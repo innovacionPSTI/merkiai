@@ -1,7 +1,7 @@
 /**
  * @jest-environment jsdom
  *
- * Unit tests for the VPS Coffee cart store (Zustand + localStorage persist).
+ * Unit tests for the Commerce CMS cart store (Zustand + localStorage persist).
  * Each test gets a fresh store to avoid cross-test contamination.
  */
 import { act } from '@testing-library/react'
@@ -29,6 +29,37 @@ beforeEach(() => {
     useCartStore.setState({ items: [] })
   })
   localStorage.clear()
+})
+
+// ─────────────────────────────────────────────
+// Topes de stock (HU-099/100)
+// ─────────────────────────────────────────────
+describe('clamp de stock', () => {
+  it('addItem topa la cantidad al stock disponible', () => {
+    act(() => { useCartStore.getState().addItem(makeItem({ qty: 5, stock: 3 })) })
+    expect(useCartStore.getState().items[0].qty).toBe(3)
+  })
+
+  it('addItem sumando sobre un ítem existente no supera el stock', () => {
+    act(() => {
+      useCartStore.getState().addItem(makeItem({ qty: 2, stock: 3 }))
+      useCartStore.getState().addItem(makeItem({ qty: 2, stock: 3 }))
+    })
+    expect(useCartStore.getState().items[0].qty).toBe(3)
+  })
+
+  it('updateQty no permite superar el stock', () => {
+    act(() => {
+      useCartStore.getState().addItem(makeItem({ qty: 1, stock: 2 }))
+      useCartStore.getState().updateQty(1, 9)
+    })
+    expect(useCartStore.getState().items[0].qty).toBe(2)
+  })
+
+  it('con allowBackorder no hay tope', () => {
+    act(() => { useCartStore.getState().addItem(makeItem({ qty: 50, stock: 1, allowBackorder: true })) })
+    expect(useCartStore.getState().items[0].qty).toBe(50)
+  })
 })
 
 // ─────────────────────────────────────────────

@@ -6,7 +6,7 @@
  *   2. Carga sus secciones + ítems con getPageWithSections()
  *   3. Renderiza cada sección con SectionRenderer
  *
- * Las rutas explícitas (/, /tienda, /blog, /checkout, /mi-cuenta…)
+ * Las rutas explícitas (/, /shop, /blog, /checkout, /account…)
  * tienen prioridad sobre esta ruta dinámica en Next.js.
  *
  * No contiene ningún string específico de café o dominio.

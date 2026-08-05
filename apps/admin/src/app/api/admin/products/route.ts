@@ -6,7 +6,7 @@ type VariantInsert = Database['public']['Tables']['product_variants']['Insert']
 
 export async function POST(req: NextRequest) {
   const body = await req.json()
-  const { name, slug, description, category_id, featured, active, seo_title, seo_desc, images = [], variants = [], variant_options = [] } = body
+  const { name, slug, description, category_id, featured, active, allow_backorder, seo_title, seo_desc, images = [], variants = [], variant_options = [] } = body
 
   if (!name?.trim() || !slug?.trim())
     return NextResponse.json({ error: 'Nombre y slug son requeridos' }, { status: 400 })
@@ -25,6 +25,7 @@ export async function POST(req: NextRequest) {
       category_id: category_id || null,
       featured: featured ?? false,
       active: active ?? true,
+      allow_backorder: allow_backorder ?? false,
       seo_title: seo_title || null,
       seo_desc: seo_desc || null,
       images: Array.isArray(images) ? images : [],

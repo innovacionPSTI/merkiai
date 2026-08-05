@@ -4,4 +4,4 @@
  * para que los callers internos no cambien su ruta de importación.
  */
 export type { EmailConfig } from '@vps/database'
-export { sendShippingNotification, sendStatusNotification } from '@vps/database'
+export { sendShippingNotification, sendStatusNotification, sendPaymentConfirmed } from '@vps/database'

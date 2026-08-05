@@ -1,4 +1,7 @@
 /**
+ * @jest-environment node
+ */
+/**
  * Unit tests — GET /api/maintenance-status
  *
  * Verifica que la ruta retorne maintenance_mode según store_config.
@@ -37,8 +40,10 @@ describe('GET /api/maintenance-status', () => {
   it('devuelve maintenance_mode: false si la BD falla (fallback seguro)', async () => {
     mockGetStoreConfig.mockRejectedValueOnce(new Error('DB error'))
 
-    // La ruta tiene export const revalidate = 60 — pero el GET en sí puede lanzar.
-    // Documentamos que la ruta propaga el error (mantenimiento debería ser false por defecto en getStoreConfig).
-    await expect(GET()).rejects.toThrow('DB error')
+    // La ruta captura el error y responde 200 con maintenance_mode: false (fail-safe)
+    const res = await GET()
+    expect(res.status).toBe(200)
+    const body = await res.json()
+    expect(body.maintenance_mode).toBe(false)
   })
 })

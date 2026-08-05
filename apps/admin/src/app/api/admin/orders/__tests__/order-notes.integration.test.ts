@@ -98,16 +98,17 @@ describe('PATCH /api/admin/orders/[id]/notes — happy path', () => {
     expect(data.internal_notes).toBe('Preparar con bolsa especial')
   })
 
-  it('borra la nota al enviar string vacío (guarda null)', async () => {
+  it('guarda string vacío tal cual (solo un valor no-string se convierte en null)', async () => {
     const { mockSupabase, updateMock } = buildSupabaseMock({
-      data: { id: 42, internal_notes: null },
+      data: { id: 42, internal_notes: '' },
       error: null,
     })
     mockCreateServerClient.mockReturnValue(mockSupabase as never)
 
     await PATCH(makeRequest({ internal_notes: '' }), { params: Promise.resolve({ id: '42' }) })
 
-    expect(updateMock).toHaveBeenCalledWith(expect.objectContaining({ internal_notes: null }))
+    // El route hace: typeof internal_notes === 'string' ? valor : null → '' se preserva
+    expect(updateMock).toHaveBeenCalledWith(expect.objectContaining({ internal_notes: '' }))
   })
 
   it('borra la nota al enviar null explícito', async () => {

@@ -9,7 +9,7 @@ export default function LoginForm() {
   const app = useStackApp()
   const router = useRouter()
   const searchParams = useSearchParams()
-  const returnTo = searchParams.get('returnTo') ?? '/mi-cuenta'
+  const returnTo = searchParams.get('returnTo') ?? '/account'
 
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
@@ -75,7 +75,7 @@ export default function LoginForm() {
                 Contraseña
               </label>
               <Link
-                href="/recuperar-contrasena"
+                href="/reset-password"
                 className="font-brand text-xs text-brand-primary/50 hover:text-brand-primary transition-colors"
               >
                 ¿La olvidaste?
@@ -117,7 +117,7 @@ export default function LoginForm() {
         </div>
 
         <Link
-          href="/registro"
+          href="/register"
           className="block w-full text-center border border-brand-primary/20 rounded-full py-3 font-brand text-sm text-brand-primary hover:bg-brand-cream transition-colors"
         >
           Crear cuenta nueva

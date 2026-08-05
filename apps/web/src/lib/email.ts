@@ -195,7 +195,7 @@ export async function sendNewsletterConfirmation(
     </p>
     ${siteUrl ? `
     <div style="text-align: center;">
-      <a href="${siteUrl}/tienda" style="display: inline-block; background: #614a2a; color: #fff8ec; text-decoration: none; padding: 12px 28px; border-radius: 50px; font-size: 14px; font-weight: 600; font-family: sans-serif;">
+      <a href="${siteUrl}/shop" style="display: inline-block; background: #614a2a; color: #fff8ec; text-decoration: none; padding: 12px 28px; border-radius: 50px; font-size: 14px; font-weight: 600; font-family: sans-serif;">
         Ver la tienda
       </a>
     </div>` : ''}
@@ -228,7 +228,7 @@ export async function sendWelcomeEmail(
     </p>
     ${siteUrl ? `
     <div style="text-align: center;">
-      <a href="${siteUrl}/tienda" style="display: inline-block; background: #614a2a; color: #fff8ec; text-decoration: none; padding: 12px 28px; border-radius: 50px; font-size: 14px; font-weight: 600; font-family: sans-serif;">
+      <a href="${siteUrl}/shop" style="display: inline-block; background: #614a2a; color: #fff8ec; text-decoration: none; padding: 12px 28px; border-radius: 50px; font-size: 14px; font-weight: 600; font-family: sans-serif;">
         Explorar la tienda
       </a>
     </div>` : ''}`

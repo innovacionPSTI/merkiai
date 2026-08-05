@@ -1,0 +1,20 @@
+{
+  "/(account)/account/page": "app/(account)/account/page.js",
+  "/(account)/mi-cuenta/page": "app/(account)/mi-cuenta/page.js",
+  "/(account)/mi-cuenta/pedidos/[id]/page": "app/(account)/mi-cuenta/pedidos/[id]/page.js",
+  "/(account)/mi-cuenta/pedidos/page": "app/(account)/mi-cuenta/pedidos/page.js",
+  "/(public)/[slug]/page": "app/(public)/[slug]/page.js",
+  "/(public)/blog/page": "app/(public)/blog/page.js",
+  "/(public)/page": "app/(public)/page.js",
+  "/(public)/shop/page": "app/(public)/shop/page.js",
+  "/(public)/tienda/[slug]/page": "app/(public)/tienda/[slug]/page.js",
+  "/(public)/tienda/page": "app/(public)/tienda/page.js",
+  "/api/account/cart/route": "app/api/account/cart/route.js",
+  "/api/checkout/bold/reconcile/route": "app/api/checkout/bold/reconcile/route.js",
+  "/api/checkout/gateways/route": "app/api/checkout/gateways/route.js",
+  "/api/checkout/route": "app/api/checkout/route.js",
+  "/api/maintenance-status/route": "app/api/maintenance-status/route.js",
+  "/api/shipping/config/route": "app/api/shipping/config/route.js",
+  "/checkout/confirmacion/page": "app/checkout/confirmacion/page.js",
+  "/checkout/page": "app/checkout/page.js"
+}

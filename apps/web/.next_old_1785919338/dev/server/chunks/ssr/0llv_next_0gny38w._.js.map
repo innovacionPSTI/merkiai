@@ -1,0 +1,7 @@
+{
+  "version": 3,
+  "sources": [],
+  "sections": [
+    {"offset": {"line": 3, "column": 0}, "map": {"version":3,"sources":["file:///Users/nestorcardona/Documents/EMPRESAS/PROPUESTAS/07%20-%20VPS%20COFFEE/vps-coffee/node_modules/.pnpm/next%4016.2.10_%40babel%2Bcore%407.29.7_%40opentelemetry%2Bapi%401.9.1_react-dom%4019.2.7_react%4019.2.7__react%4019.2.7/node_modules/next/navigation.js"],"sourcesContent":["module.exports = require('./dist/client/components/navigation')\n"],"names":["module","exports"],"mappings":"AAAAA,OAAOC,OAAO","ignoreList":[0]}},
+    {"offset": {"line": 7, "column": 0}, "map": {"version":3,"sources":["file:///Users/nestorcardona/Documents/EMPRESAS/PROPUESTAS/07%20-%20VPS%20COFFEE/vps-coffee/node_modules/.pnpm/next%4016.2.10_%40babel%2Bcore%407.29.7_%40opentelemetry%2Bapi%401.9.1_react-dom%4019.2.7_react%4019.2.7__react%4019.2.7/node_modules/next/headers.js"],"sourcesContent":["module.exports.cookies = require('./dist/server/request/cookies').cookies\nmodule.exports.headers = require('./dist/server/request/headers').headers\nmodule.exports.draftMode = require('./dist/server/request/draft-mode').draftMode\n"],"names":["module","exports","cookies","headers","draftMode"],"mappings":"AAAAA,OAAOC,OAAO,CAACC,OAAO,GAAG,qOAAyCA,OAAO;AACzEF,OAAOC,OAAO,CAACE,OAAO,GAAG,qOAAyCA,OAAO;AACzEH,OAAOC,OAAO,CAACG,SAAS,GAAG,wOAA4CA,SAAS","ignoreList":[0]}}]
+}

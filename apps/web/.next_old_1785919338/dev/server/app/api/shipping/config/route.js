@@ -1,0 +1,10 @@
+var R=require("../../../../chunks/[turbopack]_runtime.js")("server/app/api/shipping/config/route.js")
+R.c("server/chunks/apps_web_src_app_api_shipping_config_route_ts_1-4zcdm._.js")
+R.c("server/chunks/0llv_next_1d4tm8w._.js")
+R.c("server/chunks/0sj1_@opentelemetry_api_build_esm_0zw2uwe._.js")
+R.c("server/chunks/1erm_@supabase_auth-js_dist_module_1bezl1i._.js")
+R.c("server/chunks/node_modules__pnpm_0gi743d._.js")
+R.c("server/chunks/[root-of-the-server]__0ezts74._.js")
+R.c("server/chunks/apps_web__next-internal_server_app_api_shipping_config_route_actions_18a5ucp.js")
+R.m("[project]/node_modules/.pnpm/next@16.2.10_@babel+core@7.29.7_@opentelemetry+api@1.9.1_react-dom@19.2.7_react@19.2.7__react@19.2.7/node_modules/next/dist/esm/build/templates/app-route.js { INNER_APP_ROUTE => \"[project]/apps/web/src/app/api/shipping/config/route.ts [app-route] (ecmascript)\" } [app-route] (ecmascript)")
+module.exports=R.m("[project]/node_modules/.pnpm/next@16.2.10_@babel+core@7.29.7_@opentelemetry+api@1.9.1_react-dom@19.2.7_react@19.2.7__react@19.2.7/node_modules/next/dist/esm/build/templates/app-route.js { INNER_APP_ROUTE => \"[project]/apps/web/src/app/api/shipping/config/route.ts [app-route] (ecmascript)\" } [app-route] (ecmascript)").exports

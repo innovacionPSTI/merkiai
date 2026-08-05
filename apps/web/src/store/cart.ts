@@ -9,6 +9,10 @@ export interface CartItem {
   variantLabel: string
   price: number
   qty: number
+  /** Stock disponible de la variante (para topar la cantidad en el carrito) */
+  stock?: number
+  /** Si el producto permite vender sin stock (backorder) */
+  allowBackorder?: boolean
   imageUrl?: string
   /**
    * Legacy weight label — only used as last-resort fallback in shipping calc
@@ -38,6 +42,12 @@ interface CartState {
   loadFromServer: () => Promise<void>
 }
 
+/** Topa la cantidad al stock disponible, salvo que el producto permita backorder. */
+function clampQty(qty: number, item: { stock?: number; allowBackorder?: boolean }): number {
+  if (item.allowBackorder || item.stock == null) return Math.max(1, qty)
+  return Math.max(1, Math.min(qty, item.stock))
+}
+
 async function pushToServer(items: CartItem[]) {
   try {
     await fetch('/api/account/cart', {
@@ -60,9 +70,9 @@ export const useCartStore = create<CartState>()(
           const existing = state.items.find((i) => i.variantId === item.variantId)
           const newItems = existing
             ? state.items.map((i) =>
-                i.variantId === item.variantId ? { ...i, qty: i.qty + item.qty } : i
+                i.variantId === item.variantId ? { ...i, qty: clampQty(i.qty + item.qty, item) } : i
               )
-            : [...state.items, item]
+            : [...state.items, { ...item, qty: clampQty(item.qty, item) }]
           return { items: newItems }
         })
         // Fire-and-forget sync
@@ -83,7 +93,7 @@ export const useCartStore = create<CartState>()(
         }
         set((state) => ({
           items: state.items.map((i) =>
-            i.variantId === variantId ? { ...i, qty } : i
+            i.variantId === variantId ? { ...i, qty: clampQty(qty, i) } : i
           ),
         }))
         pushToServer(get().items)

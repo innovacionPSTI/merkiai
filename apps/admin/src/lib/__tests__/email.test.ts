@@ -13,8 +13,8 @@ import { sendShippingNotification, sendStatusNotification } from '../email'
 
 const config = {
   apiKey:    're_test_key',
-  fromEmail: 'pedidos@vpscoffee.com',
-  storeName: 'VPS Coffee',
+  fromEmail: 'pedidos@tienda.example.com',
+  storeName: 'Commerce CMS',
 }
 
 const baseOrder = {
@@ -130,6 +130,6 @@ describe('sendStatusNotification', () => {
   it('usa el storeName en el remitente', async () => {
     await sendStatusNotification(baseOrder, 'delivered', config)
     const body = JSON.parse((mockFetch.mock.calls[0][1] as RequestInit).body as string)
-    expect(body.from).toContain('VPS Coffee')
+    expect(body.from).toContain('Commerce CMS')
   })
 })

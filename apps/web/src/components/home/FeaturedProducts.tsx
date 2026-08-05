@@ -26,7 +26,7 @@ export default function FeaturedProducts({ products }: FeaturedProductsProps) {
             Descubre nuestra selección de productos. Calidad garantizada en cada artículo.
           </p>
           <Link
-            href="/tienda"
+            href="/shop"
             className="inline-block mt-6 border border-brand-primary text-brand-primary rounded-full px-6 py-2 font-brand text-sm hover:bg-brand-primary hover:text-brand-cream transition-colors"
           >
             Ver todos los productos →
@@ -58,11 +58,12 @@ export default function FeaturedProducts({ products }: FeaturedProductsProps) {
               : []
 
             const canQuickAdd = activeVariants.length === 1
+            const outOfStock = !product.allow_backorder && !!defaultVariant && defaultVariant.stock === 0
 
             return (
               <div key={product.id} className="group bg-white rounded-2xl overflow-hidden shadow-card hover:shadow-card-hover transition-shadow duration-300">
                 {/* Image */}
-                <Link href={`/tienda/${product.slug}`}>
+                <Link href={`/shop/${product.slug}`}>
                   <div className="relative overflow-hidden bg-brand-cream-warm h-64">
                     {image?.url ? (
                       <img
@@ -85,7 +86,7 @@ export default function FeaturedProducts({ products }: FeaturedProductsProps) {
                 </Link>
 
                 <div className="p-6 pt-2">
-                  <Link href={`/tienda/${product.slug}`}>
+                  <Link href={`/shop/${product.slug}`}>
                     <p className="font-brand text-xs text-brand-primary/50 uppercase tracking-wider">
                       {product.category?.name ?? ''}
                     </p>
@@ -133,6 +134,11 @@ export default function FeaturedProducts({ products }: FeaturedProductsProps) {
                       </span>
                     </div>
                     {canQuickAdd ? (
+                      outOfStock ? (
+                        <span className="rounded-full border border-brand-primary/20 text-brand-primary/40 px-4 py-1.5 text-sm font-brand">
+                          Agotado
+                        </span>
+                      ) : (
                       <button
                         onClick={() => {
                           if (!defaultVariant) return
@@ -144,6 +150,8 @@ export default function FeaturedProducts({ products }: FeaturedProductsProps) {
                             variantLabel: getVariantLabel(defaultVariant, opts),
                             price: defaultVariant.price,
                             qty: 1,
+                            stock: defaultVariant.stock,
+                            allowBackorder: !!product.allow_backorder,
                             imageUrl: image?.url,
                             weight: defaultVariant.weight ?? undefined,
                             weight_kg: defaultVariant.weight_kg ?? null,
@@ -156,9 +164,10 @@ export default function FeaturedProducts({ products }: FeaturedProductsProps) {
                       >
                         Agregar
                       </button>
+                      )
                     ) : (
                       <Link
-                        href={`/tienda/${product.slug}`}
+                        href={`/shop/${product.slug}`}
                         className="rounded-full border border-brand-primary text-brand-primary px-4 py-1.5 text-sm font-brand hover:bg-brand-primary hover:text-brand-cream transition-colors"
                       >
                         Ver opciones

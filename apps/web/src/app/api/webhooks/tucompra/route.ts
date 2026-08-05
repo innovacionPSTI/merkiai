@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { createServerClient, getPaymentConfig, getStoreConfig, TuCompraGateway } from '@vps/database'
+import { createServerClient, getPaymentConfig, getStoreConfig, TuCompraGateway, applyStockForOrder } from '@vps/database'
 import { sendOrderConfirmation, buildEmailConfig } from '@/lib/email'
 import { createShipmentForOrder } from '@/lib/shipping/shipments'
 import type { Order, Database } from '@vps/database'
@@ -27,7 +27,9 @@ export async function POST(req: NextRequest) {
   // Cargar credenciales desde la BD
   const paymentConfig = await getPaymentConfig().catch(() => null)
 
-  if (!paymentConfig?.tucompra_active || !paymentConfig.tucompra_merchant_id || !paymentConfig.tucompra_secret_key) {
+  // El webhook valida por credenciales (no por proveedor activo): una notificación
+  // puede llegar por un pago iniciado aunque luego se cambie la pasarela activa.
+  if (!paymentConfig?.tucompra_merchant_id || !paymentConfig.tucompra_secret_key) {
     console.warn('[webhook/tucompra] Tu Compra no configurado')
     return NextResponse.json({ error: 'Gateway not configured' }, { status: 503 })
   }
@@ -75,6 +77,9 @@ export async function POST(req: NextRequest) {
 
   // Pago aprobado: confirmación + guía de envío
   if (paymentStatus === 'approved' && updatedOrder) {
+    // Descuento de stock (idempotente) al confirmarse el pago
+    await applyStockForOrder(orderReference)
+
     const storeConfig = await getStoreConfig().catch(() => null)
     const emailConfig = storeConfig?.resend_api_key && storeConfig?.resend_from_email
       ? buildEmailConfig(

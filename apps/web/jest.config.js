@@ -12,6 +12,10 @@ const config = {
     '^@/(.*)$': '<rootDir>/src/$1',
     '^@vps/database$': '<rootDir>/../../packages/database/src/index.ts',
     '^@vps/ui$': '<rootDir>/../../packages/ui/src/index.ts',
+    // Dependencias ESM puras sin babel-jest → stub CJS genérico
+    // (se cargan transitivamente vía @stackframe/stack, nunca se ejecutan en tests)
+    '^jose(/.*)?$': '<rootDir>/__mocks__/esm-stub.js',
+    '^export-to-csv$': '<rootDir>/__mocks__/esm-stub.js',
   },
   transform: {
     '^.+\\.(ts|tsx)$': ['ts-jest', {

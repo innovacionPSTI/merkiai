@@ -31,7 +31,7 @@ export default function NotFound() {
 
       <div className="flex flex-col sm:flex-row gap-3">
         <Link
-          href="/tienda"
+          href="/shop"
           className="bg-brand-primary text-brand-cream rounded-full px-8 py-3 font-brand text-sm
                      hover:bg-brand-dark transition-colors"
         >

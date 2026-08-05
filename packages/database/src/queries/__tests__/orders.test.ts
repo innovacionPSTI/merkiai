@@ -22,14 +22,13 @@ const baseInput: CreateOrderInput = {
   customer_email: 'carlos@example.com',
   customer_phone: '3001234567',
   shipping_addr: {
-    street: 'Calle 93 #15-10',
+    address: 'Calle 93 #15-10',
     city: 'Bogotá',
     department: 'Cundinamarca',
     postal_code: '110221',
-    country: 'CO',
   },
   items: [
-    { variantId: 10, productName: 'Café Huila', variantLabel: '500g · Claro', price: 45000, qty: 2, weight: '500g' },
+    { variant_id: 10, product_name: 'Café Huila', variant_label: '500g · Claro', price: 45000, qty: 2 },
   ],
   subtotal: 90000,
   shipping_cost: 8000,
@@ -60,7 +59,7 @@ describe('createOrder', () => {
   function setupMock(orderCount: number, createdOrder: object) {
     const singleMock = jest.fn().mockResolvedValue({ data: createdOrder, error: null })
     const insertChain = { select: jest.fn().mockReturnValue({ single: singleMock }) }
-    const supabase = {
+    const supabase: { from: jest.Mock } = {
       from: jest.fn((table: string) => {
         if (table === 'orders') {
           return {
@@ -143,7 +142,7 @@ describe('createOrder', () => {
   })
 
   it('lanza error si Supabase falla al insertar', async () => {
-    const supabase = {
+    const supabase: { from: jest.Mock } = {
       from: jest.fn(() => ({
         select: jest.fn().mockResolvedValue({ data: null, count: 0, error: null }),
         insert: jest.fn().mockReturnValue({

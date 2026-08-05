@@ -1,4 +1,4 @@
-# VPS Coffee — Guía de Despliegue en Vercel + GitHub
+# Commerce CMS — Guía de Despliegue en Vercel + GitHub
 
 > **Stack:** Next.js 16 · Turborepo · pnpm · Supabase  
 > **Repositorio:** monorepo con dos apps (`apps/web` y `apps/admin`)  
@@ -36,16 +36,16 @@ GitHub (monorepo vps-coffee)
          ├── push a main
          │
          ├──▶ Vercel Project: vps-coffee-web   (apps/web)
-         │         └── vpscoffee.com
+         │         └── tienda.example.com
          │
          └──▶ Vercel Project: vps-coffee-admin  (apps/admin)
-                   └── admin.vpscoffee.com
+                   └── admin.tienda.example.com
 ```
 
 | Proyecto Vercel | App en el repo | Dominio | Puerto local |
 |----------------|----------------|---------|-------------|
-| `vps-coffee-web` | `apps/web` | `vpscoffee.com` | 3000 |
-| `vps-coffee-admin` | `apps/admin` | `admin.vpscoffee.com` | 3001 |
+| `vps-coffee-web` | `apps/web` | `tienda.example.com` | 3000 |
+| `vps-coffee-admin` | `apps/admin` | `admin.tienda.example.com` | 3001 |
 
 Vercel detecta automáticamente que es un monorepo y maneja la caché de Turborepo entre builds.
 
@@ -58,7 +58,7 @@ Antes de comenzar, tener listos:
 - [ ] Cuenta en [Vercel](https://vercel.com) (plan Hobby o Pro)
 - [ ] Repositorio creado en GitHub con el código del monorepo
 - [ ] Proyecto en [Supabase](https://supabase.com) de **producción** (distinto al de desarrollo)
-- [ ] Dominio registrado (ej. `vpscoffee.com`) con acceso al panel DNS
+- [ ] Dominio registrado (ej. `tienda.example.com`) con acceso al panel DNS
 - [ ] Fuentes tipográficas: `typogama-ahsing.otf` y `Geeeki-Regular.otf`
 
 > **Importante:** Usar proyectos Supabase separados para desarrollo y producción. Nunca apuntar producción a la misma BD de desarrollo.
@@ -85,7 +85,7 @@ git push -u origin main
 
 | Rama | Propósito | Deployment automático |
 |------|-----------|----------------------|
-| `main` | Producción | ✅ sí → `vpscoffee.com` |
+| `main` | Producción | ✅ sí → `tienda.example.com` |
 | `staging` | Pre-producción / QA | ✅ sí → Preview URL de Vercel |
 | `feat/*` | Desarrollo de features | ✅ sí → Preview URL por PR |
 
@@ -242,7 +242,7 @@ Las mínimas para que la app arranque:
 NEXT_PUBLIC_SUPABASE_URL          = https://<proyecto>.supabase.co
 NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY = eyJ...
 SUPABASE_SERVICE_ROLE_KEY         = eyJ...
-NEXT_PUBLIC_SITE_URL              = https://vpscoffee.com
+NEXT_PUBLIC_SITE_URL              = https://tienda.example.com
 ```
 
 ### 5.5 Hacer el primer deploy
@@ -296,7 +296,7 @@ Las mínimas para el panel admin:
 NEXT_PUBLIC_SUPABASE_URL          = https://<proyecto>.supabase.co
 NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY = eyJ...
 SUPABASE_SERVICE_ROLE_KEY         = eyJ...
-NEXT_PUBLIC_ADMIN_URL             = https://admin.vpscoffee.com
+NEXT_PUBLIC_ADMIN_URL             = https://admin.tienda.example.com
 ```
 
 ---
@@ -327,27 +327,27 @@ NEXT_PUBLIC_ADMIN_URL             = https://admin.vpscoffee.com
 ### 8.1 Agregar dominio al proyecto web
 
 1. En **vps-coffee-web** → **Settings** → **Domains**
-2. Agregar `vpscoffee.com` y `www.vpscoffee.com`
+2. Agregar `tienda.example.com` y `www.tienda.example.com`
 3. Vercel mostrará los registros DNS que debes configurar
 
 ### 8.2 Agregar dominio al proyecto admin
 
 1. En **vps-coffee-admin** → **Settings** → **Domains**
-2. Agregar `admin.vpscoffee.com`
+2. Agregar `admin.tienda.example.com`
 3. Vercel mostrará el registro DNS para el subdominio
 
 ### 8.3 Registros DNS a configurar en tu proveedor
 
 Ir al panel de administración DNS de tu dominio (ej. GoDaddy, Namecheap, Cloudflare, etc.) y crear:
 
-#### Para vpscoffee.com (dominio raíz + www)
+#### Para tienda.example.com (dominio raíz + www)
 
 | Tipo | Nombre | Valor | TTL |
 |------|--------|-------|-----|
 | `A` | `@` | `76.76.21.21` | Auto |
 | `CNAME` | `www` | `cname.vercel-dns.com` | Auto |
 
-#### Para admin.vpscoffee.com
+#### Para admin.tienda.example.com
 
 | Tipo | Nombre | Valor | TTL |
 |------|--------|-------|-----|
@@ -361,7 +361,7 @@ Vercel provee certificados SSL automáticos via Let's Encrypt. La verificación 
 
 ### 8.5 Redirección www → sin www
 
-En **vps-coffee-web** → **Settings** → **Domains**, Vercel redirige automáticamente `www.vpscoffee.com` → `vpscoffee.com` (o viceversa). Seleccionar `vpscoffee.com` como dominio primario.
+En **vps-coffee-web** → **Settings** → **Domains**, Vercel redirige automáticamente `www.tienda.example.com` → `tienda.example.com` (o viceversa). Seleccionar `tienda.example.com` como dominio primario.
 
 ---
 
@@ -370,14 +370,14 @@ En **vps-coffee-web** → **Settings** → **Domains**, Vercel redirige automát
 El endpoint `POST /api/webhooks/skydropx` recibe notificaciones de Skydropx cuando el estado de un envío cambia. Debe registrarse en el dashboard de Skydropx con la URL de producción:
 
 ```
-https://vpscoffee.com/api/webhooks/skydropx
+https://tienda.example.com/api/webhooks/skydropx
 ```
 
 ### Configurar en Skydropx
 
 1. Iniciar sesión en el dashboard de Skydropx
 2. Ir a **Configuración → Webhooks**
-3. Agregar la URL: `https://vpscoffee.com/api/webhooks/skydropx`
+3. Agregar la URL: `https://tienda.example.com/api/webhooks/skydropx`
 4. Seleccionar los eventos:
    - `shipment.in_transit`
    - `shipment.out_for_delivery`
@@ -502,7 +502,7 @@ VALUES (
 
 El admin no tiene formulario de registro (está deshabilitado). Para crear la cuenta:
 
-1. Ve a `https://admin.vpscoffee.com/handler/sign-in`
+1. Ve a `https://admin.tienda.example.com/handler/sign-in`
 2. Haz clic en **"¿Olvidaste tu contraseña?"**
 3. Ingresa el mismo email que pusiste en Supabase
 4. Stack Auth enviará un correo para crear/restablecer la contraseña
@@ -521,7 +521,7 @@ Una vez que el super_admin ha ingresado:
 1. Ve a `/usuarios` en el panel
 2. Clic en **"Agregar usuario"**
 3. Ingresa email, nombre y rol (`Admin`, `Vendedor` o `Gestor de Tienda`)
-4. El nuevo usuario debe ir a `https://admin.vpscoffee.com/handler/sign-in`, usar "¿Olvidaste tu contraseña?" y crear su contraseña
+4. El nuevo usuario debe ir a `https://admin.tienda.example.com/handler/sign-in`, usar "¿Olvidaste tu contraseña?" y crear su contraseña
 
 Los roles disponibles y sus permisos:
 
@@ -535,7 +535,7 @@ Los roles disponibles y sus permisos:
 
 ### 12.1 Configurar proveedor de envíos
 
-1. Ir a `https://admin.vpscoffee.com/configuracion`
+1. Ir a `https://admin.tienda.example.com/configuracion`
 2. Sección **Proveedor de envíos**
 3. Si vas a usar Skydropx: ingresar Client ID, Client Secret y Address From ID
 4. Si usas tarifa fija: definir el valor en COP (ej. `8000`)
@@ -543,7 +543,7 @@ Los roles disponibles y sus permisos:
 
 ### 12.2 Configurar logo y WhatsApp
 
-1. Ir a `https://admin.vpscoffee.com/configuracion`
+1. Ir a `https://admin.tienda.example.com/configuracion`
 2. Sección **Identidad de la tienda**
 3. Subir el logo (se guardará en el bucket `logos` de Supabase)
 4. Ingresar el número de WhatsApp en formato internacional: `573001234567`
@@ -553,18 +553,18 @@ Estos valores se aplican inmediatamente en el sitio público (Navbar, Footer, CT
 
 ### 12.3 Crear categorías
 
-1. Ir a `https://admin.vpscoffee.com/categorias`
+1. Ir a `https://admin.tienda.example.com/categorias`
 2. Crear las categorías iniciales (ej. "Café de Especialidad", "Blend", "Microlote")
 
 ### 12.4 Crear primeros productos
 
-1. Ir a `https://admin.vpscoffee.com/productos/nuevo`
+1. Ir a `https://admin.tienda.example.com/productos/nuevo`
 2. Completar nombre, slug, imágenes, variantes y precios
 3. Activar el producto
 
 ### 12.5 Configurar banners del hero
 
-1. Ir a `https://admin.vpscoffee.com/banners`
+1. Ir a `https://admin.tienda.example.com/banners`
 2. Subir imágenes para desktop y mobile en cada slide
 3. Definir título, subtítulo y CTA
 
@@ -599,7 +599,7 @@ Completar antes de hacer el primer deploy a producción:
 - [ ] Node.js 20.x seleccionado
 - [ ] Variables de entorno de producción configuradas (todas las de la lista de la sección 15)
 - [ ] Primer build exitoso (sin errores en Build Logs)
-- [ ] Dominio `vpscoffee.com` agregado y con SSL válido
+- [ ] Dominio `tienda.example.com` agregado y con SSL válido
 
 ### Vercel — vps-coffee-admin
 
@@ -610,11 +610,11 @@ Completar antes de hacer el primer deploy a producción:
 - [ ] Node.js 20.x seleccionado
 - [ ] Variables de entorno de producción configuradas
 - [ ] Primer build exitoso
-- [ ] Dominio `admin.vpscoffee.com` agregado y con SSL válido
+- [ ] Dominio `admin.tienda.example.com` agregado y con SSL válido
 
 ### DNS
 
-- [ ] Registro `A` para `vpscoffee.com` apuntando a `76.76.21.21`
+- [ ] Registro `A` para `tienda.example.com` apuntando a `76.76.21.21`
 - [ ] Registro `CNAME` para `www` apuntando a `cname.vercel-dns.com`
 - [ ] Registro `CNAME` para `admin` apuntando a `cname.vercel-dns.com`
 - [ ] Propagación DNS verificada (puede tardar hasta 24h; normalmente < 30 min)
@@ -622,11 +622,11 @@ Completar antes de hacer el primer deploy a producción:
 ### Post-deploy
 
 - [ ] **Crear super_admin** — INSERT en `profiles` (ver sección 12.0)
-- [ ] Ir a `https://admin.vpscoffee.com/handler/sign-in` → "¿Olvidaste tu contraseña?" con el email del super_admin
+- [ ] Ir a `https://admin.tienda.example.com/handler/sign-in` → "¿Olvidaste tu contraseña?" con el email del super_admin
 - [ ] Confirmar que el link del correo funciona y permite crear contraseña
 - [ ] Iniciar sesión como super_admin — dashboard accesible con sección Usuarios visible
-- [ ] Abrir `https://vpscoffee.com` — Home carga correctamente
-- [ ] Abrir `https://vpscoffee.com/tienda` — Catálogo visible
+- [ ] Abrir `https://tienda.example.com` — Home carga correctamente
+- [ ] Abrir `https://tienda.example.com/tienda` — Catálogo visible
 - [ ] Subir logo desde `/configuracion` — aparece en el sitio
 - [ ] Ingresar número de WhatsApp — CTAs funcionan
 - [ ] Webhook de Skydropx registrado en el dashboard de Skydropx
@@ -696,8 +696,8 @@ Configurar alertas en Vercel → **Observability** → **Alerts** para recibir n
 
 | Variable | App | Descripción | Ejemplo |
 |----------|-----|-------------|---------|
-| `NEXT_PUBLIC_SITE_URL` | web | URL pública del sitio | `https://vpscoffee.com` |
-| `NEXT_PUBLIC_ADMIN_URL` | admin | URL del panel admin | `https://admin.vpscoffee.com` |
+| `NEXT_PUBLIC_SITE_URL` | web | URL pública del sitio | `https://tienda.example.com` |
+| `NEXT_PUBLIC_ADMIN_URL` | admin | URL del panel admin | `https://admin.tienda.example.com` |
 
 ### Pasarelas de pago — *(pendiente de integrar)*
 
@@ -716,7 +716,7 @@ Configurar alertas en Vercel → **Observability** → **Alerts** para recibir n
 | Variable | App | Descripción | Ejemplo |
 |----------|-----|-------------|---------|
 | `RESEND_API_KEY` | web | Clave de la API de Resend (**secreta**) | `re_...` |
-| `RESEND_FROM_EMAIL` | web | Email del remitente | `pedidos@vpscoffee.com` |
+| `RESEND_FROM_EMAIL` | web | Email del remitente | `pedidos@tienda.example.com` |
 
 > Obtener en: [resend.com/api-keys](https://resend.com/api-keys)
 
@@ -756,7 +756,7 @@ Configurar alertas en Vercel → **Observability** → **Alerts** para recibir n
 │  turbo build --filter=@vps/web  turbo build --filter=@vps/admin     │
 │         │                               │                           │
 │  Production Deploy              Production Deploy                   │
-│  vpscoffee.com                  admin.vpscoffee.com                 │
+│  tienda.example.com                  admin.tienda.example.com                 │
 └──────────────────────────────────────────────────────────────────── ┘
        │                           │
        ▼                           ▼
@@ -775,4 +775,4 @@ Configurar alertas en Vercel → **Observability** → **Alerts** para recibir n
 
 ---
 
-*VPS Coffee Roasting House · Parquesoft TI · Julio 2026*
+*Commerce CMS · Parquesoft TI · Julio 2026*

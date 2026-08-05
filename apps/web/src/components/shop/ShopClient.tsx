@@ -378,11 +378,12 @@ function ProductCard({ product, fmt, addItem }: {
     : []
 
   const canQuickAdd = activeVariants.length === 1
+  const outOfStock = !product.allow_backorder && !!defaultVariant && defaultVariant.stock === 0
 
   return (
     <div className="group bg-white rounded-2xl overflow-hidden shadow-card hover:shadow-card-hover transition-all duration-300">
       {/* Image */}
-      <Link href={`/tienda/${product.slug}`} className="block relative overflow-hidden bg-brand-cream-warm h-56">
+      <Link href={`/shop/${product.slug}`} className="block relative overflow-hidden bg-brand-cream-warm h-56">
         {image?.url ? (
           <img
             src={image.url}
@@ -404,7 +405,7 @@ function ProductCard({ product, fmt, addItem }: {
 
       {/* Info */}
       <div className="p-4 pt-1">
-        <Link href={`/tienda/${product.slug}`}>
+        <Link href={`/shop/${product.slug}`}>
           <p className="font-brand text-[10px] text-brand-primary/40 uppercase tracking-wider">{product.category?.name ?? ''}</p>
           <h3 className="font-brand text-base font-semibold text-brand-primary mt-0.5 group-hover:text-brand-dark transition-colors line-clamp-1">
             {product.name}
@@ -450,6 +451,11 @@ function ProductCard({ product, fmt, addItem }: {
             </p>
           </div>
           {canQuickAdd ? (
+            outOfStock ? (
+              <span className="rounded-full border border-brand-primary/20 text-brand-primary/40 px-3 py-1 text-xs font-brand">
+                Agotado
+              </span>
+            ) : (
             <button
               onClick={() => {
                 if (!defaultVariant) return
@@ -461,6 +467,8 @@ function ProductCard({ product, fmt, addItem }: {
                   variantLabel: getVariantLabel(defaultVariant, opts),
                   price: defaultVariant.price,
                   qty: 1,
+                  stock: defaultVariant.stock,
+                  allowBackorder: !!product.allow_backorder,
                   imageUrl: image?.url,
                   weight: defaultVariant.weight ?? undefined,
                   weight_kg: defaultVariant.weight_kg ?? null,
@@ -473,9 +481,10 @@ function ProductCard({ product, fmt, addItem }: {
             >
               Agregar
             </button>
+            )
           ) : (
             <Link
-              href={`/tienda/${product.slug}`}
+              href={`/shop/${product.slug}`}
               className="rounded-full border border-brand-primary text-brand-primary px-3 py-1 text-xs font-brand hover:bg-brand-primary hover:text-brand-cream transition-colors"
             >
               Ver opciones

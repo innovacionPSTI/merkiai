@@ -1,25 +1,29 @@
 /**
  * Payment Gateway Factory
  *
+ * Solo UNA pasarela puede estar activa a la vez: `payment_config.active_provider`
+ * ('none' | 'wompi' | 'mercadopago' | 'tucompra'), igual que shipping_config.provider.
+ *
  * ┌───────────────────────────────────────────────────────────────────┐
- * │  method        │  Gateway               │  Active field           │
+ * │  method        │  Gateway               │  Activa cuando…         │
  * ├───────────────────────────────────────────────────────────────────┤
- * │  'wompi'       │  WompiGateway          │  wompi_active           │
- * │  'mercadopago' │  MercadoPagoGateway    │  mercadopago_active     │
- * │  'tucompra'    │  TuCompraGateway       │  tucompra_active        │
+ * │  'wompi'       │  WompiGateway          │  active_provider='wompi'│
+ * │  'mercadopago' │  MercadoPagoGateway    │  = 'mercadopago'        │
+ * │  'tucompra'    │  TuCompraGateway       │  = 'tucompra'           │
  * └───────────────────────────────────────────────────────────────────┘
  *
  * Adding a new gateway:
  *   1. Create src/providers/payment/<Name>Gateway.ts implementing PaymentGateway.
- *   2. Add credentials to payment_config (migration + types.ts).
+ *   2. Add credentials to payment_config (migration + types.ts) + al CHECK de active_provider.
  *   3. Add a case below.
- *   4. Add toggle + form in admin PaymentConfigForm.
+ *   4. Add la opción al selector "Proveedor activo" en admin PaymentConfigForm.
  */
 
 import type { PaymentConfig } from '../../types'
 import { WompiGateway } from './WompiGateway'
 import { MercadoPagoGateway } from './MercadoPagoGateway'
 import { TuCompraGateway } from './TuCompraGateway'
+import { BoldGateway } from './BoldGateway'
 import type { PaymentGateway } from './types'
 
 export type { PaymentGateway, CreatePaymentParams, PaymentStatus, WebhookPaymentData } from './types'
@@ -29,6 +33,8 @@ export { MercadoPagoGateway } from './MercadoPagoGateway'
 export type { MercadoPagoConfig } from './MercadoPagoGateway'
 export { TuCompraGateway } from './TuCompraGateway'
 export type { TuCompraConfig } from './TuCompraGateway'
+export { BoldGateway } from './BoldGateway'
+export type { BoldConfig } from './BoldGateway'
 
 /**
  * Returns the PaymentGateway implementation for the given method.
@@ -41,7 +47,7 @@ export function getPaymentGateway(
 ): PaymentGateway {
   switch (method) {
     case 'wompi': {
-      if (!config.wompi_active) {
+      if (config.active_provider !== 'wompi') {
         throw new Error('Wompi no está activo. Actívalo en Configuración → Pagos.')
       }
       if (!config.wompi_public_key || !config.wompi_integrity_secret) {
@@ -55,7 +61,7 @@ export function getPaymentGateway(
     }
 
     case 'mercadopago': {
-      if (!config.mercadopago_active) {
+      if (config.active_provider !== 'mercadopago') {
         throw new Error('MercadoPago no está activo. Actívalo en Configuración → Pagos.')
       }
       if (!config.mercadopago_access_token) {
@@ -68,7 +74,7 @@ export function getPaymentGateway(
     }
 
     case 'tucompra': {
-      if (!config.tucompra_active) {
+      if (config.active_provider !== 'tucompra') {
         throw new Error('Tu Compra no está activo. Actívalo en Configuración → Pagos.')
       }
       if (!config.tucompra_merchant_id || !config.tucompra_secret_key) {
@@ -81,25 +87,55 @@ export function getPaymentGateway(
       })
     }
 
+    case 'bold': {
+      if (config.active_provider !== 'bold') {
+        throw new Error('Bold no está activo. Actívalo en Configuración → Pagos.')
+      }
+      if (!config.bold_api_key || !config.bold_secret_key) {
+        throw new Error('Bold: faltan credenciales (api_key o secret_key).')
+      }
+      return new BoldGateway({
+        apiKey:    config.bold_api_key,
+        secretKey: config.bold_secret_key,
+        sandbox:   config.bold_sandbox ?? true,
+      })
+    }
+
     default:
       throw new Error(`Pasarela de pago desconocida: "${method}"`)
   }
 }
 
+export type ActivePaymentProvider = 'none' | 'wompi' | 'mercadopago' | 'tucompra' | 'bold'
+
 /**
- * Returns the list of gateway names that are currently active and configured.
- * Used by the checkout UI to show only available payment options.
+ * Devuelve la pasarela activa (única) SOLO si además tiene sus credenciales
+ * completas. Fail-closed: si active_provider apunta a una pasarela sin
+ * credenciales, devuelve 'none' (no se puede cobrar → validación manual).
+ *
+ * Esta es la fuente de verdad del servidor: el checkout NUNCA debe confiar en
+ * el método enviado por el cliente, sino derivarlo de aquí.
+ */
+export function getActiveProvider(config: PaymentConfig): ActivePaymentProvider {
+  switch (config.active_provider) {
+    case 'wompi':
+      return config.wompi_public_key && config.wompi_integrity_secret ? 'wompi' : 'none'
+    case 'mercadopago':
+      return config.mercadopago_access_token ? 'mercadopago' : 'none'
+    case 'tucompra':
+      return config.tucompra_merchant_id && config.tucompra_secret_key ? 'tucompra' : 'none'
+    case 'bold':
+      return config.bold_api_key && config.bold_secret_key ? 'bold' : 'none'
+    default:
+      return 'none'
+  }
+}
+
+/**
+ * Lista de pasarelas disponibles para el checkout. Con el modelo de pasarela
+ * única, devuelve `[activa]` o `[]` (cuando es 'none' → pago manual).
  */
 export function getActiveGateways(config: PaymentConfig): string[] {
-  const active: string[] = []
-  if (config.wompi_active && config.wompi_public_key && config.wompi_integrity_secret) {
-    active.push('wompi')
-  }
-  if (config.mercadopago_active && config.mercadopago_access_token) {
-    active.push('mercadopago')
-  }
-  if (config.tucompra_active && config.tucompra_merchant_id && config.tucompra_secret_key) {
-    active.push('tucompra')
-  }
-  return active
+  const active = getActiveProvider(config)
+  return active === 'none' ? [] : [active]
 }

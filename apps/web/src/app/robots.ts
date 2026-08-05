@@ -10,7 +10,7 @@ export default function robots(): MetadataRoute.Robots {
         allow: '/',
         disallow: [
           '/api/',
-          '/mi-cuenta/',
+          '/account/',
           '/checkout/',
           '/handler/',
         ],

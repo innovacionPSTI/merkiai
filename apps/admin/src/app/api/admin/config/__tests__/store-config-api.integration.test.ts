@@ -27,11 +27,11 @@ const mockUpdate = updateStoreConfig as jest.MockedFunction<typeof updateStoreCo
 const baseConfig = {
   id: 1,
   whatsapp_number: '573001234567',
-  store_name: 'VPS Coffee',
+  store_name: 'Commerce CMS',
   store_email: null,
   logo_url: null,
   resend_api_key: 're_test_abcd1234',
-  resend_from_email: 'pedidos@vpscoffee.com',
+  resend_from_email: 'pedidos@tienda.example.com',
   terms_content: null,
   privacy_content: null,
   instagram_url: null,
@@ -62,7 +62,7 @@ describe('GET /api/admin/config', () => {
     const res = await GET()
     expect(res.status).toBe(200)
     const data = await res.json()
-    expect(data.store_name).toBe('VPS Coffee')
+    expect(data.store_name).toBe('Commerce CMS')
     expect(data.whatsapp_number).toBe('573001234567')
   })
 
@@ -101,7 +101,7 @@ describe('GET /api/admin/config', () => {
     const res = await GET()
     const data = await res.json()
 
-    expect(data.resend_from_email).toBe('pedidos@vpscoffee.com')
+    expect(data.resend_from_email).toBe('pedidos@tienda.example.com')
   })
 
   it('retorna 500 si getStoreConfig lanza', async () => {
@@ -161,15 +161,15 @@ describe('PATCH /api/admin/config — validación WhatsApp', () => {
 // ─────────────────────────────────────────────
 describe('PATCH /api/admin/config — happy path', () => {
   it('actualiza store_name correctamente', async () => {
-    const updated = { ...baseConfig, store_name: 'VPS Coffee Roasting House' }
+    const updated = { ...baseConfig, store_name: 'Commerce CMS' }
     mockUpdate.mockResolvedValueOnce(updated)
 
-    const req = makePatchRequest({ store_name: 'VPS Coffee Roasting House' })
+    const req = makePatchRequest({ store_name: 'Commerce CMS' })
     const res = await PATCH(req)
 
     expect(res.status).toBe(200)
     const data = await res.json()
-    expect(data.store_name).toBe('VPS Coffee Roasting House')
+    expect(data.store_name).toBe('Commerce CMS')
   })
 
   it('actualiza logo_url correctamente', async () => {
@@ -189,20 +189,20 @@ describe('PATCH /api/admin/config — happy path', () => {
   it('actualiza múltiples campos a la vez', async () => {
     const updated = {
       ...baseConfig,
-      store_email: 'info@vpscoffee.com',
+      store_email: 'info@tienda.example.com',
       whatsapp_number: '573009999999',
     }
     mockUpdate.mockResolvedValueOnce(updated)
 
     const req = makePatchRequest({
-      store_email: 'info@vpscoffee.com',
+      store_email: 'info@tienda.example.com',
       whatsapp_number: '573009999999',
     })
     const res = await PATCH(req)
 
     expect(res.status).toBe(200)
     const data = await res.json()
-    expect(data.store_email).toBe('info@vpscoffee.com')
+    expect(data.store_email).toBe('info@tienda.example.com')
   })
 })
 
@@ -211,15 +211,15 @@ describe('PATCH /api/admin/config — happy path', () => {
 // ─────────────────────────────────────────────
 describe('PATCH /api/admin/config — Resend', () => {
   it('actualiza resend_from_email correctamente', async () => {
-    const updated = { ...baseConfig, resend_from_email: 'hola@vpscoffee.com' }
+    const updated = { ...baseConfig, resend_from_email: 'hola@tienda.example.com' }
     mockUpdate.mockResolvedValueOnce(updated)
 
-    const req = makePatchRequest({ resend_from_email: 'hola@vpscoffee.com' })
+    const req = makePatchRequest({ resend_from_email: 'hola@tienda.example.com' })
     const res = await PATCH(req)
 
     expect(res.status).toBe(200)
     expect(mockUpdate).toHaveBeenCalledWith(
-      expect.objectContaining({ resend_from_email: 'hola@vpscoffee.com' })
+      expect.objectContaining({ resend_from_email: 'hola@tienda.example.com' })
     )
   })
 
@@ -288,16 +288,16 @@ describe('PATCH /api/admin/config — contenido legal', () => {
 // ─────────────────────────────────────────────
 describe('PATCH /api/admin/config — redes sociales', () => {
   it('guarda instagram_url e instagram_enabled', async () => {
-    const updated = { ...baseConfig, instagram_url: 'https://instagram.com/vpscoffee', instagram_enabled: true }
+    const updated = { ...baseConfig, instagram_url: 'https://instagram.com/commercecms', instagram_enabled: true }
     mockUpdate.mockResolvedValueOnce(updated)
 
-    const req = makePatchRequest({ instagram_url: 'https://instagram.com/vpscoffee', instagram_enabled: true })
+    const req = makePatchRequest({ instagram_url: 'https://instagram.com/commercecms', instagram_enabled: true })
     const res = await PATCH(req)
 
     expect(res.status).toBe(200)
     expect(mockUpdate).toHaveBeenCalledWith(
       expect.objectContaining({
-        instagram_url: 'https://instagram.com/vpscoffee',
+        instagram_url: 'https://instagram.com/commercecms',
         instagram_enabled: true,
       })
     )
@@ -316,28 +316,28 @@ describe('PATCH /api/admin/config — redes sociales', () => {
   })
 
   it('guarda tiktok_url y tiktok_enabled juntos', async () => {
-    const updated = { ...baseConfig, tiktok_url: 'https://tiktok.com/@vpscoffee', tiktok_enabled: true }
+    const updated = { ...baseConfig, tiktok_url: 'https://tiktok.com/@commercecms', tiktok_enabled: true }
     mockUpdate.mockResolvedValueOnce(updated)
 
-    const req = makePatchRequest({ tiktok_url: 'https://tiktok.com/@vpscoffee', tiktok_enabled: true })
+    const req = makePatchRequest({ tiktok_url: 'https://tiktok.com/@commercecms', tiktok_enabled: true })
     const res = await PATCH(req)
 
     expect(res.status).toBe(200)
     const data = await res.json()
-    expect(data.tiktok_url).toBe('https://tiktok.com/@vpscoffee')
+    expect(data.tiktok_url).toBe('https://tiktok.com/@commercecms')
   })
 
   it('devuelve campos de redes sociales en el GET', async () => {
     mockGet.mockResolvedValueOnce({
       ...baseConfig,
-      instagram_url: 'https://instagram.com/vpscoffee',
+      instagram_url: 'https://instagram.com/commercecms',
       instagram_enabled: true,
       facebook_url: null,
       facebook_enabled: false,
     })
     const res = await GET()
     const data = await res.json()
-    expect(data.instagram_url).toBe('https://instagram.com/vpscoffee')
+    expect(data.instagram_url).toBe('https://instagram.com/commercecms')
     expect(data.facebook_enabled).toBe(false)
   })
 })

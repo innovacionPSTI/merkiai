@@ -1,6 +1,6 @@
-# VPS Coffee Roasting House — Plataforma Digital
+# Commerce CMS — Plataforma Digital
 
-> E-commerce de café de especialidad + servicios B2B de maquila y asesoría + panel de administración.  
+> CMS de e-commerce general y personalizable (white-label), con integraciones intercambiables (pagos, envíos, email) y componentes de IA, más panel de administración.  
 > **Desarrollado por [Parquesoft TI](mailto:produccion@parquesoftti.com)**
 
 ---
@@ -30,15 +30,19 @@
 
 ## 1. Visión general
 
-VPS Coffee Roasting House es una tostadora de café de especialidad colombiana. Esta plataforma cubre tres líneas de negocio:
+**Commerce CMS** es una plataforma de e-commerce **general y personalizable** (white-label): sirve para cualquier negocio que venda productos en línea, gestione contenido y ofrezca páginas de servicios. No está atada a un vertical específico — el catálogo, las secciones del sitio, los servicios, el blog, la identidad visual y los proveedores se configuran desde el panel de administración, sin tocar código.
 
-| Línea | Canal | Descripción |
-|-------|-------|-------------|
-| **E-commerce** | `/tienda` | Venta directa de café en grano y molido al consumidor final |
-| **Maquila** | `/maquila` | Servicio de tueste a terceros (marcas, cafeterías) |
-| **Asesorías** | `/asesorias` | Consultoría profesional en catación, perfiles y formación |
+Pilares de la plataforma:
+
+| Pilar | Descripción |
+|-------|-------------|
+| **CMS + E-commerce** | Catálogo con variantes genéricas, carrito, checkout, pedidos y CMS unificado (páginas, secciones, banners, blog, testimonios) editable desde el admin |
+| **Integraciones intercambiables** | Proveedores *swappables* de **pagos** (Wompi, MercadoPago, Tu Compra, Bold), **envíos** (Skydropx, tarifa fija) y **email** (Resend), seleccionables desde el panel — solo uno activo a la vez por categoría |
+| **Componentes de IA** | Arquitectura extensible pensada para módulos de IA: generación de descripciones y contenido, recomendaciones de productos, asistencia al catálogo y a la atención. Se integran como servicios desacoplados (mismo patrón *swappable* de las demás integraciones) |
 
 El proyecto se compone de **dos aplicaciones Next.js** en un monorepo Turborepo: el sitio público (`apps/web`) y el panel de administración (`apps/admin`), más paquetes compartidos de UI, base de datos y configuración.
+
+> **Nota de branding:** este documento usa el nombre genérico *Commerce CMS*. El nombre real de la tienda, el logo, los colores, las redes y el contenido se configuran por instancia desde `store_config` y el CMS.
 
 ---
 
@@ -100,15 +104,16 @@ vps-coffee/
 │   │       ├── app/
 │   │       │   ├── (public)/               ← Grupo de rutas públicas
 │   │       │   │   ├── page.tsx            ← Home  /
-│   │       │   │   ├── tienda/             ← /tienda  y  /tienda/[slug]
-│   │       │   │   ├── maquila/            ← /maquila
-│   │       │   │   ├── asesorias/          ← /asesorias
+│   │       │   │   ├── shop/               ← /shop  y  /shop/[slug]
 │   │       │   │   ├── blog/               ← /blog  y  /blog/[slug]
-│   │       │   │   └── nosotros/           ← /nosotros
+│   │       │   │   ├── privacy/            ← /privacy
+│   │       │   │   ├── terms/              ← /terms
+│   │       │   │   └── [slug]/             ← Páginas CMS dinámicas (gestionadas desde el admin)
 │   │       │   ├── (account)/              ← Área privada del cliente
-│   │       │   │   └── mi-cuenta/          ← /mi-cuenta  y  /mi-cuenta/pedidos
-│   │       │   ├── carrito/                ← /carrito
-│   │       │   ├── checkout/               ← /checkout  y  /checkout/confirmacion
+│   │       │   │   └── account/            ← /account (+ /orders, /profile, /settings)
+│   │       │   ├── (auth)/                 ← /login, /register, /reset-password
+│   │       │   ├── cart/                   ← /cart
+│   │       │   ├── checkout/               ← /checkout  y  /checkout/confirmation
 │   │       │   └── api/
 │   │       │       ├── checkout/           ← POST /api/checkout
 │   │       │       ├── newsletter/         ← POST /api/newsletter
@@ -215,23 +220,25 @@ cp .env.example apps/admin/.env.local
 
 Ver sección [7. Variables de entorno](#7-variables-de-entorno) para el detalle de cada variable.
 
-### Paso 4 — Aplicar migraciones en Supabase
+### Paso 4 — Aplicar el esquema en Supabase
 
-En el **SQL Editor** de tu proyecto Supabase, ejecutar en orden:
+En el **SQL Editor** de tu proyecto Supabase (ver también `packages/database/supabase/migrations/README.md`):
 
-Abrir el **SQL Editor** de Supabase y ejecutar los archivos en este orden:
+**Despliegue nuevo** — ejecuta en orden:
 
 ```
-packages/database/supabase/migrations/1_initial_schema.sql
-packages/database/supabase/migrations/2_shipping_config.sql
-packages/database/supabase/migrations/3_store_config.sql
-packages/database/supabase/migrations/4_payment_config.sql
-packages/database/supabase/migrations/5_customers.sql
-packages/database/supabase/migrations/6_customer_addresses.sql
-packages/database/supabase/migrations/7_content_settings.sql
-packages/database/supabase/migrations/8_variant_types.sql
-packages/database/supabase/migrations/9_indexes.sql
+packages/database/supabase/migrations/01_schema.sql   ← esquema canónico completo (único archivo)
+packages/database/supabase/seeds/01_config.sql        ← tema, variantes, categorías, nav
+packages/database/supabase/seeds/02_content.sql       ← páginas, secciones e ítems del CMS
 ```
+
+**Actualizar una BD existente** — ejecuta solo:
+
+```
+packages/database/supabase/migrations/upgrade.sql     ← parche idempotente v13 → v16
+```
+
+> Los archivos numerados `1_*` … `25_*` se conservan **solo como registro histórico**; su contenido ya está en `01_schema.sql` (y consolidado en `upgrade.sql`). No los ejecutes uno por uno.
 
 ### Paso 5 — Levantar el proyecto
 
@@ -290,14 +297,14 @@ Todas las variables se definen en `.env.local` dentro de cada app. La plantilla 
 | Variable | Descripción |
 |----------|-------------|
 | `RESEND_API_KEY` | Clave de la API de Resend |
-| `RESEND_FROM_EMAIL` | Email de remitente (ej: `pedidos@vpscoffee.com`) |
+| `RESEND_FROM_EMAIL` | Email de remitente (ej: `pedidos@shop.example.com`) |
 
 ### URLs y modo mantenimiento
 
 | Variable | Descripción |
 |----------|-------------|
-| `NEXT_PUBLIC_SITE_URL` | URL pública del sitio (`https://vpscoffee.com`) |
-| `NEXT_PUBLIC_ADMIN_URL` | URL del admin (`https://admin.vpscoffee.com`) |
+| `NEXT_PUBLIC_SITE_URL` | URL pública del sitio (`https://shop.example.com`) |
+| `NEXT_PUBLIC_ADMIN_URL` | URL del admin (`https://admin.shop.example.com`) |
 | `MAINTENANCE_MODE` | `true` / `false` |
 
 ---
@@ -319,7 +326,7 @@ Stack Auth (usuarios externos)
 categories ◀── products (variant_options JSONB) ──▶ product_variants (attributes JSONB)
                                                          (weight_kg, length_cm, width_cm, height_cm)
 
-variant_types               ← plantillas globales de atributo (Tueste, Peso, Molienda…)
+variant_types               ← plantillas globales de atributo (ej. Color, Talla…)
 banners                     ← slides del hero y secciones (image_url + image_url_mobile)
 blog_posts                  ← artículos del blog
 newsletter_subscribers      ← lista de correos
@@ -329,7 +336,7 @@ store_config                ← branding, WhatsApp, Resend, legal, redes, manten
 payment_config              ← credenciales Wompi y MercadoPago (singleton)
 section_settings            ← toggles del home (hero, featured, services…)
 coupons                     ← cupones de descuento (percentage/fixed, usos, expiración)
-testimonials                ← testimonios para /asesorias
+testimonials                ← testimonios (asociables a páginas de contenido)
 themes                      ← paletas de color y tipografía (solo uno activo a la vez)
 ```
 
@@ -344,7 +351,7 @@ themes                      ← paletas de color y tipografía (solo uno activo 
 | `categories` | Categorías de productos (con imagen de portada) | Lectura pública; escritura admin |
 | `products` | Catálogo (`variant_options JSONB`) | Lectura pública (activos); escritura admin |
 | `product_variants` | Variantes genéricas (`attributes JSONB` + dimensiones de envío) | Lectura pública (activos); escritura admin |
-| `variant_types` | Plantillas globales de atributo (Tueste/Peso/Molienda…) | SELECT público; escritura service_role |
+| `variant_types` | Plantillas globales de atributo (ej. Color/Talla…) | SELECT público; escritura service_role |
 | `orders` | Pedidos con `coupon_code`, `carrier_name`, `skydropx_rate_id` | Clientes ven los suyos; admins ven todos |
 | `banners` | Slides del carrusel y secciones de servicios (web + mobile) | Lectura pública (activos); escritura admin |
 | `blog_posts` | Artículos del blog | Lectura pública (publicados); escritura admin |
@@ -419,21 +426,21 @@ pnpm test             # Tests de las queries de DB
 
 | Ruta | Renderizado | Descripción |
 |------|-------------|-------------|
-| `/` | ISR 60s | Home: hero carrusel, productos destacados, servicios, blog preview, newsletter |
-| `/tienda` | ISR 60s | Catálogo con filtros por tueste/peso/método y ordenamiento |
-| `/tienda/[slug]` | `force-dynamic` | Detalle de producto con galería, selector de variantes, productos relacionados. Dinámico para que rutas nuevas sean visibles inmediatamente. |
-| `/maquila` | Estático | Servicio de maquila con FAQ y CTA WhatsApp |
-| `/asesorias` | Estático | Servicios de asesoría con formulario → WhatsApp |
+| `/` | ISR 60s | Home: hero carrusel, productos destacados, más vendidos, blog preview, newsletter (secciones configurables desde el CMS) |
+| `/shop` | ISR 60s | Catálogo con filtros por atributos de variante y ordenamiento |
+| `/shop/[slug]` | `force-dynamic` | Detalle de producto con galería, selector de variantes, productos relacionados. Dinámico para que rutas nuevas sean visibles inmediatamente. |
 | `/blog` | ISR 60s | Listado de artículos con filtro por categoría |
 | `/blog/[slug]` | SSG + ISR 60s | Artículo completo con artículos relacionados |
-| `/nosotros` | Estático | Historia de la marca |
-| `/carrito` | Client-side | Resumen del carrito, editar cantidades, cupón |
+| `/[slug]` | `force-dynamic` | Páginas de contenido creadas desde el admin (`pages` + `page_sections`) |
+| `/privacy`, `/terms` | `force-dynamic` | Páginas legales servidas desde el CMS |
+| `/cart` | Client-side | Resumen del carrito, editar cantidades, cupón |
 | `/checkout` | Client-side | Proceso de 3 pasos: Contacto → Envío → Pago |
-| `/checkout/confirmacion` | Client-side | Confirmación con número de orden |
-| `/mi-cuenta` | Protegida* | Dashboard: pedidos activos y datos personales |
-| `/mi-cuenta/pedidos` | Protegida* | Historial de pedidos con estado y tracking |
+| `/checkout/confirmation` | Client-side | Confirmación con número de orden |
+| `/account` | Protegida* | Dashboard: pedidos activos y datos personales |
+| `/account/orders` | Protegida* | Historial de pedidos con estado y tracking |
+| `/login`, `/register`, `/reset-password` | Auth | Flujo de autenticación (Stack Auth) |
 
-*Requiere integración de Stack Auth (pendiente).
+*Protegida por middleware (`/account/*`).
 
 ### Panel de administración (`apps/admin` — puerto 3001)
 
@@ -591,8 +598,8 @@ Devuelve la configuración de la tienda (`store_config`): nombre, email, WhatsAp
 ```json
 {
   "id": 1,
-  "store_name": "VPS Coffee",
-  "store_email": "info@vpscoffee.com",
+  "store_name": "Commerce CMS",
+  "store_email": "info@shop.example.com",
   "whatsapp_number": "573001234567",
   "logo_url": "https://<supabase>/storage/v1/object/public/logos/logo.png",
   "updated_at": "2026-07-09T..."
@@ -609,8 +616,8 @@ Actualiza la configuración de la tienda.
 ```json
 {
   "whatsapp_number": "573001234567",
-  "store_name": "VPS Coffee Roasting House",
-  "store_email": "info@vpscoffee.com",
+  "store_name": "Commerce CMS",
+  "store_email": "info@shop.example.com",
   "logo_url": "https://..."
 }
 ```
@@ -837,8 +844,8 @@ vercel deploy apps/admin --prod
 
 | Subdominio | App |
 |-----------|-----|
-| `vpscoffee.com` | `apps/web` |
-| `admin.vpscoffee.com` | `apps/admin` |
+| `shop.example.com` | `apps/web` |
+| `admin.shop.example.com` | `apps/admin` |
 
 ### Pre-deploy checklist
 
@@ -846,7 +853,7 @@ vercel deploy apps/admin --prod
 - [ ] Verificar que `SUPABASE_SERVICE_ROLE_KEY` está configurado (nunca exponer al cliente)
 - [ ] Configurar el proveedor de envíos desde `/configuracion` en el admin
 - [ ] Configurar `NEXT_PUBLIC_SITE_URL` con el dominio de producción
-- [ ] Configurar el webhook de Skydropx apuntando a `https://vpscoffee.com/api/webhooks/skydropx`
+- [ ] Configurar el webhook de Skydropx apuntando a `https://shop.example.com/api/webhooks/skydropx`
 - [ ] Copiar las fuentes `.otf` a `public/fonts/` en ambas apps antes del build
 
 ---
@@ -856,14 +863,14 @@ vercel deploy apps/admin --prod
 ### Flujo de compra completo
 
 ```
-Cliente →  /tienda  →  Selecciona variante
+Cliente →  /shop  →  Selecciona variante
         →  CartDrawer  (Zustand + localStorage)
-        →  /carrito  →  Revisa totales + cupón
+        →  /cart  →  Revisa totales + cupón
         →  /checkout  (Paso 1: Contacto)
                      (Paso 2: Envío → selecciona depto/ciudad → "Ver opciones" → POST /api/shipping/rates → elige transportadora)
                      (Paso 3: Pago → elige Wompi/MercadoPago)
         →  POST /api/checkout  →  Orden creada en Supabase (status: pending)
-        →  /checkout/confirmacion  →  Muestra VPS-XXXX
+        →  /checkout/confirmation  →  Muestra VPS-XXXX
 ```
 
 ### Flujo de despacho (Admin)
@@ -942,7 +949,7 @@ pnpm format        # Código formateado con Prettier
 - Monorepo Turborepo con pnpm workspaces
 - Design system completo (colores, fuentes, componentes)
 - Schema de base de datos con RLS y triggers (5 migraciones)
-- Sitio público: Home, Tienda, Producto, Maquila, Asesorías, Blog, Nosotros
+- Sitio público: Home, Tienda, Producto, Blog + páginas de contenido dinámicas (CMS)
 - HeroCarousel con imágenes separadas para mobile/desktop (`<picture>`)
 - Carrito con Zustand + persistencia en localStorage
 - Checkout de 3 pasos + confirmación
@@ -959,9 +966,9 @@ pnpm format        # Código formateado con Prettier
 - **Generación automática de guía Skydropx** tras pago confirmado (Wompi + MercadoPago)
 - **Modal de despacho masivo** (pickups Skydropx) desde `/admin/pedidos`
 - **Blog Draft Mode** — previsualización de borradores con cookie segura (`__vps_draft`)
-- **Edición de perfil** (`/mi-cuenta/perfil`) — nombre, teléfono, sincronización con Stack Auth
+- **Edición de perfil** (`/account/profile`) — nombre, teléfono, sincronización con Stack Auth
 - **Email de confirmación de newsletter** — solo al primer registro (sin duplicados)
-- **Página 404 personalizada** con diseño "taza de café vacía"
+- **Página 404 personalizada**
 - **SEO completo**: `sitemap.xml` dinámico, `robots.txt`, Open Graph y Twitter Cards por página
 - 209 casos de prueba (unitarias + integración)
 
@@ -978,7 +985,7 @@ Y en `apps/admin/.env.local`:
 
 ```env
 # URL pública del sitio web para generar el enlace de previsualización
-NEXT_PUBLIC_SITE_URL=https://vpscoffee.com
+NEXT_PUBLIC_SITE_URL=https://shop.example.com
 NEXT_PUBLIC_DRAFT_SECRET=cambia-este-secreto  # debe coincidir con DRAFT_SECRET del web
 ```
 
@@ -995,4 +1002,4 @@ NEXT_PUBLIC_DRAFT_SECRET=cambia-este-secreto  # debe coincidir con DRAFT_SECRET 
 ## Licencia
 
 Proyecto privado. Todos los derechos reservados.  
-© 2026 VPS Coffee Roasting House · Desarrollado por **Parquesoft TI**
+© 2026 Commerce CMS · Desarrollado por **Parquesoft TI**

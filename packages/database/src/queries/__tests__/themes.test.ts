@@ -39,7 +39,7 @@ jest.mock('../../client', () => ({
 
 const SAMPLE_THEME = {
   id: 1,
-  name: 'VPS Coffee',
+  name: 'Commerce CMS',
   is_active: true,
   is_default: true,
   color_primary: '#614A2A',
@@ -79,7 +79,7 @@ describe('getThemes', () => {
 
     const result = await getThemes()
     expect(result).toHaveLength(1)
-    expect(result[0].name).toBe('VPS Coffee')
+    expect(result[0].name).toBe('Commerce CMS')
   })
 
   it('devuelve array vacío si data es null', async () => {
@@ -146,9 +146,9 @@ describe('createTheme', () => {
     const c = { insert: insertMock, select: selectMock, single: singleMock }
     mockFrom.mockReturnValue(c)
 
+    // is_active no forma parte del input (el tipo lo excluye); createTheme lo fuerza a false
     const result = await createTheme({
       name: 'Nuevo',
-      is_active: true, // debería ser ignorado / sobreescrito
       color_primary: '#000000',
       color_dark: '#111111',
       color_cream: '#FFFFFF',
@@ -175,7 +175,6 @@ describe('createTheme', () => {
 
     await expect(createTheme({
       name: 'Roto',
-      is_active: false,
       color_primary: '#000', color_dark: '#000', color_cream: '#FFF',
       color_cream_warm: '#FFF', color_yellow: '#FF0', color_yellow_pale: '#FF0',
       color_text: '#000', font_display: 'cormorant', font_body: 'dm-sans',

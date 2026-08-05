@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useMemo, useCallback } from 'react'
+import { useState, useMemo, useCallback, useEffect } from 'react'
 import Link from 'next/link'
 import { useCartStore } from '@/store/cart'
 import type { ProductWithVariants, TrustBadge } from '@vps/database'
@@ -150,11 +150,23 @@ export default function ProductDetail({ product, related, trustBadges = [] }: Pr
     return min === max ? fmt(min) : `Desde ${fmt(min)}`
   }, [selectedVariant, activeVariants])
 
+  const allowBackorder = !!product.allow_backorder
   const stockWarning =
-    selectedVariant && selectedVariant.stock > 0 && selectedVariant.stock <= 5
+    !allowBackorder && selectedVariant && selectedVariant.stock > 0 && selectedVariant.stock <= 5
       ? `Solo quedan ${selectedVariant.stock} unidades`
       : null
-  const isOutOfStock = selectedVariant && selectedVariant.stock === 0
+  const isOutOfStock = !allowBackorder && selectedVariant && selectedVariant.stock === 0
+  // Tope de cantidad: el stock de la variante (salvo backorder)
+  const maxQty = allowBackorder ? Infinity : (selectedVariant?.stock ?? 0)
+  const atMaxQty = !allowBackorder && selectedVariant ? qty >= selectedVariant.stock : false
+
+  // Al cambiar de variante, ajusta la cantidad al stock de la nueva (evita quedar por encima)
+  useEffect(() => {
+    if (!allowBackorder && selectedVariant && qty > selectedVariant.stock) {
+      setQty(Math.max(1, selectedVariant.stock))
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [selectedVariant?.id])
 
   function handleAddToCart() {
     if (!selectedVariant || isOutOfStock) return
@@ -165,7 +177,9 @@ export default function ProductDetail({ product, related, trustBadges = [] }: Pr
       productName: product.name,
       variantLabel: getVariantLabel(selectedVariant, variantOpts),
       price: selectedVariant.price,
-      qty,
+      qty: Math.min(qty, maxQty),
+      stock: selectedVariant.stock,
+      allowBackorder,
       imageUrl: product.images[0]?.url,
       weight: selectedVariant.weight ?? undefined,
       weight_kg: selectedVariant.weight_kg ?? null,
@@ -184,7 +198,7 @@ export default function ProductDetail({ product, related, trustBadges = [] }: Pr
         <nav className="font-brand text-sm text-brand-primary/50 flex gap-2">
           <Link href="/" className="hover:text-brand-primary transition-colors">Inicio</Link>
           <span>/</span>
-          <Link href="/tienda" className="hover:text-brand-primary transition-colors">Tienda</Link>
+          <Link href="/shop" className="hover:text-brand-primary transition-colors">Tienda</Link>
           <span>/</span>
           <span className="text-brand-primary">{product.name}</span>
         </nav>
@@ -384,9 +398,10 @@ export default function ProductDetail({ product, related, trustBadges = [] }: Pr
                   {qty}
                 </span>
                 <button
-                  onClick={() => setQty(qty + 1)}
+                  onClick={() => setQty(Math.min(maxQty, qty + 1))}
+                  disabled={atMaxQty}
                   aria-label="Aumentar cantidad"
-                  className="text-brand-primary font-bold text-lg leading-none w-5 flex items-center justify-center"
+                  className="text-brand-primary font-bold text-lg leading-none w-5 flex items-center justify-center disabled:opacity-30 disabled:cursor-not-allowed"
                 >
                   +
                 </button>
@@ -454,7 +469,7 @@ export default function ProductDetail({ product, related, trustBadges = [] }: Pr
                 return (
                   <Link
                     key={p.id}
-                    href={`/tienda/${p.slug}`}
+                    href={`/shop/${p.slug}`}
                     className="group bg-white rounded-2xl overflow-hidden shadow-card hover:shadow-card-hover transition-shadow"
                   >
                     <div className="h-48 bg-brand-cream overflow-hidden">

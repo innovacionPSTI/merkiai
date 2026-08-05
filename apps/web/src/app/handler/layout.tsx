@@ -30,7 +30,7 @@ export default async function HandlerLayout({ children }: { children: React.Reac
           )}
         </Link>
         <Link
-          href="/tienda"
+          href="/shop"
           className="font-brand text-sm text-brand-primary/60 hover:text-brand-primary transition-colors"
         >
           ← Volver a la tienda

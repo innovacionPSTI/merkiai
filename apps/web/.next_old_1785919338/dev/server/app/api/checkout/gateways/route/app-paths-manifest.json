@@ -1,0 +1,3 @@
+{
+  "/api/checkout/gateways/route": "app/api/checkout/gateways/route.js"
+}

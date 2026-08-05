@@ -11,17 +11,21 @@ function maskSecret(value: string | null): string | null {
 
 type MaskedPaymentConfig = Omit<
   PaymentConfig,
-  'wompi_private_key' | 'wompi_integrity_secret' | 'wompi_events_secret' | 'mercadopago_access_token'
+  'wompi_private_key' | 'wompi_integrity_secret' | 'wompi_events_secret' | 'mercadopago_access_token' | 'tucompra_secret_key' | 'bold_secret_key'
 > & {
   wompi_private_key: string | null
   wompi_integrity_secret: string | null
   wompi_events_secret: string | null
   mercadopago_access_token: string | null
+  tucompra_secret_key: string | null
+  bold_secret_key: string | null
   // Indica si cada secret ya tiene un valor guardado (para mostrar en la UI)
   has_wompi_private_key: boolean
   has_wompi_integrity_secret: boolean
   has_wompi_events_secret: boolean
   has_mercadopago_access_token: boolean
+  has_tucompra_secret_key: boolean
+  has_bold_secret_key: boolean
 }
 
 function maskConfig(config: PaymentConfig): MaskedPaymentConfig {
@@ -31,13 +35,19 @@ function maskConfig(config: PaymentConfig): MaskedPaymentConfig {
     wompi_integrity_secret: maskSecret(config.wompi_integrity_secret),
     wompi_events_secret: maskSecret(config.wompi_events_secret),
     mercadopago_access_token: maskSecret(config.mercadopago_access_token),
+    tucompra_secret_key: maskSecret(config.tucompra_secret_key),
+    bold_secret_key: maskSecret(config.bold_secret_key),
     // Flags para que la UI sepa si ya hay un valor
     has_wompi_private_key: !!config.wompi_private_key,
     has_wompi_integrity_secret: !!config.wompi_integrity_secret,
     has_wompi_events_secret: !!config.wompi_events_secret,
     has_mercadopago_access_token: !!config.mercadopago_access_token,
+    has_tucompra_secret_key: !!config.tucompra_secret_key,
+    has_bold_secret_key: !!config.bold_secret_key,
   }
 }
+
+const VALID_PROVIDERS = ['none', 'wompi', 'mercadopago', 'tucompra', 'bold'] as const
 
 export async function GET() {
   try {
@@ -45,19 +55,26 @@ export async function GET() {
     if (!config) {
       return NextResponse.json({
         id: 1,
+        active_provider: 'none',
         wompi_public_key: null,
         wompi_private_key: null,
         wompi_integrity_secret: null,
         wompi_events_secret: null,
-        wompi_active: false,
         mercadopago_access_token: null,
         mercadopago_public_key: null,
-        mercadopago_active: false,
+        tucompra_merchant_id: null,
+        tucompra_secret_key: null,
+        tucompra_sandbox: true,
+        bold_api_key: null,
+        bold_secret_key: null,
+        bold_sandbox: true,
         updated_at: new Date().toISOString(),
         has_wompi_private_key: false,
         has_wompi_integrity_secret: false,
         has_wompi_events_secret: false,
         has_mercadopago_access_token: false,
+        has_tucompra_secret_key: false,
+        has_bold_secret_key: false,
       })
     }
     return NextResponse.json(maskConfig(config))
@@ -65,6 +82,44 @@ export async function GET() {
     console.error('[admin/payment-config GET]', err)
     return NextResponse.json({ error: 'Error cargando configuración de pagos' }, { status: 500 })
   }
+}
+
+/**
+ * Comprueba que la pasarela que se quiere activar tenga credenciales completas,
+ * combinando lo que llega en el body con lo ya guardado en `current`. Devuelve
+ * la lista de campos faltantes (vacía si está OK).
+ */
+function missingCredentials(
+  provider: string,
+  body: Partial<PaymentConfig>,
+  current: PaymentConfig | null,
+): string[] {
+  const eff = <K extends keyof PaymentConfig>(k: K) =>
+    (body as Partial<PaymentConfig>)[k] ?? current?.[k] ?? null
+  if (provider === 'wompi') {
+    return [
+      !eff('wompi_public_key') && 'wompi_public_key',
+      !eff('wompi_integrity_secret') && 'wompi_integrity_secret',
+    ].filter(Boolean) as string[]
+  }
+  if (provider === 'mercadopago') {
+    return [!eff('mercadopago_access_token') && 'mercadopago_access_token'].filter(Boolean) as string[]
+  }
+  if (provider === 'tucompra') {
+    return [
+      !eff('tucompra_merchant_id') && 'tucompra_merchant_id',
+      !eff('tucompra_secret_key') && 'tucompra_secret_key',
+    ].filter(Boolean) as string[]
+  }
+  if (provider === 'bold') {
+    // La llave secreta puede ir vacía en sandbox; en producción se exige.
+    const sandbox = (body as Partial<PaymentConfig>).bold_sandbox ?? current?.bold_sandbox ?? true
+    return [
+      !eff('bold_api_key') && 'bold_api_key',
+      !sandbox && !eff('bold_secret_key') && 'bold_secret_key',
+    ].filter(Boolean) as string[]
+  }
+  return []
 }
 
 export async function PATCH(req: NextRequest) {
@@ -77,6 +132,28 @@ export async function PATCH(req: NextRequest) {
         { error: 'La llave pública de Wompi debe comenzar con "pub_"' },
         { status: 400 },
       )
+    }
+
+    // Validar la pasarela activa (única). Solo un valor permitido a la vez.
+    if (body.active_provider !== undefined) {
+      if (!VALID_PROVIDERS.includes(body.active_provider as typeof VALID_PROVIDERS[number])) {
+        return NextResponse.json(
+          { error: `Proveedor inválido. Valores permitidos: ${VALID_PROVIDERS.join(', ')}` },
+          { status: 400 },
+        )
+      }
+      // No permitir activar una pasarela sin credenciales completas (evita
+      // dejar el checkout apuntando a una pasarela que no puede cobrar).
+      if (body.active_provider !== 'none') {
+        const current = await getPaymentConfig()
+        const missing = missingCredentials(body.active_provider, body, current)
+        if (missing.length) {
+          return NextResponse.json(
+            { error: `Para activar ${body.active_provider} faltan credenciales`, missing },
+            { status: 400 },
+          )
+        }
+      }
     }
 
     const updated = await updatePaymentConfig(body)

@@ -5,6 +5,7 @@ const GATEWAY_META: Record<string, { label: string; desc: string }> = {
   wompi:       { label: 'Wompi',       desc: 'Tarjeta débito/crédito, PSE, Bancolombia' },
   mercadopago: { label: 'MercadoPago', desc: 'Tarjeta, efectivo, Nequi, Daviplata' },
   tucompra:    { label: 'Tu Compra',   desc: 'Tarjeta, efectivo, Nequi, PSE' },
+  bold:        { label: 'Bold',        desc: 'Tarjeta, PSE, Nequi, Botón Bancolombia' },
 }
 
 /**
@@ -24,17 +25,12 @@ export async function GET() {
       desc:  GATEWAY_META[name]?.desc  ?? '',
     }))
 
-    // Fallback: if nothing is configured yet, show wompi as default so checkout doesn't break
-    if (gateways.length === 0) {
-      gateways.push({ value: 'wompi', label: 'Wompi', desc: 'Tarjeta débito/crédito, PSE, Bancolombia' })
-    }
-
-    return NextResponse.json({ gateways })
+    // Sin pasarela activa → checkout en modo manual (validación del administrador).
+    // No se expone ninguna pasarela; el pedido se creará como 'manual'.
+    return NextResponse.json({ gateways, manual: gateways.length === 0 })
   } catch (err) {
     console.error('[checkout/gateways GET]', err)
-    // Fallback on DB error
-    return NextResponse.json({
-      gateways: [{ value: 'wompi', label: 'Wompi', desc: 'Tarjeta débito/crédito, PSE, Bancolombia' }],
-    })
+    // Ante error de BD, degradar a modo manual (nunca inventar una pasarela activa).
+    return NextResponse.json({ gateways: [], manual: true })
   }
 }

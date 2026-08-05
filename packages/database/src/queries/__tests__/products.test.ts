@@ -12,34 +12,25 @@ const mockCreateServerClient = createServerClient as jest.MockedFunction<typeof 
 // ─────────────────────────────────────────────
 // Helpers
 // ─────────────────────────────────────────────
-function buildSupabaseMock(resolvedValue: { data: unknown; error: null | object }) {
-  const chain = {
-    select: jest.fn().mockReturnThis(),
-    eq: jest.fn().mockReturnThis(),
-    order: jest.fn().mockReturnThis(),
-    limit: jest.fn().mockReturnThis(),
+/**
+ * Construye un mock encadenable de Supabase. Cada método de query
+ * (select/eq/order/limit) devuelve la misma cadena, y la cadena es
+ * "thenable": al hacer `await query` resuelve a `resolvedValue`.
+ * Esto refleja el patrón real: `.select().eq('active').order('created_at')`
+ * seguido opcionalmente de `.eq('featured', true)` antes del await.
+ */
+function buildChain(resolvedValue: { data: unknown; error: null | object }) {
+  const chain: Record<string, jest.Mock> & { then?: unknown } = {
+    select: jest.fn(() => chain),
+    eq: jest.fn(() => chain),
+    order: jest.fn(() => chain),
+    limit: jest.fn(() => chain),
+    in: jest.fn(() => chain),
     single: jest.fn().mockResolvedValue(resolvedValue),
-    then: jest.fn(),
   }
-  // Make it thenable (for queries that don't end in .single())
-  Object.assign(chain, { ...resolvedValue, ...chain })
-  // Simulate final await on the chain
-  chain.order = jest.fn().mockResolvedValue(resolvedValue)
-
-  return {
-    from: jest.fn().mockReturnValue({
-      ...chain,
-      select: jest.fn().mockReturnValue({
-        ...chain,
-        eq: jest.fn().mockReturnValue({
-          ...chain,
-          eq: jest.fn().mockReturnValue({
-            ...chain,
-          }),
-        }),
-      }),
-    }),
-  }
+  // Hace la cadena "thenable" para queries que no terminan en .single()
+  chain.then = (resolve: (v: unknown) => unknown) => resolve(resolvedValue)
+  return chain
 }
 
 const mockProduct = {
@@ -63,16 +54,8 @@ beforeEach(() => {
 // ─────────────────────────────────────────────
 describe('getProducts', () => {
   it('retorna un arreglo de productos activos', async () => {
-    const mockSupabase = {
-      from: jest.fn().mockReturnValue({
-        select: jest.fn().mockReturnValue({
-          eq: jest.fn().mockReturnValue({
-            order: jest.fn().mockResolvedValue({ data: [mockProduct], error: null }),
-          }),
-        }),
-      }),
-    }
-    mockCreateServerClient.mockReturnValue(mockSupabase as never)
+    const chain = buildChain({ data: [mockProduct], error: null })
+    mockCreateServerClient.mockReturnValue({ from: jest.fn(() => chain) } as never)
 
     const products = await getProducts()
     expect(products).toHaveLength(1)
@@ -80,36 +63,16 @@ describe('getProducts', () => {
   })
 
   it('aplica filtro featured cuando se pasa la opción', async () => {
-    const eqMock = jest.fn().mockReturnValue({
-      order: jest.fn().mockResolvedValue({ data: [mockProduct], error: null }),
-    })
-    const mockSupabase = {
-      from: jest.fn().mockReturnValue({
-        select: jest.fn().mockReturnValue({
-          eq: jest.fn().mockReturnValue({ eq: eqMock }),
-        }),
-      }),
-    }
-    mockCreateServerClient.mockReturnValue(mockSupabase as never)
+    const chain = buildChain({ data: [mockProduct], error: null })
+    mockCreateServerClient.mockReturnValue({ from: jest.fn(() => chain) } as never)
 
     await getProducts({ featured: true })
-    expect(eqMock).toHaveBeenCalledWith('featured', true)
+    expect(chain.eq).toHaveBeenCalledWith('featured', true)
   })
 
   it('lanza un error si Supabase devuelve error', async () => {
-    const mockSupabase = {
-      from: jest.fn().mockReturnValue({
-        select: jest.fn().mockReturnValue({
-          eq: jest.fn().mockReturnValue({
-            order: jest.fn().mockResolvedValue({
-              data: null,
-              error: new Error('DB error'),
-            }),
-          }),
-        }),
-      }),
-    }
-    mockCreateServerClient.mockReturnValue(mockSupabase as never)
+    const chain = buildChain({ data: null, error: new Error('DB error') })
+    mockCreateServerClient.mockReturnValue({ from: jest.fn(() => chain) } as never)
 
     await expect(getProducts()).rejects.toThrow('DB error')
   })
@@ -120,17 +83,8 @@ describe('getProducts', () => {
 // ─────────────────────────────────────────────
 describe('getProductBySlug', () => {
   it('retorna el producto con el slug indicado', async () => {
-    const singleMock = jest.fn().mockResolvedValue({ data: mockProduct, error: null })
-    const mockSupabase = {
-      from: jest.fn().mockReturnValue({
-        select: jest.fn().mockReturnValue({
-          eq: jest.fn().mockReturnValue({
-            eq: jest.fn().mockReturnValue({ single: singleMock }),
-          }),
-        }),
-      }),
-    }
-    mockCreateServerClient.mockReturnValue(mockSupabase as never)
+    const chain = buildChain({ data: mockProduct, error: null })
+    mockCreateServerClient.mockReturnValue({ from: jest.fn(() => chain) } as never)
 
     const product = await getProductBySlug('cafe-huila')
     expect(product.slug).toBe('cafe-huila')
@@ -138,17 +92,8 @@ describe('getProductBySlug', () => {
 
   it('lanza error si el producto no existe (PGRST116)', async () => {
     const notFoundError = { code: 'PGRST116', message: 'Row not found' }
-    const singleMock = jest.fn().mockResolvedValue({ data: null, error: notFoundError })
-    const mockSupabase = {
-      from: jest.fn().mockReturnValue({
-        select: jest.fn().mockReturnValue({
-          eq: jest.fn().mockReturnValue({
-            eq: jest.fn().mockReturnValue({ single: singleMock }),
-          }),
-        }),
-      }),
-    }
-    mockCreateServerClient.mockReturnValue(mockSupabase as never)
+    const chain = buildChain({ data: null, error: notFoundError })
+    mockCreateServerClient.mockReturnValue({ from: jest.fn(() => chain) } as never)
 
     await expect(getProductBySlug('inexistente')).rejects.toMatchObject({ code: 'PGRST116' })
   })
@@ -166,16 +111,8 @@ describe('getFeaturedProducts', () => {
       featured: true,
     }))
 
-    const mockSupabase = {
-      from: jest.fn().mockReturnValue({
-        select: jest.fn().mockReturnValue({
-          eq: jest.fn().mockReturnValue({
-            order: jest.fn().mockResolvedValue({ data: fiveProducts, error: null }),
-          }),
-        }),
-      }),
-    }
-    mockCreateServerClient.mockReturnValue(mockSupabase as never)
+    const chain = buildChain({ data: fiveProducts, error: null })
+    mockCreateServerClient.mockReturnValue({ from: jest.fn(() => chain) } as never)
 
     const products = await getFeaturedProducts(3)
     expect(products).toHaveLength(3)
@@ -186,16 +123,8 @@ describe('getFeaturedProducts', () => {
       ...mockProduct, id: i + 1, slug: `p-${i + 1}`,
     }))
 
-    const mockSupabase = {
-      from: jest.fn().mockReturnValue({
-        select: jest.fn().mockReturnValue({
-          eq: jest.fn().mockReturnValue({
-            order: jest.fn().mockResolvedValue({ data: tenProducts, error: null }),
-          }),
-        }),
-      }),
-    }
-    mockCreateServerClient.mockReturnValue(mockSupabase as never)
+    const chain = buildChain({ data: tenProducts, error: null })
+    mockCreateServerClient.mockReturnValue({ from: jest.fn(() => chain) } as never)
 
     const products = await getFeaturedProducts()
     expect(products).toHaveLength(3)

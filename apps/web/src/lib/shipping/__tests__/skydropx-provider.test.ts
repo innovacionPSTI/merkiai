@@ -24,14 +24,14 @@ const CREDENTIALS = {
   clientSecret: 'test-secret',
   baseUrl:      'https://app.skydropx.com',
   origin: {
-    name:         'VPS Coffee',
+    name:         'Commerce CMS',
     street:       'Calle 10 # 5-20',
     neighborhood: 'El Centro',
     city:         'Medellín',
     department:   'Antioquia',
     postalCode:   '050001',
     phone:        '3001234567',
-    email:        'envios@vpscoffee.com',
+    email:        'envios@tienda.example.com',
   },
 }
 
@@ -109,7 +109,7 @@ describe('SkydropxProvider — happy path', () => {
     expect(rates[0].total_price).toBe(18000)
   })
 
-  it('envía address_from como objeto (no address_from_id)', async () => {
+  it('envía address_from como objeto con area_level1/area_level2 (sin postal_code, fix 422)', async () => {
     mockFetch
       .mockResolvedValueOnce(quotationCreatedResponse('quot-002'))
       .mockResolvedValueOnce(ratesCompletedResponse([]))
@@ -122,7 +122,10 @@ describe('SkydropxProvider — happy path', () => {
     const [_path, _creds, options] = mockFetch.mock.calls[0]
     const body = JSON.parse(options.body)
     expect(body.quotation.address_from).toBeDefined()
-    expect(body.quotation.address_from.postal_code).toBe('050001')
+    // Skydropx CO usa area_level1 (departamento) + area_level2 (ciudad); postal_code se omite
+    expect(body.quotation.address_from.area_level1).toBe('Antioquia')
+    expect(body.quotation.address_from.area_level2).toBe('Medellín')
+    expect(body.quotation.address_from.postal_code).toBeUndefined()
     expect(body.quotation.address_from_id).toBeUndefined()
   })
 

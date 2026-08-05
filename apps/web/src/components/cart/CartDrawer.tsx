@@ -149,7 +149,7 @@ export default function CartDrawer({ open, onClose }: CartDrawerProps) {
               Proceder al pago
             </Link>
             <Link
-              href="/carrito"
+              href="/cart"
               onClick={onClose}
               className="block w-full text-center border border-brand-primary text-brand-primary rounded-full py-3 font-brand font-medium hover:bg-brand-primary hover:text-brand-cream transition-colors"
             >

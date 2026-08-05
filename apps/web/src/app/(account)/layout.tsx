@@ -8,7 +8,7 @@ import { stackServerApp } from '@/stack'
 export const dynamic = 'force-dynamic'
 
 /**
- * Layout compartido para todas las rutas bajo /mi-cuenta/*.
+ * Layout compartido para todas las rutas bajo /account/*.
  * — Verifica autenticación una sola vez (no es necesario hacerlo en cada página)
  * — Monta Navbar + sidebar + Footer con props completos
  * — El sidebar recibe nombre y email del usuario como props (evita useUser en cliente)

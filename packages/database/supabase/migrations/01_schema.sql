@@ -1,5 +1,5 @@
 -- ============================================================
--- VPS Coffee — Esquema canónico de base de datos
+-- Commerce CMS — Esquema canónico de base de datos
 -- Versión: 1.0 (compactado de migraciones 1–20)
 -- ============================================================
 --
@@ -87,7 +87,7 @@ COMMENT ON COLUMN customers.stack_id IS 'ID en Stack Auth. NULL para compradores
 -- ═══════════════════════════════════════════════════════════════
 
 -- ─── VARIANT TYPES ────────────────────────────────────────────────────────────
--- Plantillas reutilizables de atributo: "Tueste" → ["Claro","Medio","Oscuro"].
+-- Plantillas reutilizables de atributo: "Color" → ["Rojo","Verde","Azul"].
 -- Se asignan a productos para generar combinaciones desde el admin.
 CREATE TABLE IF NOT EXISTS variant_types (
   id           SERIAL      PRIMARY KEY,
@@ -127,9 +127,10 @@ CREATE TABLE IF NOT EXISTS products (
   images          JSONB       NOT NULL DEFAULT '[]',
   active          BOOLEAN     NOT NULL DEFAULT true,
   featured        BOOLEAN     NOT NULL DEFAULT false,
+  allow_backorder BOOLEAN     NOT NULL DEFAULT false,  -- vender sin stock (bajo pedido)
   seo_title       TEXT,
   seo_desc        TEXT,
-  -- Lista ordenada de nombres de atributo: ["Tueste","Peso"].
+  -- Lista ordenada de nombres de atributo: ["Color","Talla"].
   -- Array vacío = producto simple sin variantes por atributos.
   variant_options JSONB       NOT NULL DEFAULT '[]',
   created_at      TIMESTAMPTZ NOT NULL DEFAULT now()
@@ -138,13 +139,13 @@ CREATE TABLE IF NOT EXISTS products (
 CREATE INDEX IF NOT EXISTS products_category_id_idx ON products (category_id) WHERE category_id IS NOT NULL;
 CREATE INDEX IF NOT EXISTS products_active_idx       ON products (active, featured);
 
-COMMENT ON COLUMN products.variant_options IS 'Lista ordenada de nombres de atributo. Ej: ["Tueste","Peso"]. Array vacío = usar campos heredados en product_variants.';
+COMMENT ON COLUMN products.variant_options IS 'Lista ordenada de nombres de atributo. Ej: ["Color","Talla"]. Array vacío = usar campos heredados en product_variants.';
 
 -- ─── PRODUCT VARIANTS ─────────────────────────────────────────────────────────
 CREATE TABLE IF NOT EXISTS product_variants (
   id          SERIAL      PRIMARY KEY,
   product_id  INT         NOT NULL REFERENCES products(id) ON DELETE CASCADE,
-  -- Campos heredados (retrocompatibilidad con catálogos de café simples)
+  -- Campos heredados (retrocompatibilidad con catálogos simples)
   roast       TEXT        CHECK (roast IN ('claro','medio','oscuro')),
   weight      TEXT        CHECK (weight IN ('250g','500g','1kg')),
   grind       TEXT        CHECK (grind IN ('grano','media','fina','gruesa')),
@@ -154,7 +155,7 @@ CREATE TABLE IF NOT EXISTS product_variants (
   sku         TEXT        UNIQUE,
   active      BOOLEAN     NOT NULL DEFAULT true,
   -- Sistema genérico: mapa clave-valor correspondiente a products.variant_options.
-  -- Ej: {"Tueste": "Claro", "Peso": "500g"}
+  -- Ej: {"Color": "Rojo", "Talla": "M"}
   attributes  JSONB       NOT NULL DEFAULT '{}',
   -- Dimensiones físicas para cotización Skydropx
   weight_kg   NUMERIC(8,3),
@@ -166,7 +167,7 @@ CREATE TABLE IF NOT EXISTS product_variants (
 CREATE INDEX IF NOT EXISTS product_variants_product_id_idx ON product_variants (product_id);
 CREATE INDEX IF NOT EXISTS product_variants_active_idx     ON product_variants (product_id, active);
 
-COMMENT ON COLUMN product_variants.attributes IS 'Mapa clave-valor que corresponde a products.variant_options. Ej: {"Tueste":"Claro","Peso":"500g"}.';
+COMMENT ON COLUMN product_variants.attributes IS 'Mapa clave-valor que corresponde a products.variant_options. Ej: {"Color":"Rojo","Talla":"M"}.';
 COMMENT ON COLUMN product_variants.weight_kg  IS 'Peso del producto empacado en kg. Requerido para cotizaciones Skydropx.';
 
 -- ═══════════════════════════════════════════════════════════════
@@ -210,13 +211,16 @@ CREATE TABLE IF NOT EXISTS orders (
   status                TEXT        NOT NULL DEFAULT 'pending'
                                       CHECK (status IN ('pending','processing','shipped',
                                                         'delivered','cancelled','exception')),
-  payment_method        TEXT        CHECK (payment_method IN ('wompi','mercadopago')),
+  payment_method        TEXT        CHECK (payment_method IN ('wompi','mercadopago','tucompra','bold','manual')),
   payment_id            TEXT,
   payment_status        TEXT        NOT NULL DEFAULT 'pending'
                                       CHECK (payment_status IN ('pending','approved',
                                                                 'rejected','refunded')),
   notes                 TEXT,
   internal_notes        TEXT,                          -- notas internas del equipo (no visibles al cliente)
+  -- Inventario: idempotencia del movimiento de stock
+  stock_applied         BOOLEAN     NOT NULL DEFAULT false,
+  stock_restored        BOOLEAN     NOT NULL DEFAULT false,
   -- Skydropx
   skydropx_quotation_id TEXT,
   skydropx_rate_id      TEXT,
@@ -348,7 +352,9 @@ CREATE TABLE IF NOT EXISTS store_config (
   favicon_url        TEXT,
   -- SEO
   seo_keywords       TEXT,
-  -- Email transaccional (Resend)
+  -- Email transaccional (proveedor intercambiable; Resend por defecto)
+  email_provider     TEXT        NOT NULL DEFAULT 'resend'
+                                   CHECK (email_provider IN ('resend')),
   resend_api_key     TEXT,
   resend_from_email  TEXT,
   -- Redes sociales
@@ -381,29 +387,38 @@ INSERT INTO store_config (id) VALUES (1) ON CONFLICT DO NOTHING;
 
 COMMENT ON TABLE  store_config                IS 'Singleton de configuración de tienda. Contiene credenciales sensibles — acceso solo vía service role.';
 COMMENT ON COLUMN store_config.trust_badges   IS 'Badges de confianza en página de producto. Ej: [{"text":"Envío seguro","enabled":true}].';
-COMMENT ON COLUMN store_config.terms_content  IS '[Deprecated] Contenido Markdown de /terminos. Ahora se gestiona en page_sections (page_key=terminos).';
-COMMENT ON COLUMN store_config.privacy_content IS '[Deprecated] Contenido Markdown de /privacidad. Ahora se gestiona en page_sections (page_key=privacidad).';
+COMMENT ON COLUMN store_config.terms_content  IS '[Deprecated] Contenido Markdown de /terms. Ahora se gestiona en page_sections (page_key=terms).';
+COMMENT ON COLUMN store_config.privacy_content IS '[Deprecated] Contenido Markdown de /privacy. Ahora se gestiona en page_sections (page_key=privacy).';
 
 -- ─── PAYMENT CONFIG ───────────────────────────────────────────────────────────
 CREATE TABLE IF NOT EXISTS payment_config (
   id                       INTEGER   PRIMARY KEY DEFAULT 1,
+  -- Pasarela activa (única). 'none' = sin pago en línea → validación manual del admin.
+  active_provider          TEXT      NOT NULL DEFAULT 'none'
+    CHECK (active_provider IN ('none', 'wompi', 'mercadopago', 'tucompra', 'bold')),
   -- Wompi
   wompi_public_key         TEXT,
   wompi_private_key        TEXT,
   wompi_integrity_secret   TEXT,     -- firma de payment links (SHA256)
   wompi_events_secret      TEXT,     -- verificación de webhooks
-  wompi_active             BOOLEAN   NOT NULL DEFAULT false,
   -- MercadoPago
   mercadopago_access_token TEXT,
   mercadopago_public_key   TEXT,
-  mercadopago_active       BOOLEAN   NOT NULL DEFAULT false,
+  -- Tu Compra
+  tucompra_merchant_id     TEXT,
+  tucompra_secret_key      TEXT,
+  tucompra_sandbox         BOOLEAN   NOT NULL DEFAULT true,
+  -- Bold
+  bold_api_key             TEXT,     -- llave de identidad (Authorization: x-api-key)
+  bold_secret_key          TEXT,     -- verificación de firma del webhook (HMAC-SHA256)
+  bold_sandbox             BOOLEAN   NOT NULL DEFAULT true,
   updated_at               TIMESTAMPTZ NOT NULL DEFAULT now(),
   CONSTRAINT payment_config_singleton CHECK (id = 1)
 );
 
 INSERT INTO payment_config (id) VALUES (1) ON CONFLICT DO NOTHING;
 
-COMMENT ON TABLE payment_config IS 'Singleton de credenciales de pasarelas de pago (Wompi, MercadoPago). Acceso exclusivo vía service role.';
+COMMENT ON TABLE payment_config IS 'Singleton de credenciales de pasarelas de pago (Wompi, MercadoPago, Tu Compra, Bold). Una sola pasarela activa a la vez vía active_provider. Acceso exclusivo vía service role.';
 
 -- ─── ADMIN CONFIG ──────────────────────────────────────────────────────────────
 -- Apariencia del panel de administración.
@@ -461,7 +476,7 @@ CREATE TABLE IF NOT EXISTS pages (
 );
 
 COMMENT ON TABLE  pages           IS 'Páginas del sitio. page_type: home | about | services | custom. Cada página tiene secciones ordenadas.';
-COMMENT ON COLUMN pages.page_type IS 'home: portada especial | about: nosotros | services: asesorías/maquila | custom: página genérica.';
+COMMENT ON COLUMN pages.page_type IS 'home: portada | about: página institucional | services: página de servicios | custom: página genérica.';
 
 -- Página home (siempre presente — ancla de todas las secciones del inicio)
 INSERT INTO pages (key, label, slug, page_type, enabled, show_in_footer, order_index)
@@ -511,7 +526,7 @@ CREATE TABLE IF NOT EXISTS page_sections (
   order_index  INT         NOT NULL DEFAULT 0,
   -- Configuración libre por tipo de sección.
   -- testimonials: {"filter_by_page": true}
-  -- whatsapp:     {"message_type": "asesoria"|"maquila"|"general"}
+  -- whatsapp:     {"message_type": "ventas"|"soporte"|"general"}
   -- historia:     {"title":"...","subtitle":"...","cta_text":"...","cta_url":"..."}
   settings     JSONB       NOT NULL DEFAULT '{}',
   created_at   TIMESTAMPTZ NOT NULL DEFAULT now(),
@@ -524,7 +539,7 @@ CREATE INDEX        IF NOT EXISTS page_sections_page_enabled_idx    ON page_sect
 CREATE INDEX        IF NOT EXISTS page_sections_page_type_idx       ON page_sections (page_key, section_type);
 
 COMMENT ON TABLE  page_sections          IS 'Bloques de contenido de una página. section_type define el componente React a renderizar.';
-COMMENT ON COLUMN page_sections.settings IS 'Configuración libre por tipo. Ej: historia → {"title":"...","cta_url":"/nosotros"} | whatsapp → {"message_type":"asesoria"}.';
+COMMENT ON COLUMN page_sections.settings IS 'Configuración libre por tipo. Ej: historia → {"title":"...","cta_url":"/pagina"} | whatsapp → {"message_type":"general"}.';
 COMMENT ON COLUMN page_sections.section_key IS 'UUID estable para export/import. No cambia entre despliegues.';
 
 -- ─── SECTION ITEMS ────────────────────────────────────────────────────────────
@@ -564,7 +579,7 @@ COMMENT ON COLUMN section_items.metadata IS 'Campos variables por tipo. slide/se
 -- Inventario centralizado de archivos subidos.
 -- used_in permite detectar assets huérfanos para limpieza.
 CREATE TABLE IF NOT EXISTS media_assets (
-  key         TEXT        PRIMARY KEY,      -- slug legible: 'nosotros-hero-2026'
+  key         TEXT        PRIMARY KEY,      -- slug legible: 'hero-principal-2026'
   url         TEXT        NOT NULL,
   bucket      TEXT        NOT NULL DEFAULT 'public',
   mime_type   TEXT,
@@ -770,3 +785,40 @@ CREATE TRIGGER pages_updated_at
 CREATE TRIGGER store_config_updated_at
   BEFORE UPDATE ON store_config
   FOR EACH ROW EXECUTE FUNCTION set_updated_at();
+
+-- ─── INVENTARIO: descuento/reposición atómico de stock (Épica 9) ───────────────
+CREATE OR REPLACE FUNCTION decrement_variant_stock(p_variant_id integer, p_qty integer)
+RETURNS boolean
+LANGUAGE plpgsql
+AS $$
+DECLARE
+  v_allow   boolean;
+  v_updated integer;
+BEGIN
+  IF p_qty IS NULL OR p_qty <= 0 THEN
+    RETURN true;
+  END IF;
+
+  SELECT COALESCE(p.allow_backorder, false) INTO v_allow
+  FROM product_variants pv
+  JOIN products p ON p.id = pv.product_id
+  WHERE pv.id = p_variant_id;
+
+  UPDATE product_variants
+  SET stock = stock - p_qty
+  WHERE id = p_variant_id
+    AND (v_allow OR stock >= p_qty);
+
+  GET DIAGNOSTICS v_updated = ROW_COUNT;
+  RETURN v_updated > 0;
+END;
+$$;
+
+CREATE OR REPLACE FUNCTION restore_variant_stock(p_variant_id integer, p_qty integer)
+RETURNS void
+LANGUAGE sql
+AS $$
+  UPDATE product_variants
+  SET stock = stock + p_qty
+  WHERE id = p_variant_id AND p_qty > 0;
+$$;

@@ -137,7 +137,7 @@ CREATE TABLE IF NOT EXISTS orders (
   total                   INT NOT NULL,
   status                  TEXT DEFAULT 'pending'
                             CHECK (status IN ('pending','processing','shipped','delivered','cancelled','exception')),
-  payment_method          TEXT CHECK (payment_method IN ('wompi','mercadopago')),
+  payment_method          TEXT CHECK (payment_method IN ('wompi','mercadopago','tucompra','bold','manual')),
   payment_id              TEXT,
   payment_status          TEXT DEFAULT 'pending'
                             CHECK (payment_status IN ('pending','approved','rejected','refunded')),

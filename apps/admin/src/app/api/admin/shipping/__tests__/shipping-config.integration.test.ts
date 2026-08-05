@@ -32,7 +32,11 @@ const baseConfig = {
   free_shipping_min_amount: 100000,
   skydropx_client_id: null,
   skydropx_client_secret: null,
-  skydropx_address_from_id: null,
+  // Skydropx PRO usa dirección de origen (origin_*) en vez de address_from_id
+  origin_name: null,
+  origin_city: null,
+  origin_department: null,
+  origin_postal_code: null,
   skydropx_base_url: 'https://api-pro.skydropx.com',
   updated_at: new Date().toISOString(),
 }
@@ -42,7 +46,10 @@ const skydropxConfig = {
   provider: 'skydropx' as const,
   skydropx_client_id: 'client-abc',
   skydropx_client_secret: 'super-secret-1234',
-  skydropx_address_from_id: 'warehouse-01',
+  origin_name: 'Bodega Central',
+  origin_city: 'Medellín',
+  origin_department: 'Antioquia',
+  origin_postal_code: '050001',
 }
 
 function makePatchRequest(body: object): NextRequest {
@@ -119,7 +126,10 @@ describe('PATCH /api/admin/shipping — validación', () => {
     const data = await res.json()
     expect(data.missing).toContain('skydropx_client_id')
     expect(data.missing).toContain('skydropx_client_secret')
-    expect(data.missing).toContain('skydropx_address_from_id')
+    expect(data.missing).toContain('origin_name')
+    expect(data.missing).toContain('origin_city')
+    expect(data.missing).toContain('origin_department')
+    expect(data.missing).toContain('origin_postal_code')
   })
 
   it('permite activar skydropx si la config actual ya tiene credenciales', async () => {
@@ -171,7 +181,10 @@ describe('PATCH /api/admin/shipping — happy path', () => {
       provider: 'skydropx',
       skydropx_client_id: 'cid',
       skydropx_client_secret: 'new-secret',
-      skydropx_address_from_id: 'wh-01',
+      origin_name: 'Bodega Central',
+      origin_city: 'Medellín',
+      origin_department: 'Antioquia',
+      origin_postal_code: '050001',
     })
     const res = await PATCH(req)
     expect(res.status).toBe(200)
@@ -188,7 +201,10 @@ describe('PATCH /api/admin/shipping — happy path', () => {
       provider: 'skydropx',
       skydropx_client_id: 'cid',
       skydropx_client_secret: 'super-secret-1234',
-      skydropx_address_from_id: 'wh-01',
+      origin_name: 'Bodega Central',
+      origin_city: 'Medellín',
+      origin_department: 'Antioquia',
+      origin_postal_code: '050001',
     })
     const res = await PATCH(req)
     const data = await res.json()

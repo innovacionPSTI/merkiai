@@ -68,7 +68,7 @@ export default function RegistroForm() {
         }),
       }).catch(() => {})
 
-      router.push('/mi-cuenta')
+      router.push('/account')
     } catch {
       setError('Ocurrió un error inesperado. Por favor intenta de nuevo.')
     } finally {
@@ -166,7 +166,7 @@ export default function RegistroForm() {
           {/* Términos */}
           <p className="font-brand text-xs text-brand-primary/40 text-center">
             Al crear tu cuenta aceptas nuestros{' '}
-            <Link href="/terminos" className="underline hover:text-brand-primary transition-colors">
+            <Link href="/terms" className="underline hover:text-brand-primary transition-colors">
               términos de servicio
             </Link>
             .

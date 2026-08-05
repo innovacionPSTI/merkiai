@@ -61,6 +61,7 @@ interface ProductForm {
   category_id: string
   featured: boolean
   active: boolean
+  allow_backorder: boolean
   seo_title: string
   seo_desc: string
   images: string[]
@@ -115,6 +116,7 @@ export default function ProductForm({ product, categories, variantTypes }: Props
     category_id:   product?.category_id?.toString() ?? '',
     featured:      product?.featured ?? false,
     active:        product?.active ?? true,
+    allow_backorder: product?.allow_backorder ?? false,
     seo_title:     product?.seo_title ?? '',
     seo_desc:      product?.seo_desc ?? '',
     images:        product?.images?.map((img: any) => (typeof img === 'string' ? img : img.url)).filter(Boolean) ?? [''],
@@ -367,7 +369,7 @@ export default function ProductForm({ product, categories, variantTypes }: Props
                 onChange={(e) => { setSlugTouched(true); setForm((f) => ({ ...f, slug: toSlug(e.target.value) })) }}
                 className="w-full border border-gray-200 rounded-xl px-4 py-2.5 font-brand text-sm text-brand-primary/60 focus:outline-none focus:border-brand-primary"
               />
-              <p className="font-brand text-xs text-brand-primary/30 mt-1">URL: /tienda/{form.slug}</p>
+              <p className="font-brand text-xs text-brand-primary/30 mt-1">URL: /shop/{form.slug}</p>
             </div>
 
             <div>
@@ -748,6 +750,19 @@ export default function ProductForm({ product, categories, variantTypes }: Props
                 className="w-4 h-4 accent-brand-primary"
               />
               <span className="font-brand text-sm text-brand-primary">Destacar en home</span>
+            </label>
+
+            <label className="flex items-start gap-3 cursor-pointer">
+              <input
+                type="checkbox"
+                checked={form.allow_backorder}
+                onChange={(e) => setForm((f) => ({ ...f, allow_backorder: e.target.checked }))}
+                className="w-4 h-4 mt-0.5 accent-brand-primary"
+              />
+              <span>
+                <span className="font-brand text-sm text-brand-primary block">Permitir vender sin stock (bajo pedido)</span>
+                <span className="font-brand text-xs text-brand-primary/50">Si se activa, se puede comprar aunque no haya existencias; el stock puede quedar negativo.</span>
+              </span>
             </label>
           </section>
 

@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { createServerClient, getPaymentConfig, getStoreConfig } from '@vps/database'
+import { createServerClient, getPaymentConfig, getStoreConfig, applyStockForOrder } from '@vps/database'
 import { getMercadoPagoPayment, mapMercadoPagoStatus } from '@/lib/mercadopago'
 import { sendOrderConfirmation, sendShippingNotification, buildEmailConfig } from '@/lib/email'
 import { createShipmentForOrder } from '@/lib/shipping/shipments'
@@ -75,6 +75,9 @@ export async function POST(req: NextRequest) {
   }
 
   if (paymentStatus === 'approved' && updatedOrder) {
+    // Descuento de stock (idempotente) al confirmarse el pago
+    await applyStockForOrder(reference)
+
     const storeConfig = await getStoreConfig().catch(() => null)
     const emailConfig = storeConfig?.resend_api_key && storeConfig?.resend_from_email
       ? buildEmailConfig(storeConfig.resend_api_key, storeConfig.resend_from_email, storeConfig.store_name)

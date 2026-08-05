@@ -25,6 +25,9 @@ jest.mock('@vps/database', () => ({
 
 jest.mock('@/lib/email', () => ({
   sendNewsletterConfirmation: jest.fn(),
+  buildEmailConfig: jest.fn((apiKey: string, fromEmail: string, storeName?: string) => ({
+    apiKey, fromEmail, storeName,
+  })),
 }))
 
 import { NextRequest } from 'next/server'
@@ -45,7 +48,7 @@ function makeRequest(body: unknown) {
 
 const STORE_CONFIG = {
   resend_api_key:    're_test',
-  resend_from_email: 'noreply@vpscoffee.com',
+  resend_from_email: 'noreply@tienda.example.com',
 } as Awaited<ReturnType<typeof getStoreConfig>>
 
 beforeEach(() => {
@@ -92,7 +95,7 @@ describe('POST /api/newsletter — primera suscripción', () => {
     await POST(makeRequest({ email: 'new@example.com' }))
     expect(mockSendNewsletterConfirmation).toHaveBeenCalledWith(
       'new@example.com',
-      { apiKey: 're_test', fromEmail: 'noreply@vpscoffee.com' }
+      expect.objectContaining({ apiKey: 're_test', fromEmail: 'noreply@tienda.example.com' })
     )
   })
 

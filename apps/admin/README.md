@@ -1,6 +1,6 @@
-# apps/admin — Panel de administración VPS Coffee
+# apps/admin — Panel de administración Commerce CMS
 
-Aplicación Next.js 16 (App Router) para la gestión interna de VPS Coffee. Protegida con Stack Auth + sistema de roles en Supabase.
+Aplicación Next.js 16 (App Router) para la gestión interna de Commerce CMS. Protegida con Stack Auth + sistema de roles en Supabase.
 
 **URL local:** `http://localhost:3001`
 
@@ -127,7 +127,7 @@ El editor de artículos permite previsualizar borradores sin publicarlos:
 **Variable de entorno necesaria:**
 ```env
 # apps/admin/.env.local
-NEXT_PUBLIC_SITE_URL=https://vpscoffee.com
+NEXT_PUBLIC_SITE_URL=https://tienda.example.com
 NEXT_PUBLIC_DRAFT_SECRET=cambia-este-secreto  # debe coincidir con DRAFT_SECRET en apps/web
 ```
 
@@ -197,7 +197,7 @@ HEXCLAVE_SECRET_SERVER_KEY=
 
 # URLs
 NEXT_PUBLIC_ADMIN_URL=http://localhost:3001
-NEXT_PUBLIC_SITE_URL=https://vpscoffee.com   ← para el enlace de previsualización del blog
+NEXT_PUBLIC_SITE_URL=https://tienda.example.com   ← para el enlace de previsualización del blog
 
 # Blog Draft Mode
 NEXT_PUBLIC_DRAFT_SECRET=cambia-este-secreto  ← mismo valor que DRAFT_SECRET en apps/web

@@ -77,6 +77,7 @@ export type Database = {
           images: Json
           active: boolean
           featured: boolean
+          allow_backorder: boolean
           seo_title: string | null
           seo_desc: string | null
           created_at: string
@@ -91,6 +92,7 @@ export type Database = {
           images?: ProductImage[]
           active?: boolean
           featured?: boolean
+          allow_backorder?: boolean
           seo_title?: string | null
           seo_desc?: string | null
           created_at?: string
@@ -105,6 +107,7 @@ export type Database = {
           images?: ProductImage[]
           active?: boolean
           featured?: boolean
+          allow_backorder?: boolean
           seo_title?: string | null
           seo_desc?: string | null
           created_at?: string
@@ -197,7 +200,7 @@ export type Database = {
           discount: number
           total: number
           status: 'pending' | 'processing' | 'shipped' | 'delivered' | 'cancelled' | 'exception'
-          payment_method: 'wompi' | 'mercadopago' | 'tucompra' | null
+          payment_method: 'wompi' | 'mercadopago' | 'tucompra' | 'bold' | 'manual' | null
           payment_id: string | null
           payment_status: 'pending' | 'approved' | 'rejected' | 'refunded'
           notes: string | null
@@ -211,6 +214,8 @@ export type Database = {
           pickup_id: string | null
           pickup_date: string | null
           coupon_code: string | null
+          stock_applied: boolean
+          stock_restored: boolean
           created_at: string
           updated_at: string
         }
@@ -228,7 +233,7 @@ export type Database = {
           discount?: number
           total: number
           status?: 'pending' | 'processing' | 'shipped' | 'delivered' | 'cancelled' | 'exception'
-          payment_method?: 'wompi' | 'mercadopago' | 'tucompra' | null
+          payment_method?: 'wompi' | 'mercadopago' | 'tucompra' | 'bold' | 'manual' | null
           payment_id?: string | null
           payment_status?: 'pending' | 'approved' | 'rejected' | 'refunded'
           notes?: string | null
@@ -242,6 +247,8 @@ export type Database = {
           pickup_id?: string | null
           pickup_date?: string | null
           coupon_code?: string | null
+          stock_applied?: boolean
+          stock_restored?: boolean
           created_at?: string
           updated_at?: string
         }
@@ -259,7 +266,7 @@ export type Database = {
           discount?: number
           total?: number
           status?: 'pending' | 'processing' | 'shipped' | 'delivered' | 'cancelled' | 'exception'
-          payment_method?: 'wompi' | 'mercadopago' | 'tucompra' | null
+          payment_method?: 'wompi' | 'mercadopago' | 'tucompra' | 'bold' | 'manual' | null
           payment_id?: string | null
           payment_status?: 'pending' | 'approved' | 'rejected' | 'refunded'
           notes?: string | null
@@ -273,6 +280,8 @@ export type Database = {
           pickup_id?: string | null
           pickup_date?: string | null
           coupon_code?: string | null
+          stock_applied?: boolean
+          stock_restored?: boolean
           updated_at?: string
         }
         Relationships: [
@@ -810,50 +819,53 @@ export type Database = {
       payment_config: {
         Row: {
           id: number
+          active_provider: 'none' | 'wompi' | 'mercadopago' | 'tucompra' | 'bold'
           wompi_public_key: string | null
           wompi_private_key: string | null
           wompi_integrity_secret: string | null
           wompi_events_secret: string | null
-          wompi_active: boolean
           mercadopago_access_token: string | null
           mercadopago_public_key: string | null
-          mercadopago_active: boolean
           tucompra_merchant_id: string | null
           tucompra_secret_key: string | null
           tucompra_sandbox: boolean
-          tucompra_active: boolean
+          bold_api_key: string | null
+          bold_secret_key: string | null
+          bold_sandbox: boolean
           updated_at: string
         }
         Insert: {
           id?: number
+          active_provider?: 'none' | 'wompi' | 'mercadopago' | 'tucompra' | 'bold'
           wompi_public_key?: string | null
           wompi_private_key?: string | null
           wompi_integrity_secret?: string | null
           wompi_events_secret?: string | null
-          wompi_active?: boolean
           mercadopago_access_token?: string | null
           mercadopago_public_key?: string | null
-          mercadopago_active?: boolean
           tucompra_merchant_id?: string | null
           tucompra_secret_key?: string | null
           tucompra_sandbox?: boolean
-          tucompra_active?: boolean
+          bold_api_key?: string | null
+          bold_secret_key?: string | null
+          bold_sandbox?: boolean
           updated_at?: string
         }
         Update: {
           id?: number
+          active_provider?: 'none' | 'wompi' | 'mercadopago' | 'tucompra' | 'bold'
           wompi_public_key?: string | null
           wompi_private_key?: string | null
           wompi_integrity_secret?: string | null
           wompi_events_secret?: string | null
-          wompi_active?: boolean
           mercadopago_access_token?: string | null
           mercadopago_public_key?: string | null
-          mercadopago_active?: boolean
           tucompra_merchant_id?: string | null
           tucompra_secret_key?: string | null
           tucompra_sandbox?: boolean
-          tucompra_active?: boolean
+          bold_api_key?: string | null
+          bold_secret_key?: string | null
+          bold_sandbox?: boolean
           updated_at?: string
         }
         Relationships: []
@@ -1176,6 +1188,14 @@ export type Database = {
     Functions: {
       increment_coupon_usage: {
         Args: { coupon_code: string }
+        Returns: undefined
+      }
+      decrement_variant_stock: {
+        Args: { p_variant_id: number; p_qty: number }
+        Returns: boolean
+      }
+      restore_variant_stock: {
+        Args: { p_variant_id: number; p_qty: number }
         Returns: undefined
       }
     }

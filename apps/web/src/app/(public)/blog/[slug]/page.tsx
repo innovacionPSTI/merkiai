@@ -87,12 +87,12 @@ export default async function BlogPostPage({ params, searchParams }: Props) {
     url: `${siteUrl}/blog/${post.slug}`,
     author: {
       '@type': 'Organization',
-      name: storeConfig?.store_name ?? 'VPS Coffee',
+      name: storeConfig?.store_name ?? 'Commerce CMS',
       url: siteUrl,
     },
     publisher: {
       '@type': 'Organization',
-      name: storeConfig?.store_name ?? 'VPS Coffee',
+      name: storeConfig?.store_name ?? 'Commerce CMS',
       url: siteUrl,
       ...(storeConfig?.logo_url ? { logo: { '@type': 'ImageObject', url: storeConfig.logo_url } } : {}),
     },

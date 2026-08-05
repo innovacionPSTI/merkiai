@@ -77,6 +77,7 @@ export default function CheckoutClient({ initialEmail = '', defaultAddress = nul
   )
   const [paymentMethod, setPaymentMethod] = useState<string>('wompi')
   const [gateways, setGateways]           = useState<GatewayOption[]>(FALLBACK_GATEWAYS)
+  const [manualPayment, setManualPayment] = useState(false)
   const [loading, setLoading]   = useState(false)
 
   // Envío
@@ -102,8 +103,14 @@ export default function CheckoutClient({ initialEmail = '', defaultAddress = nul
 
     fetch('/api/checkout/gateways')
       .then((r) => r.ok ? r.json() : null)
-      .then((d: { gateways: GatewayOption[] } | null) => {
-        if (d?.gateways?.length) {
+      .then((d: { gateways: GatewayOption[]; manual?: boolean } | null) => {
+        if (!d) return
+        if (d.manual || !d.gateways?.length) {
+          // Sin pasarela activa → pago validado por el administrador
+          setManualPayment(true)
+          setGateways([])
+        } else {
+          setManualPayment(false)
           setGateways(d.gateways)
           setPaymentMethod(d.gateways[0].value)
         }
@@ -199,7 +206,7 @@ export default function CheckoutClient({ initialEmail = '', defaultAddress = nul
       <div className="bg-brand-cream min-h-screen pt-20 flex items-center justify-center">
         <div className="text-center">
           <p className="font-brand text-brand-primary/50 mb-4">Tu carrito está vacío</p>
-          <Link href="/tienda" className="font-brand text-sm text-brand-primary underline">Volver a la tienda</Link>
+          <Link href="/shop" className="font-brand text-sm text-brand-primary underline">Volver a la tienda</Link>
         </div>
       </div>
     )
@@ -235,9 +242,12 @@ export default function CheckoutClient({ initialEmail = '', defaultAddress = nul
         }),
       })
       if (!res.ok) throw new Error('Error creando el pedido')
-      const { payment_url } = await res.json()
+      const { payment_url, order_number } = await res.json()
       clearCart()
+      // Sin pasarela activa: el pedido queda pendiente de validación del admin
       window.location.href = payment_url
+        ? payment_url
+        : `/checkout/confirmation?order=${order_number}&manual=1`
     } catch (err) {
       console.error('[checkout]', err)
       alert('Ocurrió un error al procesar tu pedido. Por favor intenta de nuevo.')
@@ -457,22 +467,34 @@ export default function CheckoutClient({ initialEmail = '', defaultAddress = nul
             {step === 3 && (
               <div className="bg-white rounded-2xl p-6 shadow-sm">
                 <h2 className="font-brand font-semibold text-brand-primary text-xl mb-5">3. Método de pago</h2>
-                <div className="space-y-3 mb-6">
-                  {gateways.map((pm) => (
-                    <label key={pm.value} className={`flex items-center gap-4 p-4 rounded-xl border-2 cursor-pointer transition-colors ${paymentMethod === pm.value ? 'border-brand-primary bg-brand-cream/50' : 'border-brand-primary/10 hover:border-brand-primary/30'}`}>
-                      <input type="radio" name="payment" value={pm.value} checked={paymentMethod === pm.value} onChange={() => setPaymentMethod(pm.value)} className="accent-brand-primary" />
-                      <div>
-                        <p className="font-brand font-semibold text-brand-primary">{pm.label}</p>
-                        <p className="font-brand text-xs text-brand-primary/50">{pm.desc}</p>
-                      </div>
-                    </label>
-                  ))}
-                </div>
-                <div className="bg-brand-yellow/20 rounded-xl p-4 mb-6">
-                  <p className="font-brand text-sm text-brand-primary/70">
-                    💡 El widget de {gateways.find((g) => g.value === paymentMethod)?.label ?? paymentMethod} se cargará al confirmar. Datos protegidos con SSL.
-                  </p>
-                </div>
+                {manualPayment ? (
+                  <div className="bg-brand-yellow/20 rounded-xl p-4 mb-6">
+                    <p className="font-brand font-semibold text-brand-primary mb-1">Pago coordinado con la tienda</p>
+                    <p className="font-brand text-sm text-brand-primary/70">
+                      Al confirmar, tu pedido quedará registrado como <strong>pendiente de pago</strong>.
+                      El equipo de la tienda te contactará para coordinar y validar el pago antes de despacharlo.
+                    </p>
+                  </div>
+                ) : (
+                  <>
+                    <div className="space-y-3 mb-6">
+                      {gateways.map((pm) => (
+                        <label key={pm.value} className={`flex items-center gap-4 p-4 rounded-xl border-2 cursor-pointer transition-colors ${paymentMethod === pm.value ? 'border-brand-primary bg-brand-cream/50' : 'border-brand-primary/10 hover:border-brand-primary/30'}`}>
+                          <input type="radio" name="payment" value={pm.value} checked={paymentMethod === pm.value} onChange={() => setPaymentMethod(pm.value)} className="accent-brand-primary" />
+                          <div>
+                            <p className="font-brand font-semibold text-brand-primary">{pm.label}</p>
+                            <p className="font-brand text-xs text-brand-primary/50">{pm.desc}</p>
+                          </div>
+                        </label>
+                      ))}
+                    </div>
+                    <div className="bg-brand-yellow/20 rounded-xl p-4 mb-6">
+                      <p className="font-brand text-sm text-brand-primary/70">
+                        💡 El widget de {gateways.find((g) => g.value === paymentMethod)?.label ?? paymentMethod} se cargará al confirmar. Datos protegidos con SSL.
+                      </p>
+                    </div>
+                  </>
+                )}
                 <div className="flex gap-3">
                   <button onClick={() => setStep(2)} className="flex-1 border border-brand-primary/20 text-brand-primary rounded-full py-3 font-brand font-medium hover:border-brand-primary transition-colors">← Atrás</button>
                   <button onClick={handleConfirm} disabled={loading} className="flex-1 bg-brand-primary text-brand-cream rounded-full py-3 font-brand font-medium hover:bg-brand-dark transition-colors disabled:opacity-50">

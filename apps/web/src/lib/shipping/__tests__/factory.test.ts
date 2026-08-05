@@ -38,14 +38,14 @@ const BASE_CONFIG = {
 }
 
 const FULL_ORIGIN = {
-  origin_name:        'VPS Coffee',
+  origin_name:        'Commerce CMS',
   origin_street:      'Calle 10 # 5-20',
   origin_neighborhood:'El Centro',
   origin_city:        'Medellín',
   origin_department:  'Antioquia',
   origin_postal_code: '050001',
   origin_phone:       '3001234567',
-  origin_email:       'envios@vpscoffee.com',
+  origin_email:       'envios@tienda.example.com',
 }
 
 beforeEach(() => jest.clearAllMocks())

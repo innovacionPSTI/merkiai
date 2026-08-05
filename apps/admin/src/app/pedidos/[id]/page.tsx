@@ -4,6 +4,8 @@ import Link from 'next/link'
 import type { Metadata } from 'next'
 import OrderStatusUpdater from './OrderStatusUpdater'
 import OrderNotes from './OrderNotes'
+import ReconcileBoldButton from './ReconcileBoldButton'
+import PaymentStatusValidator from './PaymentStatusValidator'
 
 export const metadata: Metadata = { title: 'Detalle de pedido' }
 
@@ -161,6 +163,12 @@ export default async function PedidoDetailPage({ params }: { params: Promise<{ i
                 </span>
               </div>
             </div>
+            {order.payment_method === 'bold' && order.payment_status !== 'approved' && (
+              <ReconcileBoldButton orderId={order.id} />
+            )}
+            {order.payment_status !== 'approved' && (
+              <PaymentStatusValidator orderId={order.id} />
+            )}
           </div>
 
           {/* Notas internas */}

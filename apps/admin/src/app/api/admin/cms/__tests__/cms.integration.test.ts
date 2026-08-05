@@ -363,55 +363,23 @@ describe('items', () => {
 // section-settings
 // ─────────────────────────────────────────────────────────────────────────────
 
-describe('section-settings', () => {
-  const fakeSetting = { key: 'hero', page_key: 'home', enabled: true, order_index: 1, metadata: null }
-
-  it('GET lista section_settings filtradas por page_key', async () => {
-    const mock = buildSupabaseMock([fakeSetting])
-    mockCreateServerClient.mockReturnValue(mock as ReturnType<typeof createServerClient>)
-
+describe('section-settings (recurso retirado en migración 19)', () => {
+  // La tabla section_settings se eliminó al unificar el CMS (migración 19);
+  // 'section-settings' ya no es un recurso válido y debe responder 404.
+  it('GET a section-settings devuelve 404 (recurso desconocido)', async () => {
     const res = await GET(
       makeRequest('GET', 'section-settings', undefined, '?page_key=home'),
       makeParams('section-settings'),
     )
-    expect(res.status).toBe(200)
-    const body = await res.json()
-    expect(body[0].key).toBe('hero')
+    expect(res.status).toBe(404)
   })
 
-  it('PATCH actualiza enabled de una sección del home', async () => {
-    const mock = buildSupabaseMock({ ...fakeSetting, enabled: false })
-    mockCreateServerClient.mockReturnValue(mock as ReturnType<typeof createServerClient>)
-
+  it('PATCH a section-settings devuelve 404 (recurso desconocido)', async () => {
     const res = await PATCH(
       makeRequest('PATCH', 'section-settings', { key: 'hero', enabled: false }),
       makeParams('section-settings'),
     )
-    expect(res.status).toBe(200)
-    const body = await res.json()
-    expect(body.enabled).toBe(false)
-  })
-
-  it('PATCH actualiza metadata de una sección', async () => {
-    const metadata = { title: 'Nuestra historia', subtitle: 'Desde 2020' }
-    const mock = buildSupabaseMock({ ...fakeSetting, metadata })
-    mockCreateServerClient.mockReturnValue(mock as ReturnType<typeof createServerClient>)
-
-    const res = await PATCH(
-      makeRequest('PATCH', 'section-settings', { key: 'historia', metadata }),
-      makeParams('section-settings'),
-    )
-    expect(res.status).toBe(200)
-    const body = await res.json()
-    expect(body.metadata).toEqual(metadata)
-  })
-
-  it('PATCH devuelve 400 si falta key', async () => {
-    const res = await PATCH(
-      makeRequest('PATCH', 'section-settings', { enabled: true }),
-      makeParams('section-settings'),
-    )
-    expect(res.status).toBe(400)
+    expect(res.status).toBe(404)
   })
 })
 

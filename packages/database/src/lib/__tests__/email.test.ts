@@ -9,14 +9,14 @@
 const mockFetch = jest.fn()
 global.fetch = mockFetch
 
-import { sendShippingNotification, sendStatusNotification } from '../email'
+import { sendShippingNotification, sendStatusNotification, sendPaymentConfirmed } from '../email'
 import type { EmailConfig } from '../email'
 
 const config: EmailConfig = {
   apiKey:    're_test_shared_key',
   fromEmail: 'pedidos@tienda.com',
   storeName: 'Mi Tienda Test',
-  siteUrl:   'https://tienda.com',
+  siteUrl:   'https://shop.com',
 }
 
 const baseOrder = {
@@ -28,6 +28,26 @@ const baseOrder = {
 beforeEach(() => {
   mockFetch.mockResolvedValue({ ok: true } as Response)
   jest.clearAllMocks()
+})
+
+// ─────────────────────────────────────────────
+// sendPaymentConfirmed
+// ─────────────────────────────────────────────
+describe('sendPaymentConfirmed (shared)', () => {
+  it('llama a Resend con asunto de pago confirmado y el número de pedido', async () => {
+    await sendPaymentConfirmed(baseOrder, config)
+    expect(mockFetch).toHaveBeenCalledWith('https://api.resend.com/emails', expect.objectContaining({ method: 'POST' }))
+    const payload = JSON.parse(mockFetch.mock.calls[0][1].body)
+    expect(payload.subject).toMatch(/Pago confirmado/i)
+    expect(payload.subject).toContain('ORD-0001')
+    expect(payload.to).toEqual(['cliente@example.com'])
+    expect(payload.html).toContain('ORD-0001')
+  })
+
+  it('lanza error si Resend devuelve status no-OK', async () => {
+    mockFetch.mockResolvedValueOnce({ ok: false, status: 500, text: async () => 'err' } as Response)
+    await expect(sendPaymentConfirmed(baseOrder, config)).rejects.toThrow()
+  })
 })
 
 // ─────────────────────────────────────────────

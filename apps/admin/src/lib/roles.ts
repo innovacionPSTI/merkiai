@@ -1,5 +1,5 @@
 /**
- * Definición de roles y permisos del panel de administración VPS Coffee.
+ * Definición de roles y permisos del panel de administración Commerce CMS.
  *
  * Roles con acceso al panel:
  *  - super_admin   : Acceso total + gestión de usuarios incluyendo otros admins

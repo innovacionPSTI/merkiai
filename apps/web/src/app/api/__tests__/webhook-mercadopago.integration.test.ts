@@ -30,6 +30,7 @@ jest.mock('@vps/database', () => ({
   createServerClient: jest.fn(() => ({ from: mockFrom })),
   getPaymentConfig: jest.fn(),
   getStoreConfig: jest.fn(),
+  applyStockForOrder: jest.fn(),
 }))
 
 jest.mock('@/lib/mercadopago', () => ({
@@ -39,6 +40,10 @@ jest.mock('@/lib/mercadopago', () => ({
 
 jest.mock('@/lib/email', () => ({
   sendOrderConfirmation: jest.fn(),
+  sendShippingNotification: jest.fn(),
+  buildEmailConfig: jest.fn((apiKey: string, fromEmail: string, storeName?: string) => ({
+    apiKey, fromEmail, storeName,
+  })),
 }))
 
 import { getPaymentConfig, getStoreConfig } from '@vps/database'
@@ -55,23 +60,22 @@ const mockSendEmail = sendOrderConfirmation as jest.MockedFunction<typeof sendOr
 // ── Fixtures ──────────────────────────────────
 const paymentConfig = {
   id: 1,
+  active_provider: 'mercadopago',
   mercadopago_access_token: 'TEST-mp-token-abc123',
-  mercadopago_active: true,
   mercadopago_public_key: 'TEST-pub-key',
   wompi_public_key: null,
   wompi_private_key: null,
   wompi_integrity_secret: null,
   wompi_events_secret: null,
-  wompi_active: false,
   updated_at: new Date().toISOString(),
 }
 
 const storeConfig = {
   id: 1,
   resend_api_key: 're_test_key',
-  resend_from_email: 'pedidos@vpscoffee.com',
+  resend_from_email: 'pedidos@tienda.example.com',
   whatsapp_number: null,
-  store_name: 'VPS Coffee',
+  store_name: 'Commerce CMS',
   store_email: null,
   logo_url: null,
   updated_at: new Date().toISOString(),

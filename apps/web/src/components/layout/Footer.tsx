@@ -143,12 +143,12 @@ export default function Footer({
               <h4 className="font-brand font-semibold text-sm mb-3 text-brand-cream/80">Tienda</h4>
               <ul className="space-y-2">
                 <li>
-                  <Link href="/tienda" className="font-brand text-xs text-brand-cream/50 hover:text-brand-cream transition-colors">
+                  <Link href="/shop" className="font-brand text-xs text-brand-cream/50 hover:text-brand-cream transition-colors">
                     Todos los productos
                   </Link>
                 </li>
                 <li>
-                  <Link href="/tienda" className="font-brand text-xs text-brand-cream/50 hover:text-brand-cream transition-colors">
+                  <Link href="/shop" className="font-brand text-xs text-brand-cream/50 hover:text-brand-cream transition-colors">
                     Novedades
                   </Link>
                 </li>
@@ -222,12 +222,12 @@ export default function Footer({
               <h4 className="font-brand font-semibold text-sm mb-3 text-brand-cream/80">Legal</h4>
               <ul className="space-y-2">
                 <li>
-                  <Link href="/terminos" className="font-brand text-xs text-brand-cream/50 hover:text-brand-cream transition-colors">
+                  <Link href="/terms" className="font-brand text-xs text-brand-cream/50 hover:text-brand-cream transition-colors">
                     Términos
                   </Link>
                 </li>
                 <li>
-                  <Link href="/privacidad" className="font-brand text-xs text-brand-cream/50 hover:text-brand-cream transition-colors">
+                  <Link href="/privacy" className="font-brand text-xs text-brand-cream/50 hover:text-brand-cream transition-colors">
                     Privacidad
                   </Link>
                 </li>

@@ -39,7 +39,7 @@ export default function HeroCarousel({ items }: HeroCarouselProps) {
             Trazabilidad completa desde el origen hasta tu taza
           </p>
           <div className="flex gap-4 justify-center flex-wrap">
-            <Link href="/tienda" className="bg-brand-cream text-brand-primary rounded-full px-8 py-3 font-brand font-medium hover:bg-brand-yellow transition-colors">
+            <Link href="/shop" className="bg-brand-cream text-brand-primary rounded-full px-8 py-3 font-brand font-medium hover:bg-brand-yellow transition-colors">
               Comprar ahora →
             </Link>
             <Link href="/nosotros" className="border border-brand-cream text-brand-cream rounded-full px-8 py-3 font-brand font-medium hover:bg-brand-cream/10 transition-colors">

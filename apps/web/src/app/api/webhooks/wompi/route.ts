@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { createServerClient, getPaymentConfig, getStoreConfig } from '@vps/database'
+import { createServerClient, getPaymentConfig, getStoreConfig, applyStockForOrder } from '@vps/database'
 import { verifyWompiWebhook, mapWompiStatus } from '@/lib/wompi'
 import { sendOrderConfirmation, sendShippingNotification, buildEmailConfig } from '@/lib/email'
 import { createShipmentForOrder } from '@/lib/shipping/shipments'
@@ -83,6 +83,9 @@ export async function POST(req: NextRequest) {
 
   // Pago aprobado: confirmación + guía de envío
   if (paymentStatus === 'approved' && updatedOrder) {
+    // Descuento de stock (idempotente) al confirmarse el pago
+    await applyStockForOrder(reference)
+
     const storeConfig = await getStoreConfig().catch(() => null)
     const emailConfig = storeConfig?.resend_api_key && storeConfig?.resend_from_email
       ? buildEmailConfig(storeConfig.resend_api_key, storeConfig.resend_from_email, storeConfig.store_name)

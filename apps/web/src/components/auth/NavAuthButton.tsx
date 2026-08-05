@@ -14,7 +14,7 @@ export default function NavAuthButton() {
   if (user) {
     return (
       <Link
-        href="/mi-cuenta"
+        href="/account"
         className="p-2 text-brand-primary hover:text-brand-dark transition-colors"
         aria-label="Mi cuenta"
         title={user.displayName ?? 'Mi cuenta'}

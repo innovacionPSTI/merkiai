@@ -12,7 +12,7 @@ interface Props {
 
 const navLinks = [
   {
-    href: '/mi-cuenta',
+    href: '/account',
     exact: true,
     label: 'Inicio',
     icon: (
@@ -22,7 +22,7 @@ const navLinks = [
     ),
   },
   {
-    href: '/mi-cuenta/perfil',
+    href: '/account/profile',
     exact: false,
     label: 'Mi perfil',
     icon: (
@@ -32,7 +32,7 @@ const navLinks = [
     ),
   },
   {
-    href: '/mi-cuenta/pedidos',
+    href: '/account/orders',
     exact: false,
     label: 'Mis pedidos',
     icon: (
@@ -42,7 +42,7 @@ const navLinks = [
     ),
   },
   {
-    href: '/mi-cuenta/configuracion',
+    href: '/account/settings',
     exact: false,
     label: 'Configuración',
     icon: (
@@ -145,7 +145,7 @@ export default function AccountSidebar({ displayName, email }: Props) {
           {/* Separador + Cerrar sesión */}
           <div className="p-2 border-t border-brand-primary/8">
             <Link
-              href="/tienda"
+              href="/shop"
               className="flex items-center gap-3 px-3 py-2.5 rounded-xl font-brand text-sm text-brand-primary/40 hover:text-brand-primary hover:bg-brand-cream/50 transition-colors"
             >
               <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">

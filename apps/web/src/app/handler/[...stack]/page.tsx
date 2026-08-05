@@ -5,7 +5,7 @@ import { stackServerApp } from '@/stack'
 /**
  * Stack Auth handler catch-all route.
  * Maneja internamente:
- *   - /handler/sign-in / sign-up   (Stack Auth redirige a /login y /registro)
+ *   - /handler/sign-in / sign-up   (Stack Auth redirige a /login y /register)
  *   - /handler/email-verification
  *   - /handler/password-reset
  *   - /handler/magic-link

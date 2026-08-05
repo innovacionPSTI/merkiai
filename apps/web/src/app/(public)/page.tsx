@@ -53,7 +53,7 @@ export default async function HomePage() {
                   {categories.map((cat) => (
                     <div key={cat.id} className="border-b border-brand-primary/15 pb-4">
                       <Link
-                        href={`/tienda?categoria=${cat.slug}`}
+                        href={`/shop?categoria=${cat.slug}`}
                         className="font-brand text-brand-primary hover:text-brand-dark transition-colors flex items-center gap-2"
                       >
                         → {cat.name}
@@ -62,7 +62,7 @@ export default async function HomePage() {
                   ))}
                 </div>
                 <Link
-                  href="/tienda"
+                  href="/shop"
                   className="inline-block mt-8 bg-brand-primary text-brand-cream rounded-full px-8 py-3 font-brand font-medium hover:bg-brand-dark transition-colors"
                 >
                   Ver todos los productos →
@@ -72,7 +72,7 @@ export default async function HomePage() {
                 {bestSellers.map((product) => (
                   <Link
                     key={product.product_id}
-                    href={product.slug ? `/tienda/${product.slug}` : '/tienda'}
+                    href={product.slug ? `/shop/${product.slug}` : '/shop'}
                     className="group aspect-square rounded-2xl bg-brand-yellow/30 overflow-hidden relative"
                   >
                     {product.image_url ? (

@@ -2,13 +2,13 @@ import { NextRequest, NextResponse } from 'next/server'
 import { stackServerApp } from './stack'
 
 /**
- * Middleware de VPS Coffee Web.
+ * Middleware de Commerce CMS Web.
  *
  * 1. Modo mantenimiento: si está activo redirige todo a /maintenance
  *    (excepto la propia página, APIs y rutas de auth).
  *    El estado se cachea 60 s en memoria para no golpear la BD en cada request.
  *
- * 2. Auth guard: protege /mi-cuenta/* y redirige al login si no hay sesión.
+ * 2. Auth guard: protege /account/* y redirige al login si no hay sesión.
  */
 
 let maintenanceCache: { value: boolean; expiresAt: number } | null = null
@@ -51,8 +51,8 @@ export async function middleware(request: NextRequest) {
   // Stack Auth handler: nunca proteger
   if (pathname.startsWith('/handler')) return NextResponse.next()
 
-  // Rutas protegidas: /mi-cuenta/*
-  if (pathname.startsWith('/mi-cuenta')) {
+  // Rutas protegidas: /account/*
+  if (pathname.startsWith('/account')) {
     const user = await stackServerApp.getUser()
     if (!user) {
       const loginUrl = new URL('/login', request.url)

@@ -1,6 +1,6 @@
-# apps/web — Sitio público VPS Coffee
+# apps/web — Sitio público Commerce CMS
 
-Aplicación Next.js (App Router) que implementa el sitio público de VPS Coffee Roasting House: e-commerce, servicios B2B (maquila y asesorías) y blog.
+Aplicación Next.js (App Router) que implementa el sitio público de Commerce CMS: e-commerce, servicios B2B (maquila y asesorías) y blog.
 
 **URL local:** `http://localhost:3000`
 

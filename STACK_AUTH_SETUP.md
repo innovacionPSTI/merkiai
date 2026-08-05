@@ -1,6 +1,6 @@
 # Stack Auth — Guía de Configuración
 
-> **Proyecto:** VPS Coffee Roasting House  
+> **Proyecto:** Commerce CMS  
 > **Paquete:** `@stackframe/stack` v2.7.4  
 > **Aplica a:** `apps/web` y `apps/admin`
 
@@ -24,7 +24,7 @@ Stack Auth es el proveedor de autenticación del proyecto. Maneja el registro, i
 ## Paso 2 — Crear el proyecto
 
 1. En el dashboard, haz clic en **"New Project"**
-2. Asigna el nombre: `VPS Coffee`
+2. Asigna el nombre: `Commerce CMS`
 3. Selecciona el plan **Free** (suficiente para desarrollo y para producción con bajo volumen)
 4. Haz clic en **"Create Project"**
 
@@ -57,8 +57,8 @@ http://localhost:3001
 
 ### Para producción (cuando se despliegue)
 ```
-https://vpscoffee.com
-https://admin.vpscoffee.com
+https://tienda.example.com
+https://admin.tienda.example.com
 ```
 
 > Stack Auth valida el origen de las peticiones. Si no agregas estas URLs, el login no funcionará.
@@ -72,8 +72,8 @@ En **"Auth" → "Domains & URLs"**, sección **"Redirect URLs"**, agrega:
 ```
 http://localhost:3000/handler
 http://localhost:3001/handler
-https://vpscoffee.com/handler
-https://admin.vpscoffee.com/handler
+https://tienda.example.com/handler
+https://admin.tienda.example.com/handler
 ```
 
 Estos son los endpoints del catch-all handler de Stack Auth (`/app/handler/[...stack]/page.tsx`).
@@ -171,7 +171,7 @@ Esto significa que aunque alguien llegara a crear una cuenta Stack Auth con un e
 
 ### Roles y permisos — NO configurar en Stack Auth
 
-> **Importante:** El sistema de roles de VPS Coffee está implementado en Supabase (`profiles.role`), **no** en Stack Auth. No es necesario crear roles, permisos ni equipos en Stack Auth para el panel admin. Stack Auth solo maneja la identidad (quién eres); Supabase maneja la autorización (qué puedes hacer).
+> **Importante:** El sistema de roles de Commerce CMS está implementado en Supabase (`profiles.role`), **no** en Stack Auth. No es necesario crear roles, permisos ni equipos en Stack Auth para el panel admin. Stack Auth solo maneja la identidad (quién eres); Supabase maneja la autorización (qué puedes hacer).
 
 Esto es intencional: los roles viven junto a los datos del negocio, son inmediatamente efectivos al cambiar (sin esperar expiración de token) y son auditables directamente en SQL.
 
@@ -180,7 +180,7 @@ Esto es intencional: los roles viven junto a los datos del negocio, son inmediat
 Para que los links de "Restablecer contraseña" que llegan por email apunten correctamente al admin (y no al sitio web):
 
 1. Ve a **"Auth" → "Domains & URLs"**
-2. Confirma que `https://admin.vpscoffee.com` y `http://localhost:3001` están en la lista
+2. Confirma que `https://admin.tienda.example.com` y `http://localhost:3001` están en la lista
 
 Sin esto, los nuevos usuarios admin no podrán crear su contraseña desde el link del correo.
 
@@ -228,8 +228,8 @@ Ver `DEPLOYMENT.md` para el procedimiento completo de despliegue.
 | `apps/web/src/middleware.ts` | Protege `/mi-cuenta/*`; sin sesión → `/login?returnTo=...` |
 | `apps/web/src/app/layout.tsx` | Envuelve la app en `<StackProvider>` + `<StackTheme>` |
 | `apps/web/src/app/handler/[...stack]/page.tsx` | Catch-all para flows internos de Stack (password reset, verificación) |
-| `apps/web/src/app/(auth)/login/page.tsx` | Formulario de login branded VPS Coffee |
-| `apps/web/src/app/(auth)/registro/page.tsx` | Formulario de registro branded VPS Coffee |
+| `apps/web/src/app/(auth)/login/page.tsx` | Formulario de login branded Commerce CMS |
+| `apps/web/src/app/(auth)/registro/page.tsx` | Formulario de registro branded Commerce CMS |
 | `apps/web/src/components/auth/LogoutButton.tsx` | Botón de cierre de sesión (`useUser().signOut()`) |
 | `apps/web/src/app/api/auth/welcome/route.ts` | API route que envía email de bienvenida vía Resend tras el registro |
 | `apps/admin/src/stack.ts` | Instancia `StackServerApp` para el admin |
@@ -255,4 +255,4 @@ Ver `DEPLOYMENT.md` para el procedimiento completo de despliegue.
 
 ---
 
-*VPS Coffee Roasting House · Parquesoft TI · Julio 2026*
+*Commerce CMS · Parquesoft TI · Julio 2026*

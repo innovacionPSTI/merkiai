@@ -12,7 +12,7 @@ export interface CreateOrderInput {
   shipping_cost: number
   discount?: number
   total: number
-  payment_method?: 'wompi' | 'mercadopago' | 'tucompra'
+  payment_method?: 'wompi' | 'mercadopago' | 'tucompra' | 'bold' | 'manual'
   skydropx_rate_id?: string | null
   carrier_name?: string | null
   coupon_code?: string | null
@@ -55,7 +55,7 @@ export async function getOrdersByCustomer(customerId: string): Promise<Order[]> 
 
 /**
  * Obtiene los pedidos de un cliente por su email.
- * Usado desde /mi-cuenta/pedidos cuando el usuario está autenticado con Stack Auth
+ * Usado desde /account/orders cuando el usuario está autenticado con Stack Auth
  * y sus órdenes históricas se vincularon por email (no por ID de Stack).
  */
 export async function getOrdersByCustomerEmail(email: string): Promise<Order[]> {

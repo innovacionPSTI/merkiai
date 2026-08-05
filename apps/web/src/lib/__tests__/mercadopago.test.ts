@@ -108,11 +108,11 @@ describe('createMercadoPagoPreference', () => {
       items: [{ id: '10', title: 'Café Huila', quantity: 1, unit_price: 45000 }],
       payerEmail: 'juan@example.com',
       backUrls: {
-        success: 'https://vpscoffee.com/checkout/confirmacion',
-        failure: 'https://vpscoffee.com/checkout?error=pago_rechazado',
-        pending: 'https://vpscoffee.com/checkout/confirmacion?status=pending',
+        success: 'https://shop.example.com/checkout/confirmation',
+        failure: 'https://shop.example.com/checkout?error=pago_rechazado',
+        pending: 'https://shop.example.com/checkout/confirmation?status=pending',
       },
-      notificationUrl: 'https://vpscoffee.com/api/webhooks/mercadopago',
+      notificationUrl: 'https://shop.example.com/api/webhooks/mercadopago',
     })
 
     expect(mockFetch).toHaveBeenCalledWith(

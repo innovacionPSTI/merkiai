@@ -110,7 +110,7 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: 'No hay suscriptores activos' }, { status: 422 })
   }
 
-  const storeName = config.store_name ?? 'VPS Coffee'
+  const storeName = config.store_name ?? 'Commerce CMS'
   const siteUrl = process.env.NEXT_PUBLIC_SITE_URL
   const htmlContent = markdownToEmailHtml(emailBody)
   const html = baseTemplate(htmlContent, storeName, siteUrl)

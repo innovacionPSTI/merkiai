@@ -232,7 +232,7 @@ export const COLOMBIA_LOCATIONS: ColombiaLocation[] = [
       'Cali', 'Buenaventura', 'Palmira', 'Tuluá', 'Buga',
       'Cartago', 'Yumbo', 'Florida', 'Candelaria', 'Jamundí',
       'Zarzal', 'La Unión', 'Roldanillo', 'Sevilla', 'Caicedonia',
-      'El Cerrito', 'Ginebra', 'Guacarí', 'Dagua', 'Buenaventura',
+      'El Cerrito', 'Ginebra', 'Guacarí', 'Dagua',
       'San Pedro', 'Pradera', 'Miranda',
     ],
   },

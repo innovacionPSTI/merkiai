@@ -26,7 +26,7 @@ export default async function AuthLayout({ children }: { children: React.ReactNo
             </>
           )}
         </Link>
-        <Link href="/tienda" className="font-brand text-sm text-brand-primary/60 hover:text-brand-primary transition-colors">
+        <Link href="/shop" className="font-brand text-sm text-brand-primary/60 hover:text-brand-primary transition-colors">
           ← Volver a la tienda
         </Link>
       </header>

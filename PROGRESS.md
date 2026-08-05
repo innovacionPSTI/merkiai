@@ -1,4 +1,4 @@
-# VPS Coffee — Estado del Proyecto
+# Commerce CMS — Estado del Proyecto
 > **Última actualización:** Julio 2026 (v14) · **Stack:** Next.js 16 · Supabase · Stack Auth · Tailwind · Turborepo
 
 ---
@@ -28,8 +28,8 @@
 - `supabase/migrations/4_payment_config.sql` — tabla `payment_config` singleton con credenciales Wompi y MercadoPago
 - `supabase/migrations/5_customers.sql` — tabla `customers` (mirror Stack Auth) + FK `orders.customer_id → customers.id` + tabla `cart_items` con FKs a `customers`, `products` y `product_variants` (ON DELETE CASCADE)
 - `supabase/migrations/6_customer_addresses.sql` — tabla `customer_addresses` (N direcciones por cliente para pre-llenar checkout)
-- `supabase/migrations/7_content_settings.sql` — agrupa `section_settings` (toggles del home), `coupons`, `testimonials` y `themes`; seed de secciones y tema VPS Coffee por defecto
-- `supabase/migrations/8_variant_types.sql` — tabla `variant_types` (plantillas reutilizables de atributo); RLS SELECT público + escritura service_role; seed con Tueste/Peso/Molienda
+- `supabase/migrations/7_content_settings.sql` — agrupa `section_settings` (toggles del home), `coupons`, `testimonials` y `themes`; seed de secciones y tema Commerce CMS por defecto
+- `supabase/migrations/8_variant_types.sql` — tabla `variant_types` (plantillas reutilizables de atributo); RLS SELECT público + escritura service_role (sin seed de ejemplo)
 - `supabase/migrations/9_indexes.sql` — índices de rendimiento: `products.category_id`, `product_variants.product_id`, `orders.customer_id/customer_email/status/created_at/coupon_code`, `banners (section, active, order_index)`, `blog_posts (published, published_at)` (9 archivos totales — compactados en v9 desde los 16 originales)
 - `src/queries/coupons.ts` — `getCoupons`, `getCouponByCode`, **`validateCoupon` (función pura)**, `createCoupon`, `updateCoupon`, `deleteCoupon`, `incrementCouponUsage`
 - `src/queries/testimonials.ts` — `getTestimonials(onlyActive)`, `createTestimonial`, `updateTestimonial`, `deleteTestimonial`
@@ -52,12 +52,12 @@
 - `app/layout.tsx` — **carga tema activo** con `getActiveTheme()` e **inyecta `<style>`** en el `<head>` con CSS vars sobreescritas; pre-carga Playfair Display e Inter como alternativas de fuente
 
 **Auth (Stack Auth):**
-- `src/stack.ts` — `StackServerApp` (tokenStore: nextjs-cookie, urls custom: /login, /registro, /mi-cuenta)
-- `src/middleware.ts` — protege `/mi-cuenta/*`; redirige a `/login?returnTo=...` si sin sesión
+- `src/stack.ts` — `StackServerApp` (tokenStore: nextjs-cookie, urls custom: /login, /register, /account)
+- `src/middleware.ts` — protege `/account/*`; redirige a `/login?returnTo=...` si sin sesión
 - `src/app/handler/[...stack]/page.tsx` — catch-all handler (password-reset, email-verification, etc.)
 - `src/app/(auth)/layout.tsx` — layout centrado con logo para páginas de auth
-- `src/app/(auth)/login/page.tsx` — formulario VPS-branded, `signInWithCredential`, returnTo param
-- `src/app/(auth)/registro/page.tsx` — formulario VPS-branded, `signUpWithCredential`, dispara welcome email
+- `src/app/(auth)/login/page.tsx` — formulario con estilo de marca, `signInWithCredential`, returnTo param
+- `src/app/(auth)/register/page.tsx` — formulario con estilo de marca, `signUpWithCredential`, dispara welcome email
 - `src/components/auth/LogoutButton.tsx` — client component con `useUser().signOut()`
 - `src/app/api/auth/welcome/route.ts` — POST: obtiene user de Stack Auth, envía bienvenida vía Resend
 
@@ -76,29 +76,27 @@
 | Ruta | Archivo | Modo |
 |------|---------|------|
 | `/` | `app/(public)/page.tsx` | ISR 60s |
-| `/tienda` | `app/(public)/tienda/page.tsx` | ISR 60s |
-| `/tienda/[slug]` | `app/(public)/tienda/[slug]/page.tsx` | `force-dynamic` (nueva ruta visible inmediatamente) |
-| `/maquila` | `app/(public)/maquila/page.tsx` | Estático, async (WhatsApp desde BD) |
-| `/asesorias` | `app/(public)/asesorias/page.tsx` | Estático, async (WhatsApp desde BD) |
+| `/shop` | `app/(public)/shop/page.tsx` | ISR 60s |
+| `/shop/[slug]` | `app/(public)/shop/[slug]/page.tsx` | `force-dynamic` (nueva ruta visible inmediatamente) |
 | `/blog` | `app/(public)/blog/page.tsx` | ISR 60s |
 | `/blog/[slug]` | `app/(public)/blog/[slug]/page.tsx` | SSG+ISR |
-| `/nosotros` | `app/(public)/nosotros/page.tsx` | Estático |
-| `/carrito` | `app/carrito/page.tsx` | Client — tarifa y umbral de envío gratis desde BD vía `/api/shipping/config`; barra de progreso hacia envío gratis |
+| `/[slug]` | `app/(public)/[slug]/page.tsx` | `force-dynamic` — páginas CMS dinámicas (`pages` + `page_sections`) |
+| `/cart` | `app/cart/page.tsx` | Client — tarifa y umbral de envío gratis desde BD vía `/api/shipping/config`; barra de progreso hacia envío gratis |
 | `/checkout` | `app/checkout/page.tsx` | 3 pasos — paso 2: comboboxes departamento/ciudad Colombia; si provider=skydropx muestra "Ver opciones de envío →" → lista de transportadoras con precio y días → usuario elige antes de continuar al pago; `shipping_rate` completo (id, carrier_name, service_name, days) se persiste en la orden |
-| `/terminos` | `app/(public)/terminos/page.tsx` | `force-dynamic` — renderiza `store_config.terms_content` (Markdown→HTML) |
-| `/privacidad` | `app/(public)/privacidad/page.tsx` | `force-dynamic` — renderiza `store_config.privacy_content` (Markdown→HTML) |
-| `/checkout/confirmacion` | `app/checkout/confirmacion/page.tsx` | async, WhatsApp desde BD |
+| `/terms` | `app/(public)/terms/page.tsx` | `force-dynamic` — contenido desde el CMS (`getPageWithSections('terms')`) |
+| `/privacy` | `app/(public)/privacy/page.tsx` | `force-dynamic` — contenido desde el CMS (`getPageWithSections('privacy')`) |
+| `/checkout/confirmation` | `app/checkout/confirmation/page.tsx` | async, WhatsApp desde BD |
 | `/` | `app/(public)/page.tsx` | ISR 60s |
-| `/tienda` | `app/(public)/tienda/page.tsx` | ISR 60s |
-| `/tienda/[slug]` | `app/(public)/tienda/[slug]/page.tsx` | `force-dynamic`; OG image desde `images[0].url` |
+| `/shop` | `app/(public)/shop/page.tsx` | ISR 60s |
+| `/shop/[slug]` | `app/(public)/shop/[slug]/page.tsx` | `force-dynamic`; OG image desde `images[0].url` |
 | `/blog` | `app/(public)/blog/page.tsx` | ISR 60s |
 | `/blog/[slug]` | `app/(public)/blog/[slug]/page.tsx` | SSG+ISR; Draft Mode con cookie `__vps_draft`; banner borrador |
-| `/mi-cuenta` | `app/(account)/mi-cuenta/page.tsx` | SSR · user real |
-| `/mi-cuenta/perfil` | `app/(account)/mi-cuenta/perfil/page.tsx` | SSR · editar nombre, teléfono y direcciones |
-| `/mi-cuenta/pedidos` | `app/(account)/mi-cuenta/pedidos/page.tsx` | SSR |
-| `not-found.tsx` | `app/not-found.tsx` | Página 404 con estilo VPS (café vacío) |
+| `/account` | `app/(account)/account/page.tsx` | SSR · user real |
+| `/account/profile` | `app/(account)/account/profile/page.tsx` | SSR · editar nombre, teléfono y direcciones |
+| `/account/orders` | `app/(account)/account/orders/page.tsx` | SSR |
+| `not-found.tsx` | `app/not-found.tsx` | Página 404 personalizada |
 | `sitemap.ts` | `app/sitemap.ts` | Sitemap dinámico: rutas estáticas + productos activos + posts publicados |
-| `robots.ts` | `app/robots.ts` | robots.txt: bloquea `/api/`, `/mi-cuenta/`, `/checkout/` |
+| `robots.ts` | `app/robots.ts` | robots.txt: bloquea `/api/`, `/account/`, `/checkout/` |
 
 > **Nota Next.js 15:** En rutas dinámicas `params` es un `Promise`. Se debe tipar como `params: Promise<{ slug: string }>` y usar `const { slug } = await params`.
 
@@ -129,14 +127,14 @@
 **Componentes:**
 - `HeroCarousel` — autoplay 5s, fade, dots, flechas; usa `<picture>` + `<source media="(max-width: 768px)">` para mostrar imagen mobile en móvil e imagen desktop en escritorio
 - `Footer` — iconos SVG oficiales de Instagram, Facebook y TikTok; se muestran solo si están `enabled: true` y tienen URL configurada; recibe prop `social` desde el layout servidor
-- `LegalPage` — componente compartido para `/terminos` y `/privacidad`; converter Markdown→HTML sin dependencias externas (h1/h2/h3, **bold**, *italic*, listas, links); muestra aviso si el contenido está vacío
+- `LegalPage` — componente compartido para `/terms` y `/privacy`; converter Markdown→HTML sin dependencias externas (h1/h2/h3, **bold**, *italic*, listas, links); muestra aviso si el contenido está vacío
 - `FeaturedProducts` — grid 3 col, add to cart
 - `ServicesSection` — async, llama `Promise.all` para URLs de WhatsApp desde BD
 - `NewsletterSection` — POST a API route
 - `CartDrawer` — slide-in desde derecha, overlay, Escape key
 - `ShopClient` — filtros de categoría y atributos dinámicos desde `variant_options`; swatches de color cuando el valor es un color; "Desde $X" cuando hay múltiples precios; "Ver opciones" vs "Agregar" según cantidad de variantes
 - `ProductDetail` — galería, selector variantes genérico (cualquier atributo: color/talla/etc.), strikethrough para variantes no disponibles, add to cart
-- `lib/variant-utils.ts` — `getProductOptions`, `getVariantAttrs`, `getVariantLabel` (retrocompat. con café legacy), `isColorValue`, `COLOR_HEX` (20 colores españoles → hex)
+- `lib/variant-utils.ts` — `getProductOptions`, `getVariantAttrs`, `getVariantLabel` (retrocompat. con catálogos legacy), `isColorValue`, `COLOR_HEX` (20 colores españoles → hex)
 - `lib/colombia-locations.ts` — 33 departamentos + ~400 municipios; `DEPARTMENTS` (lista ordenada), `getCitiesForDepartment(dept)` (lista ordenada por depto)
 - `components/ui/SearchableSelect.tsx` — combobox reutilizable: input + dropdown filtrado, nav por teclado (↑↓ Enter Escape), cierre en click externo, checkmark en seleccionado, key única por índice (evita duplicados como "Buenaventura")
 - `components/account/ProfileForm` — editar nombre y teléfono del cliente; PATCH a `/api/account/profile`
@@ -259,13 +257,75 @@
 
 ---
 
+## 🆕 Completado en v16 — Pasarela de pago única (`active_provider`)
+
+Se reorganizó la configuración de pagos con la misma lógica de "Proveedor activo" de envíos: **solo una pasarela puede estar activa a la vez**; al seleccionar una, las demás quedan inactivas.
+
+- [x] **Migración 24** — `payment_config.active_provider TEXT DEFAULT 'none' CHECK(none/wompi/mercadopago/tucompra)`; back-fill desde los booleanos previos; `DROP` de `wompi_active`/`mercadopago_active`/`tucompra_active`. `01_schema.sql` canónico actualizado (además incorpora las columnas de Tu Compra que faltaban) ✅
+- [x] **Factory** — `getActiveProvider(config)` (fail-closed: si la pasarela activa no tiene credenciales → `'none'`); `getPaymentGateway` valida contra `active_provider`; `getActiveGateways` devuelve `[activa]` o `[]` ✅
+- [x] **Admin** — `PaymentConfigForm` con selector "Proveedor activo" (Ninguna/Wompi/MercadoPago/Tu Compra) + badge Activa/Inactiva por sección; ruta `PATCH /api/admin/payment-config` valida el valor y que la pasarela a activar tenga credenciales completas (400 con `missing` si faltan) ✅
+- [x] **Seguridad en checkout** — el `POST /api/checkout` **ignora el `payment_method` del cliente** y deriva la pasarela del servidor (`getActiveProvider`). Cierra el bypass de forzar una pasarela distinta a la activa ✅
+- [x] **Modo manual (`'none'`)** — sin pasarela activa el pedido se crea con `payment_method: 'manual'` y `payment_status: 'pending'`, **sujeto a validación del administrador**; no se genera pago en línea. `CheckoutClient` muestra "Pago coordinado con la tienda" y redirige a confirmación ✅
+- [x] **Tests** — `checkout.integration` reescrito (incluye caso manual + prueba de no-bypass de pasarela), `payment-config.integration` y webhooks actualizados al nuevo modelo ✅
+
+### Bold (HU-093) + URLs de webhook (HU-094)
+- [x] **BoldGateway** (`packages/database/.../BoldGateway.ts`) — API "link de pagos": `POST /online/link/v1` con `Authorization: x-api-key`, total en COP, `callback_url` a confirmación y `metadata.reference = order_number`; devuelve `payload.url`. Verificación de webhook **HMAC-SHA256(base64(body))** contra `x-bold-signature` (llave vacía en sandbox); `mapStatus` (SALE_APPROVED/REJECTED, VOID_*) y `extractWebhookData` ✅
+- [x] **Webhook `/api/webhooks/bold`** — verifica firma **antes** de tocar estado; **idempotente** (reintento de pago ya aprobado → 200 sin reprocesar); dispara email + guía en aprobado ✅
+- [x] **Migración 24 (sobrescrita)** — añade `bold_api_key`, `bold_secret_key`, `bold_sandbox`; `active_provider` CHECK incluye `'bold'`; `01_schema.sql` y `types.ts` actualizados; `payment_method` de orders acepta `'bold'` y `'manual'` ✅
+- [x] **Admin** — opción **Bold** en el selector "Proveedor activo" + credenciales; validación de credenciales al activar (secret opcional en sandbox); factory y `getActiveProvider` con case `'bold'` (fail-closed) ✅
+- [x] **URLs de webhook por pasarela** — componente `WebhookUrl` muestra `${NEXT_PUBLIC_SITE_URL}/api/webhooks/<provider>` (copiable) en cada sección (Wompi, MercadoPago, Tu Compra, Bold), con nota de dónde registrarla ✅
+- [x] **Tests** — `bold-gateway.test.ts` (10), `webhook-bold.integration.test.ts` (5), caso Bold en `checkout.integration` ✅
+
+### Fallback de estado Bold (HU-095)
+- [x] **`BoldGateway.queryStatusByReference`** — consulta el servicio de fallback `GET /payments/webhook/notifications/<ref>?is_external_reference=true` (por `metadata.reference` = order_number), prioriza `SALE_APPROVED`, devuelve el estado mapeado o `null` ✅
+- [x] **`reconcileBoldOrder` (`apps/web/src/lib/bold-reconcile.ts`)** — guard `bold` + `pending`, estado tomado SOLO de la API autenticada de Bold, idempotente, mismos efectos que el webhook (email + guía) ✅
+- [x] **Disparadores** — endpoint público `POST /api/checkout/bold/reconcile` (rate-limited 6/min por IP) invocado una vez desde la confirmación (`BoldReconcileOnLoad`); endpoint admin `POST /api/admin/orders/[id]/reconcile-bold` (guard admin) + botón "Verificar pago con Bold" en el detalle del pedido ✅
+- [x] **Fix (ago-2026): reconcile compartido sin salto HTTP** — el núcleo `reconcileBoldOrder` se movió a `@vps/database` (`lib/bold-reconcile.ts`); el endpoint admin lo llama **directo** (antes hacía `fetch` a `NEXT_PUBLIC_SITE_URL`, que en local fallaba con `UNABLE_TO_GET_ISSUER_CERT_LOCALLY`). Al aprobar, el admin envía email `sendPaymentConfirmed`. Test `bold-reconcile.test.ts` en database (5). **Nota:** en desarrollo local los webhooks de Bold no llegan a `localhost` (usar túnel o el botón de verificación) ✅
+- [x] **Tests** — `bold-gateway.test.ts` ampliado (13 total), `bold-reconcile.test.ts` (5) ✅
+
+### Validación manual del pago por el admin (HU-096)
+- [x] **`PATCH /api/admin/orders/[id]/payment-status`** — guard admin (super_admin/admin/vendedor); acepta solo `approved`/`rejected`; al aprobar fija `payment_status='approved'` + `status='processing'`; email de confirmación al cliente (fire-and-forget) ✅
+- [x] **`sendPaymentConfirmed`** — email compartido en `@vps/database` ("hemos confirmado tu pago"); re-exportado en admin ✅
+- [x] **UI** — `PaymentStatusValidator` (botones "Confirmar pago"/"Rechazar pago") en el detalle del pedido, visible mientras el pago no esté aprobado ✅
+- [x] **Fix constraint BD** — `orders_payment_method_check` ampliado a `('wompi','mercadopago','tucompra','bold','manual')` en `01_schema.sql`, `1_initial_schema.sql` y `ALTER` idempotente en la migración 24 (antes solo permitía wompi/mercadopago → rompía los pedidos `manual`) ✅
+- [x] **Tests** — `payment-status.integration.test.ts` (5) + `sendPaymentConfirmed` en `email.test.ts` ✅
+
+### Reposicionamiento a CMS general (des-branding)
+- [x] **Marca eliminada** — todas las referencias a "VPS Coffee" quitadas de docs (README, PROGRESS, BACKLOG, DEPLOYMENT, STACK_AUTH_SETUP y sub-READMEs), seeds canónicos y fixtures de tests; dominios `vpscoffee.com` → `shop.example.com`. Las migraciones históricas (1–23) se dejan como registro ✅
+- [x] **Nombre genérico** — la documentación usa "Commerce CMS" como nombre de plataforma (placeholder; el nombre real se configura por instancia en `store_config`) ✅
+- [x] **Reposicionamiento** — README y objetivos del backlog reescritos como **CMS de e-commerce general y personalizable (white-label)** con tres pilares: CMS + e-commerce, integraciones intercambiables (pagos/envíos/email) y **componentes de IA** (arquitectura extensible para generación de contenido, recomendaciones y asistencia). Ejemplos de café/maquila marcados como ilustrativos, no como vertical obligatorio ✅
+- [x] Suites verdes tras el renombrado: **web 26/290, database 11/124, admin 12/165** ✅
+
+### Reorganización del backlog por dominio (v2)
+- [x] **Mapa de Épicas v2** — el backlog se reagrupa por dominio (E1–E16) eliminando colisiones de numeración (había tres "Épica 9/10/11" con doble significado) y la dispersión de temas. El mapa vive en `PRODUCT_BACKLOG.md §2.0` y es la fuente de verdad ✅
+- [x] **Épica 15 (Proveedores intercambiables) disuelta** — sus HU transversales se redistribuyen: gateways de pago → **E6 Pagos**, envío → **E7 Envíos**, email → **E8 Emails** ✅
+- [x] **Pagos consolidados** en **E6 · Pagos y pasarelas** (checkout + Wompi/MP/Tu Compra/Bold + validación manual + fallback) ✅
+- [x] **Renombres:** Épica 8 → *Páginas de contenido y servicios* (genérica, maquila/asesorías como ejemplo); secciones de detalle colisionadas renumeradas a su épica v2 (E2/E14/E8/E15/E6/E9) ✅
+- [x] **Nueva E16 · Componentes de IA** (roadmap: IA-01 descripciones, IA-02 recomendaciones, IA-03 asistente) ✅
+- [x] **Tabla de cobertura regenerada** por dominio: 190 ítems → 177 ✅ / 7 🟡 / 6 🔲 (93 % con pruebas, 97 % con código) ✅
+
+**Mapa v2 resumido:** E1 Fundación · E2 Arquitectura+CMS · E3 Sitio público · E4 Tienda · E5 Carrito · **E6 Pagos** · **E7 Envíos** · **E8 Emails** · **E9 Inventario 🔲** · E10 Blog · E11 Contenido/servicios · E12 Auth/Mi Cuenta · E13 Panel admin · E14 Despliegue/seguridad · E15 SEO · **E16 IA 🔲**.
+
+---
+
+### E9 · Control de inventario y stock (HU-097/098/099)
+- [x] **HU-097 — `allow_backorder` por producto** — migración 25 (`products.allow_backorder`) + checkbox en `ProductForm` + API/types ✅
+- [x] **HU-098 — Movimiento de stock por estado de pago** — RPC atómicas `decrement_variant_stock`/`restore_variant_stock` (respetan backorder); helper compartido `applyStockForOrder`/`restoreStockForOrder` **idempotente** (flags `orders.stock_applied/stock_restored`); descuento cableado en los 4 webhooks + validación manual + reconcile Bold; **reposición** al cancelar/rechazar; **validación 409** en el checkout ✅
+- [x] **HU-099 — Topes en el front** — PDP topa la cantidad al stock (deshabilita "+", "Agotado"); `clampQty` en el store del carrito; `CartItem` con `stock`/`allowBackorder` ✅
+- [x] **Tests** — `stock.test.ts` (6: idempotencia + mapeo) + caso 409 en `checkout.integration` ✅
+- [x] **HU-100 — Guardas de stock en todos los puntos de agregar** — quick-add en `/shop` (ShopClient) y home (FeaturedProducts) con guarda "Agotado" y propagación de `stock`/`allowBackorder`; botón "+" del carrito deshabilitado al máximo con aviso "Máximo N"; 4 tests de clamp en `cart.test.ts`. Suites verdes: **web 26/296, database 12/130, admin 12/165**; `tsc` limpio ✅
+
+---
+
 ## 🔧 Pendiente de implementar
+
+> **Único trabajo funcional pendiente (v2):** **E16 · Componentes de IA** (roadmap: IA-01 descripciones, IA-02 recomendaciones, IA-03 asistente). El resto son 🟡 sin pruebas (ver Resumen de Cobertura del backlog).
 
 ### Completado recientemente (v3)
 - [x] **Skydropx PRO completo** — OAuth2 client_credentials, cotización (quotations API), creación automática de guías post-pago (`createShipmentForOrder`), webhooks de tracking, pickups masivos desde admin ✅
 - [x] **Página 404** personalizada con motivo de "taza vacía", links de recuperación ✅
 - [x] **SEO técnico** — `sitemap.xml` dinámico (productos + blog), `robots.txt`, Open Graph + Twitter Card por producto y artículo ✅
-- [x] **Edición de perfil** en `/mi-cuenta/perfil` — nombre, teléfono, y gestión de direcciones guardadas ✅
+- [x] **Edición de perfil** en `/account/profile` — nombre, teléfono, y gestión de direcciones guardadas ✅
 - [x] **Email de confirmación de newsletter** — vía Resend, solo en primera suscripción ✅
 - [x] **Modal de despacho masivo** — `PickupModal` en `/pedidos` para seleccionar órdenes con guía y programar recolección Skydropx ✅
 - [x] **Blog Draft Mode** — botón "Previsualizar" en el editor activa cookie `__vps_draft` por 1h; artículo se renderiza con banner de borrador ✅
@@ -295,7 +355,7 @@
 - [x] **`'newsletter'` en roles y sidebar** — `AdminSection` extendido; `ROLE_CONFIG` actualizado para super_admin, admin y gestor_tienda; ítem 📧 Newsletter añadido al grupo Contenido ✅
 
 ### Completado en v7
-- [x] **Eliminación de valores hardcodeados en emails** — `lib/email.ts` reescrito: `storeName` y `siteUrl` vienen de `store_config` y `NEXT_PUBLIC_SITE_URL`; helper `buildEmailConfig()` actualizado en los 5 callers (wompi, mercadopago, skydropx, newsletter, welcome); `admin/newsletter/send/route.ts` corregido (footer ya no tiene `vpscoffee.com` hardcodeado) ✅
+- [x] **Eliminación de valores hardcodeados en emails** — `lib/email.ts` reescrito: `storeName` y `siteUrl` vienen de `store_config` y `NEXT_PUBLIC_SITE_URL`; helper `buildEmailConfig()` actualizado en los 5 callers (wompi, mercadopago, skydropx, newsletter, welcome); `admin/newsletter/send/route.ts` corregido (footer ya no tiene `shop.example.com` hardcodeado) ✅
 - [x] **Consolidación de migraciones** — reducidas de 19 a 13 archivos; 6 `ALTER TABLE` eliminados (6_email_config, 10_shipping_free_threshold, 11_legal_content, 12_social_links, 13_skydropx_origin_address, 14_maintenance_mode); sus columnas incorporadas en las migraciones CREATE TABLE originales (2 y 4); archivos renumerados sin colisiones; ambas apps pasan `tsc --noEmit` ✅
 
 ### Completado en v8
@@ -333,7 +393,7 @@
 - [x] **CMS Home — Categorías dinámicas** — `getCategories()` añadida a `packages/database/src/queries/products.ts`; `Promise.all` en `page.tsx` ahora incluye las categorías; sección "Tienda" en home renderiza links dinámicos desde BD (`.slug` + `.name`) en lugar de array hardcodeado ✅
 - [x] **CMS Home — Guard `enabled('historia')`** — sección Historia envuelta en `{enabled('historia') && ...}`, controlable desde el panel admin sin código ✅
 - [x] **Metadata JSONB generalizada en `section_settings`** — migración 17: columna `metadata JSONB NULL`; seed de sección 'historia' con título, subtítulo y CTA como JSON; admin muestra editor inline para cualquier sección que tenga metadata; web lee con fallbacks a strings hardcodeados; patrón extensible a cualquier sección futura ✅
-- [x] **Análisis arquitectural** — identificadas 5 categorías de deuda técnica: (1) rutas API zombie sin auth (`/api/admin/banners`), (2) directorios zombie `/banners/` y `/secciones/` con ~800 líneas de código muerto, (3) código duplicado entre apps (SearchableSelect, colombia-locations, email.ts, skydropx/auth.ts), (4) dos modelos CMS coexistentes (banners+section_settings vs pages+page_sections), (5) páginas legales /privacidad y /terminos fuera del CMS ✅
+- [x] **Análisis arquitectural** — identificadas 5 categorías de deuda técnica: (1) rutas API zombie sin auth (`/api/admin/banners`), (2) directorios zombie `/banners/` y `/secciones/` con ~800 líneas de código muerto, (3) código duplicado entre apps (SearchableSelect, colombia-locations, email.ts, skydropx/auth.ts), (4) dos modelos CMS coexistentes (banners+section_settings vs pages+page_sections), (5) páginas legales /privacy y /terms fuera del CMS ✅
 
 ### Completado en v13 — Épica 10: CMS Unificado + Limpieza Arquitectural
 
@@ -354,7 +414,7 @@
 - [x] **HU-046 — Consolidar `SearchableSelect` en `packages/ui`** — componente movido a `packages/ui/src/SearchableSelect.tsx`; admin usa `@vps/ui`; web mantiene copia local por limitación de Turbopack con `'use client'` en barrels ✅
 - [x] **HU-047 — Consolidar `colombia-locations` en `packages/ui`** — `DEPARTMENTS`, `COLOMBIA_LOCATIONS`, `getCitiesForDepartment` movidos a `packages/ui/src/colombia-locations.ts`; eliminados de web, admin y database; tests actualizados al nuevo import ✅
 - [x] **HU-048 — Consolidar `email.ts` compartido** — creado `packages/database/src/lib/email.ts` con `EmailConfig`, `sendShippingNotification` y `sendStatusNotification` (unificadas con firma flexible); `apps/admin/src/lib/email.ts` reducido a 2 líneas de re-export; `apps/web/src/lib/email.ts` conserva solo funciones web-only (`buildEmailConfig`, `sendOrderConfirmation`, `sendNewsletterConfirmation`, `sendWelcomeEmail`) e importa el resto de `@vps/database` ✅
-- [x] **HU-049 — Migrar `/privacidad` y `/terminos` al CMS** — migración `18_legal_pages.sql`: seed idempotente de páginas + secciones de texto por defecto; rutas web actualizan a `getPageWithSections()` con fallback a `store_config` para compatibilidad retroactiva; `meta_title` y `meta_description` desde la página del CMS ✅
+- [x] **HU-049 — Migrar `/privacy` y `/terms` al CMS** — migración `18_legal_pages.sql`: seed idempotente de páginas + secciones de texto por defecto; rutas web actualizan a `getPageWithSections()` con fallback a `store_config` para compatibilidad retroactiva; `meta_title` y `meta_description` desde la página del CMS ✅
 - [x] **HU-050 — Crear `getWebHomeData()`** — `packages/database/src/queries/home.ts` consolida las 6 queries paralelas del home; `apps/web/(public)/page.tsx` hace una sola llamada; nombre `getWebHomeData` evita colisión con `getHomeData` existente en `sections.ts` (admin editor) ✅
 - [x] **`packages/ui` zero-dependency** — `cn.ts` reescrito en JS puro sin `clsx`/`tailwind-merge`; resuelve fallo de build por resolución estricta de pnpm en Vercel ✅
 - [x] **`tsc --noEmit` limpio** — sin errores en apps/web y apps/admin después de todos los cambios ✅
@@ -381,12 +441,12 @@
 - [x] **HU-085/086/087** — `PaymentGateway` + `WompiGateway` + `MercadoPagoGateway` + factory; toggles admin; checkout solo muestra pasarelas activas ✅
 - [x] **HU-088** — `TuCompraGateway` (MD5 signature, sandbox/prod); webhook `/api/webhooks/tucompra`; tipo `tucompra` en `payment_method` ✅
 - [x] **HU-089/090** — `EmailProvider` + `ResendProvider` + factory `getEmailProvider()`; campo `email_provider` en `store_config`; selector en admin ✅
-- [x] **HU-060** — Tracking en Mi Cuenta: `/mi-cuenta/pedidos/[id]` con timeline visual (pending→processing→shipped→delivered); tracking number, tabla de ítems, dirección, totales; verificación de propiedad por email ✅
+- [x] **HU-060** — Tracking en Mi Cuenta: `/account/orders/[id]` con timeline visual (pending→processing→shipped→delivered); tracking number, tabla de ítems, dirección, totales; verificación de propiedad por email ✅
 - [x] **`/api/checkout/gateways`** — endpoint público que devuelve pasarelas activas; `CheckoutClient` las carga dinámicamente con fallback ✅
 
 #### Iteración 5 — Polish
 - [x] **HU-079 — Responsive admin** — `AdminSidebar` self-contained: hamburger fijo `top-0 left-0 z-50 md:hidden`, overlay backdrop, `<aside>` con `fixed md:relative` + `translate-x` animation; layout.tsx añade `pl-14 md:pl-0` al topbar ✅
-- [x] **HU-080 — JSON-LD structured data** — schema `Product` (con offers, brand, images) en `/tienda/[slug]`; schema `Article` (con author/publisher desde store_config) en `/blog/[slug]` ✅
+- [x] **HU-080 — JSON-LD structured data** — schema `Product` (con offers, brand, images) en `/shop/[slug]`; schema `Article` (con author/publisher desde store_config) en `/blog/[slug]` ✅
 - [x] **HU-081 — Fuentes adicionales en editor de temas** — añadidos `Lora` y `Merriweather` como display; `Montserrat` y `Nunito` como body; registrados en `FONT_DISPLAY_MAP`/`FONT_BODY_MAP` del web layout y en `TemasClient.tsx` ✅
 - [x] **Tests newsletter** — `newsletter.integration.test.ts`: 10 casos para GET/POST con auth, validaciones, Resend mock ✅
 - [x] **Tests admin-config/sistema** — `sistema.integration.test.ts` + `admin-config.test.ts`: cobertura de `getAdminConfig`, `updateAdminConfig`, PATCH /api/admin/sistema (auth, filtro falsy, propagación de errores) ✅
@@ -405,6 +465,12 @@
 #### Épica 15 — Estado final
 - [x] **HU-082 a HU-090** — todas completas ✅
 - [x] `tsc --noEmit --skipLibCheck` pasa en `apps/web` y `apps/admin` ✅
+
+> **⚠️ Corrección de validación (ago-2026):** al verificar contra el código bajo el criterio "código + cableado + pruebas definidas", se detectaron huecos de cobertura respecto a lo que este log daba por cerrado:
+> - **Tu Compra (HU-088 / PRV-07):** `TuCompraGateway.ts` y su webhook existen y están cableados, pero **no hay ningún test** que los referencie (a diferencia de Wompi y MercadoPago, que sí tienen unit + integration). Estado real: 🟡 sin pruebas.
+> - **Security hardening (HU-062):** los guards de auth y la verificación de firma de webhooks sí están probados, pero el **rate limiting** (`checkout/route.ts`) y los **CSP headers** (`next.config.ts`) no tienen pruebas que cubran el 429 ni los headers. Estado real: 🟡 parcial.
+> - **HU-060 (tracking), HU-079 (responsive admin), HU-080 (JSON-LD), HU-081 (fuentes):** implementados y cableados pero sin pruebas. Estado real: 🟡.
+> - **Resend / envío de emails (PRV-08):** confirmado con pruebas (`email.test.ts` en `packages/database` y `apps/admin`). ✅
 
 ---
 
@@ -429,16 +495,21 @@ cp .env.example apps/admin/.env.local
 ```
 
 ### 4. Ejecutar schema y seeds en Supabase
-Abrir el SQL Editor de Supabase y ejecutar en orden (**3 archivos — despliegue desde cero**):
+Abrir el SQL Editor de Supabase (ver `migrations/README.md`).
+
+**Despliegue NUEVO** (3 archivos):
 ```
-packages/database/supabase/migrations/01_schema.sql   ← schema completo (único archivo)
+packages/database/supabase/migrations/01_schema.sql   ← esquema canónico completo (único archivo)
 packages/database/supabase/seeds/01_config.sql        ← tema, variantes, categorías, nav base
 packages/database/supabase/seeds/02_content.sql       ← páginas, secciones e ítems CMS
 ```
 
-> **v13 — esquema canónico compactado:** Las 20 migraciones históricas (1_initial_schema.sql … 20_integrity_and_indexes.sql) se conservan en la carpeta `migrations/` como registro de la evolución del proyecto, pero **para un despliegue nuevo usar únicamente `01_schema.sql`**. El esquema canónico incorpora desde el inicio todas las columnas, FKs, índices compuestos, triggers `updated_at`, CHECK constraints y comentarios de tabla que antes se añadían en migraciones sucesivas.
+**Actualizar una BD EXISTENTE** (1 archivo idempotente):
+```
+packages/database/supabase/migrations/upgrade.sql     ← consolida 21–25 (favicon, admin_config, proveedores, pasarela única + Bold, inventario)
+```
 
-> Si ya tienes una instancia corriendo con las 20 migraciones aplicadas, **no** ejecutes `01_schema.sql` — el esquema ya está al día.
+> **Compactación (v16):** `01_schema.sql` es la **única fuente de verdad** del esquema (incluye todo hasta v16: `active_provider`+Bold, `email_provider`, inventario/RPC, etc.). Los archivos numerados `1_*`…`25_*` se conservan **solo como registro histórico** y no forman parte del flujo de despliegue. Para actualizar una instancia previa se usa un único `upgrade.sql`.
 
 ### 5. Levantar el proyecto
 ```bash
@@ -459,18 +530,18 @@ vps-coffee/
 │   │   │   ├── (public)/
 │   │   │   │   ├── layout.tsx          — async; carga store_config, pasa logoUrl+whatsapp
 │   │   │   │   ├── page.tsx            — Home
-│   │   │   │   ├── tienda/
+│   │   │   │   ├── shop/
 │   │   │   │   │   ├── page.tsx
 │   │   │   │   │   └── [slug]/page.tsx — force-dynamic; params: Promise<{slug}>
-│   │   │   │   ├── maquila/page.tsx    — async; WhatsApp desde BD
-│   │   │   │   ├── asesorias/page.tsx  — async; WhatsApp desde BD
 │   │   │   │   ├── blog/
-│   │   │   │   └── nosotros/
+│   │   │   │   ├── privacy/            — contenido desde el CMS
+│   │   │   │   ├── terms/              — contenido desde el CMS
+│   │   │   │   └── [slug]/             — páginas CMS dinámicas
 │   │   │   ├── (account)/
 │   │   │   │   └── layout.tsx          — async; carga store_config
-│   │   │   ├── carrito/
+│   │   │   ├── cart/
 │   │   │   ├── checkout/
-│   │   │   │   └── confirmacion/       — async; WhatsApp desde BD
+│   │   │   │   └── confirmation/       — async; WhatsApp desde BD
 │   │   │   ├── api/
 │   │   │   │   ├── checkout/route.ts   — crea orden + URL pago Wompi/MP
 │   │   │   │   ├── webhooks/
@@ -597,7 +668,7 @@ vps-coffee/
 │   │       ├── 15_store_seo.sql          — SEO por página
 │   │       ├── 16_order_notes.sql        — notas internas en pedidos
 │   │       ├── 17_home_sections.sql      — metadata JSONB en section_settings + seed historia
-│   │       └── 18_legal_pages.sql        — seed /privacidad y /terminos en tabla pages (idempotente)
+│   │       └── 18_legal_pages.sql        — seed /privacy y /terms en tabla pages (idempotente)
 │   └── config/
 │
 ├── .env.example
@@ -619,4 +690,4 @@ Las más críticas para arrancar:
 
 ---
 
-*Proyecto VPS Coffee Roasting House · Parquesoft TI · Julio 2026*
+*Proyecto Commerce CMS · Parquesoft TI · Julio 2026*

@@ -23,7 +23,7 @@ describe('buildWompiCheckoutUrl', () => {
     integritySecret: 'test_int_secret',
     reference: 'VPS-0042',
     amountInCents: 9800000,
-    redirectUrl: 'https://vpscoffee.com/checkout/confirmacion?order=VPS-0042',
+    redirectUrl: 'https://shop.example.com/checkout/confirmation?order=VPS-0042',
   }
 
   it('genera una URL que empieza en el dominio de Wompi', () => {

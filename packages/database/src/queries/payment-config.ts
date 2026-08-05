@@ -35,6 +35,8 @@ export async function updatePaymentConfig(
     'mercadopago_public_key',
     'tucompra_merchant_id',
     'tucompra_secret_key',
+    'bold_api_key',
+    'bold_secret_key',
   ] as const
 
   const sanitized: typeof input = { ...input }

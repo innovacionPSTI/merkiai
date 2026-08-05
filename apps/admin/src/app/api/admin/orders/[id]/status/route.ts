@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { createServerClient } from '@vps/database'
+import { createServerClient, restoreStockForOrder } from '@vps/database'
 import { sendShippingNotification, sendStatusNotification } from '@/lib/email'
 
 const NOTIFIABLE_STATUSES = new Set(['shipped', 'delivered', 'cancelled'])
@@ -21,6 +21,11 @@ export async function PATCH(
       .single()
 
     if (error) throw error
+
+    // Inventario: al cancelar un pedido se repone el stock descontado (idempotente)
+    if (status === 'cancelled' && order) {
+      await restoreStockForOrder(order.order_number).catch((e) => console.error('[status] stock restore:', e))
+    }
 
     // ── Email al cliente — no bloquea la respuesta si falla ──────────────────
     if (NOTIFIABLE_STATUSES.has(status) && order) {

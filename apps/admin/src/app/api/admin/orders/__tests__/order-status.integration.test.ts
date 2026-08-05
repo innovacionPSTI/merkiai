@@ -12,6 +12,7 @@ import { NextRequest } from 'next/server'
 
 jest.mock('@vps/database', () => ({
   createServerClient: jest.fn(),
+  restoreStockForOrder: jest.fn().mockResolvedValue(undefined),
 }))
 
 // Mock del módulo de email — evita llamadas reales a Resend
@@ -51,8 +52,8 @@ const mockOrder = {
 
 const mockStoreConfig = {
   resend_api_key:    're_test_key',
-  resend_from_email: 'noreply@vpscoffee.com',
-  store_name:        'VPS Coffee',
+  resend_from_email: 'noreply@tienda.example.com',
+  store_name:        'Commerce CMS',
 }
 
 /**

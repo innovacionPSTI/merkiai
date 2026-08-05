@@ -164,7 +164,7 @@ export default function CategoryFormModal({ category, onClose, onDelete }: Props
               className="w-full border border-gray-200 rounded-xl px-4 py-2.5 font-brand text-sm text-brand-primary/60 focus:outline-none focus:border-brand-primary"
               placeholder="cafe-especialidad"
             />
-            <p className="font-brand text-xs text-brand-primary/30 mt-1">URL: /tienda?categoria={form.slug}</p>
+            <p className="font-brand text-xs text-brand-primary/30 mt-1">URL: /shop?categoria={form.slug}</p>
           </div>
 
           {/* Descripción */}

@@ -1,4 +1,4 @@
-# packages/database — Capa de datos VPS Coffee
+# packages/database — Capa de datos Commerce CMS
 
 Paquete compartido que centraliza el cliente de Supabase, los tipos TypeScript del schema y las funciones de query para todas las apps del monorepo.
 
@@ -98,7 +98,7 @@ packages/database/
     │   └── 1_initial_schema.sql … 20_integrity_and_indexes.sql  ← historial evolutivo
     └── seeds/
         ├── 01_config.sql       ← Tema, variantes, categorías, nav base
-        └── 02_content.sql      ← Páginas, secciones e ítems CMS de VPS Coffee
+        └── 02_content.sql      ← Páginas, secciones e ítems CMS de Commerce CMS
 ```
 
 ---

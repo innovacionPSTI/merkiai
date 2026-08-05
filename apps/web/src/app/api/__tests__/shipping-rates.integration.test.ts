@@ -128,14 +128,14 @@ describe('POST /api/shipping/rates — address mapping', () => {
     )
   })
 
-  it('usa "000000" como postal_code si no se provee', async () => {
+  it('usa postal_code vacío si no se provee (Skydropx CO no lo requiere)', async () => {
     const providerMock = makeProviderMock('fixed', fixedRates)
     mockGetShippingProvider.mockResolvedValueOnce(providerMock as never)
 
     await POST(makeRequest({ address: { ...validAddress, postal_code: undefined }, items: validItems }))
 
     expect(providerMock.getRates).toHaveBeenCalledWith(
-      expect.objectContaining({ postal_code: '000000' }),
+      expect.objectContaining({ postal_code: '' }),
       mockParcel
     )
   })

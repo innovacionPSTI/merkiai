@@ -15,7 +15,7 @@ const mockSingle = jest.fn()
 const mockSelect = jest.fn(() => ({ limit: jest.fn(() => ({ single: mockSingle })) }))
 const mockUpsertChain = jest.fn()
 const mockUpsertSelect = jest.fn(() => ({ single: mockUpsertChain }))
-const mockUpsert = jest.fn(() => ({ select: mockUpsertSelect }))
+const mockUpsert = jest.fn((_payload: Record<string, unknown>, _opts?: unknown) => ({ select: mockUpsertSelect }))
 const mockFrom = jest.fn(() => ({
   select: mockSelect,
   upsert: mockUpsert,
@@ -33,11 +33,11 @@ beforeEach(() => jest.clearAllMocks())
 const fullConfig = {
   id: 1,
   whatsapp_number: '573001234567',
-  store_name: 'VPS Coffee',
-  store_email: 'info@vpscoffee.com',
+  store_name: 'Commerce CMS',
+  store_email: 'info@tienda.example.com',
   logo_url: 'https://example.com/logo.png',
   resend_api_key: null,
-  resend_from_email: 'pedidos@vpscoffee.com',
+  resend_from_email: 'pedidos@tienda.example.com',
   terms_content: null,
   privacy_content: null,
   instagram_url: null,
@@ -60,7 +60,7 @@ describe('getStoreConfig', () => {
 
     expect(result.whatsapp_number).toBe('573001234567')
     expect(result.logo_url).toBe('https://example.com/logo.png')
-    expect(result.store_name).toBe('VPS Coffee')
+    expect(result.store_name).toBe('Commerce CMS')
   })
 
   it('devuelve DEFAULT_CONFIG cuando la BD devuelve error', async () => {
@@ -69,7 +69,7 @@ describe('getStoreConfig', () => {
     const result = await getStoreConfig()
 
     expect(result.id).toBe(1)
-    expect(result.store_name).toBe('VPS Coffee')
+    expect(result.store_name).toBe('Mi Tienda')
     expect(result.whatsapp_number).toBeNull()
     expect(result.logo_url).toBeNull()
   })
@@ -117,8 +117,7 @@ describe('updateStoreConfig', () => {
     const result = await updateStoreConfig({ whatsapp_number: '573009999999' })
 
     expect(mockUpsert).toHaveBeenCalledWith(
-      expect.objectContaining({ id: 1, whatsapp_number: '573009999999' }),
-      undefined
+      expect.objectContaining({ id: 1, whatsapp_number: '573009999999' })
     )
     expect(result.whatsapp_number).toBe('573009999999')
   })
@@ -126,9 +125,9 @@ describe('updateStoreConfig', () => {
   it('incluye updated_at en el upsert', async () => {
     mockUpsertChain.mockResolvedValueOnce({ data: fullConfig, error: null })
 
-    await updateStoreConfig({ store_name: 'VPS Coffee Nuevo' })
+    await updateStoreConfig({ store_name: 'Commerce CMS Nuevo' })
 
-    const upsertArg = mockUpsert.mock.calls[0][0]
+    const upsertArg = mockUpsert.mock.calls[0]![0]
     expect(upsertArg).toHaveProperty('updated_at')
     expect(typeof upsertArg.updated_at).toBe('string')
   })
@@ -147,7 +146,7 @@ describe('updateStoreConfig', () => {
     const result = await updateStoreConfig({ logo_url: 'https://example.com/new-logo.png' })
 
     expect(result.logo_url).toBe('https://example.com/new-logo.png')
-    const upsertArg = mockUpsert.mock.calls[0][0]
+    const upsertArg = mockUpsert.mock.calls[0]![0]
     expect(upsertArg).not.toHaveProperty('whatsapp_number')
   })
 
@@ -166,7 +165,7 @@ describe('updateStoreConfig', () => {
 
     expect(result.terms_content).toContain('## Términos')
     expect(result.privacy_content).toContain('## Privacidad')
-    const upsertArg = mockUpsert.mock.calls[0][0]
+    const upsertArg = mockUpsert.mock.calls[0]![0]
     expect(upsertArg).toHaveProperty('terms_content')
     expect(upsertArg).toHaveProperty('privacy_content')
   })
@@ -174,9 +173,9 @@ describe('updateStoreConfig', () => {
   it('guarda redes sociales con url y enabled', async () => {
     const socialConfig = {
       ...fullConfig,
-      instagram_url: 'https://instagram.com/vpscoffee',
+      instagram_url: 'https://instagram.com/commercecms',
       instagram_enabled: true,
-      facebook_url: 'https://facebook.com/vpscoffee',
+      facebook_url: 'https://facebook.com/commercecms',
       facebook_enabled: false,
       tiktok_url: null,
       tiktok_enabled: true,
@@ -184,13 +183,13 @@ describe('updateStoreConfig', () => {
     mockUpsertChain.mockResolvedValueOnce({ data: socialConfig, error: null })
 
     const result = await updateStoreConfig({
-      instagram_url: 'https://instagram.com/vpscoffee',
+      instagram_url: 'https://instagram.com/commercecms',
       instagram_enabled: true,
-      facebook_url: 'https://facebook.com/vpscoffee',
+      facebook_url: 'https://facebook.com/commercecms',
       facebook_enabled: false,
     })
 
-    expect(result.instagram_url).toBe('https://instagram.com/vpscoffee')
+    expect(result.instagram_url).toBe('https://instagram.com/commercecms')
     expect(result.facebook_enabled).toBe(false)
     expect(result.tiktok_url).toBeNull()
   })

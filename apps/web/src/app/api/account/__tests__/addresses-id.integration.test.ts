@@ -1,4 +1,7 @@
 /**
+ * @jest-environment node
+ */
+/**
  * Integration tests — PATCH + DELETE /api/account/addresses/[id]
  *
  * Covers: editar dirección, establecer como predeterminada, eliminar.
@@ -7,7 +10,7 @@
  */
 
 import { NextRequest } from 'next/server'
-import { PATCH, DELETE } from '../[id]/route'
+import { PATCH, DELETE } from '../addresses/[id]/route'
 
 // ─── Mocks ────────────────────────────────────────────────────────────────────
 
@@ -135,7 +138,7 @@ describe('PATCH /api/account/addresses/[id]', () => {
       }
       chain.eq.mockReturnValue(chain)
       chain.select.mockReturnValue(chain)
-      chain.update.mockReturnValue(chain)
+      // NO re-mockear chain.update: conserva el mockImplementation que dispara clearDefaultCalled
       chain.delete.mockReturnValue(chain)
       return chain
     })

@@ -34,6 +34,7 @@ jest.mock('@vps/database', () => ({
   createServerClient: jest.fn(() => ({ from: mockFrom })),
   getPaymentConfig: jest.fn(),
   getStoreConfig: jest.fn(),
+  applyStockForOrder: jest.fn(),
 }))
 
 jest.mock('@/lib/wompi', () => ({
@@ -43,6 +44,10 @@ jest.mock('@/lib/wompi', () => ({
 
 jest.mock('@/lib/email', () => ({
   sendOrderConfirmation: jest.fn(),
+  sendShippingNotification: jest.fn(),
+  buildEmailConfig: jest.fn((apiKey: string, fromEmail: string, storeName?: string) => ({
+    apiKey, fromEmail, storeName,
+  })),
 }))
 
 import { getPaymentConfig, getStoreConfig } from '@vps/database'
@@ -61,23 +66,22 @@ const EVENTS_SECRET = 'test_events_secret'
 
 const paymentConfig = {
   id: 1,
+  active_provider: 'wompi',
   wompi_events_secret: EVENTS_SECRET,
-  wompi_active: true,
   wompi_public_key: 'pub_test_xxx',
   wompi_private_key: 'prv_test_xxx',
   wompi_integrity_secret: 'int_test_xxx',
   mercadopago_access_token: null,
   mercadopago_public_key: null,
-  mercadopago_active: false,
   updated_at: new Date().toISOString(),
 }
 
 const storeConfig = {
   id: 1,
   resend_api_key: 're_test_key',
-  resend_from_email: 'pedidos@vpscoffee.com',
+  resend_from_email: 'pedidos@tienda.example.com',
   whatsapp_number: null,
-  store_name: 'VPS Coffee',
+  store_name: 'Commerce CMS',
   store_email: null,
   logo_url: null,
   updated_at: new Date().toISOString(),
@@ -199,7 +203,7 @@ describe('POST /api/webhooks/wompi — transaction.updated', () => {
       mockOrder,
       expect.objectContaining({
         apiKey: 're_test_key',
-        fromEmail: 'pedidos@vpscoffee.com',
+        fromEmail: 'pedidos@tienda.example.com',
       })
     )
   })

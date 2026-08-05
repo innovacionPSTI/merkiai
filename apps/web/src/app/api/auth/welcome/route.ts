@@ -14,7 +14,7 @@ import { sendWelcomeEmail, buildEmailConfig } from '@/lib/email'
  *
  * 2. Vincula pedidos previos — si el cliente ya había comprado como invitado
  *    con el mismo email, actualiza orders.customer_id para que su historial
- *    quede visible en /mi-cuenta/pedidos desde el primer día.
+ *    quede visible en /account/orders desde el primer día.
  *
  * 3. Email de bienvenida — envía el correo de bienvenida vía Resend
  *    (silencioso si Resend no está configurado).

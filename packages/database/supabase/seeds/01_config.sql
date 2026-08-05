@@ -6,40 +6,33 @@
 -- Personalizar antes del primer despliegue.
 -- ============================================================
 
--- ── Tema por defecto ─────────────────────────────────────────────────────────
+-- ── Tema por defecto (paleta neutra) ─────────────────────────────────────────
+-- Debe existir un tema activo. La paleta es un punto de partida neutro;
+-- personalízala desde el panel de administración.
 INSERT INTO themes (
   name, is_active, is_default,
   color_primary, color_dark, color_cream, color_cream_warm,
   color_yellow, color_yellow_pale, color_text,
   font_display, font_body
 ) VALUES (
-  'VPS Coffee (Por defecto)', true, true,
-  '#614A2A', '#604B30', '#FFF0D1', '#FFF1D3',
-  '#FFF6B8', '#FDF8B9', '#2D1A0A',
+  'Tema base', true, true,
+  '#334155', '#1E293B', '#F8FAFC', '#F1F5F9',
+  '#6366F1', '#E0E7FF', '#0F172A',
   'cormorant', 'dm-sans'
 ) ON CONFLICT DO NOTHING;
 
--- ── Tipos de variante para tienda de café ────────────────────────────────────
-INSERT INTO variant_types (name, values, display_type, order_index) VALUES
-  ('Tueste',   '["Claro", "Medio", "Oscuro"]',                'pill', 0),
-  ('Peso',     '["250g", "500g", "1kg"]',                     'pill', 1),
-  ('Molienda', '["Grano entero", "Media", "Fina", "Gruesa"]', 'pill', 2)
-ON CONFLICT (name) DO NOTHING;
+-- ── Tipos de variante ────────────────────────────────────────────────────────
+-- Sin ejemplos: crea los tipos de variante de tu catálogo desde el admin.
 
 -- ── Categorías de producto ───────────────────────────────────────────────────
-INSERT INTO categories (name, slug, description, order_index) VALUES
-  ('Café Claro',  'cafe-claro',  'Tueste claro — notas frutales y florales, ideal para filtrado', 1),
-  ('Café Medio',  'cafe-medio',  'Tueste medio balanceado, versátil para cualquier método',       2),
-  ('Café Oscuro', 'cafe-oscuro', 'Tueste oscuro — cuerpo intenso, ideal para espresso',           3)
-ON CONFLICT (slug) DO NOTHING;
+-- Sin ejemplos: crea tus categorías desde el admin.
 
 -- ── Nav items base ───────────────────────────────────────────────────────────
+-- Menú mínimo. Añade, reordena o vincula páginas CMS desde el admin.
 INSERT INTO nav_items (nav_key, label, href, enabled, order_index) VALUES
-  ('cafe-1',      'Café',      '/',          true, 1),
-  ('tienda-2',    'Tienda',    '/tienda',    true, 2),
-  ('maquila-3',   'Maquila',   '/maquila',   true, 3),
-  ('asesorias-4', 'Asesorías', '/asesorias', true, 4),
-  ('blog-5',      'Blog',      '/blog',      true, 5)
+  ('home-1',  'Inicio',  '/',     true, 1),
+  ('shop-2',  'Tienda',  '/shop', true, 2),
+  ('blog-3',  'Blog',    '/blog', true, 3)
 ON CONFLICT (nav_key) DO NOTHING;
 
 -- ── Configuración visual del panel de administración ────────────────────────

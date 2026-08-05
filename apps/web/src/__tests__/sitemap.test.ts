@@ -8,6 +8,9 @@
  * and published blog posts only — and handles DB failures gracefully.
  */
 
+// sitemap.ts lee NEXT_PUBLIC_SITE_URL al importarse; debe estar seteado antes del import
+process.env.NEXT_PUBLIC_SITE_URL = 'https://shop.example.com'
+
 // ── Mocks ────────────────────────────────────────────────────────────────────
 jest.mock('@vps/database', () => ({
   getProducts:  jest.fn(),
@@ -20,7 +23,7 @@ import sitemap from '../app/sitemap'
 const mockGetProducts  = getProducts  as jest.MockedFunction<typeof getProducts>
 const mockGetBlogPosts = getBlogPosts as jest.MockedFunction<typeof getBlogPosts>
 
-const BASE = 'https://vpscoffee.com'
+const BASE = 'https://shop.example.com'
 
 beforeEach(() => jest.clearAllMocks())
 
@@ -38,27 +41,24 @@ describe('sitemap — rutas estáticas', () => {
     expect(home?.priority).toBe(1.0)
   })
 
-  it('incluye /tienda, /blog, /maquila, /asesorias, /nosotros', async () => {
+  it('incluye /shop y /blog', async () => {
     const routes = await sitemap()
     const urls = routes.map((r) => r.url)
-    expect(urls).toContain(`${BASE}/tienda`)
+    expect(urls).toContain(`${BASE}/shop`)
     expect(urls).toContain(`${BASE}/blog`)
-    expect(urls).toContain(`${BASE}/maquila`)
-    expect(urls).toContain(`${BASE}/asesorias`)
-    expect(urls).toContain(`${BASE}/nosotros`)
   })
 
-  it('incluye /terminos y /privacidad', async () => {
+  it('incluye /terms y /privacy', async () => {
     const routes = await sitemap()
     const urls = routes.map((r) => r.url)
-    expect(urls).toContain(`${BASE}/terminos`)
-    expect(urls).toContain(`${BASE}/privacidad`)
+    expect(urls).toContain(`${BASE}/terms`)
+    expect(urls).toContain(`${BASE}/privacy`)
   })
 
-  it('nunca incluye /checkout, /mi-cuenta o /handler', async () => {
+  it('nunca incluye /checkout, /account o /handler', async () => {
     const routes = await sitemap()
     const urls = routes.map((r) => r.url)
-    for (const blocked of ['/checkout', '/mi-cuenta', '/handler']) {
+    for (const blocked of ['/checkout', '/account', '/handler']) {
       expect(urls.some((u) => u.includes(blocked))).toBe(false)
     }
   })
@@ -77,8 +77,8 @@ describe('sitemap — productos', () => {
     const routes = await sitemap()
     const urls = routes.map((r) => r.url)
 
-    expect(urls).toContain(`${BASE}/tienda/cafe-blend`)
-    expect(urls).not.toContain(`${BASE}/tienda/cafe-raw`)
+    expect(urls).toContain(`${BASE}/shop/cafe-blend`)
+    expect(urls).not.toContain(`${BASE}/shop/cafe-raw`)
   })
 
   it('no falla si getProducts lanza error', async () => {

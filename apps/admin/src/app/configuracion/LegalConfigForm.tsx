@@ -79,7 +79,7 @@ export default function LegalConfigForm({ initialTerms, initialPrivacy }: Props)
         <code className="bg-brand-primary/5 px-1 rounded">- lista</code>, etc.
         El contenido se renderiza en{' '}
         <a
-          href={activeTab === 'terms' ? '/terminos' : '/privacidad'}
+          href={activeTab === 'terms' ? '/terms' : '/privacy'}
           target="_blank"
           rel="noopener noreferrer"
           className="underline hover:text-brand-primary"

@@ -31,14 +31,16 @@ const mockUpdate = updatePaymentConfig as jest.MockedFunction<typeof updatePayme
 // ── Fixtures ──────────────────────────────────
 const fullConfig = {
   id: 1,
+  active_provider: 'wompi',
   wompi_public_key: 'pub_test_abc123',
   wompi_private_key: 'prv_test_abc1234',      // last 4: 1234
   wompi_integrity_secret: 'test_int_secret56', // last 4: et56
   wompi_events_secret: 'test_events_secret78', // last 4: et78
-  wompi_active: true,
   mercadopago_access_token: 'TEST-mp-token-99', // last 4: t-99
   mercadopago_public_key: 'TEST-pub-mp-key',
-  mercadopago_active: false,
+  tucompra_merchant_id: null,
+  tucompra_secret_key: null,
+  tucompra_sandbox: true,
   updated_at: new Date().toISOString(),
 }
 
@@ -63,11 +65,12 @@ describe('GET /api/admin/payment-config', () => {
     const data = await res.json()
 
     expect(data.wompi_public_key).toBeNull()
-    expect(data.wompi_active).toBe(false)
+    expect(data.active_provider).toBe('none')
     expect(data.has_wompi_private_key).toBe(false)
     expect(data.has_wompi_integrity_secret).toBe(false)
     expect(data.has_wompi_events_secret).toBe(false)
     expect(data.has_mercadopago_access_token).toBe(false)
+    expect(data.has_tucompra_secret_key).toBe(false)
   })
 
   it('enmascara wompi_private_key con ••••last4', async () => {
@@ -156,24 +159,50 @@ describe('PATCH /api/admin/payment-config — validación', () => {
     const res = await PATCH(req)
     expect(res.status).toBe(200)
   })
+
+  it('retorna 400 si active_provider es un valor inválido', async () => {
+    const req = makePatchRequest({ active_provider: 'paypal' })
+    const res = await PATCH(req)
+    expect(res.status).toBe(400)
+    const data = await res.json()
+    expect(data.error).toMatch(/inválido/i)
+  })
+
+  it('retorna 400 si se activa una pasarela sin credenciales completas', async () => {
+    // La config actual no tiene credenciales de wompi
+    mockGet.mockResolvedValueOnce({ ...fullConfig, active_provider: 'none', wompi_public_key: null, wompi_integrity_secret: null } as never)
+    const req = makePatchRequest({ active_provider: 'wompi' })
+    const res = await PATCH(req)
+    expect(res.status).toBe(400)
+    const data = await res.json()
+    expect(data.missing).toContain('wompi_public_key')
+    expect(data.missing).toContain('wompi_integrity_secret')
+  })
 })
 
-describe('PATCH /api/admin/payment-config — happy path', () => {
-  it('actualiza wompi_active y mercadopago_active', async () => {
-    mockUpdate.mockResolvedValueOnce({ ...fullConfig, wompi_active: false } as never)
-    const req = makePatchRequest({ wompi_active: false, mercadopago_active: false })
-    const res = await PATCH(req)
+describe('PATCH /api/admin/payment-config — proveedor activo', () => {
+  it('activa una pasarela cuando las credenciales ya están guardadas', async () => {
+    mockGet.mockResolvedValueOnce(fullConfig as never) // current ya tiene creds wompi
+    mockUpdate.mockResolvedValueOnce({ ...fullConfig, active_provider: 'wompi' } as never)
 
+    const res = await PATCH(makePatchRequest({ active_provider: 'wompi' }))
     expect(res.status).toBe(200)
-    expect(mockUpdate).toHaveBeenCalledWith(
-      expect.objectContaining({ wompi_active: false, mercadopago_active: false })
-    )
+    expect(mockUpdate).toHaveBeenCalledWith(expect.objectContaining({ active_provider: 'wompi' }))
+  })
+
+  it('permite desactivar todo con active_provider = "none" (sin chequear credenciales)', async () => {
+    mockUpdate.mockResolvedValueOnce({ ...fullConfig, active_provider: 'none' } as never)
+
+    const res = await PATCH(makePatchRequest({ active_provider: 'none' }))
+    expect(res.status).toBe(200)
+    // 'none' no dispara validación de credenciales (no llama getPaymentConfig)
+    expect(mockGet).not.toHaveBeenCalled()
+    expect(mockUpdate).toHaveBeenCalledWith(expect.objectContaining({ active_provider: 'none' }))
   })
 
   it('la respuesta PATCH también enmascara los secrets', async () => {
     mockUpdate.mockResolvedValueOnce(fullConfig as never)
-    const req = makePatchRequest({ wompi_active: true })
-    const res = await PATCH(req)
+    const res = await PATCH(makePatchRequest({ mercadopago_public_key: 'TEST-x' }))
     const data = await res.json()
 
     expect(data.wompi_private_key).toMatch(/^••••/)
@@ -183,8 +212,7 @@ describe('PATCH /api/admin/payment-config — happy path', () => {
 
   it('retorna 500 si updatePaymentConfig lanza', async () => {
     mockUpdate.mockRejectedValueOnce(new Error('DB error'))
-    const req = makePatchRequest({ wompi_active: true })
-    const res = await PATCH(req)
+    const res = await PATCH(makePatchRequest({ mercadopago_public_key: 'TEST-x' }))
     expect(res.status).toBe(500)
     const data = await res.json()
     expect(data.error).toBeDefined()

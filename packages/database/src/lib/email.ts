@@ -109,6 +109,35 @@ export async function sendShippingNotification(
   })
 }
 
+/** Notificación al cliente cuando el administrador confirma manualmente el pago */
+export async function sendPaymentConfirmed(
+  order: {
+    order_number: string
+    customer_email: string
+    customer_name: string
+  },
+  config: EmailConfig,
+): Promise<void> {
+  const name = config.storeName ?? 'Mi Tienda'
+
+  const content = `
+    <h2 style="margin: 0 0 8px; color: #614a2a; font-size: 20px; font-family: sans-serif;">¡Confirmamos tu pago!</h2>
+    <p style="margin: 0 0 24px; color: #8a6a4a; font-size: 14px; font-family: sans-serif;">
+      Verificamos el pago de tu pedido <strong>${order.order_number}</strong> y ya está en preparación.
+      Te avisaremos cuando sea despachado.
+    </p>
+    <p style="margin: 0; font-size: 13px; color: #8a6a4a; text-align: center; font-family: sans-serif;">
+      Pedido: <strong>${order.order_number}</strong> · ${order.customer_name}
+    </p>`
+
+  await sendEmail(config, {
+    from: `${name} <${config.fromEmail}>`,
+    to: [order.customer_email],
+    subject: `Pago confirmado — Pedido ${order.order_number} · ${name}`,
+    html: baseTemplate(content, config),
+  })
+}
+
 /** Notificación genérica de cambio de estado — para "delivered" y "cancelled" */
 export async function sendStatusNotification(
   order: {

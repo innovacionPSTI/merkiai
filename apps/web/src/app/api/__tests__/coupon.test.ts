@@ -1,4 +1,7 @@
 /**
+ * @jest-environment node
+ */
+/**
  * Integration tests — POST /api/checkout/coupon
  *
  * Tests: coupon not found, invalid (expired/inactive/min-order), valid response.
@@ -62,11 +65,12 @@ describe('POST /api/checkout/coupon', () => {
     expect(body.value).toBe(20)
   })
 
-  it('normaliza el código a mayúsculas antes de buscar', async () => {
+  it('recorta espacios del código antes de buscar (match case-insensitive vía ilike)', async () => {
     mockGetCouponByCode.mockResolvedValueOnce(null)
 
     await POST(makeReq({ code: '  vps20  ', subtotal: 50_000 }))
 
-    expect(mockGetCouponByCode).toHaveBeenCalledWith('VPS20')
+    // El route hace code.trim(); la normalización de mayúsculas la resuelve ilike en getCouponByCode
+    expect(mockGetCouponByCode).toHaveBeenCalledWith('vps20')
   })
 })
