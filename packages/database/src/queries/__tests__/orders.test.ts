@@ -56,67 +56,43 @@ beforeEach(() => {
 // createOrder
 // ─────────────────────────────────────────────
 describe('createOrder', () => {
-  function setupMock(orderCount: number, createdOrder: object) {
+  // El número de orden lo genera el RPC `generate_order_number` (secuencia + prefijo
+  // configurable). Aquí se mockea el RPC y la cadena de insert.
+  function setupMock(createdOrder: { order_number: string } & Record<string, unknown>) {
     const singleMock = jest.fn().mockResolvedValue({ data: createdOrder, error: null })
-    const insertChain = { select: jest.fn().mockReturnValue({ single: singleMock }) }
-    const supabase: { from: jest.Mock } = {
-      from: jest.fn((table: string) => {
-        if (table === 'orders') {
-          return {
-            // First call: select count
-            select: jest.fn().mockReturnValue({
-              then: undefined,
-              // The count query returns a resolved promise directly
-              ...{ data: null, count: orderCount, error: null },
-              // Supabase chained call for count
-            }),
-            insert: jest.fn().mockReturnValue(insertChain),
-          }
-        }
-        return {}
-      }),
-    }
-    // Override: first from('orders') returns count, second returns insert chain
-    let callCount = 0
-    supabase.from = jest.fn((_table: string) => {
-      callCount++
-      if (callCount === 1) {
-        // Count query: .select('*', { count: 'exact', head: true })
-        return {
-          select: jest.fn().mockResolvedValue({ data: null, count: orderCount, error: null }),
-        }
-      }
-      // Insert query
-      return {
-        insert: jest.fn().mockReturnValue(insertChain),
-        select: jest.fn().mockReturnValue({ single: singleMock }),
-      }
+    const insertMock = jest.fn().mockReturnValue({
+      select: jest.fn().mockReturnValue({ single: singleMock }),
     })
-
+    const rpcMock = jest.fn().mockResolvedValue({ data: createdOrder.order_number, error: null })
+    const supabase = {
+      rpc: rpcMock,
+      from: jest.fn(() => ({ insert: insertMock })),
+    }
     mockCreateServerClient.mockReturnValue(supabase as never)
-    return { singleMock, insertChain }
+    return { singleMock, insertMock, rpcMock }
   }
 
-  it('genera número de orden VPS-0001 cuando no hay órdenes previas', async () => {
-    const expectedOrder = buildOrderMock({ order_number: 'VPS-0001' })
-    const { singleMock } = setupMock(0, expectedOrder)
-
-    const order = await createOrder(baseInput)
-    expect(order.order_number).toBe('VPS-0001')
-  })
-
-  it('genera número correlativo VPS-0042 cuando hay 41 órdenes previas', async () => {
+  it('genera el número de orden vía RPC generate_order_number', async () => {
     const expectedOrder = buildOrderMock({ order_number: 'VPS-0042' })
-    setupMock(41, expectedOrder)
+    const { rpcMock, insertMock } = setupMock(expectedOrder)
 
     const order = await createOrder(baseInput)
+    expect(rpcMock).toHaveBeenCalledWith('generate_order_number')
+    // El número devuelto por el RPC se usa como order_number del insert
+    expect(insertMock).toHaveBeenCalledWith(
+      expect.objectContaining({ order_number: 'VPS-0042' })
+    )
     expect(order.order_number).toBe('VPS-0042')
   })
 
-  it('asigna status "pending" y payment_status "pending" por defecto', async () => {
-    const expectedOrder = buildOrderMock()
-    setupMock(0, expectedOrder)
+  it('lanza error si el RPC no devuelve número', async () => {
+    const rpcMock = jest.fn().mockResolvedValue({ data: null, error: new Error('seq failed') })
+    mockCreateServerClient.mockReturnValue({ rpc: rpcMock, from: jest.fn() } as never)
+    await expect(createOrder(baseInput)).rejects.toThrow('seq failed')
+  })
 
+  it('asigna status "pending" y payment_status "pending" por defecto', async () => {
+    setupMock(buildOrderMock())
     const order = await createOrder(baseInput)
     expect(order.status).toBe('pending')
     expect(order.payment_status).toBe('pending')
@@ -125,26 +101,23 @@ describe('createOrder', () => {
   it('asigna discount = 0 si no se proporciona', async () => {
     const inputSinDescuento = { ...baseInput }
     delete (inputSinDescuento as CreateOrderInput & { discount?: number }).discount
-    const expectedOrder = buildOrderMock({ discount: 0 })
-    setupMock(0, expectedOrder)
-
+    setupMock(buildOrderMock({ discount: 0 }))
     const order = await createOrder(inputSinDescuento)
     expect(order.discount).toBe(0)
   })
 
   it('aplica el descuento si se proporciona', async () => {
     const inputConDescuento = { ...baseInput, discount: 5000, total: 93000 }
-    const expectedOrder = buildOrderMock({ discount: 5000, total: 93000 })
-    setupMock(0, expectedOrder)
-
+    setupMock(buildOrderMock({ discount: 5000, total: 93000 }))
     const order = await createOrder(inputConDescuento)
     expect(order.discount).toBe(5000)
   })
 
   it('lanza error si Supabase falla al insertar', async () => {
-    const supabase: { from: jest.Mock } = {
+    const rpcMock = jest.fn().mockResolvedValue({ data: 'VPS-0001', error: null })
+    const supabase = {
+      rpc: rpcMock,
       from: jest.fn(() => ({
-        select: jest.fn().mockResolvedValue({ data: null, count: 0, error: null }),
         insert: jest.fn().mockReturnValue({
           select: jest.fn().mockReturnValue({
             single: jest.fn().mockResolvedValue({ data: null, error: new Error('Insert failed') }),
@@ -152,22 +125,7 @@ describe('createOrder', () => {
         }),
       })),
     }
-    let callCount = 0
-    supabase.from = jest.fn((_table: string) => {
-      callCount++
-      if (callCount === 1) {
-        return { select: jest.fn().mockResolvedValue({ data: null, count: 0, error: null }) }
-      }
-      return {
-        insert: jest.fn().mockReturnValue({
-          select: jest.fn().mockReturnValue({
-            single: jest.fn().mockResolvedValue({ data: null, error: new Error('Insert failed') }),
-          }),
-        }),
-      }
-    })
     mockCreateServerClient.mockReturnValue(supabase as never)
-
     await expect(createOrder(baseInput)).rejects.toThrow('Insert failed')
   })
 })

@@ -102,3 +102,23 @@ RETURNS void LANGUAGE sql AS $$
   UPDATE product_variants SET stock = stock + p_qty
     WHERE id = p_variant_id AND p_qty > 0;
 $$;
+
+-- ── 26 · número de orden: secuencia atómica + prefijo configurable ────────────
+ALTER TABLE store_config
+  ADD COLUMN IF NOT EXISTS order_prefix TEXT NOT NULL DEFAULT 'ORD';
+
+CREATE SEQUENCE IF NOT EXISTS order_number_seq;
+
+-- Inicializa la secuencia por encima del máximo actual para no colisionar con los
+-- order_number ya existentes (el esquema previo usaba COUNT(*)+1).
+SELECT setval('order_number_seq', GREATEST((SELECT COUNT(*) FROM orders), 1), true);
+
+CREATE OR REPLACE FUNCTION generate_order_number()
+RETURNS text LANGUAGE plpgsql AS $$
+DECLARE v_prefix text; v_n bigint;
+BEGIN
+  SELECT NULLIF(order_prefix, '') INTO v_prefix FROM store_config WHERE id = 1;
+  v_prefix := COALESCE(v_prefix, 'ORD');
+  v_n := nextval('order_number_seq');
+  RETURN v_prefix || '-' || lpad(v_n::text, 4, '0');
+END; $$;

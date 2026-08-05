@@ -48,6 +48,22 @@ function clampQty(qty: number, item: { stock?: number; allowBackorder?: boolean 
   return Math.max(1, Math.min(qty, item.stock))
 }
 
+/**
+ * Consolida el carrito por variantId (sumando cantidades). Evita líneas
+ * duplicadas para la misma variante — que romperían el unique constraint
+ * (customer_id, variant_id) al sincronizar con la BD. Protege también contra
+ * estados persistidos legacy con duplicados.
+ */
+function consolidateByVariant(items: CartItem[]): CartItem[] {
+  const map = new Map<number, CartItem>()
+  for (const it of items) {
+    const prev = map.get(it.variantId)
+    if (prev) prev.qty = clampQty(prev.qty + it.qty, prev)
+    else map.set(it.variantId, { ...it, qty: clampQty(it.qty, it) })
+  }
+  return [...map.values()]
+}
+
 async function pushToServer(items: CartItem[]) {
   try {
     await fetch('/api/account/cart', {
@@ -142,13 +158,19 @@ export const useCartStore = create<CartState>()(
               })
             }
           }
-          set({ items: merged })
+          set({ items: consolidateByVariant(merged) })
         } catch { /* non-critical */ }
       },
     }),
     {
       name: 'vps-cart',
       storage: createJSONStorage(() => localStorage),
+      // Limpia duplicados por variante en estados persistidos legacy al rehidratar.
+      onRehydrateStorage: () => (state) => {
+        if (state?.items?.length) {
+          state.items = consolidateByVariant(state.items)
+        }
+      },
     }
   )
 )

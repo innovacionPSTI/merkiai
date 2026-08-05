@@ -350,6 +350,8 @@ CREATE TABLE IF NOT EXISTS store_config (
   whatsapp_number    TEXT,
   logo_url           TEXT,
   favicon_url        TEXT,
+  -- Prefijo configurable del número de orden (ej. 'ORD' → ORD-0001)
+  order_prefix       TEXT        NOT NULL DEFAULT 'ORD',
   -- SEO
   seo_keywords       TEXT,
   -- Email transaccional (proveedor intercambiable; Resend por defecto)
@@ -821,4 +823,24 @@ AS $$
   UPDATE product_variants
   SET stock = stock + p_qty
   WHERE id = p_variant_id AND p_qty > 0;
+$$;
+
+-- ─── NÚMERO DE ORDEN: secuencia atómica + prefijo configurable ─────────────────
+-- Reemplaza el antiguo COUNT(*)+1 (no seguro ante concurrencia/borrados).
+-- El prefijo sale de store_config.order_prefix (de-brandeado y configurable).
+CREATE SEQUENCE IF NOT EXISTS order_number_seq;
+
+CREATE OR REPLACE FUNCTION generate_order_number()
+RETURNS text
+LANGUAGE plpgsql
+AS $$
+DECLARE
+  v_prefix text;
+  v_n      bigint;
+BEGIN
+  SELECT NULLIF(order_prefix, '') INTO v_prefix FROM store_config WHERE id = 1;
+  v_prefix := COALESCE(v_prefix, 'ORD');
+  v_n := nextval('order_number_seq');
+  RETURN v_prefix || '-' || lpad(v_n::text, 4, '0');
+END;
 $$;

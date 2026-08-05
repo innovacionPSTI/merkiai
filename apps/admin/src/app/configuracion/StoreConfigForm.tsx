@@ -13,6 +13,7 @@ export default function StoreConfigForm({ initialConfig }: Props) {
   const [faviconUrl, setFaviconUrl]     = useState(initialConfig?.favicon_url       ?? '')
   const [whatsapp, setWhatsapp]         = useState(initialConfig?.whatsapp_number   ?? '')
   const [storeName, setStoreName]       = useState(initialConfig?.store_name        ?? '')
+  const [orderPrefix, setOrderPrefix]   = useState(initialConfig?.order_prefix       ?? 'ORD')
   const [storeDescription, setStoreDescription] = useState(initialConfig?.store_description ?? '')
   const [seoKeywords, setSeoKeywords]   = useState(initialConfig?.seo_keywords      ?? '')
   const [storeEmail, setStoreEmail]     = useState(initialConfig?.store_email       ?? '')
@@ -78,6 +79,7 @@ export default function StoreConfigForm({ initialConfig }: Props) {
           favicon_url:        faviconUrl        || null,
           whatsapp_number:    whatsapp          || null,
           store_name:         storeName         || 'Mi Tienda',
+          order_prefix:       (orderPrefix || 'ORD').toUpperCase().replace(/[^A-Z0-9_-]/g, '').slice(0, 10) || 'ORD',
           store_description:  storeDescription  || null,
           seo_keywords:       seoKeywords       || null,
           store_email:        storeEmail        || null,
@@ -188,6 +190,24 @@ export default function StoreConfigForm({ initialConfig }: Props) {
             onChange={(e) => setStoreName(e.target.value)}
             placeholder="Nombre de la tienda"
             className="w-64 border border-gray-200 rounded-xl px-4 py-2.5 font-brand text-sm focus:outline-none focus:border-brand-primary"
+          />
+        </div>
+
+        {/* Prefijo del número de orden */}
+        <div>
+          <label className="font-brand text-xs font-semibold text-brand-primary block mb-1">
+            Prefijo del número de orden
+          </label>
+          <p className="font-brand text-xs text-brand-primary/40 mb-2">
+            Se antepone al consecutivo (ej. <strong>{(orderPrefix || 'ORD').toUpperCase()}-0001</strong>). Letras, números, guion y guion bajo.
+          </p>
+          <input
+            type="text"
+            value={orderPrefix}
+            onChange={(e) => setOrderPrefix(e.target.value)}
+            placeholder="ORD"
+            maxLength={10}
+            className="w-40 border border-gray-200 rounded-xl px-4 py-2.5 font-brand text-sm uppercase focus:outline-none focus:border-brand-primary"
           />
         </div>
 

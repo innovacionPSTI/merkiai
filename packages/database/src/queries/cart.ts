@@ -57,10 +57,25 @@ export async function clearCart(customerId: string): Promise<void> {
 
 export async function replaceCart(customerId: string, items: UpsertCartItemInput[]): Promise<void> {
   const supabase = createServerClient()
+
+  // Deduplicar por variant_id (sumando cantidades). El payload del cliente puede
+  // traer el mismo variant repetido (fusión de carrito invitado + BD, cambios de
+  // variante, etc.); sin esto, insertar dos filas con la misma (customer_id,
+  // variant_id) viola el unique constraint (error 23505).
+  const merged = new Map<number, UpsertCartItemInput>()
+  for (const it of items) {
+    const prev = merged.get(it.variant_id)
+    if (prev) prev.qty += it.qty
+    else merged.set(it.variant_id, { ...it })
+  }
+  const deduped = [...merged.values()]
+
   // 1. Borrar todo el carrito actual
   await supabase.from('cart_items').delete().eq('customer_id', customerId)
-  // 2. Insertar los ítems nuevos (si los hay)
-  if (items.length === 0) return
-  const { error } = await supabase.from('cart_items').insert(items)
+  // 2. Upsert de los ítems nuevos (a prueba de carreras / filas residuales)
+  if (deduped.length === 0) return
+  const { error } = await supabase
+    .from('cart_items')
+    .upsert(deduped, { onConflict: 'customer_id,variant_id' })
   if (error) throw error
 }

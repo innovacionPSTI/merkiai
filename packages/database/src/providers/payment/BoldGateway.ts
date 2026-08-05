@@ -48,8 +48,12 @@ export class BoldGateway implements PaymentGateway {
       // Bold redirige aquí tras finalizar; conservamos el order para la confirmación
       callback_url: params.redirectUrl,
       payer_email: params.customerEmail,
-      // Se devuelve en el webhook como data.metadata.reference → correlación del pedido
-      metadata: { reference: params.orderNumber },
+      // Referencia externa de la venta. En el API "Link de pagos" es un campo de
+      // NIVEL SUPERIOR (no metadata). Bold la devuelve en el webhook como
+      // data.metadata.reference → correlación del pedido. Si no se envía, Bold
+      // asigna el ID del link (LNK_*) y el webhook no casaría con el order_number.
+      // Restricción de Bold: alfanumérico + '-'/'_', máx. 60 caracteres.
+      reference: params.orderNumber,
     }
 
     const res = await fetch(`${BASE_URL}/online/link/v1`, {

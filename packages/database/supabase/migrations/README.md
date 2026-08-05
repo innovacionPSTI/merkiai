@@ -23,4 +23,4 @@ Se conservan **solo como registro** de la evolución del esquema. **No forman pa
 | Rango | Contenido | Estado |
 |-------|-----------|--------|
 | `1_*` … `20_*` | Esquema base + CMS unificado + integridad (baseline v13) | Fusionado en `01_schema.sql` |
-| `21_*` … `25_*` | Favicon, admin_config, proveedores, pasarela única + Bold, inventario | Fusionado en `01_schema.sql` y `upgrade.sql` |
+| `21_*` … `26_*` | Favicon, admin_config, proveedores, pasarela única + Bold, inventario, número de orden (secuencia + prefijo) | Fusionado en `01_schema.sql` y `upgrade.sql` |

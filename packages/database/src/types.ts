@@ -460,6 +460,7 @@ export type Database = {
           nav_show_cart: boolean
           nav_show_auth: boolean
           email_provider: string
+          order_prefix: string
           updated_at: string
         }
         Insert: {
@@ -487,6 +488,7 @@ export type Database = {
           nav_show_cart?: boolean
           nav_show_auth?: boolean
           email_provider?: string
+          order_prefix?: string
           updated_at?: string
         }
         Update: {
@@ -514,6 +516,7 @@ export type Database = {
           nav_show_cart?: boolean
           nav_show_auth?: boolean
           email_provider?: string
+          order_prefix?: string
           updated_at?: string
         }
         Relationships: []
@@ -1197,6 +1200,10 @@ export type Database = {
       restore_variant_stock: {
         Args: { p_variant_id: number; p_qty: number }
         Returns: undefined
+      }
+      generate_order_number: {
+        Args: Record<string, never>
+        Returns: string
       }
     }
     Enums: {

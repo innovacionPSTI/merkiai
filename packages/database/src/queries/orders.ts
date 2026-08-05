@@ -21,9 +21,13 @@ export interface CreateOrderInput {
 export async function createOrder(input: CreateOrderInput): Promise<Order> {
   const supabase = createServerClient()
 
-  // Generar número de orden: VPS-XXXX
-  const { count } = await supabase.from('orders').select('*', { count: 'exact', head: true })
-  const orderNumber = `VPS-${String((count ?? 0) + 1).padStart(4, '0')}`
+  // Número de orden atómico: RPC con secuencia + prefijo configurable
+  // (store_config.order_prefix). Evita colisiones del antiguo COUNT(*)+1.
+  const { data: generated, error: seqError } = await supabase.rpc('generate_order_number')
+  if (seqError || !generated) {
+    throw seqError ?? new Error('No se pudo generar el número de orden')
+  }
+  const orderNumber = generated as unknown as string
 
   const { data, error } = await supabase
     .from('orders')

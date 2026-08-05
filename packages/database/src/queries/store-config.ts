@@ -12,6 +12,8 @@ export type StoreConfig = {
   id: number
   whatsapp_number: string | null
   store_name: string
+  /** Prefijo configurable del número de orden (ej. 'ORD' → ORD-0001). */
+  order_prefix: string
   store_description: string | null
   seo_keywords: string | null
   store_email: string | null
@@ -49,6 +51,7 @@ const DEFAULT_CONFIG: StoreConfig = {
   id: 1,
   whatsapp_number: null,
   store_name: 'Mi Tienda',
+  order_prefix: 'ORD',
   store_description: null,
   seo_keywords: null,
   store_email: null,

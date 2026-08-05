@@ -80,11 +80,19 @@ export async function POST(req: NextRequest) {
     .update(updatePayload)
     .eq('order_number', orderReference)
     .select()
-    .single()
+    .maybeSingle()
 
   if (error) {
     console.error('[webhook/bold] Error actualizando orden:', error)
     return NextResponse.json({ ok: true, warning: 'order_not_updated' })
+  }
+
+  // Sin fila: la referencia del webhook no corresponde a ninguna orden. Suele
+  // pasar con el "Probar webhook" de Bold (payload de ejemplo) o si el pago se
+  // creó sin enviar `reference`. Se responde 200 para no forzar reintentos.
+  if (!updatedOrder) {
+    console.warn(`[webhook/bold] Sin orden para reference="${orderReference}" (evento ${rawStatus}); se ignora`)
+    return NextResponse.json({ ok: true, warning: 'order_not_found' })
   }
 
   // 3) Pago aprobado: confirmación + guía de envío (fallas silenciosas)

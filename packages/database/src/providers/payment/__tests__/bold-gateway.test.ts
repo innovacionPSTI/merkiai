@@ -48,7 +48,8 @@ describe('BoldGateway — createPaymentUrl', () => {
     const body = JSON.parse(String(init?.body))
     expect(body.amount_type).toBe('CLOSE')
     expect(body.amount.total_amount).toBe(98000) // centavos → COP
-    expect(body.metadata.reference).toBe('VPS-0042') // correlación del pedido
+    expect(body.reference).toBe('VPS-0042') // referencia externa top-level → webhook data.metadata.reference
+    expect(body.metadata).toBeUndefined() // Bold ignora metadata en el API Link de pagos
     expect(body.callback_url).toContain('order=VPS-0042')
   })
 

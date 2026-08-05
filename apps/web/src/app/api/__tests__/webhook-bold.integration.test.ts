@@ -26,7 +26,7 @@ const mockMap = jest.fn()
 const mockSingle = jest.fn()
 const mockFrom = jest.fn(() => ({
   select: jest.fn(() => ({ eq: jest.fn(() => ({ single: mockSingle })) })),
-  update: jest.fn(() => ({ eq: jest.fn(() => ({ select: jest.fn(() => ({ single: mockSingle })) })) })),
+  update: jest.fn(() => ({ eq: jest.fn(() => ({ select: jest.fn(() => ({ single: mockSingle, maybeSingle: mockSingle })) })) })),
 }))
 
 jest.mock('@vps/database', () => ({
