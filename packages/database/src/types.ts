@@ -832,6 +832,12 @@ export type Database = {
           tucompra_merchant_id: string | null
           tucompra_secret_key: string | null
           tucompra_sandbox: boolean
+          tucompra_user: string | null
+          tucompra_password: string | null
+          tucompra_terminal: string | null
+          tucompra_api_url: string | null
+          tucompra_public_key: string | null
+          tucompra_methods: Json | null
           bold_api_key: string | null
           bold_secret_key: string | null
           bold_sandbox: boolean
@@ -849,6 +855,12 @@ export type Database = {
           tucompra_merchant_id?: string | null
           tucompra_secret_key?: string | null
           tucompra_sandbox?: boolean
+          tucompra_user?: string | null
+          tucompra_password?: string | null
+          tucompra_terminal?: string | null
+          tucompra_api_url?: string | null
+          tucompra_public_key?: string | null
+          tucompra_methods?: Json | null
           bold_api_key?: string | null
           bold_secret_key?: string | null
           bold_sandbox?: boolean
@@ -866,6 +878,12 @@ export type Database = {
           tucompra_merchant_id?: string | null
           tucompra_secret_key?: string | null
           tucompra_sandbox?: boolean
+          tucompra_user?: string | null
+          tucompra_password?: string | null
+          tucompra_terminal?: string | null
+          tucompra_api_url?: string | null
+          tucompra_public_key?: string | null
+          tucompra_methods?: Json | null
           bold_api_key?: string | null
           bold_secret_key?: string | null
           bold_sandbox?: boolean

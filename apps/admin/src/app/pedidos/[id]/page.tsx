@@ -166,6 +166,9 @@ export default async function PedidoDetailPage({ params }: { params: Promise<{ i
             {order.payment_method === 'bold' && order.payment_status !== 'approved' && (
               <ReconcileBoldButton orderId={order.id} />
             )}
+            {order.payment_method === 'tucompra' && order.payment_status !== 'approved' && (
+              <ReconcileBoldButton orderId={order.id} provider="tucompra" />
+            )}
             {order.payment_status !== 'approved' && (
               <PaymentStatusValidator orderId={order.id} />
             )}

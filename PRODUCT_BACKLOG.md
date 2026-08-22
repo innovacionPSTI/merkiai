@@ -87,14 +87,14 @@ Consolidar todo el contenido gestionable (banners, secciones del home, testimoni
 | Épica (v2) | Alcance | HU / códigos |
 |-----------|---------|--------------|
 | **E1 · Fundación e infraestructura** | Monorepo Turborepo, DB Supabase, RLS, Storage, Stack Auth base, envs | F-01…10 |
-| **E2 · Arquitectura y CMS unificado** | Refactor limpio, modelo `pages → page_sections → section_items`, integridad DB, generalización, export/import · *(roadmap: i18n [114a/b/c], biblioteca de medios, import/export extensible, historial de versiones)* | HU-044…057, migraciones canónicas, HU-114a/b/c, HU-115/123/127 🔲 |
+| **E2 · Arquitectura y CMS unificado** | Refactor limpio, modelo `pages → page_sections → section_items`, integridad DB, generalización, export/import · *(roadmap: i18n [114a/b/c], biblioteca de medios, import/export extensible, historial de versiones)* | HU-044…057, migraciones canónicas, HU-114a/b/c, HU-115/123/127/165 🔲 |
 
 **Sitio público**
 
 | Épica (v2) | Alcance | HU / códigos |
 |-----------|---------|--------------|
 | **E3 · Sitio público: layout, home y navegación** | Navbar, footer, 404, mantenimiento, hero, secciones del home, newsletter · *(roadmap: plantillas de diseño, variantes de disposición [122a/b/c], preview/publish, paquetes de plantilla, accesibilidad)* | N-01…07, H-01…08, HU-121, HU-122a/b/c, HU-128/129/154 🔲 |
-| **E4 · Tienda y catálogo** | Grid, filtros dinámicos, PDP, variantes genéricas · *(roadmap: reseñas, búsqueda, wishlist, filtro de precio)* | T-01…15, HU-101…104 🔲 |
+| **E4 · Tienda y catálogo** | Grid, filtros dinámicos, PDP, variantes genéricas · *(roadmap: reseñas, búsqueda, wishlist, filtro de precio, bundles/kits)* | T-01…15, HU-101…104, HU-168 🔲 |
 | **E5 · Carrito** | Store Zustand, drawer, cupón, envío gratis, sync con BD · *(roadmap: carrito abandonado, motor de descuentos/promociones)* | C-01…08, HU-109/147 🔲 |
 | **E10 · Blog** | Listado, artículo, SEO por post, draft mode | B-01…08 |
 | **E11 · Páginas de contenido y servicios** | Landing configurables vía CMS (maquila/asesorías como instancia de ejemplo) | SV-01…06 |
@@ -103,18 +103,19 @@ Consolidar todo el contenido gestionable (banners, secciones del home, testimoni
 
 | Épica (v2) | Alcance | HU / códigos |
 |-----------|---------|--------------|
-| **E6 · Pagos y pasarelas** | Checkout 3 pasos; pasarela única (`active_provider`); Wompi, MercadoPago, Tu Compra, **Bold**; webhooks + firma; validación manual del admin; fallback de estado · *(roadmap: devoluciones/reembolsos [107a/b], pasarela internacional, gift cards/saldo, impuestos multi-región)* | P-01…12, PRV-04…07, HU-082…096 (pagos), HU-107a/b, HU-108/148/149 🔲 |
+| **E6 · Pagos y pasarelas** | Checkout 3 pasos; pasarela única (`active_provider`); Wompi, MercadoPago, Tu Compra, **Bold**; webhooks + firma; validación manual del admin; fallback de estado · *(roadmap: devoluciones/reembolsos [107a/b], pasarela internacional, gift cards/saldo, impuestos multi-región)* | P-01…12, PRV-04…07, HU-082…096 (pagos), HU-107a/b, HU-108/148/149, HU-164 (pricing) / HU-166 (DIAN), HU-188 (Tu Compra integrador) / HU-189 (UX config pagos) 🔲 |
 | **E7 · Envíos** | Skydropx (OAuth, cotización, guías, webhook, pickups), tarifa fija, proveedor intercambiable, UX de tarifas · *(roadmap: click & collect)* | S-01…08, PRV-01…03, HU-110 🔲 |
-| **E8 · Emails transaccionales** | Resend, plantillas, proveedor intercambiable, newsletter broadcast · *(roadmap: notificaciones multicanal WhatsApp/SMS)* | E-01…05, PRV-08/09, HU-153 🔲 |
+| **E8 · Emails y newsletter** | Resend, plantillas, proveedor intercambiable, newsletter broadcast · *(roadmap: notificaciones multicanal WhatsApp/SMS, EmailProvider multi-proveedor [SES/Postmark/SMTP], plantillas editables, entregabilidad/DKIM + suppression, email_log, newsletter externo Beehiiv y similares)* | E-01…05, PRV-08/09, HU-153/159/160/161/162/163 🔲 |
 | **E9 · Inventario y stock** | Descuento/reposición por estado de pago, backorder, topes de cantidad en el front · *(roadmap: back-in-stock, alertas de stock bajo)* | HU-097…100, HU-105/106 🔲 |
+| **E18 · Inventario multi-ubicación y fulfillment** *(roadmap)* | Ubicaciones (bodegas/tiendas/puntos de retiro), stock por `(variante, ubicación)`, ruteo de fulfillment, transferencias, click & collect por ubicación; incluye migración del stock único actual | HU-176…183 🔲 |
 
 **Cuentas y administración**
 
 | Épica (v2) | Alcance | HU / códigos |
 |-----------|---------|--------------|
-| **E12 · Autenticación y Mi Cuenta** | Login/register (Stack Auth), pedidos, perfil, direcciones, tracking · *(roadmap: login social, reorder, consulta como invitado, portabilidad/borrado de datos)* | A-01…10, HU-060, HU-111/112/150/151 🔲 |
-| **E13 · Panel de administración** | CRUD catálogo/pedidos/contenido, roles, configuración, temas, newsletter, export/import · *(roadmap: reportes exportables, drag-and-drop de secciones, carga CSV de productos, drag generalizado, export CSV, acciones masivas, importadores CSV)* | AD-01…38, HU-116/120/124/126/130/131/132 🔲 |
-| **E14 · Despliegue, seguridad e identidad del panel** | Vercel + CI/CD, hardening (rate limit, CSP, firmas), favicon, colores del admin, responsive · *(roadmap: 2FA, registro de auditoría, respaldos + restore programado, RBAC de datos, consentimiento de cookies)* | HU-061…064, HU-079…081, HU-117/125/133/134/146/152 🔲 |
+| **E12 · Autenticación y Mi Cuenta** | Login/register (Stack Auth), pedidos, perfil, direcciones, tracking · *(roadmap: login social, reorder, consulta como invitado, portabilidad/borrado de datos, fidelización/puntos)* | A-01…10, HU-060, HU-111/112/150/151/167 🔲 |
+| **E13 · Panel de administración** | CRUD catálogo/pedidos/contenido, roles, configuración, temas, newsletter, export/import · *(roadmap: reportes exportables, drag-and-drop de secciones, carga CSV de productos, drag generalizado, export CSV, acciones masivas, importadores CSV, onboarding/setup wizard)* | AD-01…38, HU-116/120/124/126/130/131/132/169 🔲 |
+| **E14 · Despliegue, seguridad e identidad del panel** | Vercel + CI/CD, hardening (rate limit, CSP, firmas), favicon, colores del admin, responsive · *(roadmap: 2FA, registro de auditoría, respaldos + restore programado, RBAC de datos, consentimiento de cookies, monitoreo de errores/APM, hardening PCI DSS)* | HU-061…064, HU-079…081, HU-117/125/133/134/146/152/170, HU-184…187 (PCI) 🔲 |
 
 **Transversales**
 
@@ -127,7 +128,7 @@ Consolidar todo el contenido gestionable (banners, secciones del home, testimoni
 
 | Épica (v2) | Alcance | HU / códigos |
 |-----------|---------|--------------|
-| **E17 · Plataforma multi-tienda (multi-tenant)** *(roadmap)* | Varias tiendas desde un mismo despliegue: aislamiento de datos por tenant, resolución por dominio/subdominio, panel multi-tienda. Capacidad estratégica del modelo white-label (sin facturación por suscripción) | HU-156/157/158 🔲 |
+| **E17 · Plataforma multi-tienda (multi-tenant)** *(roadmap)* | Varias tiendas desde un mismo despliegue: aislamiento de datos por tenant, resolución por dominio/subdominio, panel multi-tienda. Capacidad estratégica del modelo white-label Incluye **control plane** (administración de todos los tenants, planes/entitlements) y **dominios** (web custom con ciclo DNS→cert→CDN→activo y dominios de envío). Sin facturación por suscripción; spike de auth previo | HU-171 (spike), HU-156/157/158, HU-172…175 🔲 |
 
 > **Nota:** algunas HU son transversales y aparecen en su épica primaria (p. ej. HU-080 JSON-LD vive en E15 SEO aunque toca la PDP). Los códigos históricos (F-, N-, T-, PRV-, etc.) se conservan; las secciones de detalle 2.x son un apéndice de historias.
 
@@ -384,7 +385,7 @@ Consolidar todo el contenido gestionable (banners, secciones del home, testimoni
 | PRV-04 | Interfaz `PaymentGateway` con métodos `createPayment()` y `verifyWebhook()`; Wompi y MercadoPago como implementaciones concretas | Alta | ✅ | `wompi.test.ts`, `mercadopago.test.ts`, `webhook-wompi/mercadopago.integration.test.ts` |
 | PRV-05 | Toggle independiente por pasarela de pago en `/configuracion/pagos` (Wompi, MercadoPago, Tu Compra) | Alta | ✅ | `payment-config.integration.test.ts` |
 | PRV-06 | Checkout muestra únicamente las pasarelas con `enabled = true` | Alta | ✅ | `checkout.integration.test.ts` (casos 503 pasarela inactiva) |
-| PRV-07 | Integración Tu Compra como tercera pasarela de pago con webhook y redireccionamiento | Alta | 🟡 | **Sin pruebas** — `TuCompraGateway.ts` + webhook existen pero ningún test los referencia |
+| PRV-07 | Integración Tu Compra como tercera pasarela de pago con webhook y redireccionamiento | Alta | 🔲 | En progreso vía **HU-188** (modalidad integrador `confirmacionTransaccionMedioPago`, multi-método). Núcleo (gateway/webhook/reconcile/URLs) listo; falta el checkout por método (PSE→Nequi/Daviplata→Referenciado→Tarjeta) |
 | PRV-08 | Interfaz `EmailProvider` con método `send({ to, subject, html })`; Resend como implementación concreta | Media | ✅ | `packages/database/.../email.test.ts`, `apps/admin/.../email.test.ts` (POST a Resend, headers, errores) |
 | PRV-09 | Selector de proveedor de email activo en `/configuracion/email`; campo `email_provider` en `store_config` | Media | 🟡 | **Sin prueba dedicada** del selector `email_provider` (solo se prueba el envío Resend) |
 
@@ -1713,7 +1714,7 @@ Para agregar un nuevo proveedor (ej. FedEx): crear `providers/fedex/index.ts`, a
 
 **Estimación:** M (5 puntos)  
 **Módulo:** `apps/admin/src/app/api/`, `apps/web/src/app/api/`, políticas RLS  
-**Estado:** 🟡 Parcial (v15) — guards de auth y verificación de firma de webhooks **con pruebas**; rate limiting (`checkout/route.ts`) y CSP headers (`next.config.ts`) implementados pero **sin pruebas** que cubran el 429 ni los headers
+**Estado:** ✅ Completado — guards de auth y firma de webhooks con pruebas; rate limiting (429 por IP) cubierto en `checkout.integration.test.ts` y CSP/headers en `security-headers.test.ts` (v19)
 
 **Criterios de aceptación:**
 
@@ -3670,6 +3671,556 @@ Para agregar un nuevo proveedor (ej. FedEx): crear `providers/fedex/index.ts`, a
 
 ---
 
+## Detalle · Emails y newsletter (v18) — HU-159…163 · E8
+
+> Refuerza la **Épica 8**: eleva el email de "HTML embebido + solo Resend" a una capa de proveedores intercambiables, plantillas editables, entregabilidad y observabilidad; y separa el **transaccional** del **marketing/newsletter**, que se integra con plataformas especializadas (Beehiiv y similares). Todo **🔲 (roadmap)**.
+
+### HU-159 — Abstracción `EmailProvider` multi-proveedor (transaccional) · E8
+
+> Como plataforma, quiero una interfaz de proveedor de email intercambiable (mismo patrón que pagos/envíos), para enviar correos transaccionales por distintos servicios sin acoplar el código.
+
+**Estimación:** L (8 puntos)
+**Módulo:** `packages/database/src/providers/email/*` (interfaz + factory), `store_config.email_provider` (ampliar CHECK), config admin
+**Estado:** 🔲 Pendiente (roadmap v18) — **enabler de E8**
+
+| # | Escenario | Resultado esperado |
+|---|-----------|-------------------|
+| AC-1 | Interfaz `EmailProvider.send(message, config)` | Implementaciones registradas en un factory; Resend actual migrado a este contrato |
+| AC-2 | Proveedores | Resend + **Amazon SES**, **Postmark** y **SMTP genérico (Nodemailer)** como comodín para white-label |
+| AC-3 | Configuración | Proveedor activo + credenciales + `from`/dominio desde el admin; llave sensible vía service_role |
+| AC-4 | Resiliencia | Un fallo del proveedor se registra (HU-162) y no bloquea el flujo (p. ej. checkout) |
+| AC-5 | Separación | El transaccional es independiente del marketing/newsletter (HU-163): distinto proveedor y reputación |
+
+---
+
+### HU-160 — Plantillas de email editables con variables · E8
+
+> Como administrador, quiero editar el asunto y el contenido de los emails (confirmación, envío, bienvenida, recuperación) con variables, para personalizarlos sin tocar código.
+
+**Estimación:** L (8 puntos)
+**Módulo:** layout MJML/React Email + plantillas en BD (`email_templates`), interpolación de variables, preview en admin
+**Estado:** 🔲 Pendiente (roadmap v18)
+
+| # | Escenario | Resultado esperado |
+|---|-----------|-------------------|
+| AC-1 | Layout compartido | Header con logo, colores del theme y footer legal; HTML responsive renderizado **en la app** (no plantillas del proveedor, para no amarrarse) |
+| AC-2 | Contenido editable | Asunto y bloques por tipo de email editables desde el admin, con variables (`{{order_number}}`, `{{customer_name}}`, `{{tracking_url}}`) |
+| AC-3 | Previsualización | Vista previa con datos de ejemplo antes de guardar |
+| AC-4 | Envío agnóstico | Se renderiza el HTML y se envía por el proveedor activo (HU-159) |
+| AC-5 | i18n-ready | Variante de plantilla por idioma (se apoya en HU-114) |
+
+---
+
+### HU-161 — Entregabilidad: dominio de envío, SPF/DKIM/DMARC, rebotes y suppression list · E8
+
+> Como responsable, quiero configurar un dominio de envío autenticado y procesar rebotes/quejas, para que los correos lleguen a la bandeja y no a spam.
+
+**Estimación:** L (8 puntos)
+**Módulo:** config de dominio en admin, webhooks de eventos del proveedor, tabla `suppression_list`
+**Estado:** 🔲 Pendiente (roadmap v18)
+
+| # | Escenario | Resultado esperado |
+|---|-----------|-------------------|
+| AC-1 | Dominio de envío | Configuración de dominio/subdominio y `from`; guía y estado de verificación de SPF/DKIM/DMARC en el admin |
+| AC-2 | Webhook de eventos | Recibe `delivered`/`bounce`/`complaint` del proveedor con verificación de origen |
+| AC-3 | Suppression list | Rebotes duros y quejas alimentan una lista de supresión; no se envía a direcciones suprimidas |
+| AC-4 | Transversal | Aplica a cualquier proveedor activo (HU-159) |
+
+---
+
+### HU-162 — Registro de emails (`email_log`) + reintentos · E8
+
+> Como operador, quiero un registro de los emails enviados y sus fallos, para trazabilidad y soporte.
+
+**Estimación:** M (5 puntos)
+**Módulo:** tabla `email_log`, wrapper de envío, reintentos con backoff
+**Estado:** 🔲 Pendiente (roadmap v18)
+
+| # | Escenario | Resultado esperado |
+|---|-----------|-------------------|
+| AC-1 | Cada envío | Registra destinatario, tipo, proveedor, estado (enviado/fallido/suprimido) y timestamp |
+| AC-2 | Reintentos | Backoff ante fallos transitorios; idempotencia por (tipo, entidad) para no duplicar correos |
+| AC-3 | Consulta | Filtrable en el admin; solo roles autorizados (compatible con HU-146/134) |
+| AC-4 | Sin fallos silenciosos | Reemplaza el `.catch` mudo actual por registro explícito |
+
+---
+
+### HU-163 — Integración con plataformas de newsletter (Beehiiv y similares) · E8
+
+> Como negocio, quiero conectar el newsletter con plataformas especializadas (Beehiiv, ConvertKit, Substack, Mailchimp, Brevo), para gestionar suscriptores y campañas fuera de la plataforma.
+
+**Estimación:** L (8 puntos)
+**Módulo:** `NewsletterProvider` intercambiable, sync de suscriptores, config admin; se apoya en `newsletter_subscribers`
+**Estado:** 🔲 Pendiente (roadmap v18)
+
+| # | Escenario | Resultado esperado |
+|---|-----------|-------------------|
+| AC-1 | Interfaz `NewsletterProvider` | `subscribe`/`unsubscribe`/`sync` con implementaciones (**Beehiiv** y similares) + el newsletter interno actual como opción |
+| AC-2 | Alta en el sitio | El contacto se sincroniza con la plataforma activa, respetando su doble opt-in |
+| AC-3 | Baja | El unsubscribe se propaga en ambos sentidos (consentimiento; se conecta con HU-151/152) |
+| AC-4 | Configuración | Proveedor + API key + `publication`/`list id` desde el admin |
+| AC-5 | Separación | Marketing separado del transaccional (HU-159): distinto proveedor, dominio y reputación |
+| AC-6 | Fallback | Sin proveedor externo configurado, usa el newsletter interno existente |
+
+---
+
+## Detalle · v19 — Enablers de plataforma y vacíos (HU-164…171)
+
+> HU derivadas del análisis de coherencia arquitectónica: *enablers* transversales y funcionalidades faltantes de una plataforma de comercio madura. Todo **🔲 (roadmap)**.
+
+### HU-164 — Motor de cálculo de precios/checkout unificado (enabler) · E6
+
+> Como plataforma, quiero un pipeline único y autoritativo (server-side) que calcule el total —líneas → descuentos → impuestos → envío—, para que cupones, promociones, gift cards e impuestos se apliquen en un solo lugar consistente y seguro.
+
+**Estimación:** L (8 puntos)
+**Módulo:** `packages/database` (pricing), checkout, pasos de regla conectables
+**Estado:** 🔲 Pendiente (roadmap) — **enabler de HU-147/148/149/167**
+
+| # | Escenario | Resultado esperado |
+|---|-----------|-------------------|
+| AC-1 | Cálculo determinista | subtotal → descuentos → impuestos → envío → total, en el servidor |
+| AC-2 | Conectores | Cupones (existente), promociones (HU-147), gift cards (HU-148), impuestos (HU-149) y puntos (HU-167) entran como pasos, no como parches |
+| AC-3 | Seguridad | El cliente nunca decide el total; el checkout usa siempre el resultado del pipeline (HU-092) |
+| AC-4 | Desglose | Devuelve el detalle para UI, email y factura |
+
+---
+
+### HU-165 — Webhooks salientes / API pública de integración · E2
+
+> Como plataforma, quiero exponer una API y webhooks salientes de eventos (`order.created`, `payment.approved`, `shipment.created`), para que sistemas de terceros se integren.
+
+**Estimación:** L (8 puntos)
+**Módulo:** registro de webhooks, firma HMAC, API keys, cola con reintentos
+**Estado:** 🔲 Pendiente (roadmap)
+
+| # | Escenario | Resultado esperado |
+|---|-----------|-------------------|
+| AC-1 | Registro de endpoints por evento | Desde el admin; con firma HMAC verificable (igual que las que recibimos de Bold/Wompi) |
+| AC-2 | Entrega confiable | Reintentos con backoff y log de entregas (HU-162/146) |
+| AC-3 | API de lectura | Con API keys por rol/tenant (RBAC, HU-134) |
+| AC-4 | Versionado | Catálogo de eventos versionado |
+
+---
+
+### HU-166 — Facturación electrónica (Colombia / DIAN) · E6
+
+> Como comercio en Colombia, quiero emitir factura electrónica válida ante la DIAN al confirmarse el pago, para cumplir la obligación fiscal.
+
+**Estimación:** XL (13+ puntos)
+**Módulo:** proveedor de facturación electrónica (swappable), mapeo orden→factura, numeración fiscal
+**Estado:** 🔲 Pendiente (roadmap)
+
+| # | Escenario | Resultado esperado |
+|---|-----------|-------------------|
+| AC-1 | Pago aprobado | Se genera el documento fiscal vía proveedor autorizado (integración configurable) |
+| AC-2 | Datos fiscales | Numeración/resolución DIAN + datos del comercio y del cliente |
+| AC-3 | Almacenamiento | Documento enlazado a la orden y disponible para el cliente |
+| AC-4 | Consistencia | Impuestos alineados con HU-149 y el pipeline (HU-164) |
+| AC-5 | Extensible | La abstracción permite otros regímenes fiscales por país (se conecta con HU-114) |
+
+---
+
+### HU-167 — Programa de fidelización / puntos · E12
+
+> Como cliente recurrente, quiero acumular y redimir puntos por mis compras, para incentivar la recompra.
+
+**Estimación:** L (8 puntos)
+**Módulo:** `loyalty_points` por cliente, reglas de acumulación/redención, checkout
+**Estado:** 🔲 Pendiente (roadmap)
+
+| # | Escenario | Resultado esperado |
+|---|-----------|-------------------|
+| AC-1 | Acumulación | Puntos por compra según reglas configurables |
+| AC-2 | Redención | Como descuento en el checkout, vía el pipeline de pricing (HU-164) |
+| AC-3 | Visibilidad | Saldo y movimientos en `/account`; auditable (HU-146) |
+| AC-4 | Configuración | Reglas gestionables desde el admin |
+
+---
+
+### HU-168 — Bundles / kits de producto · E4
+
+> Como negocio, quiero vender paquetes/kits (varios productos como una unidad con precio propio), para aumentar el ticket promedio.
+
+**Estimación:** L (8 puntos)
+**Módulo:** modelo de bundle, PDP, carrito, inventario compuesto
+**Estado:** 🔲 Pendiente (roadmap)
+
+| # | Escenario | Resultado esperado |
+|---|-----------|-------------------|
+| AC-1 | Definición | Bundle = componentes + precio, desde el admin |
+| AC-2 | Compra | PDP y carrito lo tratan como una línea; el inventario descuenta cada componente (RPC de stock, HU-098) |
+| AC-3 | Precio | El precio del bundle entra al pipeline (HU-164) |
+| AC-4 | Stock | Backorder/disponibilidad según el componente más restrictivo |
+
+---
+
+### HU-169 — Onboarding / asistente de configuración inicial · E13
+
+> Como nuevo comercio (white-label), quiero un asistente guiado de primer arranque (marca, pago, envío, dominio, legales), para dejar la tienda operativa sin fricción.
+
+**Estimación:** M (5 puntos)
+**Módulo:** wizard en admin, checklist de setup
+**Estado:** 🔲 Pendiente (roadmap)
+
+| # | Escenario | Resultado esperado |
+|---|-----------|-------------------|
+| AC-1 | Wizard de arranque | Identidad/tema, pasarela activa, proveedor de envío, dominio, legales |
+| AC-2 | Estado | Checklist con lo pendiente; se puede retomar |
+| AC-3 | Multi-tienda | En E17, aplica por tienda |
+
+---
+
+### HU-170 — Monitoreo de errores en runtime (APM / error tracking) · E14
+
+> Como responsable, quiero capturar y agrupar errores de runtime (front y back) con contexto, para detectar y resolver incidencias.
+
+**Estimación:** M (5 puntos)
+**Módulo:** integración de error tracking (Sentry o similar), source maps, alertas
+**Estado:** 🔲 Pendiente (roadmap)
+
+| # | Escenario | Resultado esperado |
+|---|-----------|-------------------|
+| AC-1 | Captura | Errores de cliente y servidor con traza y contexto (usuario/tenant) |
+| AC-2 | Gestión | Agrupación, alertas, entorno y release asociados |
+| AC-3 | Privacidad | Sin PII innecesaria; respeta consentimiento (HU-152) |
+
+---
+
+### HU-171 — Spike: modelo de autenticación multi-tenant (Stack Auth vs FusionAuth) · E17
+
+> Como arquitecto, quiero decidir y documentar el modelo de auth para multi-tienda, para no acoplar E17 a una decisión no validada.
+
+**Estimación:** M (spike)
+**Módulo:** PoC + ADR (registro de decisión arquitectónica)
+**Estado:** 🔲 Pendiente (roadmap) — **precede a HU-156/157/158**
+
+| # | Escenario | Resultado esperado |
+|---|-----------|-------------------|
+| AC-1 | Comparativa | Stack Auth (Teams/Org + aislamiento en BD por `store_id`) vs FusionAuth (tenant = namespace, identidad separada por tienda) |
+| AC-2 | Decisión (ADR) | Criterios: aislamiento de clientes por tienda, branding/políticas de auth por tienda, self-hosting/residencia, costo de migración |
+| AC-3 | Diseño contenido | E17 se diseña **auth-agnóstico** (`store_id` + RLS como fuente de verdad) para acotar un eventual cambio de proveedor |
+
+---
+
+## Detalle · E17 — Control plane, planes y dominios (HU-172…175)
+
+> Eleva E17 de "multi-tenant básico" a **plataforma SaaS**: introduce el **plano de plataforma (control plane)** por encima del plano de tienda. Todo **🔲 (roadmap)**. Depende del spike de auth (HU-171) y del modelo de datos multi-tenant (HU-156/157).
+
+### HU-172 — Consola de plataforma: administración de todos los tenants · E17
+
+> Como operador de la plataforma, quiero una consola por encima de las tiendas para crear, listar, suspender y monitorear todos los tenants, para administrar el negocio white-label.
+
+**Estimación:** L (8 puntos)
+**Módulo:** control plane (rutas/rol de plataforma), acceso controlado cross-tenant, auditoría
+**Estado:** 🔲 Pendiente (roadmap) — depende de HU-156
+
+| # | Escenario | Resultado esperado |
+|---|-----------|-------------------|
+| AC-1 | Vista global | Lista de todos los tenants: estado (activo/trial/suspendido), plan, dominios y uso básico |
+| AC-2 | Ciclo de vida | Crear, suspender, reactivar y eliminar tenant |
+| AC-3 | Soporte | Impersonar una tienda para soporte, **auditado** (HU-146) |
+| AC-4 | Aislamiento | Rol de **plataforma** separado del admin de tienda; un admin de tienda nunca ve otros tenants |
+
+---
+
+### HU-173 — Planes y entitlements (habilitar funcionalidades por plan) · E17
+
+> Como operador, quiero definir planes y qué funcionalidades habilita cada uno, y asignar un plan por tenant, para ofrecer niveles (p. ej. Free/Pro/Enterprise).
+
+**Estimación:** L (8 puntos)
+**Módulo:** `plans` + `entitlements`, guard `can(tenant, feature)` en UI y API
+**Estado:** 🔲 Pendiente (roadmap) — **enabler transversal del control plane**
+
+| # | Escenario | Resultado esperado |
+|---|-----------|-------------------|
+| AC-1 | Catálogo de planes | Planes y mapa de funcionalidades (entitlements) configurables desde el control plane |
+| AC-2 | Gating | Las features se habilitan por entitlement en front y **back (autoritativo server-side)** según el plan del tenant |
+| AC-3 | Límites | Límites cuantitativos por plan si aplica (nº de productos, usuarios, envíos…) |
+| AC-4 | Desacoplado de billing | El plan se asigna manualmente hoy; la **facturación por suscripción** queda como extensión futura (fuera de alcance actual) |
+| AC-5 | Cambio de plan | Actualiza entitlements de inmediato; degradación controlada (no rompe datos existentes) |
+
+---
+
+### HU-174 — Dominios personalizados de la web pública (DNS → certificado → CDN → activo) · E17
+
+> Como comercio, quiero conectar mi propio dominio a mi tienda con un proceso guiado y verificable, para operar bajo mi marca.
+
+**Estimación:** XL (13+ puntos)
+**Módulo:** gestión de dominios + máquina de estados; integración con CDN/host para certificado + propagación
+**Estado:** 🔲 Pendiente (roadmap) — extiende HU-157
+
+| # | Escenario | Resultado esperado |
+|---|-----------|-------------------|
+| AC-1 | Alta de dominio | Se muestran los registros DNS a crear (CNAME/A + token de verificación) |
+| AC-2 | Máquina de estados | **pendiente → validación DNS → emisión de certificado (ACME/TLS) → propagación CDN → activo**, con estado visible, polling/webhook y reintentos |
+| AC-3 | Cert y CDN delegados | La emisión del certificado y la propagación se **delegan al host/CDN** (no implementar ACME propio). Recomendado **Cloudflare for SaaS (custom hostnames)** o **Vercel Domains** |
+| AC-4 | Resolución y unicidad | El dominio activo resuelve al tenant correcto (HU-157); un dominio pertenece a un solo tenant (anti-takeover) |
+| AC-5 | Renovación | El certificado se renueva automáticamente |
+
+---
+
+### HU-175 — Dominios de envío de email por tenant (SPF/DKIM/DMARC → verificado) · E17 (toca E8)
+
+> Como comercio, quiero enviar los correos desde mi propio dominio verificado, para entregabilidad y marca.
+
+**Estimación:** L (8 puntos)
+**Módulo:** gestión de dominio de envío por tenant, verificación vía proveedor de email (SES/Postmark)
+**Estado:** 🔲 Pendiente (roadmap) — extiende HU-161 al modelo multi-tenant
+
+| # | Escenario | Resultado esperado |
+|---|-----------|-------------------|
+| AC-1 | Alta de dominio de envío | Registros DNS a crear (SPF, DKIM, DMARC, return-path) |
+| AC-2 | Máquina de estados | **pendiente → validación DNS → verificado/activo** (sin cert/CDN: es email, no web) |
+| AC-3 | Verificación | Vía el proveedor de email activo (HU-159/161); estado visible en el admin de la tienda |
+| AC-4 | Activo | Los emails del tenant salen con su `from`/dominio; si falla, cae al dominio de la plataforma |
+| AC-5 | Unicidad | Un dominio de envío por tenant; no reutilizable entre tenants |
+
+---
+
+## Detalle · E18 — Inventario multi-ubicación y fulfillment (HU-176…183)  *(roadmap)*
+
+> **Épica nueva.** Introduce el concepto de **ubicaciones** (tipo Shopify Locations): el stock pasa de `por variante` a `por (variante, ubicación)`, con fulfillment por lugar, transferencias y retiro por punto. Es un **cambio de modelo fundacional** que toca inventario (E9), envíos (E7), catálogo (E4) y admin (E13), y hereda el aislamiento de E17. Incluye una HU dedicada a **migrar lo ya implementado** sin ruptura. Todo **🔲 (roadmap)**.
+
+### HU-176 — Modelo de ubicaciones (`locations`) · E18
+
+> Como negocio, quiero definir ubicaciones (bodegas, tiendas físicas, puntos de retiro) con dirección y capacidades, para gestionar inventario y fulfillment por lugar.
+
+**Estimación:** M (5 puntos)
+**Módulo:** tabla `locations` (con `store_id`), toggles, admin
+**Estado:** 🔲 Pendiente (roadmap) — **cimiento de E18**
+
+| # | Escenario | Resultado esperado |
+|---|-----------|-------------------|
+| AC-1 | CRUD | Ubicación con dirección y toggles (¿surte envíos?, ¿permite retiro?) |
+| AC-2 | Multi-tenant | `store_id` por ubicación (aislamiento heredado de E17) |
+| AC-3 | Default | Una ubicación por defecto obligatoria (para compatibilidad y backfill) |
+
+---
+
+### HU-177 — Inventario por ubicación (`inventory_levels`) + RPCs por ubicación · E18
+
+> Como plataforma, quiero llevar el stock por `(variante, ubicación)` con operaciones atómicas por ubicación, para reflejar existencias reales por lugar.
+
+**Estimación:** L (8 puntos)
+**Módulo:** tabla `inventory_levels`, RPCs `decrement/restore` con `p_location_id`
+**Estado:** 🔲 Pendiente (roadmap) — **enabler del modelo**
+
+| # | Escenario | Resultado esperado |
+|---|-----------|-------------------|
+| AC-1 | Modelo | `inventory_levels(variant_id, location_id, stock)` único por par |
+| AC-2 | RPCs por ubicación | `decrement/restore_variant_stock` reciben `location_id`; respetan `allow_backorder`; atómicos e idempotentes |
+| AC-3 | Disponibilidad agregada | Vista de stock total por variante (suma de ubicaciones) para consumidores que no distinguen ubicación |
+| AC-4 | Concurrencia | Mismo control de carrera que el modelo actual |
+
+---
+
+### HU-178 — Migración del modelo de stock único → multi-ubicación · E18
+
+> Como equipo, quiero migrar el modelo actual (stock único por variante) al multi-ubicación **sin pérdida ni ruptura**, para adoptar el nuevo enfoque de forma segura.
+
+**Estimación:** L (8 puntos)
+**Módulo:** migración de datos + refactor de los consumidores existentes
+**Estado:** 🔲 Pendiente (roadmap) — **contempla los cambios de lo ya implementado**
+
+| # | Escenario | Resultado esperado |
+|---|-----------|-------------------|
+| AC-1 | Backfill | Se crea la ubicación por defecto y el `product_variants.stock` actual se copia a `inventory_levels` de esa ubicación |
+| AC-2 | Compatibilidad | `product_variants.stock` se conserva como **agregado derivado** (o se deprecia) con lectura agregada durante la transición |
+| AC-3 | Refactor de consumidores | Se adaptan: `stock.ts` (`applyStockForOrder`/`restoreStockForOrder` → por ubicación de fulfillment), RPCs (HU-098), topes del front `getStockForVariants`/PDP (HU-100), back-in-stock (HU-105), alertas (HU-106), validación 409 del checkout y el campo de stock en `ProductForm` (admin) |
+| AC-4 | Cutover por fases | Con retrocompatibilidad; se prueba que el flujo actual (una sola ubicación) queda idéntico |
+| AC-5 | Seguro | No rompe órdenes ni stock existentes; reversible |
+
+---
+
+### HU-179 — Ruteo de fulfillment (origen del despacho) · E18
+
+> Como operador, quiero que cada pedido se surta desde una ubicación (por disponibilidad, cercanía o manual), para definir el origen del envío o el punto de retiro.
+
+**Estimación:** L (8 puntos)
+**Módulo:** asignación de ubicación de fulfillment por orden, integración con envíos (E7)
+**Estado:** 🔲 Pendiente (roadmap) — depende de HU-177
+
+| # | Escenario | Resultado esperado |
+|---|-----------|-------------------|
+| AC-1 | Asignación | Regla por disponibilidad + cercanía a la dirección, o selección manual |
+| AC-2 | Descuento | El stock se descuenta en la ubicación asignada (HU-177) |
+| AC-3 | Envíos | El origen del despacho alimenta la cotización/guía (E7/Skydropx) |
+| AC-4 | Sin cobertura | Pedido sin ubicación con stock suficiente → estado claro para el operador |
+
+---
+
+### HU-180 — Transferencias de stock entre ubicaciones · E18
+
+> Como operador, quiero mover stock entre ubicaciones con trazabilidad, para reabastecer y balancear existencias.
+
+**Estimación:** M (5 puntos)
+**Módulo:** movimientos de inventario (transfer), auditoría
+**Estado:** 🔲 Pendiente (roadmap) — depende de HU-177
+
+| # | Escenario | Resultado esperado |
+|---|-----------|-------------------|
+| AC-1 | Transferencia | Origen → destino con cantidades; ajusta ambos `inventory_levels` atómicamente |
+| AC-2 | Trazabilidad | Historial de movimientos auditable (HU-146) |
+| AC-3 | Estados | Pendiente / en tránsito / recibida (si aplica) |
+
+---
+
+### HU-181 — Click & collect con stock por ubicación · E18 (integra HU-110)
+
+> Como comprador, quiero elegir retiro en una tienda que tenga el producto en stock, para recogerlo donde sí hay disponibilidad.
+
+**Estimación:** M (5 puntos)
+**Módulo:** PDP/checkout muestran disponibilidad por ubicación de retiro
+**Estado:** 🔲 Pendiente (roadmap) — extiende HU-110 con HU-177
+
+| # | Escenario | Resultado esperado |
+|---|-----------|-------------------|
+| AC-1 | Selección | El paso de retiro (HU-110) muestra solo ubicaciones con `permite_retiro` y stock del ítem |
+| AC-2 | Reserva | Al elegir, se reserva/descuenta en esa ubicación |
+| AC-3 | Consistencia | Retiro = ubicación de fulfillment (HU-179) |
+
+---
+
+### HU-182 — Gestión de ubicaciones e inventario en el admin · E18
+
+> Como operador, quiero administrar ubicaciones y ajustar el stock por ubicación desde el panel, para operar el inventario multi-lugar.
+
+**Estimación:** M (5 puntos)
+**Módulo:** admin (CRUD ubicaciones, edición de niveles por ubicación)
+**Estado:** 🔲 Pendiente (roadmap)
+
+| # | Escenario | Resultado esperado |
+|---|-----------|-------------------|
+| AC-1 | Ubicaciones | CRUD (HU-176) desde el panel |
+| AC-2 | Niveles | Edición de stock por `(variante, ubicación)`; vista de niveles en el producto |
+| AC-3 | Permisos | Por rol; en multi-tenant, acotado a la tienda (E17) |
+
+---
+
+### HU-183 — Reportes de inventario y alertas de stock bajo por ubicación · E18
+
+> Como operador, quiero ver el inventario y recibir alertas de stock bajo por ubicación, para reponer donde falta.
+
+**Estimación:** M (5 puntos)
+**Módulo:** reportes por ubicación (extiende HU-106/116)
+**Estado:** 🔲 Pendiente (roadmap)
+
+| # | Escenario | Resultado esperado |
+|---|-----------|-------------------|
+| AC-1 | Inventario por ubicación | Vista con filtros; export (compatible con HU-116/130) |
+| AC-2 | Alertas | Stock bajo por `(variante, ubicación)` — extiende el umbral de HU-106 |
+| AC-3 | Permisos | Solo roles autorizados |
+
+---
+
+## Detalle · Hardening PCI DSS (HU-184…187) · E14
+
+> Refuerza el cumplimiento de **PCI DSS**. Contexto: la plataforma usa **flujo redirect/hosted** (el cliente digita la tarjeta en la pasarela), por lo que **no almacena, procesa ni transmite datos de tarjeta (CHD)** → alcance mínimo **SAQ A**. Este bloque cierra los controles operativos que faltan para sostener ese alcance. Se apoya en **HU-117 (MFA admin)** y **HU-146 (auditoría)**, que son parte del cumplimiento. Todo **🔲 (roadmap)**.
+
+### HU-184 — Gestión y rotación de llaves de pasarela · E14 (toca E6)
+
+> Como responsable de seguridad, quiero cifrar, rotar y limitar el acceso a las llaves de las pasarelas de pago, para reducir el riesgo de fuga (PCI DSS req. 3 y 8).
+
+**Estimación:** L (8 puntos)
+**Módulo:** cifrado/secrets manager para los secretos de `payment_config`, rotación, mínimo privilegio
+**Estado:** 🔲 Pendiente (roadmap)
+
+| # | Escenario | Resultado esperado |
+|---|-----------|-------------------|
+| AC-1 | Cifrado en reposo | Secretos de pasarela cifrados / gestionados por un secrets manager; acceso solo server-side (`service_role`) |
+| AC-2 | Rotación | Procedimiento de rotación de llaves sin downtime; cada rotación queda auditada (HU-146) |
+| AC-3 | Mínimo privilegio | Solo roles autorizados leen/editan credenciales (compatible con HU-134) |
+| AC-4 | No exposición | Nunca se devuelven en claro al cliente (ya enmascaradas; mantener) |
+
+---
+
+### HU-185 — Política de logging seguro (sin datos sensibles) · E14
+
+> Como responsable, quiero que los logs no contengan datos sensibles (PAN aunque venga enmascarado, secretos, payloads completos de pago), para cumplir PCI DSS req. 3 y 10.
+
+**Estimación:** M (5 puntos)
+**Módulo:** capa de logging con redacción; revisión de `console.*` en webhooks
+**Estado:** 🔲 Pendiente (roadmap)
+
+| # | Escenario | Resultado esperado |
+|---|-----------|-------------------|
+| AC-1 | Redacción | Campos sensibles (PAN, secretos, tokens) redactados u omitidos en logs |
+| AC-2 | Webhooks | No se loguea el payload completo de pago por defecto |
+| AC-3 | Retención/acceso | Logs con retención y acceso controlados (compatible con HU-146/170) |
+
+---
+
+### HU-186 — Conformidad PCI DSS: alcance SAQ A + evidencia · E14 (toca E6)
+
+> Como responsable, quiero documentar y mantener el alcance SAQ A y la evidencia de conformidad, para la atestación con el adquirente.
+
+**Estimación:** M (5 puntos)
+**Módulo:** documentación de alcance, checklist SAQ A, recopilación de AOC de proveedores
+**Estado:** 🔲 Pendiente (roadmap)
+
+| # | Escenario | Resultado esperado |
+|---|-----------|-------------------|
+| AC-1 | Alcance documentado | La app no almacena/procesa/transmite CHD; flujo redirect a pasarelas PCI-compliant |
+| AC-2 | Checklist SAQ A | TLS, control de accesos, MFA admin (HU-117), auditoría (HU-146) y gestión de llaves (HU-184) cubiertos |
+| AC-3 | Evidencia | AOC/atestaciones PCI de Wompi/MercadoPago/Bold recopiladas |
+| AC-4 | Guardarraíl | Alerta si se introduce un flujo que rompa SAQ A (widget embebido → SAQ A-EP) |
+
+---
+
+### HU-187 — Integridad de scripts de la página de pago (PCI DSS 4.0 · 6.4.3 / 11.6.1) · E14
+
+> Como responsable, quiero controlar y detectar cambios en los scripts de las páginas que intervienen en el pago, para cumplir PCI DSS 4.0 si se usa cualquier JS de pasarela en el propio checkout.
+
+**Estimación:** M (5 puntos)
+**Módulo:** inventario de scripts + integridad (CSP/SRI), detección de manipulación
+**Estado:** 🔲 Pendiente (roadmap) — aplica si se pasa de redirect a widget embebido (SAQ A-EP)
+
+| # | Escenario | Resultado esperado |
+|---|-----------|-------------------|
+| AC-1 | Inventario | Lista autorizada de scripts en páginas de pago; CSP restrictiva + SRI donde aplique |
+| AC-2 | Detección | Se detectan cambios/manipulación en la página de pago |
+| AC-3 | Aplicabilidad | En modo redirect puro se documenta como no-aplicable; se activa al embeber JS de pasarela |
+
+---
+
+### HU-188 — Tu Compra: modalidad INTEGRADOR (API REST · token JWT · multi-método) · E6
+
+> Como plataforma, quiero integrar Tu Compra en su **modalidad integrador** (`confirmacionTransaccionMedioPago`, transaccional por medio de pago, con `Referencia`=order_number), para cobrar y correlacionar los pedidos. Reemplaza tanto el modelo antiguo (form-POST+MD5) como el intento con `crearBotonPago` (botón reutilizable, sin referencia). **Configurable** para cualquier comercio (medios habilitados e IDs de método parametrizables), no atado a la config de una pasarela concreta.
+
+**Estimación:** XL (13+ puntos)
+**Módulo:** `TuCompraGateway` (integrador), `payment_config` (config de medios), factory, admin (URLs + config de medios), checkout (selector de medio + banco/celular), webhook (URL de Confirmación), reconcile
+**Estado:** 🔲 Casi completo (v19). **Hecho:** gateway integrador (`/autenticar`, `/confirmacionTransaccionMedioPago` → `urlBanco` con `Referencia`, `listarBancos`, `/consultarEstadoTransaccion`, `mapStatus`, constructores `MetodoPago`), 5 campos + URL base + **config de medios habilitados (`tucompra_methods`, IDs por demo/prod)** en `payment_config`/admin (JSON), **URL de Confirmación y Retorno** copiables en el admin, webhook autoritativo, reconcile web+admin, **checkout cableado** (selector de medio + banco PSE vía `listarBancos` + celular/documento Nequi/Daviplata + Referenciado) → `urlBanco`, tests del gateway/reconcile. **Pendiente:** **Tarjeta** (cifrado RSA en la página → rompe SAQ A, opt-in) y **validación sandbox** (valores de `estadoPago`/params de confirmación). Doc: `desarrolladores.tucompra.net/manuales/rest`
+
+| # | Escenario | Resultado esperado |
+|---|-----------|-------------------|
+| AC-1 | Credenciales reales | `payment_config` guarda **usuario**, **clave**, **terminal** (Id Sistema), **URL base** (demo/prod) y **llave pública** (solo tarjeta); expuestos en el admin |
+| AC-2 | Autenticación | `POST /autenticar` con `{usuario, clave, terminal}` → `tokenSeguridad` (JWT) en cada servicio; manejo de `codigoRespuesta` |
+| AC-3 | Transacción integrador | `POST /confirmacionTransaccionMedioPago` con `Referencia`=order_number + `MetodoPago{id, campos}` → `urlBanco` (redirect) + `CodigoSeguimiento`. **NO** `crearBotonPago` |
+| AC-4 | Multi-método configurable | Medios habilitados (PSE/Nequi/Daviplata/Referenciado/Tarjeta) e **IDs de `MetodoPago`** parametrizables (Ver Tabla de Valores). PSE usa `listarBancos`; Tarjeta cifra con RSA (rompe SAQ A → opt-in) |
+| AC-5 | URLs configurables | **URL de Confirmación** (server-to-server, webhook autoritativo por `Referencia`) y **URL de Retorno** (navegador → confirmación) visibles/copiables en el admin |
+| AC-6 | Seguridad y pruebas | Deriva del `active_provider` (HU-092); estado autoritativo por API (nunca el cliente); tests de gateway/reconcile; la confirmación incluye **Firma TuCompra** (verificable) |
+
+---
+
+### HU-189 — Rediseño UX de configuración de pagos (entorno Demo/Producción + selector visual de métodos) · E6 (toca E13)
+
+> Como administrador, quiero configurar las pasarelas de forma clara —ver de un vistazo cuál está **activa** y si es **Demo** o **Producción**, y habilitar/ordenar los métodos de Tu Compra sin editar JSON—, para operar sin errores.
+
+**Estimación:** M (5 puntos)
+**Módulo:** admin `PaymentConfigForm` (entorno, badges, selector de métodos con drag-and-drop)
+**Estado:** 🔲 Pendiente (v19)
+
+| # | Escenario | Resultado esperado |
+|---|-----------|-------------------|
+| AC-1 | Entorno por pasarela | Indicador **Demo/Producción**: toggle donde la API lo permite (Bold `sandbox`, Tu Compra URL base), badge **auto-detectado** donde lo implica la credencial (Wompi `pub_test/pub_prod`, MercadoPago `TEST/APP_USR`) |
+| AC-2 | Estado activo claro | La pasarela **activa** y su entorno se ven de un vistazo (badge "Activa · Demo/Producción") |
+| AC-3 | Tu Compra sin JSON | Reemplaza el textarea por una **lista de métodos** (PSE/Nequi/Daviplata/Referenciado/Tarjeta) con switch de habilitado + **drag-and-drop para ordenar** |
+| AC-4 | IDs por entorno | El toggle Demo/Prod aplica los IDs correctos por método desde una tabla interna (PSE 41/3, Nequi 72, Daviplata 71, Tarjeta 37-40/1-5, Referenciado 42-50); editable en modo avanzado |
+| AC-5 | Reflejo en checkout | El orden/habilitados se reflejan en el selector de medio del checkout |
+| AC-6 | UX | Estético, intuitivo y accesible por teclado |
+
+---
+
 ## 11. Resumen de Cobertura  *(por dominio, v2)*
 
 > Criterio: **✅** implementado con pruebas · **🟡** implementado sin pruebas · **🔲** no implementado.
@@ -3677,25 +4228,49 @@ Para agregar un nuevo proveedor (ej. FedEx): crear `providers/fedex/index.ts`, a
 | Épica (v2) | Ítems | ✅ | 🟡 | 🔲 |
 |-----------|:----:|:--:|:--:|:--:|
 | E1 · Fundación e infraestructura | 10 | 10 | 0 | 0 |
-| E2 · Arquitectura y CMS unificado | 22 | 16 | 0 | 6 |
+| E2 · Arquitectura y CMS unificado | 23 | 16 | 0 | 7 |
 | E3 · Sitio público (layout, home, navegación) | 22 | 15 | 0 | 7 |
-| E4 · Tienda y catálogo | 19 | 15 | 0 | 4 |
+| E4 · Tienda y catálogo | 20 | 15 | 0 | 5 |
 | E5 · Carrito | 10 | 8 | 0 | 2 |
-| E6 · Pagos y pasarelas | 27 | 21 | 1 | 5 |
+| E6 · Pagos y pasarelas | 31 | 21 | 0 | 10 |
 | E7 · Envíos | 12 | 11 | 0 | 1 |
-| E8 · Emails transaccionales | 8 | 6 | 1 | 1 |
+| E8 · Emails y newsletter | 13 | 6 | 1 | 6 |
 | E9 · Inventario y stock | 6 | 4 | 0 | 2 |
 | E10 · Blog | 8 | 8 | 0 | 0 |
 | E11 · Páginas de contenido y servicios | 6 | 6 | 0 | 0 |
-| E12 · Autenticación y Mi Cuenta | 15 | 10 | 1 | 4 |
-| E13 · Panel de administración | 45 | 38 | 0 | 7 |
-| E14 · Despliegue, seguridad e identidad del panel | 13 | 4 | 3 | 6 |
+| E12 · Autenticación y Mi Cuenta | 16 | 10 | 1 | 5 |
+| E13 · Panel de administración | 46 | 38 | 0 | 8 |
+| E14 · Despliegue, seguridad e identidad del panel | 18 | 5 | 2 | 11 |
 | E15 · SEO y rendimiento | 12 | 9 | 1 | 2 |
 | E16 · Aplicación inteligente (IA) *(roadmap)* | 17 | 0 | 0 | 17 |
-| E17 · Plataforma multi-tienda *(roadmap)* | 3 | 0 | 0 | 3 |
-| **TOTAL** | **255** | **181** | **7** | **67** |
+| E17 · Plataforma multi-tienda (control plane) *(roadmap)* | 8 | 0 | 0 | 8 |
+| E18 · Inventario multi-ubicación y fulfillment *(roadmap)* | 8 | 0 | 0 | 8 |
+| **TOTAL** | **286** | **182** | **5** | **99** |
 
-**Lectura:** del **MVP** (191 ítems) el 98 % tiene código (✅+🟡 = 188) y el 95 % tiene pruebas (✅ = 181). El roadmap **v17** suma **34 HU 🔲** (HU-101…134) para un total de 225. Bloque HU-101…119: catálogo, inventario, pagos, cuentas, SEO e IA. Bloque HU-120…125 (configurabilidad y operación de datos): drag-and-drop de secciones, **sistema de plantillas de diseño** (theme por defecto + variantes de disposición de navbar/home/tienda/PDP/carrito), import/export extensible y versionado, carga masiva de productos por CSV y respaldos de productos/pedidos/clientes. Bloque **HU-126…134 (personalización avanzada y operación de datos):** drag-and-drop generalizado, historial de versiones del CMS, vista previa/publicación y paquetes de plantilla, export CSV de productos, acciones masivas, importadores CSV multi-entidad, restauración + respaldos programados y control de acceso por rol a operaciones de datos. Bloque **E16 v2 — aplicación inteligente (HU-135…145):** cimientos (proveedor de IA intercambiable, captura de eventos, vector store) y features (asistente de compra, búsqueda visual, personalización, clustering, patrones de compra, apariencia por chat, generación de imágenes y detección de fraude). Revisión **v18:** se dividieron 5 HU grandes en incrementos (HU-107→a/b, HU-114→a/b/c, HU-122→a/b/c, HU-138→a/b, y HU-117 quedó solo 2FA), se extrajo el **registro de auditoría** (HU-146) como enabler, se sumaron HU-147…155 (descuentos, gift cards, impuestos multi-región, consulta de pedido como invitado, portabilidad/borrado de datos, consentimiento de cookies, notificaciones multicanal, accesibilidad y Core Web Vitals) y se creó la épica **E17 · Multi-tienda** (HU-156…158). Total roadmap: **74 HU 🔲** (255 ítems). Los 🟡 (7) siguen siendo features sin pruebas dedicadas (Tu Compra, selector de email, tracking, rate-limit/CSP, JSON-LD, responsive admin, fuentes de tema).
+**Lectura:** del **MVP** (191 ítems) el 98 % tiene código (✅+🟡 = 188) y el 95 % tiene pruebas (✅ = 181). El roadmap **v17** suma **34 HU 🔲** (HU-101…134) para un total de 225. Bloque HU-101…119: catálogo, inventario, pagos, cuentas, SEO e IA. Bloque HU-120…125 (configurabilidad y operación de datos): drag-and-drop de secciones, **sistema de plantillas de diseño** (theme por defecto + variantes de disposición de navbar/home/tienda/PDP/carrito), import/export extensible y versionado, carga masiva de productos por CSV y respaldos de productos/pedidos/clientes. Bloque **HU-126…134 (personalización avanzada y operación de datos):** drag-and-drop generalizado, historial de versiones del CMS, vista previa/publicación y paquetes de plantilla, export CSV de productos, acciones masivas, importadores CSV multi-entidad, restauración + respaldos programados y control de acceso por rol a operaciones de datos. Bloque **E16 v2 — aplicación inteligente (HU-135…145):** cimientos (proveedor de IA intercambiable, captura de eventos, vector store) y features (asistente de compra, búsqueda visual, personalización, clustering, patrones de compra, apariencia por chat, generación de imágenes y detección de fraude). Revisión **v18:** se dividieron 5 HU grandes en incrementos (HU-107→a/b, HU-114→a/b/c, HU-122→a/b/c, HU-138→a/b, y HU-117 quedó solo 2FA), se extrajo el **registro de auditoría** (HU-146) como enabler, se sumaron HU-147…155 (descuentos, gift cards, impuestos multi-región, consulta de pedido como invitado, portabilidad/borrado de datos, consentimiento de cookies, notificaciones multicanal, accesibilidad y Core Web Vitals) y se creó la épica **E17 · Multi-tienda** (HU-156…158). Bloque **v18 (emails):** EmailProvider multi-proveedor, plantillas editables, entregabilidad, email_log y newsletter externo (Beehiiv y similares) — HU-159…163. Bloque **v19 (enablers de plataforma):** pipeline de pricing unificado, webhooks salientes/API pública, facturación electrónica (DIAN), fidelización, bundles, onboarding, monitoreo de errores y spike de auth multi-tenant — HU-164…171. Épica **E18 · Inventario multi-ubicación** (HU-176…183): ubicaciones tipo Shopify (stock por variante+ubicación, fulfillment por lugar, transferencias, click & collect), con migración del stock único actual. Bloque **hardening PCI DSS** (HU-184…187): gestión/rotación de llaves, logging seguro, alcance SAQ A + evidencia e integridad de scripts de pago (la plataforma usa flujo redirect/hosted → no maneja datos de tarjeta → alcance mínimo SAQ A). Revisión **v19 (Tu Compra):** al contrastar contra la doc oficial se detectó que la integración de Tu Compra usa un modelo antiguo (form-POST + MD5) que **no corresponde** a su API REST (token JWT + cifrado de valores); PRV-07 pasa de 🟡 a 🔲 y se agrega la HU-188 correctiva. Además, rate-limit/CSP (HU-062) pasó a ✅ con pruebas. Total roadmap: **98 HU 🔲** (285 ítems); ver el plan de olas más abajo. Los 🟡 (5) restantes son features sin pruebas dedicadas (selector de email, tracking, JSON-LD, responsive admin, fuentes de tema).
+
+---
+
+## 11.1 Roadmap por olas de entrega  *(plan de fases · v19)*
+
+> Ordena las **82 HU 🔲** por **valor + dependencias + riesgo**. Regla base: los *enablers* y las decisiones de cimientos van primero, porque posponerlos encarece todo lo demás. El *sizing* es orientativo (S=3 · M=5 · L=8 · XL=13 pts).
+>
+> **Dos decisiones estratégicas que reordenan el plan:** (1) si el modelo de negocio es **white-label multi-cliente desde ya**, sube **E17** (HU-171→156/157/158) y **i18n** (HU-114a/b/c) a la Ola 0/1 — introducir `tenant_id`/RLS e idiomas después de decenas de features es un refactor mucho más caro. (2) Si el mercado es solo hispanohablante y una sola tienda, **i18n y facturación internacional se posponen o descartan**.
+
+| Ola | Foco | HU (🔲) | Prioridad | Size aprox. |
+|-----|------|---------|-----------|-------------|
+| **0 · Cimientos y decisiones** | Enablers que desbloquean todo | HU-171 (spike auth) · HU-164 (pipeline pricing) · HU-146 (auditoría) · HU-136 (eventos) + HU-152 (cookies) · HU-159 (EmailProvider) · cerrar los 7 🟡 | **Alta** | ~55 pts |
+| **1 · Conversión y catálogo** | Quick wins de venta | HU-102 · HU-101 · HU-104 · HU-103 · HU-105 · HU-106 · HU-113 · HU-147 · HU-148 · HU-168 | **Alta** | ~55 pts |
+| **2 · Operación y postventa** | Admin operable | HU-120 · HU-126 · HU-124 · HU-130 · HU-131 · HU-132 · HU-116 · HU-107a/b · HU-125 · HU-133 · HU-134 · HU-112 · HU-150 · HU-160 · HU-162 | Alta/Media | ~70 pts |
+| **3 · Confianza, privacidad, seguridad y rendimiento** | Seguridad, PCI y UX | HU-117 (2FA) · HU-146 (auditoría) · **HU-184…187 (hardening PCI)** · HU-151 · HU-154 · HU-155 · HU-170 · HU-111 · HU-153 · HU-161 | Media/Alta | ~75 pts |
+| **4 · Personalización visual** | Theming white-label (definir modelo único primero) | HU-121 · HU-122a/b/c · HU-128 · HU-129 · HU-123 · HU-127 · HU-115 | Media | ~65 pts |
+| **5 · Internacional y fiscal** | Expansión (según mercado) | HU-114a/b/c · HU-149 · HU-108 · HU-166 (DIAN) · HU-110 · HU-109 · HU-163 · HU-167 | Media / depende de mercado | ~75 pts |
+| **6 · Aplicación inteligente (IA)** | Capa de IA | HU-137 · IA-01 · HU-119 · HU-139 · HU-140 · IA-02 · HU-138a/b · HU-142 · HU-141 · HU-118 · HU-143 · HU-144 · HU-145 · IA-03 (+ HU-135 si no se hizo en Ola 0) | Media / estratégica | ~110 pts |
+| **7 · Multi-tienda + control plane (E17)** | Escala white-label (o adelantar a Ola 0 según decisión) | HU-171 (spike) · HU-156 · HU-157 · HU-158 · HU-172 (consola tenants) · HU-173 (planes/entitlements) · HU-174 (dominios web) · HU-175 (dominios de envío) · HU-165 · HU-169 | Estratégica | ~90 pts |
+
+**Épica condicional — E18 · Inventario multi-ubicación (HU-176…183, ~50 pts):** solo aplica si el negocio maneja **varias bodegas/tiendas físicas** o click & collect con stock real por punto. Si es una sola ubicación, el modelo actual (stock único) basta. Cuando aplique, va en la **Ola 2** (operación) y su enabler es HU-177 (inventario por ubicación) + HU-178 (migración del stock único, que **debe preceder** a ruteo/transferencias/retiro). Si las ubicaciones son por tenant, alinéala **después de E17** (o diseña `location` con `store_id` desde el inicio).
+
+**Enablers que deben preceder a su bloque** (dependencias duras): HU-164 (pricing) antes de descuentos/gift cards/impuestos/puntos · HU-159 (EmailProvider) antes de plantillas/entregabilidad/email_log · HU-136 (eventos) + HU-152 (cookies) antes de personalización/clustering/fraude · HU-121 + modelo único de theming antes de variantes de layout · HU-171 (spike auth) antes de E17 · HU-135 (proveedor IA) + HU-137 (vectores) antes de las features de IA.
 
 ---
 

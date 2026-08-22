@@ -77,13 +77,15 @@ export function getPaymentGateway(
       if (config.active_provider !== 'tucompra') {
         throw new Error('Tu Compra no está activo. Actívalo en Configuración → Pagos.')
       }
-      if (!config.tucompra_merchant_id || !config.tucompra_secret_key) {
-        throw new Error('Tu Compra: faltan credenciales (merchant_id o secret_key).')
+      if (!config.tucompra_user || !config.tucompra_password || !config.tucompra_terminal) {
+        throw new Error('Tu Compra: faltan credenciales (usuario, clave o terminal).')
       }
       return new TuCompraGateway({
-        merchantId: config.tucompra_merchant_id,
-        secretKey:  config.tucompra_secret_key,
-        sandbox:    config.tucompra_sandbox ?? true,
+        usuario:   config.tucompra_user,
+        clave:     config.tucompra_password,
+        terminal:  config.tucompra_terminal,
+        apiUrl:    config.tucompra_api_url ?? undefined,
+        publicKey: config.tucompra_public_key ?? undefined,
       })
     }
 
@@ -123,7 +125,7 @@ export function getActiveProvider(config: PaymentConfig): ActivePaymentProvider 
     case 'mercadopago':
       return config.mercadopago_access_token ? 'mercadopago' : 'none'
     case 'tucompra':
-      return config.tucompra_merchant_id && config.tucompra_secret_key ? 'tucompra' : 'none'
+      return config.tucompra_user && config.tucompra_password && config.tucompra_terminal ? 'tucompra' : 'none'
     case 'bold':
       return config.bold_api_key && config.bold_secret_key ? 'bold' : 'none'
     default:

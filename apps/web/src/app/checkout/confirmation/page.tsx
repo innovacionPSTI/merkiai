@@ -2,6 +2,8 @@ import Link from 'next/link'
 import type { Metadata } from 'next'
 import { getWhatsAppNumber } from '@/lib/whatsapp'
 import BoldReconcileOnLoad from '@/components/checkout/BoldReconcileOnLoad'
+import TuCompraReconcileOnLoad from '@/components/checkout/TuCompraReconcileOnLoad'
+import ConfirmationRecovery from '@/components/checkout/ConfirmationRecovery'
 
 export const metadata: Metadata = { title: 'Pedido confirmado' }
 
@@ -15,7 +17,9 @@ export default async function ConfirmacionPage({
 
   return (
     <div className="bg-brand-cream min-h-screen flex items-center justify-center px-6">
+      <ConfirmationRecovery hasOrder={!!order} />
       {order && <BoldReconcileOnLoad order={order} />}
+      {order && <TuCompraReconcileOnLoad order={order} />}
       <div className="text-center max-w-md">
         <div className="w-20 h-20 rounded-full bg-green-100 flex items-center justify-center mx-auto mb-6">
           <svg className="w-10 h-10 text-green-600" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">

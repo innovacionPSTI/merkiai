@@ -44,6 +44,16 @@ El proyecto se compone de **dos aplicaciones Next.js** en un monorepo Turborepo:
 
 > **Nota de branding:** este documento usa el nombre genérico *Commerce CMS*. El nombre real de la tienda, el logo, los colores, las redes y el contenido se configuran por instancia desde `store_config` y el CMS.
 
+### Roadmap (dirección del producto)
+
+El **MVP está completo** (E1–E15, sin IA): catálogo, carrito, checkout multi-pasarela, pedidos, CMS, envíos, emails y panel de administración, con 181 features cubiertas por pruebas. Sobre esa base hay un **roadmap de expansión** de 92 historias organizado en 18 épicas y 8 olas de entrega (fuente de verdad: `PRODUCT_BACKLOG.md` §2.0, §11 y §11.1):
+
+- **E16 · Aplicación inteligente (IA)** — proveedor de IA *swappable* + captura de eventos + vector store, sobre los que corren asistente de compra, búsqueda visual, personalización, clustering, patrones de compra, generación de imágenes y detección de fraude.
+- **E17 · Plataforma multi-tienda (control plane)** — multi-tenant (aislamiento por `store_id`/RLS, resolución por dominio), consola de administración de todos los tenants, **planes y entitlements** (habilitar funcionalidades por plan) y **gestión de dominios** (dominios web personalizados con ciclo DNS→certificado→CDN→activo, y dominios de envío de email).
+- **E18 · Inventario multi-ubicación y fulfillment** — ubicaciones tipo *Shopify Locations* (stock por variante+ubicación, ruteo de despacho, transferencias, click & collect por punto), con migración del modelo de stock único actual.
+
+Además, refuerzos transversales: reseñas y búsqueda de catálogo, motor de descuentos, i18n, entregabilidad de email (SPF/DKIM/DMARC) e integración de newsletter externo (Beehiiv y similares), pipeline de pricing unificado, webhooks salientes/API pública, facturación electrónica (DIAN), accesibilidad y monitoreo. El plan de olas pone los *enablers* primero y señala las dos decisiones que reordenan todo: **cuándo abordar multi-tienda (E17) e i18n**.
+
 ---
 
 ## 2. Stack tecnológico
@@ -948,7 +958,7 @@ pnpm format        # Código formateado con Prettier
 
 - Monorepo Turborepo con pnpm workspaces
 - Design system completo (colores, fuentes, componentes)
-- Schema de base de datos con RLS y triggers (5 migraciones)
+- Schema de base de datos con RLS y triggers (esquema canónico `01_schema.sql` + `upgrade.sql`)
 - Sitio público: Home, Tienda, Producto, Blog + páginas de contenido dinámicas (CMS)
 - HeroCarousel con imágenes separadas para mobile/desktop (`<picture>`)
 - Carrito con Zustand + persistencia en localStorage
@@ -970,7 +980,13 @@ pnpm format        # Código formateado con Prettier
 - **Email de confirmación de newsletter** — solo al primer registro (sin duplicados)
 - **Página 404 personalizada**
 - **SEO completo**: `sitemap.xml` dinámico, `robots.txt`, Open Graph y Twitter Cards por página
-- 209 casos de prueba (unitarias + integración)
+- **Inventario**: stock por variante con descuento/reposición atómico por estado de pago, backorder y topes en el front
+- **Pagos**: pasarela única activa (Wompi, MercadoPago, Tu Compra, Bold) con webhooks firmados, validación manual y fallback de estado
+- **596 casos de prueba** (51 suites: 135 database · 296 web · 165 admin) — unitarias + integración
+
+### Roadmap 🔲
+
+Expansión planificada en 18 épicas / 92 historias (ver `PRODUCT_BACKLOG.md`): **E16** Aplicación inteligente (IA), **E17** Plataforma multi-tienda + control plane (planes/entitlements, dominios personalizados), **E18** Inventario multi-ubicación, más reseñas, búsqueda, descuentos, i18n, entregabilidad de email, newsletter externo (Beehiiv), pricing unificado, webhooks salientes, facturación electrónica (DIAN), accesibilidad y monitoreo. Priorizado en 8 olas de entrega (`§11.1`).
 
 ### Variables de entorno nuevas (v3)
 

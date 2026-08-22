@@ -70,7 +70,7 @@ describe('GET /api/admin/payment-config', () => {
     expect(data.has_wompi_integrity_secret).toBe(false)
     expect(data.has_wompi_events_secret).toBe(false)
     expect(data.has_mercadopago_access_token).toBe(false)
-    expect(data.has_tucompra_secret_key).toBe(false)
+    expect(data.has_tucompra_password).toBe(false)
   })
 
   it('enmascara wompi_private_key con ••••last4', async () => {

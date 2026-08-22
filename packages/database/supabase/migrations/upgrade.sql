@@ -122,3 +122,12 @@ BEGIN
   v_n := nextval('order_number_seq');
   RETURN v_prefix || '-' || lpad(v_n::text, 4, '0');
 END; $$;
+
+-- ── 27 · Tu Compra API REST (token JWT) ──────────────────────────────────────
+ALTER TABLE payment_config
+  ADD COLUMN IF NOT EXISTS tucompra_user       TEXT,
+  ADD COLUMN IF NOT EXISTS tucompra_password   TEXT,
+  ADD COLUMN IF NOT EXISTS tucompra_terminal   TEXT,
+  ADD COLUMN IF NOT EXISTS tucompra_api_url    TEXT,
+  ADD COLUMN IF NOT EXISTS tucompra_public_key TEXT,
+  ADD COLUMN IF NOT EXISTS tucompra_methods    JSONB NOT NULL DEFAULT '[]';

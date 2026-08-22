@@ -11,20 +11,22 @@ function maskSecret(value: string | null): string | null {
 
 type MaskedPaymentConfig = Omit<
   PaymentConfig,
-  'wompi_private_key' | 'wompi_integrity_secret' | 'wompi_events_secret' | 'mercadopago_access_token' | 'tucompra_secret_key' | 'bold_secret_key'
+  'wompi_private_key' | 'wompi_integrity_secret' | 'wompi_events_secret' | 'mercadopago_access_token' | 'tucompra_password' | 'tucompra_public_key' | 'bold_secret_key'
 > & {
   wompi_private_key: string | null
   wompi_integrity_secret: string | null
   wompi_events_secret: string | null
   mercadopago_access_token: string | null
-  tucompra_secret_key: string | null
+  tucompra_password: string | null
+  tucompra_public_key: string | null
   bold_secret_key: string | null
   // Indica si cada secret ya tiene un valor guardado (para mostrar en la UI)
   has_wompi_private_key: boolean
   has_wompi_integrity_secret: boolean
   has_wompi_events_secret: boolean
   has_mercadopago_access_token: boolean
-  has_tucompra_secret_key: boolean
+  has_tucompra_password: boolean
+  has_tucompra_public_key: boolean
   has_bold_secret_key: boolean
 }
 
@@ -35,14 +37,16 @@ function maskConfig(config: PaymentConfig): MaskedPaymentConfig {
     wompi_integrity_secret: maskSecret(config.wompi_integrity_secret),
     wompi_events_secret: maskSecret(config.wompi_events_secret),
     mercadopago_access_token: maskSecret(config.mercadopago_access_token),
-    tucompra_secret_key: maskSecret(config.tucompra_secret_key),
+    tucompra_password: maskSecret(config.tucompra_password),
+    tucompra_public_key: maskSecret(config.tucompra_public_key),
     bold_secret_key: maskSecret(config.bold_secret_key),
     // Flags para que la UI sepa si ya hay un valor
     has_wompi_private_key: !!config.wompi_private_key,
     has_wompi_integrity_secret: !!config.wompi_integrity_secret,
     has_wompi_events_secret: !!config.wompi_events_secret,
     has_mercadopago_access_token: !!config.mercadopago_access_token,
-    has_tucompra_secret_key: !!config.tucompra_secret_key,
+    has_tucompra_password: !!config.tucompra_password,
+    has_tucompra_public_key: !!config.tucompra_public_key,
     has_bold_secret_key: !!config.bold_secret_key,
   }
 }
@@ -62,8 +66,12 @@ export async function GET() {
         wompi_events_secret: null,
         mercadopago_access_token: null,
         mercadopago_public_key: null,
-        tucompra_merchant_id: null,
-        tucompra_secret_key: null,
+        tucompra_user: null,
+        tucompra_password: null,
+        tucompra_terminal: null,
+        tucompra_api_url: null,
+        tucompra_public_key: null,
+        tucompra_methods: [],
         tucompra_sandbox: true,
         bold_api_key: null,
         bold_secret_key: null,
@@ -73,7 +81,8 @@ export async function GET() {
         has_wompi_integrity_secret: false,
         has_wompi_events_secret: false,
         has_mercadopago_access_token: false,
-        has_tucompra_secret_key: false,
+        has_tucompra_password: false,
+        has_tucompra_public_key: false,
         has_bold_secret_key: false,
       })
     }
@@ -107,8 +116,9 @@ function missingCredentials(
   }
   if (provider === 'tucompra') {
     return [
-      !eff('tucompra_merchant_id') && 'tucompra_merchant_id',
-      !eff('tucompra_secret_key') && 'tucompra_secret_key',
+      !eff('tucompra_user') && 'tucompra_user',
+      !eff('tucompra_password') && 'tucompra_password',
+      !eff('tucompra_terminal') && 'tucompra_terminal',
     ].filter(Boolean) as string[]
   }
   if (provider === 'bold') {

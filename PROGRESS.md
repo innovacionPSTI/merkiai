@@ -304,7 +304,27 @@ Se reorganizó la configuración de pagos con la misma lógica de "Proveedor act
 - [x] **Nueva E16 · Componentes de IA** (roadmap: IA-01 descripciones, IA-02 recomendaciones, IA-03 asistente) ✅
 - [x] **Tabla de cobertura regenerada** por dominio: 190 ítems → 177 ✅ / 7 🟡 / 6 🔲 (93 % con pruebas, 97 % con código) ✅
 
-**Mapa v2 resumido:** E1 Fundación · E2 Arquitectura+CMS · E3 Sitio público · E4 Tienda · E5 Carrito · **E6 Pagos** · **E7 Envíos** · **E8 Emails** · **E9 Inventario 🔲** · E10 Blog · E11 Contenido/servicios · E12 Auth/Mi Cuenta · E13 Panel admin · E14 Despliegue/seguridad · E15 SEO · **E16 IA 🔲**.
+**Mapa v2 resumido (18 épicas):** E1 Fundación · E2 Arquitectura+CMS · E3 Sitio público · E4 Tienda · E5 Carrito · **E6 Pagos** · **E7 Envíos** · **E8 Emails y newsletter** · **E9 Inventario** · E10 Blog · E11 Contenido/servicios · E12 Auth/Mi Cuenta · E13 Panel admin · E14 Despliegue/seguridad · E15 SEO · **E16 Aplicación inteligente (IA) 🔲** · **E17 Plataforma multi-tienda / control plane 🔲** · **E18 Inventario multi-ubicación 🔲**.
+
+> **Nota:** el MVP (191 ítems, E1–E15 salvo IA) está completo (181 ✅ / 7 🟡). Las épicas E16–E18 y las HU-101…187 son **roadmap** (96 🔲). La fuente de verdad es `PRODUCT_BACKLOG.md` §2.0 (mapa), §11 (cobertura) y §11.1 (plan de olas).
+
+---
+
+### Expansión del roadmap (v17–v19) — planificación
+
+> Ampliación del backlog de **191 → 280 ítems** (181 ✅ / 7 🟡 / 92 🔲). Solo **planificación** (HU redactadas con criterios de aceptación y dependencias); sin cambios de código salvo los fixes listados por separado.
+
+- [x] **v17 — Expansión por dominio (HU-101…134):** catálogo (reseñas, búsqueda, wishlist, precio), inventario (back-in-stock, stock bajo), pagos (RMA, pasarela internacional), cuentas (login social, reorder, guest order), SEO (redirects 301), operación (drag-and-drop, CSV, acciones masivas, backups) y configurabilidad (plantillas de diseño, import/export, media library) ✅
+- [x] **v17 — E16 ampliada a "Aplicación inteligente" (HU-135…145):** cimientos (proveedor de IA swappable, captura de eventos, vector store) + features (asistente de compra, búsqueda visual, personalización, clustering, patrones de compra, apariencia por chat, generación de imágenes, detección de fraude) ✅
+- [x] **v18 — Emails y newsletter (HU-159…163):** `EmailProvider` multi-proveedor (SES/Postmark/SMTP), plantillas editables, entregabilidad (SPF/DKIM/DMARC + suppression), `email_log`, y newsletter externo (Beehiiv y similares) ✅
+- [x] **v18 — Divisiones de HU grandes:** HU-107→a/b, HU-114→a/b/c (i18n), HU-122→a/b/c (layouts), HU-138→a/b (asistente); registro de auditoría extraído a HU-146 ✅
+- [x] **v19 — Enablers de plataforma (HU-164…171):** pipeline de pricing unificado, webhooks salientes/API pública, facturación electrónica (DIAN), fidelización, bundles, onboarding, monitoreo de errores (APM) y spike de auth multi-tenant ✅
+- [x] **Épica nueva E17 · Plataforma multi-tienda / control plane (HU-156/157/158, HU-171…175):** multi-tenant (aislamiento por `store_id`/RLS, resolución por dominio, panel multi-tienda), consola de administración de todos los tenants, planes/entitlements, y gestión de dominios (web custom con ciclo DNS→cert→CDN→activo, y dominios de envío). **Decisión de auth:** Stack Auth + aislamiento en BD; FusionAuth solo si se requiere identidad separada por tienda / branding de auth por tienda / self-hosting ✅
+- [x] **Épica nueva E18 · Inventario multi-ubicación y fulfillment (HU-176…183):** ubicaciones tipo Shopify (stock por variante+ubicación, ruteo de fulfillment, transferencias, click & collect por ubicación), **incluye migración del stock único actual** (HU-178) ✅
+- [x] **Plan de olas (§11.1):** las HU 🔲 ordenadas en 8 fases por valor + dependencias + riesgo, con sizing aproximado; enablers primero (pricing, auditoría, eventos+cookies, EmailProvider, IA, spike auth). Decisiones estratégicas señaladas: adelantar E17/i18n si el negocio es white-label multi-cliente ✅
+- [x] **Tu Compra reescrita a la modalidad INTEGRADOR (HU-188):** al probar contra la doc oficial se descartó el modelo antiguo (form-POST+MD5) y el `crearBotonPago` (botón, sin referencia). Se implementó `confirmacionTransaccionMedioPago` (con `Referencia`=order_number → `urlBanco`), `listarBancos`, `consultarEstadoTransaccion`, **config de medios habilitados con IDs por demo/prod** (`tucompra_methods`), **URL de Confirmación + Retorno** en el admin, webhook autoritativo y **checkout cableado** (PSE con selector de banco, Nequi/Daviplata con celular, Referenciado). Pendiente: método **Tarjeta** (RSA → rompe SAQ A) y validación sandbox. PRV-07 y HU-188 en 🔲 (funcional, sin cerrar E2E) ✅
+- [x] **HU-189 — Rediseño UX de configuración de pagos:** indicador **Demo/Producción** por pasarela, estado activo claro y selector visual de métodos de Tu Compra (switches + drag-and-drop, IDs por entorno) en lugar del JSON ✅ *(en implementación)*
+- [x] **Hardening PCI DSS (HU-184…187):** la plataforma usa **flujo redirect/hosted** en todas las pasarelas (Wompi/MercadoPago/Tu Compra/Bold) — **no almacena, procesa ni transmite datos de tarjeta (CHD)** → alcance mínimo **SAQ A**. Se añadieron HU de gestión/rotación de llaves, logging seguro (sin datos sensibles), documentación de alcance SAQ A + evidencia (AOC de proveedores) e integridad de scripts de pago (PCI 4.0 6.4.3/11.6.1, si se pasa a widget embebido). MFA admin (HU-117) y auditoría (HU-146) forman parte del cumplimiento y se priorizan en la Ola 3. Total roadmap: **96 HU 🔲** (284 ítems) ✅
 
 ---
 
@@ -319,7 +339,7 @@ Se reorganizó la configuración de pagos con la misma lógica de "Proveedor act
 
 ## 🔧 Pendiente de implementar
 
-> **Único trabajo funcional pendiente (v2):** **E16 · Componentes de IA** (roadmap: IA-01 descripciones, IA-02 recomendaciones, IA-03 asistente). El resto son 🟡 sin pruebas (ver Resumen de Cobertura del backlog).
+> **Estado (v19):** el **MVP está completo** (181 ✅ / 7 🟡). El trabajo pendiente es el **roadmap de expansión**: **92 HU 🔲** (HU-101…183) en las épicas E16 (IA), E17 (multi-tienda/control plane), E18 (multi-ubicación) y refuerzos de E2–E15. Está priorizado en **8 olas** con dependencias explícitas — ver `PRODUCT_BACKLOG.md §11.1 (Roadmap por olas)`. Los 7 🟡 son features implementadas sin pruebas dedicadas.
 
 ### Completado recientemente (v3)
 - [x] **Skydropx PRO completo** — OAuth2 client_credentials, cotización (quotations API), creación automática de guías post-pago (`createShipmentForOrder`), webhooks de tracking, pickups masivos desde admin ✅

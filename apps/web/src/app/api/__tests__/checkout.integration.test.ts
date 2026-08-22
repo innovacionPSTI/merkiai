@@ -137,6 +137,29 @@ describe('POST /api/checkout — validación', () => {
 })
 
 // ─────────────────────────────────────────────
+// Rate limiting (HU-062) — 429 tras 10 intentos por IP
+// ─────────────────────────────────────────────
+describe('POST /api/checkout — rate limiting', () => {
+  it('retorna 429 al superar el límite (10) por IP en la ventana', async () => {
+    mockCreateOrder.mockResolvedValue({ id: 1, order_number: 'VPS-0001' } as never)
+    const ip = '203.0.113.77' // IP fija para acumular en el mismo cubo
+    const req = () =>
+      new NextRequest('http://localhost/api/checkout', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'x-forwarded-for': ip },
+        body: JSON.stringify(validBody),
+      })
+
+    for (let i = 0; i < 10; i++) {
+      const r = await POST(req())
+      expect(r.status).not.toBe(429) // las primeras 10 no se bloquean
+    }
+    const blocked = await POST(req())
+    expect(blocked.status).toBe(429) // la 11ª supera el límite
+  })
+})
+
+// ─────────────────────────────────────────────
 // Stock (Épica 9)
 // ─────────────────────────────────────────────
 describe('POST /api/checkout — validación de stock', () => {

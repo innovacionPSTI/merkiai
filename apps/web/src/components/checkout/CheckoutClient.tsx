@@ -80,6 +80,13 @@ export default function CheckoutClient({ initialEmail = '', defaultAddress = nul
   const [manualPayment, setManualPayment] = useState(false)
   const [loading, setLoading]   = useState(false)
 
+  // Tu Compra (modalidad integrador): medios habilitados + selección del cliente
+  const [tcMethods, setTcMethods] = useState<string[]>([])
+  const [tcBanks, setTcBanks]     = useState<Array<{ codigo: string; nombre: string }>>([])
+  const [tc, setTc] = useState<{ method: string; bankCode: string; personType: string; phone: string; document: string; docType: string }>(
+    { method: '', bankCode: '', personType: '0', phone: '', document: '', docType: '1' }
+  )
+
   // Envío
   const [shippingCfg, setShippingCfg]       = useState<ShippingPublicConfig>(FALLBACK_CFG)
   const [availableRates, setAvailableRates] = useState<ShippingRate[]>([])
@@ -103,7 +110,7 @@ export default function CheckoutClient({ initialEmail = '', defaultAddress = nul
 
     fetch('/api/checkout/gateways')
       .then((r) => r.ok ? r.json() : null)
-      .then((d: { gateways: GatewayOption[]; manual?: boolean } | null) => {
+      .then((d: { gateways: GatewayOption[]; manual?: boolean; tucompraMethods?: string[] } | null) => {
         if (!d) return
         if (d.manual || !d.gateways?.length) {
           // Sin pasarela activa → pago validado por el administrador
@@ -113,10 +120,23 @@ export default function CheckoutClient({ initialEmail = '', defaultAddress = nul
           setManualPayment(false)
           setGateways(d.gateways)
           setPaymentMethod(d.gateways[0].value)
+          const tcm = d.tucompraMethods ?? []
+          setTcMethods(tcm)
+          if (tcm.length) setTc((p) => ({ ...p, method: tcm[0] }))
         }
       })
       .catch(() => {})
   }, [])
+
+  // Carga los bancos PSE cuando se elige ese medio de Tu Compra
+  useEffect(() => {
+    if (paymentMethod === 'tucompra' && tc.method === 'pse' && tcBanks.length === 0) {
+      fetch('/api/checkout/tucompra/banks')
+        .then((r) => (r.ok ? r.json() : null))
+        .then((d: { banks?: Array<{ codigo: string; nombre: string }> } | null) => { if (d?.banks) setTcBanks(d.banks) })
+        .catch(() => {})
+    }
+  }, [paymentMethod, tc.method, tcBanks.length])
 
   // Obtener tarifas Skydropx
   const fetchRates = async () => {
@@ -239,11 +259,18 @@ export default function CheckoutClient({ initialEmail = '', defaultAddress = nul
             : null,
           total,
           payment_method: paymentMethod,
+          tucompra: paymentMethod === 'tucompra'
+            ? { method: tc.method, bankCode: tc.bankCode, personType: tc.personType, phone: tc.phone || shipping.phone, document: tc.document, docType: tc.docType }
+            : undefined,
         }),
       })
       if (!res.ok) throw new Error('Error creando el pedido')
       const { payment_url, order_number } = await res.json()
       clearCart()
+      // Guarda el pedido para recuperarlo al volver de la pasarela cuando la URL de
+      // Retorno no trae el parámetro (p.ej. Tu Compra: Nequi/Daviplata/Referenciado
+      // usan la URL de Retorno global del panel, sin ?order=).
+      try { sessionStorage.setItem('lastOrder', order_number) } catch { /* ignore */ }
       // Sin pasarela activa: el pedido queda pendiente de validación del admin
       window.location.href = payment_url
         ? payment_url
@@ -488,11 +515,47 @@ export default function CheckoutClient({ initialEmail = '', defaultAddress = nul
                         </label>
                       ))}
                     </div>
-                    <div className="bg-brand-yellow/20 rounded-xl p-4 mb-6">
-                      <p className="font-brand text-sm text-brand-primary/70">
-                        💡 El widget de {gateways.find((g) => g.value === paymentMethod)?.label ?? paymentMethod} se cargará al confirmar. Datos protegidos con SSL.
-                      </p>
-                    </div>
+                    {paymentMethod === 'tucompra' && tcMethods.length > 0 ? (
+                      <div className="mb-6 space-y-3 rounded-xl border border-brand-primary/10 p-4">
+                        <p className="font-brand text-sm font-semibold text-brand-primary">Medio de pago Tu Compra</p>
+                        <div className="grid grid-cols-2 gap-2">
+                          {tcMethods.map((m) => (
+                            <label key={m} className={`flex items-center gap-2 p-3 rounded-xl border-2 cursor-pointer text-sm ${tc.method === m ? 'border-brand-primary bg-brand-cream/50' : 'border-brand-primary/10 hover:border-brand-primary/30'}`}>
+                              <input type="radio" name="tcmethod" checked={tc.method === m} onChange={() => setTc((p) => ({ ...p, method: m }))} className="accent-brand-primary" />
+                              <span className="font-brand text-brand-primary">{({ pse: 'PSE (débito bancario)', nequi: 'Nequi', daviplata: 'Daviplata', referenciado: 'Efectivo / referenciado', tarjeta: 'Tarjeta de crédito' } as Record<string, string>)[m] ?? m}</span>
+                            </label>
+                          ))}
+                        </div>
+                        {tc.method === 'pse' && (
+                          <div className="space-y-2">
+                            <select value={tc.bankCode} onChange={(e) => setTc((p) => ({ ...p, bankCode: e.target.value }))} className="w-full border border-brand-primary/20 rounded-xl px-4 py-2.5 font-brand text-sm focus:outline-none focus:border-brand-primary">
+                              <option value="">Selecciona tu banco…</option>
+                              {tcBanks.map((b) => <option key={b.codigo} value={b.codigo}>{b.nombre}</option>)}
+                            </select>
+                            <div className="flex gap-4">
+                              {([['0', 'Persona natural'], ['1', 'Persona jurídica']] as const).map(([v, l]) => (
+                                <label key={v} className="flex items-center gap-2 font-brand text-sm text-brand-primary cursor-pointer">
+                                  <input type="radio" name="tcperson" checked={tc.personType === v} onChange={() => setTc((p) => ({ ...p, personType: v }))} className="accent-brand-primary" />{l}
+                                </label>
+                              ))}
+                            </div>
+                          </div>
+                        )}
+                        {(tc.method === 'nequi' || tc.method === 'daviplata') && (
+                          <input type="tel" value={tc.phone} onChange={(e) => setTc((p) => ({ ...p, phone: e.target.value }))} placeholder="Celular (ej. 3001234567)" className="w-full border border-brand-primary/20 rounded-xl px-4 py-2.5 font-brand text-sm focus:outline-none focus:border-brand-primary" />
+                        )}
+                        {tc.method === 'daviplata' && (
+                          <input type="text" value={tc.document} onChange={(e) => setTc((p) => ({ ...p, document: e.target.value }))} placeholder="Documento del titular" className="w-full border border-brand-primary/20 rounded-xl px-4 py-2.5 font-brand text-sm focus:outline-none focus:border-brand-primary" />
+                        )}
+                        <p className="font-brand text-[11px] text-brand-primary/40">Al confirmar te llevaremos a Tu Compra para completar el pago de forma segura.</p>
+                      </div>
+                    ) : (
+                      <div className="bg-brand-yellow/20 rounded-xl p-4 mb-6">
+                        <p className="font-brand text-sm text-brand-primary/70">
+                          💡 El widget de {gateways.find((g) => g.value === paymentMethod)?.label ?? paymentMethod} se cargará al confirmar. Datos protegidos con SSL.
+                        </p>
+                      </div>
+                    )}
                   </>
                 )}
                 <div className="flex gap-3">

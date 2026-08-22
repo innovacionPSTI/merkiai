@@ -70,6 +70,7 @@ describe('getStoreConfig', () => {
 
     expect(result.id).toBe(1)
     expect(result.store_name).toBe('Mi Tienda')
+    expect(result.order_prefix).toBe('ORD') // prefijo por defecto del número de orden
     expect(result.whatsapp_number).toBeNull()
     expect(result.logo_url).toBeNull()
   })
@@ -137,6 +138,17 @@ describe('updateStoreConfig', () => {
     mockUpsertChain.mockResolvedValueOnce({ data: null, error: dbError })
 
     await expect(updateStoreConfig({ store_name: 'X' })).rejects.toMatchObject(dbError)
+  })
+
+  it('reenvía order_prefix en el upsert (prefijo configurable del número de orden)', async () => {
+    mockUpsertChain.mockResolvedValueOnce({ data: { ...fullConfig, order_prefix: 'SHOP' }, error: null })
+
+    const result = await updateStoreConfig({ order_prefix: 'SHOP' })
+
+    expect(mockUpsert).toHaveBeenCalledWith(
+      expect.objectContaining({ id: 1, order_prefix: 'SHOP' })
+    )
+    expect(result.order_prefix).toBe('SHOP')
   })
 
   it('actualiza solo logo_url sin afectar otros campos', async () => {

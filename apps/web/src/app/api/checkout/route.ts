@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { createOrder, getPaymentConfig, createServerClient, getPaymentGateway, getActiveProvider, getStockForVariants } from '@vps/database'
+import { createOrder, getPaymentConfig, createServerClient, getPaymentGateway, getActiveProvider, getStockForVariants, TuCompraGateway } from '@vps/database'
 import { stackServerApp } from '@/stack'
 
 // ── Rate limiting (best-effort, per-instance) ──────────────────────────────────
@@ -127,6 +127,8 @@ export async function POST(req: NextRequest) {
       discount,
       coupon_code,
       shipping_rate,
+      // Datos del medio de pago Tu Compra (modalidad integrador, elegidos en el checkout)
+      tucompra,
     } = body
 
     // Extract carrier info from the rate the user selected
@@ -218,6 +220,68 @@ export async function POST(req: NextRequest) {
         payment_url: null,
         manual: true,
       })
+    }
+
+    // ── Tu Compra (modalidad integrador): transaccional por medio de pago.
+    // El cliente eligió el medio (PSE/Nequi/…) y sus datos; el servidor arma la
+    // transacción con Referencia=order_number → urlBanco. Los IDs de método son
+    // configurables (payment_config.tucompra_methods; difieren demo/prod).
+    if (activeProvider === 'tucompra') {
+      const tc = (tucompra ?? {}) as {
+        method?: string; bankCode?: string; personType?: string; document?: string; docType?: string; phone?: string
+      }
+      const methods = (Array.isArray(paymentConfig.tucompra_methods) ? paymentConfig.tucompra_methods : []) as Array<{ tipo: string; id: string; enabled?: boolean }>
+      const cfgMethod = methods.find((m) => m.tipo === tc.method && m.enabled !== false)
+      if (!tc.method || !cfgMethod?.id) {
+        return NextResponse.json({ error: 'Selecciona un medio de pago de Tu Compra.' }, { status: 400 })
+      }
+      if (tc.method === 'pse' && !tc.bankCode) {
+        return NextResponse.json({ error: 'Selecciona tu banco para PSE.' }, { status: 400 })
+      }
+
+      const order = await createOrder({
+        customer_name: name, customer_email: email, customer_phone: phone ?? null,
+        shipping_addr: address, items, subtotal, shipping_cost: shipping_cost ?? 0, total,
+        payment_method: 'tucompra', skydropx_rate_id, carrier_name,
+      })
+      await autoSaveAddress()
+
+      const gw = new TuCompraGateway({
+        usuario:   paymentConfig.tucompra_user!,
+        clave:     paymentConfig.tucompra_password!,
+        terminal:  paymentConfig.tucompra_terminal!,
+        apiUrl:    paymentConfig.tucompra_api_url ?? undefined,
+        publicKey: paymentConfig.tucompra_public_key ?? undefined,
+      })
+      const returnUrl = `${siteUrl}/checkout/confirmation?order=${order.order_number}`
+      const metodo = tc.method === 'pse'
+        ? TuCompraGateway.metodoPSE(cfgMethod.id, tc.bankCode!, tc.personType === '1' ? '1' : '0', returnUrl)
+        : TuCompraGateway.metodoSimple(cfgMethod.id)
+
+      try {
+        const result = await gw.createIntegradorTransaction({
+          referencia: order.order_number,
+          valorTotal: total,
+          descripcion: `Pedido ${order.order_number}`,
+          correo: email,
+          nombre: name,
+          celular: tc.phone ?? phone ?? undefined,
+          telefono: phone ?? undefined,
+          documento: tc.document ?? undefined,
+          tipoDocumento: tc.docType ?? undefined,
+          ciudad: address.city,
+          pais: 'CO',
+        }, metodo)
+
+        if (result.codigoRespuesta === '1' || !result.urlBanco) {
+          console.error('[checkout/tucompra]', result.descripcion, result.codigoRespuesta)
+          return NextResponse.json({ error: result.descripcion ?? 'Tu Compra rechazó la transacción.' }, { status: 502 })
+        }
+        return NextResponse.json({ order_number: order.order_number, order_id: order.id, payment_url: result.urlBanco })
+      } catch (err) {
+        console.error('[checkout/tucompra] transacción falló:', err)
+        return NextResponse.json({ error: 'No se pudo iniciar el pago con Tu Compra.' }, { status: 502 })
+      }
     }
 
     // ── Pasarela activa: resolver el gateway (server-side) antes de crear la orden

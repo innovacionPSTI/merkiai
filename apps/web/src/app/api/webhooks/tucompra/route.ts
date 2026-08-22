@@ -7,14 +7,15 @@ import type { Order, Database } from '@vps/database'
 type OrderUpdate = Database['public']['Tables']['orders']['Update']
 
 /**
- * Webhook de Tu Compra — confirmación de pago (POST form-encoded)
- * Tu Compra envía los datos como application/x-www-form-urlencoded.
+ * URL de Confirmación de Tu Compra (server-to-server).
  *
- * Campos relevantes:
- *   factura    — order_number (referencia)
- *   resultado  — 1=approved, 2=rejected, 3=pending
- *   firma      — MD5 de verificación
- *   ref_payco  — ID de transacción (opcional)
+ * Se configura en el panel del comercio (Tu Compra → URL de Confirmación).
+ * Tu Compra hace POST aquí con el resultado del pago. NO confiamos en el payload:
+ * se extrae la referencia (order_number) y se re-consulta el estado autoritativo
+ * a la API (`consultarEstadoTransaccion`). Idempotente.
+ *
+ * (La URL de Retorno es distinta: redirige el navegador del cliente a la página
+ * de confirmación; esa NO confirma el pago.)
  */
 export async function POST(req: NextRequest) {
   let rawBody: string
@@ -24,38 +25,34 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: 'Invalid body' }, { status: 400 })
   }
 
-  // Cargar credenciales desde la BD
   const paymentConfig = await getPaymentConfig().catch(() => null)
-
-  // El webhook valida por credenciales (no por proveedor activo): una notificación
-  // puede llegar por un pago iniciado aunque luego se cambie la pasarela activa.
-  if (!paymentConfig?.tucompra_merchant_id || !paymentConfig.tucompra_secret_key) {
+  if (!paymentConfig?.tucompra_user || !paymentConfig.tucompra_password || !paymentConfig.tucompra_terminal) {
     console.warn('[webhook/tucompra] Tu Compra no configurado')
     return NextResponse.json({ error: 'Gateway not configured' }, { status: 503 })
   }
 
   const gateway = new TuCompraGateway({
-    merchantId: paymentConfig.tucompra_merchant_id,
-    secretKey:  paymentConfig.tucompra_secret_key,
-    sandbox:    paymentConfig.tucompra_sandbox ?? true,
+    usuario:   paymentConfig.tucompra_user,
+    clave:     paymentConfig.tucompra_password,
+    terminal:  paymentConfig.tucompra_terminal,
+    apiUrl:    paymentConfig.tucompra_api_url ?? undefined,
+    publicKey: paymentConfig.tucompra_public_key ?? undefined,
   })
 
-  // Verificar firma
-  if (!gateway.verifyWebhook(rawBody, {})) {
-    console.warn('[webhook/tucompra] Firma inválida')
-    return NextResponse.json({ error: 'Invalid signature' }, { status: 401 })
-  }
-
   const webhookData = gateway.extractWebhookData(rawBody)
-  if (!webhookData) {
-    return NextResponse.json({ ok: true })
-  }
+  if (!webhookData) return NextResponse.json({ ok: true })
+  const orderReference = webhookData.orderReference
 
-  const { orderReference, rawStatus, paymentId } = webhookData
-  const paymentStatus = gateway.mapStatus(rawStatus)
+  // Estado autoritativo: re-consulta a la API (no se confía en el payload).
+  const status = await gateway.queryStatusByReference(orderReference)
+  if (!status) {
+    console.warn(`[webhook/tucompra] Sin estado para reference="${orderReference}"; se ignora`)
+    return NextResponse.json({ ok: true, warning: 'no_status' })
+  }
+  const paymentStatus = status.status
+  const paymentId = status.paymentId
 
   const supabase = createServerClient()
-
   const updatePayload: OrderUpdate = {
     payment_status: paymentStatus,
     updated_at: new Date().toISOString(),
@@ -68,51 +65,38 @@ export async function POST(req: NextRequest) {
     .update(updatePayload)
     .eq('order_number', orderReference)
     .select()
-    .single()
+    .maybeSingle()
 
   if (error) {
     console.error('[webhook/tucompra] Error actualizando orden:', error)
     return NextResponse.json({ ok: true, warning: 'order_not_updated' })
   }
+  if (!updatedOrder) {
+    console.warn(`[webhook/tucompra] Sin orden para reference="${orderReference}"`)
+    return NextResponse.json({ ok: true, warning: 'order_not_found' })
+  }
 
-  // Pago aprobado: confirmación + guía de envío
-  if (paymentStatus === 'approved' && updatedOrder) {
-    // Descuento de stock (idempotente) al confirmarse el pago
+  if (paymentStatus === 'approved') {
     await applyStockForOrder(orderReference)
 
     const storeConfig = await getStoreConfig().catch(() => null)
     const emailConfig = storeConfig?.resend_api_key && storeConfig?.resend_from_email
-      ? buildEmailConfig(
-          storeConfig.resend_api_key,
-          storeConfig.resend_from_email,
-          storeConfig.store_name,
-          storeConfig.email_provider,
-        )
+      ? buildEmailConfig(storeConfig.resend_api_key, storeConfig.resend_from_email, storeConfig.store_name, storeConfig.email_provider)
       : null
 
     if (emailConfig) {
-      try {
-        await sendOrderConfirmation(updatedOrder as unknown as Order, emailConfig)
-      } catch (err) {
-        console.error('[webhook/tucompra] Error email confirmación:', err)
-      }
+      try { await sendOrderConfirmation(updatedOrder as unknown as Order, emailConfig) }
+      catch (err) { console.error('[webhook/tucompra] Error email confirmación:', err) }
     }
 
-    // Generar guía de envío (falla silenciosa)
     const shipment = await createShipmentForOrder(orderReference)
     if (shipment && emailConfig) {
-      const { data: shippedOrder } = await supabase
-        .from('orders')
-        .select('*')
-        .eq('order_number', orderReference)
-        .single()
+      const { data: shippedOrder } = await supabase.from('orders').select('*').eq('order_number', orderReference).single()
       if (shippedOrder?.tracking_number) {
         try {
           const { sendShippingNotification } = await import('@/lib/email')
           await sendShippingNotification(shippedOrder as unknown as Order, emailConfig)
-        } catch (err) {
-          console.error('[webhook/tucompra] Error email envío:', err)
-        }
+        } catch (err) { console.error('[webhook/tucompra] Error email envío:', err) }
       }
     }
   }

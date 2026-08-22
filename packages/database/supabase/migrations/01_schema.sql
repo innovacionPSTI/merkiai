@@ -407,9 +407,18 @@ CREATE TABLE IF NOT EXISTS payment_config (
   mercadopago_access_token TEXT,
   mercadopago_public_key   TEXT,
   -- Tu Compra
-  tucompra_merchant_id     TEXT,
-  tucompra_secret_key      TEXT,
+  tucompra_merchant_id     TEXT,          -- [deprecated] modelo antiguo
+  tucompra_secret_key      TEXT,          -- [deprecated] modelo antiguo
   tucompra_sandbox         BOOLEAN   NOT NULL DEFAULT true,
+  -- API REST de Tu Compra (token JWT). Ver providers/payment/TuCompraGateway.ts
+  tucompra_user            TEXT,          -- usuario de autenticación
+  tucompra_password        TEXT,          -- clave (contraseña)
+  tucompra_terminal        TEXT,          -- terminal (Id Sistema)
+  tucompra_api_url         TEXT,          -- URL base (demo/prod) configurable
+  tucompra_public_key      TEXT,          -- llave pública RSA (solo tarjeta directa)
+  -- Medios habilitados + su id de MetodoPago (difieren demo/prod → configurable).
+  -- Ej: [{"tipo":"pse","id":"41","enabled":true},{"tipo":"nequi","id":"72","enabled":true}]
+  tucompra_methods         JSONB     NOT NULL DEFAULT '[]',
   -- Bold
   bold_api_key             TEXT,     -- llave de identidad (Authorization: x-api-key)
   bold_secret_key          TEXT,     -- verificación de firma del webhook (HMAC-SHA256)

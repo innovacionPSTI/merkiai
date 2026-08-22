@@ -31,6 +31,11 @@ beforeEach(() => {
   localStorage.clear()
 })
 
+afterEach(() => {
+  // @ts-expect-error limpiar el mock de fetch entre tests
+  delete global.fetch
+})
+
 // ─────────────────────────────────────────────
 // Topes de stock (HU-099/100)
 // ─────────────────────────────────────────────
@@ -212,6 +217,69 @@ describe('subtotal y total', () => {
     act(() => { useCartStore.getState().addItem(makeItem({ variantId: 2, price: 20000, qty: 1 })) })
     act(() => { useCartStore.getState().removeItem(2) })
     expect(useCartStore.getState().subtotal()).toBe(90000)
+  })
+})
+
+// ─────────────────────────────────────────────
+// loadFromServer — fusión invitado→BD + consolidación por variante
+// ─────────────────────────────────────────────
+function mockServerCart(serverItems: unknown[]) {
+  global.fetch = jest.fn().mockResolvedValue({
+    ok: true,
+    json: async () => ({ items: serverItems }),
+  }) as unknown as typeof fetch
+}
+
+const serverRow = (variant_id: number, qty: number) => ({
+  variant_id,
+  product_id: variant_id * 10,
+  product_name: `P${variant_id}`,
+  variant_label: 'V',
+  price: 1000,
+  qty,
+  image_url: null,
+})
+
+describe('loadFromServer y consolidación', () => {
+  it('agrega ítems del servidor que no están en local', async () => {
+    act(() => { useCartStore.setState({ items: [makeItem({ variantId: 1, qty: 1 })] }) })
+    mockServerCart([serverRow(2, 3)])
+    await act(async () => { await useCartStore.getState().loadFromServer() })
+    const { items } = useCartStore.getState()
+    expect(items).toHaveLength(2)
+    expect(items.find((i) => i.variantId === 2)?.qty).toBe(3)
+  })
+
+  it('no duplica un ítem del servidor que ya existe en local (gana local)', async () => {
+    act(() => { useCartStore.setState({ items: [makeItem({ variantId: 1, qty: 2 })] }) })
+    mockServerCart([serverRow(1, 9)])
+    await act(async () => { await useCartStore.getState().loadFromServer() })
+    const { items } = useCartStore.getState()
+    expect(items).toHaveLength(1)
+    expect(items[0].qty).toBe(2) // se conserva la cantidad local, no se duplica
+  })
+
+  it('consolida duplicados legacy por variantId (suma cantidades)', async () => {
+    // Estado con duplicados (como podría venir de localStorage legacy)
+    act(() => {
+      useCartStore.setState({
+        items: [makeItem({ variantId: 1, qty: 2 }), makeItem({ variantId: 1, qty: 3 })],
+      })
+    })
+    mockServerCart([serverRow(2, 1)]) // servidor no vacío para disparar la consolidación
+    await act(async () => { await useCartStore.getState().loadFromServer() })
+    const { items } = useCartStore.getState()
+    const v1 = items.filter((i) => i.variantId === 1)
+    expect(v1).toHaveLength(1)   // los duplicados se fusionan
+    expect(v1[0].qty).toBe(5)    // 2 + 3
+    expect(items).toHaveLength(2)
+  })
+
+  it('no altera el carrito si el servidor no devuelve ítems', async () => {
+    act(() => { useCartStore.setState({ items: [makeItem({ variantId: 1, qty: 1 })] }) })
+    mockServerCart([])
+    await act(async () => { await useCartStore.getState().loadFromServer() })
+    expect(useCartStore.getState().items).toHaveLength(1)
   })
 })
 

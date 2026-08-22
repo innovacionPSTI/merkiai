@@ -25,9 +25,16 @@ export async function GET() {
       desc:  GATEWAY_META[name]?.desc  ?? '',
     }))
 
+    // Tu Compra (integrador): medios habilitados para el selector del checkout.
+    const tucompraMethods = names.includes('tucompra')
+      ? ((Array.isArray(config.tucompra_methods) ? config.tucompra_methods : []) as Array<{ tipo: string; enabled?: boolean }>)
+          .filter((m) => m.enabled !== false)
+          .map((m) => m.tipo)
+      : []
+
     // Sin pasarela activa → checkout en modo manual (validación del administrador).
     // No se expone ninguna pasarela; el pedido se creará como 'manual'.
-    return NextResponse.json({ gateways, manual: gateways.length === 0 })
+    return NextResponse.json({ gateways, manual: gateways.length === 0, tucompraMethods })
   } catch (err) {
     console.error('[checkout/gateways GET]', err)
     // Ante error de BD, degradar a modo manual (nunca inventar una pasarela activa).
