@@ -9,7 +9,7 @@ const mockGetAdminUser = jest.fn()
 jest.mock('@/lib/auth', () => ({ getAdminUser: () => mockGetAdminUser() }))
 
 const mockUpdateAdminConfig = jest.fn()
-jest.mock('@vps/database', () => ({
+jest.mock('@merkiai/database', () => ({
   updateAdminConfig: (...args: unknown[]) => mockUpdateAdminConfig(...args),
 }))
 

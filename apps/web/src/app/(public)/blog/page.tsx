@@ -1,4 +1,4 @@
-import { getBlogPosts } from '@vps/database'
+import { getBlogPosts } from '@merkiai/database'
 import Link from 'next/link'
 import type { Metadata } from 'next'
 

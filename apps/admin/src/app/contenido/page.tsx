@@ -1,6 +1,6 @@
 import { getAdminUser } from '@/lib/auth'
 import { redirect } from 'next/navigation'
-import { createServerClient } from '@vps/database'
+import { createServerClient } from '@merkiai/database'
 import ContenidoClient from './ContenidoClient'
 
 export const dynamic = 'force-dynamic'

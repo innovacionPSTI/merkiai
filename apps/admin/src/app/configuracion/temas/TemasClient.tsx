@@ -2,7 +2,7 @@
 
 import { useState, useTransition } from 'react'
 import { useRouter } from 'next/navigation'
-import type { Theme } from '@vps/database'
+import type { Theme } from '@merkiai/database'
 
 // ── Constantes ────────────────────────────────────────────────────────────────
 

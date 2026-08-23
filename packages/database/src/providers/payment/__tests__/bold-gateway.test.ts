@@ -12,14 +12,14 @@ import type { CreatePaymentParams } from '../types'
 const cfg = { apiKey: 'bold_api_123', secretKey: 'super_secret', sandbox: false }
 
 const baseParams: CreatePaymentParams = {
-  orderNumber: 'VPS-0042',
+  orderNumber: 'ORD-0042',
   amountInCents: 9800000, // 98.000 COP en centavos
   currency: 'COP',
   customerEmail: 'juan@example.com',
   customerName: 'Juan Pérez',
   customerPhone: '3001234567',
   items: [{ id: '10', title: 'Café', quantity: 2, unit_price: 45000 }],
-  redirectUrl: 'https://shop.com/checkout/confirmation?order=VPS-0042',
+  redirectUrl: 'https://shop.com/checkout/confirmation?order=ORD-0042',
   webhookUrl: 'https://shop.com/api/webhooks/bold',
 }
 
@@ -48,9 +48,9 @@ describe('BoldGateway — createPaymentUrl', () => {
     const body = JSON.parse(String(init?.body))
     expect(body.amount_type).toBe('CLOSE')
     expect(body.amount.total_amount).toBe(98000) // centavos → COP
-    expect(body.reference).toBe('VPS-0042') // referencia externa top-level → webhook data.metadata.reference
+    expect(body.reference).toBe('ORD-0042') // referencia externa top-level → webhook data.metadata.reference
     expect(body.metadata).toBeUndefined() // Bold ignora metadata en el API Link de pagos
-    expect(body.callback_url).toContain('order=VPS-0042')
+    expect(body.callback_url).toContain('order=ORD-0042')
   })
 
   it('lanza si Bold responde error HTTP', async () => {
@@ -71,7 +71,7 @@ describe('BoldGateway — createPaymentUrl', () => {
 })
 
 describe('BoldGateway — verifyWebhook', () => {
-  const body = JSON.stringify({ type: 'SALE_APPROVED', data: { metadata: { reference: 'VPS-0042' } } })
+  const body = JSON.stringify({ type: 'SALE_APPROVED', data: { metadata: { reference: 'ORD-0042' } } })
 
   it('acepta una firma válida', () => {
     const sig = boldSign(body, cfg.secretKey)
@@ -109,22 +109,22 @@ describe('BoldGateway — queryStatusByReference (fallback)', () => {
       ] }),
     } as unknown as Response)
 
-    const out = await new BoldGateway(cfg).queryStatusByReference('VPS-0042')
+    const out = await new BoldGateway(cfg).queryStatusByReference('ORD-0042')
 
     expect(out).toEqual({ status: 'approved', rawStatus: 'SALE_APPROVED', paymentId: 'P2' })
     const [url, init] = fetchMock.mock.calls[0]
-    expect(String(url)).toBe('https://integrations.api.bold.co/payments/webhook/notifications/VPS-0042?is_external_reference=true')
+    expect(String(url)).toBe('https://integrations.api.bold.co/payments/webhook/notifications/ORD-0042?is_external_reference=true')
     expect((init?.headers as Record<string, string>).Authorization).toBe('x-api-key bold_api_123')
   })
 
   it('devuelve null si no hay notificaciones', async () => {
     jest.spyOn(global, 'fetch').mockResolvedValue({ ok: true, json: async () => ({ notifications: [] }) } as unknown as Response)
-    expect(await new BoldGateway(cfg).queryStatusByReference('VPS-0001')).toBeNull()
+    expect(await new BoldGateway(cfg).queryStatusByReference('ORD-0001')).toBeNull()
   })
 
   it('devuelve null ante error HTTP', async () => {
     jest.spyOn(global, 'fetch').mockResolvedValue({ ok: false, status: 404 } as unknown as Response)
-    expect(await new BoldGateway(cfg).queryStatusByReference('VPS-0001')).toBeNull()
+    expect(await new BoldGateway(cfg).queryStatusByReference('ORD-0001')).toBeNull()
   })
 })
 
@@ -142,10 +142,10 @@ describe('BoldGateway — mapStatus / extractWebhookData', () => {
     const body = JSON.stringify({
       type: 'SALE_APPROVED',
       subject: 'TXN-1',
-      data: { payment_id: 'PAY-1', amount: { total: 98000 }, metadata: { reference: 'VPS-0042' } },
+      data: { payment_id: 'PAY-1', amount: { total: 98000 }, metadata: { reference: 'ORD-0042' } },
     })
     expect(gw.extractWebhookData(body)).toEqual({
-      orderReference: 'VPS-0042',
+      orderReference: 'ORD-0042',
       rawStatus: 'SALE_APPROVED',
       paymentId: 'PAY-1',
       amountCop: 98000,

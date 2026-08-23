@@ -7,8 +7,8 @@
  * Seguridad: guard admin (super_admin/admin/vendedor); solo acepta 'approved' o
  * 'rejected'; nunca accesible desde el sitio público.
  */
-import { createServerClient, applyStockForOrder, restoreStockForOrder } from '@vps/database'
-import type { Database } from '@vps/database'
+import { createServerClient, applyStockForOrder, restoreStockForOrder } from '@merkiai/database'
+import type { Database } from '@merkiai/database'
 import { NextRequest, NextResponse } from 'next/server'
 import { getAdminUser } from '@/lib/auth'
 import { sendPaymentConfirmed } from '@/lib/email'

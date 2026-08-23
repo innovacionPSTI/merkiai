@@ -14,7 +14,7 @@
  *   - Pago sin external_reference → 200 ok sin tocar BD
  *   - Error de BD al actualizar → 200 ok con warning
  *
- * Mocks: @vps/database, @/lib/mercadopago, @/lib/email
+ * Mocks: @merkiai/database, @/lib/mercadopago, @/lib/email
  */
 
 import { NextRequest } from 'next/server'
@@ -30,7 +30,7 @@ const mockReadEq = jest.fn(() => ({ maybeSingle: mockMaybeSingle }))
 const mockReadSelect = jest.fn(() => ({ eq: mockReadEq }))
 const mockFrom = jest.fn(() => ({ update: mockUpdate, select: mockReadSelect }))
 
-jest.mock('@vps/database', () => ({
+jest.mock('@merkiai/database', () => ({
   createServerClient: jest.fn(() => ({ from: mockFrom })),
   getPaymentConfig: jest.fn(),
   getStoreConfig: jest.fn(),
@@ -52,7 +52,7 @@ jest.mock('@/lib/email', () => ({
   })),
 }))
 
-import { getPaymentConfig, getStoreConfig } from '@vps/database'
+import { getPaymentConfig, getStoreConfig } from '@merkiai/database'
 import { getMercadoPagoPayment, mapMercadoPagoStatus } from '@/lib/mercadopago'
 import { sendOrderConfirmation } from '@/lib/email'
 import { POST } from '../webhooks/mercadopago/route'
@@ -81,7 +81,7 @@ const storeConfig = {
   resend_api_key: 're_test_key',
   resend_from_email: 'pedidos@tienda.example.com',
   whatsapp_number: null,
-  store_name: 'Commerce CMS',
+  store_name: 'Merkiai',
   store_email: null,
   logo_url: null,
   updated_at: new Date().toISOString(),
@@ -90,13 +90,13 @@ const storeConfig = {
 const mockMPPayment = {
   id: 12345678,
   status: 'approved',
-  external_reference: 'VPS-0042',
+  external_reference: 'ORD-0042',
   transaction_amount: 98000,
 }
 
 const mockOrder = {
   id: 42,
-  order_number: 'VPS-0042',
+  order_number: 'ORD-0042',
   status: 'processing',
   customer_name: 'Juan Pérez',
   customer_email: 'juan@example.com',

@@ -1,5 +1,5 @@
-import { createServerClient } from '@vps/database'
-import { getVariantTypes } from '@vps/database'
+import { createServerClient } from '@merkiai/database'
+import { getVariantTypes } from '@merkiai/database'
 import type { Metadata } from 'next'
 import ProductForm from '../ProductForm'
 

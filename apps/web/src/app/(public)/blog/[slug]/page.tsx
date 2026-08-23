@@ -1,4 +1,4 @@
-import { getBlogPostBySlug, getBlogPostBySlugAny, getBlogPosts, getStoreConfig } from '@vps/database'
+import { getBlogPostBySlug, getBlogPostBySlugAny, getBlogPosts, getStoreConfig } from '@merkiai/database'
 import { notFound } from 'next/navigation'
 import { cookies } from 'next/headers'
 import Link from 'next/link'
@@ -7,7 +7,7 @@ import ShareWhatsApp from '@/components/blog/ShareWhatsApp'
 import { markdownToHtml } from '@/lib/markdown'
 import { buildArticleJsonLd } from '@/lib/json-ld'
 
-const DRAFT_COOKIE = '__vps_draft'
+const DRAFT_COOKIE = '__merkiai_draft'
 
 interface Props {
   params:      Promise<{ slug: string }>

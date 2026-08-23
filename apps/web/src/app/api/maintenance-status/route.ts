@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server'
-import { getStoreConfig } from '@vps/database'
+import { getStoreConfig } from '@merkiai/database'
 
 // Cachear la respuesta 60 s en el CDN / ISR
 export const revalidate = 60

@@ -1,6 +1,6 @@
 import Link from 'next/link'
 import Image from 'next/image'
-import type { SectionItem } from '@vps/database'
+import type { SectionItem } from '@merkiai/database'
 
 interface Props {
   items: SectionItem[]

@@ -1,7 +1,7 @@
 'use client'
 
 import { useState } from 'react'
-import type { VariantType } from '@vps/database'
+import type { VariantType } from '@merkiai/database'
 
 interface Props {
   variantTypes: VariantType[]

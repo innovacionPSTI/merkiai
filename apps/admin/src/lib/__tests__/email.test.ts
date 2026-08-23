@@ -14,11 +14,11 @@ import { sendShippingNotification, sendStatusNotification } from '../email'
 const config = {
   apiKey:    're_test_key',
   fromEmail: 'pedidos@tienda.example.com',
-  storeName: 'Commerce CMS',
+  storeName: 'Merkiai',
 }
 
 const baseOrder = {
-  order_number:   'VPS-0042',
+  order_number:   'ORD-0042',
   customer_email: 'cliente@example.com',
   customer_name:  'Ana García',
 }
@@ -51,7 +51,7 @@ describe('sendShippingNotification', () => {
     await sendShippingNotification({ ...baseOrder, tracking_number: 'TRK123' }, config)
 
     const body = JSON.parse((mockFetch.mock.calls[0][1] as RequestInit).body as string)
-    expect(body.subject).toContain('VPS-0042')
+    expect(body.subject).toContain('ORD-0042')
   })
 
   it('el destinatario es el email del cliente', async () => {
@@ -105,8 +105,8 @@ describe('sendStatusNotification', () => {
     ).subject
 
     expect(subjectDelivered).not.toBe(subjectCancelled)
-    expect(subjectDelivered).toContain('VPS-0042')
-    expect(subjectCancelled).toContain('VPS-0042')
+    expect(subjectDelivered).toContain('ORD-0042')
+    expect(subjectCancelled).toContain('ORD-0042')
   })
 
   it('el HTML de "delivered" menciona entrega', async () => {
@@ -130,6 +130,6 @@ describe('sendStatusNotification', () => {
   it('usa el storeName en el remitente', async () => {
     await sendStatusNotification(baseOrder, 'delivered', config)
     const body = JSON.parse((mockFetch.mock.calls[0][1] as RequestInit).body as string)
-    expect(body.from).toContain('Commerce CMS')
+    expect(body.from).toContain('Merkiai')
   })
 })

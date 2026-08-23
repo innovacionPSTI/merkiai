@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { createServerClient, restoreStockForOrder } from '@vps/database'
+import { createServerClient, restoreStockForOrder } from '@merkiai/database'
 import { sendShippingNotification, sendStatusNotification } from '@/lib/email'
 
 const NOTIFIABLE_STATUSES = new Set(['shipped', 'delivered', 'cancelled'])

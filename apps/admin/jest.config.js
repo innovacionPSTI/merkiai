@@ -4,13 +4,13 @@ const createJestConfig = nextJest({ dir: './' })
 
 /** @type {import('jest').Config} */
 const config = {
-  displayName: '@vps/admin',
+  displayName: '@merkiai/admin',
   testEnvironment: 'jsdom',
   setupFilesAfterEnv: ['<rootDir>/jest.setup.ts'],
   moduleNameMapper: {
     '^@/(.*)$': '<rootDir>/src/$1',
-    '^@vps/database$': '<rootDir>/../../packages/database/src/index.ts',
-    '^@vps/ui$': '<rootDir>/../../packages/ui/src/index.ts',
+    '^@merkiai/database$': '<rootDir>/../../packages/database/src/index.ts',
+    '^@merkiai/ui$': '<rootDir>/../../packages/ui/src/index.ts',
   },
   testMatch: ['**/__tests__/**/*.test.{ts,tsx}', '**/*.test.{ts,tsx}'],
   collectCoverageFrom: [

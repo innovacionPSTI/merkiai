@@ -1,4 +1,4 @@
-import { getStoreConfig } from '@vps/database'
+import { getStoreConfig } from '@merkiai/database'
 
 /**
  * Mensajes predeterminados por tipo de servicio.

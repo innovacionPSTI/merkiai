@@ -3,7 +3,7 @@
  * Actualiza las notas internas de un pedido.
  * Accesible por super_admin, admin y vendedor.
  */
-import { createServerClient } from '@vps/database'
+import { createServerClient } from '@merkiai/database'
 import { NextRequest, NextResponse } from 'next/server'
 import { getAdminUser } from '@/lib/auth'
 

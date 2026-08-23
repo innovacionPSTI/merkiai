@@ -6,7 +6,7 @@
  * solo actúa sobre pedidos `bold` en estado `pending`, y el estado proviene
  * SIEMPRE de la API autenticada de Bold, nunca del cliente.
  *
- * Vive en @vps/database para que web y admin lo llamen DIRECTO (sin saltos HTTP
+ * Vive en @merkiai/database para que web y admin lo llamen DIRECTO (sin saltos HTTP
  * entre apps). Los efectos secundarios web-only (email de confirmación con las
  * plantillas de la tienda y guía de envío Skydropx) los añade la app web sobre
  * este núcleo; el admin usa solo el núcleo.

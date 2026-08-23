@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server'
-import { getPaymentConfig, TuCompraGateway } from '@vps/database'
+import { getPaymentConfig, TuCompraGateway } from '@merkiai/database'
 
 type MethodCfg = { tipo: string; id: string; enabled?: boolean }
 

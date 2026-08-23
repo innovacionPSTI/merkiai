@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server'
 import { getAdminUser } from '@/lib/auth'
-import { createServerClient } from '@vps/database'
+import { createServerClient } from '@merkiai/database'
 
 async function requireAdmin() {
   const user = await getAdminUser()

@@ -9,11 +9,11 @@
 
 import { NextRequest } from 'next/server'
 
-jest.mock('@vps/database', () => ({ createServerClient: jest.fn(), applyStockForOrder: jest.fn().mockResolvedValue(undefined), restoreStockForOrder: jest.fn().mockResolvedValue(undefined) }))
+jest.mock('@merkiai/database', () => ({ createServerClient: jest.fn(), applyStockForOrder: jest.fn().mockResolvedValue(undefined), restoreStockForOrder: jest.fn().mockResolvedValue(undefined) }))
 jest.mock('@/lib/auth', () => ({ getAdminUser: jest.fn() }))
 jest.mock('@/lib/email', () => ({ sendPaymentConfirmed: jest.fn() }))
 
-import { createServerClient } from '@vps/database'
+import { createServerClient } from '@merkiai/database'
 import { getAdminUser } from '@/lib/auth'
 import { PATCH } from '../[id]/payment-status/route'
 
@@ -75,7 +75,7 @@ describe('PATCH /payment-status — happy path', () => {
   it('aprobar → payment_status approved + status processing', async () => {
     const { mockSupabase, updateMock } = buildSupabaseMock({
       payment_status: 'approved', status: 'processing',
-      order_number: 'VPS-0001', customer_email: 'a@b.co', customer_name: 'Ana',
+      order_number: 'ORD-0001', customer_email: 'a@b.co', customer_name: 'Ana',
     })
     mockCreateServerClient.mockReturnValue(mockSupabase as never)
 
@@ -93,7 +93,7 @@ describe('PATCH /payment-status — happy path', () => {
   it('rechazar → payment_status rejected sin avanzar el estado', async () => {
     const { mockSupabase, updateMock } = buildSupabaseMock({
       payment_status: 'rejected', status: 'pending',
-      order_number: 'VPS-0002', customer_email: 'a@b.co', customer_name: 'Ana',
+      order_number: 'ORD-0002', customer_email: 'a@b.co', customer_name: 'Ana',
     })
     mockCreateServerClient.mockReturnValue(mockSupabase as never)
 

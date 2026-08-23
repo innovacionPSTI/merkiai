@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { getVariantTypes, createVariantType } from '@vps/database'
+import { getVariantTypes, createVariantType } from '@merkiai/database'
 import { getAdminUser } from '@/lib/auth'
 import { canAccess } from '@/lib/roles'
 import type { AdminRole } from '@/lib/roles'

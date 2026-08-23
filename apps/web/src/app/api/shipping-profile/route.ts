@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { stackServerApp } from '@/stack'
-import { getShippingProfile, upsertShippingProfile } from '@vps/database'
+import { getShippingProfile, upsertShippingProfile } from '@merkiai/database'
 
 export async function GET() {
   let user = null

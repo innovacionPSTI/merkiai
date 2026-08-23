@@ -7,7 +7,7 @@
  * `tucompra` en estado `pending`, y el estado proviene SIEMPRE de la API
  * autenticada de Tu Compra, nunca del cliente.
  *
- * Vive en @vps/database para que web y admin lo llamen DIRECTO. Los efectos
+ * Vive en @merkiai/database para que web y admin lo llamen DIRECTO. Los efectos
  * web-only (email + guía de envío) los añade la app web sobre este núcleo.
  */
 

@@ -17,7 +17,7 @@ const mockFrom        = jest.fn(() => ({
   maybeSingle: mockMaybeSingle,
 }))
 
-jest.mock('@vps/database', () => ({
+jest.mock('@merkiai/database', () => ({
   createServerClient: jest.fn(() => ({ from: mockFrom })),
 }))
 

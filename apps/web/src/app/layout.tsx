@@ -4,7 +4,7 @@ import { Cormorant_Garamond, DM_Sans, Playfair_Display, Inter, Lora, Merriweathe
 import { StackProvider, StackTheme } from '@stackframe/stack'
 import { Analytics } from '@vercel/analytics/react'
 import { stackServerApp } from '../stack'
-import { getStoreConfig, getActiveTheme } from '@vps/database'
+import { getStoreConfig, getActiveTheme } from '@merkiai/database'
 import CartSyncOnLogin from '@/components/auth/CartSyncOnLogin'
 import { buildThemeCSS } from '@/lib/theme-css'
 import './globals.css'

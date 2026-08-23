@@ -15,7 +15,7 @@ const mockFrom = jest.fn(() => ({
 }))
 const mockQuery = jest.fn()
 
-jest.mock('@vps/database', () => ({
+jest.mock('@merkiai/database', () => ({
   createServerClient: jest.fn(() => ({ from: mockFrom })),
   getPaymentConfig: jest.fn(),
   getStoreConfig: jest.fn(),
@@ -33,7 +33,7 @@ jest.mock('@/lib/shipping/shipments', () => ({
   createShipmentForOrder: jest.fn().mockResolvedValue(null),
 }))
 
-import { getPaymentConfig, getStoreConfig } from '@vps/database'
+import { getPaymentConfig, getStoreConfig } from '@merkiai/database'
 import { reconcileBoldOrder } from '../bold-reconcile'
 
 const mockGetPaymentConfig = getPaymentConfig as jest.MockedFunction<typeof getPaymentConfig>
@@ -48,14 +48,14 @@ beforeEach(() => {
 describe('reconcileBoldOrder', () => {
   it('no aplica si el pedido no es Bold', async () => {
     mockSingle.mockResolvedValueOnce({ data: { payment_method: 'wompi', payment_status: 'pending' } })
-    const r = await reconcileBoldOrder('VPS-0001')
+    const r = await reconcileBoldOrder('ORD-0001')
     expect(r).toEqual({ ok: false, reason: 'not_bold' })
     expect(mockQuery).not.toHaveBeenCalled()
   })
 
   it('es idempotente si el pedido ya está aprobado (no consulta a Bold)', async () => {
     mockSingle.mockResolvedValueOnce({ data: { payment_method: 'bold', payment_status: 'approved' } })
-    const r = await reconcileBoldOrder('VPS-0002')
+    const r = await reconcileBoldOrder('ORD-0002')
     expect(r).toEqual({ ok: true, status: 'approved' })
     expect(mockQuery).not.toHaveBeenCalled()
   })
@@ -63,19 +63,19 @@ describe('reconcileBoldOrder', () => {
   it('actualiza a approved cuando Bold reporta el pago aprobado', async () => {
     mockSingle
       .mockResolvedValueOnce({ data: { payment_method: 'bold', payment_status: 'pending' } }) // read
-      .mockResolvedValueOnce({ data: { order_number: 'VPS-0003' }, error: null })             // update
+      .mockResolvedValueOnce({ data: { order_number: 'ORD-0003' }, error: null })             // update
     mockQuery.mockResolvedValueOnce({ status: 'approved', rawStatus: 'SALE_APPROVED', paymentId: 'P1' })
 
-    const r = await reconcileBoldOrder('VPS-0003')
+    const r = await reconcileBoldOrder('ORD-0003')
     expect(r).toEqual({ ok: true, status: 'approved' })
-    expect(mockQuery).toHaveBeenCalledWith('VPS-0003')
+    expect(mockQuery).toHaveBeenCalledWith('ORD-0003')
   })
 
   it('devuelve pending si Bold aún no tiene notificación', async () => {
     mockSingle.mockResolvedValueOnce({ data: { payment_method: 'bold', payment_status: 'pending' } })
     mockQuery.mockResolvedValueOnce(null)
 
-    const r = await reconcileBoldOrder('VPS-0004')
+    const r = await reconcileBoldOrder('ORD-0004')
     expect(r).toEqual({ ok: true, status: 'pending', reason: 'no_data' })
     // Solo el read; no hubo update
     expect(mockSingle).toHaveBeenCalledTimes(1)
@@ -85,7 +85,7 @@ describe('reconcileBoldOrder', () => {
     mockSingle.mockResolvedValueOnce({ data: { payment_method: 'bold', payment_status: 'pending' } })
     mockGetPaymentConfig.mockResolvedValueOnce({} as never)
 
-    const r = await reconcileBoldOrder('VPS-0005')
+    const r = await reconcileBoldOrder('ORD-0005')
     expect(r).toEqual({ ok: false, reason: 'not_configured' })
     expect(mockQuery).not.toHaveBeenCalled()
   })

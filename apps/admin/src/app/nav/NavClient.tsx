@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useCallback } from 'react'
-import type { NavItem } from '@vps/database'
+import type { NavItem } from '@merkiai/database'
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 

@@ -2,7 +2,7 @@ import { redirect } from 'next/navigation'
 import Navbar from '@/components/layout/Navbar'
 import Footer from '@/components/layout/Footer'
 import AccountSidebar from '@/components/account/AccountSidebar'
-import { getStoreConfig, getFooterPages, getNavTree } from '@vps/database'
+import { getStoreConfig, getFooterPages, getNavTree } from '@merkiai/database'
 import { stackServerApp } from '@/stack'
 
 export const dynamic = 'force-dynamic'

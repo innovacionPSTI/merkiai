@@ -1,10 +1,10 @@
-# packages/database — Capa de datos Commerce CMS
+# packages/database — Capa de datos Merkiai
 
 Paquete compartido que centraliza el cliente de Supabase, los tipos TypeScript del schema y las funciones de query para todas las apps del monorepo.
 
 ```ts
-import { getWebHomeData, getPageWithSections, createServerClient } from '@vps/database'
-import type { Product, Order, PageSection, SectionItem } from '@vps/database'
+import { getWebHomeData, getPageWithSections, createServerClient } from '@merkiai/database'
+import type { Product, Order, PageSection, SectionItem } from '@merkiai/database'
 ```
 
 ---
@@ -99,7 +99,7 @@ packages/database/
     │   └── upgrade.sql         ← parche idempotente para BD existentes
     └── seeds/
         ├── 01_config.sql       ← Tema, variantes, categorías, nav base
-        └── 02_content.sql      ← Páginas, secciones e ítems CMS de Commerce CMS
+        └── 02_content.sql      ← Páginas, secciones e ítems CMS de Merkiai
 ```
 
 ---

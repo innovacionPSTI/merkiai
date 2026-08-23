@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useState } from 'react'
 import Link from 'next/link'
-import type { SectionItem } from '@vps/database'
+import type { SectionItem } from '@merkiai/database'
 
 interface HeroCarouselProps {
   items: SectionItem[]

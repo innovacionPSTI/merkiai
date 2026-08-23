@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useRef, useCallback } from 'react'
-import type { MediaAsset } from '@vps/database'
+import type { MediaAsset } from '@merkiai/database'
 
 // ── Tipos ────────────────────────────────────────────────────────────────────
 

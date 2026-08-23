@@ -1,6 +1,6 @@
 /** @type {import('jest').Config} */
 const config = {
-  displayName: '@vps/web',
+  displayName: '@merkiai/web',
   preset: 'ts-jest',
   testEnvironment: 'jsdom',
   setupFilesAfterEnv: ['<rootDir>/jest.setup.ts'],
@@ -10,8 +10,8 @@ const config = {
     '^.+\\.(css|scss|sass)$': '<rootDir>/__mocks__/styleMock.js',
     // Path aliases
     '^@/(.*)$': '<rootDir>/src/$1',
-    '^@vps/database$': '<rootDir>/../../packages/database/src/index.ts',
-    '^@vps/ui$': '<rootDir>/../../packages/ui/src/index.ts',
+    '^@merkiai/database$': '<rootDir>/../../packages/database/src/index.ts',
+    '^@merkiai/ui$': '<rootDir>/../../packages/ui/src/index.ts',
     // Dependencias ESM puras sin babel-jest → stub CJS genérico
     // (se cargan transitivamente vía @stackframe/stack, nunca se ejecutan en tests)
     '^jose(/.*)?$': '<rootDir>/__mocks__/esm-stub.js',

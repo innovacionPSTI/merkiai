@@ -6,7 +6,7 @@
  */
 
 import { stackServerApp } from '@/stack'
-import { createServerClient } from '@vps/database'
+import { createServerClient } from '@merkiai/database'
 import type { AdminRole } from './roles'
 import { isAdminRole } from './roles'
 

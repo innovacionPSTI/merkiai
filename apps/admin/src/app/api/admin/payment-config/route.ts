@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { getPaymentConfig, updatePaymentConfig } from '@vps/database'
-import type { PaymentConfig } from '@vps/database'
+import { getPaymentConfig, updatePaymentConfig } from '@merkiai/database'
+import type { PaymentConfig } from '@merkiai/database'
 
 /** Enmascara los últimos 4 caracteres de un secret. Devuelve null si el campo es null. */
 function maskSecret(value: string | null): string | null {

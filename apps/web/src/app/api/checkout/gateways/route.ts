@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server'
-import { getPaymentConfig, getActiveGateways } from '@vps/database'
+import { getPaymentConfig, getActiveGateways } from '@merkiai/database'
 
 const GATEWAY_META: Record<string, { label: string; desc: string }> = {
   wompi:       { label: 'Wompi',       desc: 'Tarjeta débito/crédito, PSE, Bancolombia' },

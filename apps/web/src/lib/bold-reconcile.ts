@@ -8,8 +8,8 @@
  * `bold` en estado `pending`.
  */
 
-import { createServerClient, getPaymentConfig, getStoreConfig, BoldGateway, applyStockForOrder } from '@vps/database'
-import type { Order, Database } from '@vps/database'
+import { createServerClient, getPaymentConfig, getStoreConfig, BoldGateway, applyStockForOrder } from '@merkiai/database'
+import type { Order, Database } from '@merkiai/database'
 import { sendOrderConfirmation, buildEmailConfig } from '@/lib/email'
 import { createShipmentForOrder } from '@/lib/shipping/shipments'
 

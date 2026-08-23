@@ -1,4 +1,4 @@
-import { getProductBySlug, getProducts, getStoreConfig } from '@vps/database'
+import { getProductBySlug, getProducts, getStoreConfig } from '@merkiai/database'
 import { notFound } from 'next/navigation'
 import type { Metadata } from 'next'
 import ProductDetail from '@/components/shop/ProductDetail'

@@ -1,4 +1,4 @@
-import { createServerClient } from '@vps/database'
+import { createServerClient } from '@merkiai/database'
 import type { Metadata } from 'next'
 import ClientesClient from './ClientesClient'
 import type { ClientRow } from './ClientesClient'

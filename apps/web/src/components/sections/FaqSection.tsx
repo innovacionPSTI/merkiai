@@ -1,4 +1,4 @@
-import type { PageSection, SectionItem } from '@vps/database'
+import type { PageSection, SectionItem } from '@merkiai/database'
 
 interface Props {
   section: PageSection

@@ -24,7 +24,7 @@ const CREDENTIALS = {
   clientSecret: 'test-secret',
   baseUrl:      'https://app.skydropx.com',
   origin: {
-    name:         'Commerce CMS',
+    name:         'Merkiai',
     street:       'Calle 10 # 5-20',
     neighborhood: 'El Centro',
     city:         'Medellín',

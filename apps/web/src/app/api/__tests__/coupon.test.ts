@@ -14,7 +14,7 @@ import { POST } from '../checkout/coupon/route'
 const mockGetCouponByCode = jest.fn()
 const mockValidateCoupon = jest.fn()
 
-jest.mock('@vps/database', () => ({
+jest.mock('@merkiai/database', () => ({
   getCouponByCode: (...args: unknown[]) => mockGetCouponByCode(...args),
   validateCoupon: (...args: unknown[]) => mockValidateCoupon(...args),
 }))

@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { stackServerApp } from '@/stack'
-import { createServerClient, getStoreConfig } from '@vps/database'
+import { createServerClient, getStoreConfig } from '@merkiai/database'
 import { sendWelcomeEmail, buildEmailConfig } from '@/lib/email'
 
 /**

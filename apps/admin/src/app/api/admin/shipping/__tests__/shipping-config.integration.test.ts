@@ -10,12 +10,12 @@
 
 import { NextRequest } from 'next/server'
 
-jest.mock('@vps/database', () => ({
+jest.mock('@merkiai/database', () => ({
   getShippingConfig: jest.fn(),
   updateShippingConfig: jest.fn(),
 }))
 
-import { getShippingConfig, updateShippingConfig } from '@vps/database'
+import { getShippingConfig, updateShippingConfig } from '@merkiai/database'
 import { GET, PATCH } from '../route'
 
 const mockGet = getShippingConfig as jest.MockedFunction<typeof getShippingConfig>

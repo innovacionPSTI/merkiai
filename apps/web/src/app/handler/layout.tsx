@@ -1,5 +1,5 @@
 import Link from 'next/link'
-import { getStoreConfig } from '@vps/database'
+import { getStoreConfig } from '@merkiai/database'
 
 /**
  * Layout para todas las rutas /handler/* de Stack Auth.

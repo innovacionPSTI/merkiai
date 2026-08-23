@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useTransition } from 'react'
-import type { StoreConfig, TrustBadge } from '@vps/database'
+import type { StoreConfig, TrustBadge } from '@merkiai/database'
 import ImageUpload from '@/components/ImageUpload'
 
 interface Props {

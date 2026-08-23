@@ -18,7 +18,7 @@ const mockFrom        = jest.fn(() => ({
   upsert: mockUpsert,
 }))
 
-jest.mock('@vps/database', () => ({
+jest.mock('@merkiai/database', () => ({
   createServerClient: jest.fn(() => ({ from: mockFrom })),
   getStoreConfig: jest.fn(),
 }))
@@ -32,7 +32,7 @@ jest.mock('@/lib/email', () => ({
 
 import { NextRequest } from 'next/server'
 import { POST } from '../newsletter/route'
-import { getStoreConfig } from '@vps/database'
+import { getStoreConfig } from '@merkiai/database'
 import { sendNewsletterConfirmation } from '@/lib/email'
 
 const mockGetStoreConfig          = getStoreConfig as jest.MockedFunction<typeof getStoreConfig>

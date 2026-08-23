@@ -2,7 +2,7 @@ import type { Metadata } from 'next'
 import Link from 'next/link'
 import { notFound, redirect } from 'next/navigation'
 import { stackServerApp } from '@/stack'
-import { getOrderById } from '@vps/database'
+import { getOrderById } from '@merkiai/database'
 
 export const metadata: Metadata = { title: 'Detalle del pedido' }
 export const dynamic = 'force-dynamic'

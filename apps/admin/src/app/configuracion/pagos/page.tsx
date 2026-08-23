@@ -1,6 +1,6 @@
 import { redirect } from 'next/navigation'
 import type { Metadata } from 'next'
-import { getPaymentConfig } from '@vps/database'
+import { getPaymentConfig } from '@merkiai/database'
 import { getAdminUser } from '@/lib/auth'
 import { canAccess } from '@/lib/roles'
 import PaymentConfigForm from '../PaymentConfigForm'

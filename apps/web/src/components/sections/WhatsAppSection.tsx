@@ -1,4 +1,4 @@
-import type { PageSection } from '@vps/database'
+import type { PageSection } from '@merkiai/database'
 import { getWhatsAppURL } from '@/lib/whatsapp'
 
 interface Props {

@@ -77,7 +77,7 @@ describe('buildArticleJsonLd', () => {
   it('cae a created_at y nombre por defecto cuando faltan', () => {
     const ld = buildArticleJsonLd({ title: 'T', created_at: '2026-02-02T00:00:00Z', slug: 't' })
     expect(ld.datePublished).toBe('2026-02-02T00:00:00Z')
-    expect((ld.author as Record<string, unknown>).name).toBe('Commerce CMS')
+    expect((ld.author as Record<string, unknown>).name).toBe('Merkiai')
     expect((ld.publisher as Record<string, unknown>).logo).toBeUndefined()
   })
 })

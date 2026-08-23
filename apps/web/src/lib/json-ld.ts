@@ -60,7 +60,7 @@ export interface ArticleJsonLdInput {
 export function buildArticleJsonLd(input: ArticleJsonLdInput): Record<string, unknown> {
   const siteUrl = (input.siteUrl ?? '').replace(/\/$/, '')
   const date = input.published_at ?? input.created_at
-  const orgName = input.storeName ?? 'Commerce CMS'
+  const orgName = input.storeName ?? 'Merkiai'
   return {
     '@context': 'https://schema.org',
     '@type': 'Article',

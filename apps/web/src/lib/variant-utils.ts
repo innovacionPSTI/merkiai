@@ -1,4 +1,4 @@
-import type { ProductVariant, ProductWithVariants } from '@vps/database'
+import type { ProductVariant, ProductWithVariants } from '@merkiai/database'
 
 /**
  * Returns the ordered list of variant option names for a product.

@@ -3,7 +3,7 @@
 import { useState, useEffect, useCallback } from 'react'
 import { useRouter } from 'next/navigation'
 import ImageUpload from '@/components/ImageUpload'
-import type { VariantType } from '@vps/database'
+import type { VariantType } from '@merkiai/database'
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
 

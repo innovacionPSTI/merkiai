@@ -2,7 +2,7 @@
 
 import Link from 'next/link'
 import { useCartStore } from '@/store/cart'
-import type { ProductWithVariants } from '@vps/database'
+import type { ProductWithVariants } from '@merkiai/database'
 import { getProductOptions, getVariantAttrs, getVariantLabel, COLOR_HEX } from '@/lib/variant-utils'
 
 interface FeaturedProductsProps {

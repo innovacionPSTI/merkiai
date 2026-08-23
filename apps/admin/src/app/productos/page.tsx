@@ -1,4 +1,4 @@
-import { createServerClient } from '@vps/database'
+import { createServerClient } from '@merkiai/database'
 import Link from 'next/link'
 import type { Metadata } from 'next'
 import ProductosSearch from './ProductosSearch'

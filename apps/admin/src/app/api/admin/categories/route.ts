@@ -1,4 +1,4 @@
-import { createServerClient } from '@vps/database'
+import { createServerClient } from '@merkiai/database'
 import { NextRequest, NextResponse } from 'next/server'
 
 export async function GET() {

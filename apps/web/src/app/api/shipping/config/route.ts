@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server'
-import { getShippingConfig } from '@vps/database'
+import { getShippingConfig } from '@merkiai/database'
 
 /**
  * GET /api/shipping/config

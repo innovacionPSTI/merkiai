@@ -1,7 +1,7 @@
 import type { Metadata } from 'next'
 import Link from 'next/link'
 import { getAdminUser } from '@/lib/auth'
-import { createServerClient } from '@vps/database'
+import { createServerClient } from '@merkiai/database'
 import type { AdminRole } from '@/lib/roles'
 
 export const metadata: Metadata = { title: 'Dashboard' }

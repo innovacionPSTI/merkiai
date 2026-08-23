@@ -39,7 +39,7 @@ jest.mock('../../client', () => ({
 
 const SAMPLE_THEME = {
   id: 1,
-  name: 'Commerce CMS',
+  name: 'Merkiai',
   is_active: true,
   is_default: true,
   color_primary: '#614A2A',
@@ -79,7 +79,7 @@ describe('getThemes', () => {
 
     const result = await getThemes()
     expect(result).toHaveLength(1)
-    expect(result[0].name).toBe('Commerce CMS')
+    expect(result[0].name).toBe('Merkiai')
   })
 
   it('devuelve array vacío si data es null', async () => {

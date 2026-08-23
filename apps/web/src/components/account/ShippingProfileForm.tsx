@@ -1,7 +1,7 @@
 'use client'
 
 import { useState } from 'react'
-import type { ShippingProfile } from '@vps/database'
+import type { ShippingProfile } from '@merkiai/database'
 
 interface Props {
   initial: ShippingProfile | null

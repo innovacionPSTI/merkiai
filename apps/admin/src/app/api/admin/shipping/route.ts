@@ -9,8 +9,8 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server'
-import { getShippingConfig, updateShippingConfig } from '@vps/database'
-import type { UpdateShippingConfigInput } from '@vps/database'
+import { getShippingConfig, updateShippingConfig } from '@merkiai/database'
+import type { UpdateShippingConfigInput } from '@merkiai/database'
 
 /** Mask sensitive credential fields for GET responses */
 function maskConfig(config: Awaited<ReturnType<typeof getShippingConfig>>) {

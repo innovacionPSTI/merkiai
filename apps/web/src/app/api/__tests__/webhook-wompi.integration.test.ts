@@ -15,7 +15,7 @@
  *   - Error de BD al actualizar → 200 ok con warning
  *   - getPaymentConfig falla → procesa con secret vacío (bypass)
  *
- * Mocks: @vps/database (getPaymentConfig, getStoreConfig, createServerClient)
+ * Mocks: @merkiai/database (getPaymentConfig, getStoreConfig, createServerClient)
  *        @/lib/wompi (verifyWompiWebhook, mapWompiStatus)
  *        @/lib/email (sendOrderConfirmation)
  */
@@ -34,7 +34,7 @@ const mockReadEq = jest.fn(() => ({ maybeSingle: mockMaybeSingle }))
 const mockReadSelect = jest.fn(() => ({ eq: mockReadEq }))
 const mockFrom = jest.fn(() => ({ update: mockUpdate, select: mockReadSelect }))
 
-jest.mock('@vps/database', () => ({
+jest.mock('@merkiai/database', () => ({
   createServerClient: jest.fn(() => ({ from: mockFrom })),
   getPaymentConfig: jest.fn(),
   getStoreConfig: jest.fn(),
@@ -56,7 +56,7 @@ jest.mock('@/lib/email', () => ({
   })),
 }))
 
-import { getPaymentConfig, getStoreConfig } from '@vps/database'
+import { getPaymentConfig, getStoreConfig } from '@merkiai/database'
 import { verifyWompiWebhook, mapWompiStatus } from '@/lib/wompi'
 import { sendOrderConfirmation } from '@/lib/email'
 import { POST } from '../webhooks/wompi/route'
@@ -87,13 +87,13 @@ const storeConfig = {
   resend_api_key: 're_test_key',
   resend_from_email: 'pedidos@tienda.example.com',
   whatsapp_number: null,
-  store_name: 'Commerce CMS',
+  store_name: 'Merkiai',
   store_email: null,
   logo_url: null,
   updated_at: new Date().toISOString(),
 }
 
-function makeTransactionBody(status = 'APPROVED', reference = 'VPS-0042') {
+function makeTransactionBody(status = 'APPROVED', reference = 'ORD-0042') {
   return JSON.stringify({
     event: 'transaction.updated',
     data: {
@@ -121,7 +121,7 @@ function makeRequest(body: string, headers: Record<string, string> = {}): NextRe
 
 const mockOrder = {
   id: 42,
-  order_number: 'VPS-0042',
+  order_number: 'ORD-0042',
   status: 'processing',
   customer_name: 'Juan Pérez',
   customer_email: 'juan@example.com',
@@ -198,7 +198,7 @@ describe('POST /api/webhooks/wompi — transaction.updated', () => {
     expect(mockUpdate).toHaveBeenCalledWith(
       expect.objectContaining({ payment_status: 'approved', status: 'processing' })
     )
-    expect(mockEq).toHaveBeenCalledWith('order_number', 'VPS-0042')
+    expect(mockEq).toHaveBeenCalledWith('order_number', 'ORD-0042')
   })
 
   it('envía email de confirmación cuando el pago es APPROVED', async () => {

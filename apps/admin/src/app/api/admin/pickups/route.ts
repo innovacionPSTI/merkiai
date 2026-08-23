@@ -15,7 +15,7 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server'
-import { getShippingConfig } from '@vps/database'
+import { getShippingConfig } from '@merkiai/database'
 import { skydropxFetch } from '@/lib/shipping/providers/skydropx/auth'
 
 // ─── POST: crear pickup ───────────────────────────────────────────────────────

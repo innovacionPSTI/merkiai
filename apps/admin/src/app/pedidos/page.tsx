@@ -1,5 +1,5 @@
-import { createServerClient } from '@vps/database'
-import type { OrderStatus } from '@vps/database'
+import { createServerClient } from '@merkiai/database'
+import type { OrderStatus } from '@merkiai/database'
 import Link from 'next/link'
 import type { Metadata } from 'next'
 import PickupModal from '@/components/pedidos/PickupModal'

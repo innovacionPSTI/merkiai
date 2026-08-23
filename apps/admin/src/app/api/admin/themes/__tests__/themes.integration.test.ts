@@ -16,7 +16,7 @@ jest.mock('@/lib/auth', () => ({
 
 // ── Database mock ──────────────────────────────────────────────────────────────
 const mockFrom = jest.fn()
-jest.mock('@vps/database', () => ({
+jest.mock('@merkiai/database', () => ({
   createServerClient: () => ({ from: mockFrom }),
 }))
 
@@ -27,7 +27,7 @@ const VENDEDOR_USER = { id: 'u3', role: 'vendedor' as const }
 
 const SAMPLE_THEME = {
   id: 1,
-  name: 'Commerce CMS',
+  name: 'Merkiai',
   is_active: true,
   is_default: true,
   color_primary: '#614A2A',
@@ -101,7 +101,7 @@ describe('GET /api/admin/themes', () => {
 
     expect(res.status).toBe(200)
     expect(body.themes).toHaveLength(1)
-    expect(body.themes[0].name).toBe('Commerce CMS')
+    expect(body.themes[0].name).toBe('Merkiai')
   })
 
   it('devuelve array vacío si no hay temas', async () => {

@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { stackServerApp } from '@/stack'
-import { createServerClient } from '@vps/database'
+import { createServerClient } from '@merkiai/database'
 
 async function getCustomerId(
   supabase: ReturnType<typeof createServerClient>,

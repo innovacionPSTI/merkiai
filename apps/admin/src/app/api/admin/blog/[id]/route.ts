@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { createServerClient } from '@vps/database'
+import { createServerClient } from '@merkiai/database'
 
 export async function PATCH(
   request: NextRequest,

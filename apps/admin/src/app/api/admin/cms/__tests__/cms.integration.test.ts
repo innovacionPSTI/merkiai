@@ -17,14 +17,14 @@
 jest.mock('@/lib/auth', () => ({
   getAdminUser: jest.fn(),
 }))
-jest.mock('@vps/database', () => ({
+jest.mock('@merkiai/database', () => ({
   createServerClient: jest.fn(),
 }))
 
 import { NextRequest } from 'next/server'
 import { GET, POST, PATCH, DELETE } from '../[resource]/route'
 import { getAdminUser } from '@/lib/auth'
-import { createServerClient } from '@vps/database'
+import { createServerClient } from '@merkiai/database'
 
 const mockGetAdminUser = getAdminUser as jest.MockedFunction<typeof getAdminUser>
 const mockCreateServerClient = createServerClient as jest.MockedFunction<typeof createServerClient>

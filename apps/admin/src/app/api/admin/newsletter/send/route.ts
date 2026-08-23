@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { getAdminUser } from '@/lib/auth'
-import { createServerClient } from '@vps/database'
+import { createServerClient } from '@merkiai/database'
 
 const RESEND_API_URL = 'https://api.resend.com/emails'
 
@@ -110,7 +110,7 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: 'No hay suscriptores activos' }, { status: 422 })
   }
 
-  const storeName = config.store_name ?? 'Commerce CMS'
+  const storeName = config.store_name ?? 'Merkiai'
   const siteUrl = process.env.NEXT_PUBLIC_SITE_URL
   const htmlContent = markdownToEmailHtml(emailBody)
   const html = baseTemplate(htmlContent, storeName, siteUrl)

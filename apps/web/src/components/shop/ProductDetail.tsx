@@ -3,7 +3,7 @@
 import { useState, useMemo, useCallback, useEffect } from 'react'
 import Link from 'next/link'
 import { useCartStore } from '@/store/cart'
-import type { ProductWithVariants, TrustBadge } from '@vps/database'
+import type { ProductWithVariants, TrustBadge } from '@merkiai/database'
 import { getProductOptions, getVariantAttrs, getVariantLabel, isColorValue, COLOR_HEX } from '@/lib/variant-utils'
 
 interface Props {

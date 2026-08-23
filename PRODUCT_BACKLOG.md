@@ -1,6 +1,6 @@
-# Commerce CMS — Product Backlog & Documentación de Producto
+# Merkiai — Product Backlog & Documentación de Producto
 
-> **Producto:** Commerce CMS — plataforma de e-commerce general y personalizable (white-label)  
+> **Producto:** Merkiai — plataforma de e-commerce general y personalizable (white-label)  
 > **Desarrollo:** Parquesoft TI  
 > **Versión:** 1.3 · Agosto 2026 (Pasarela única · Bold · Validación manual de pago)  
 > **Stack:** Next.js 16 · Supabase · Stack Auth · Tailwind CSS · Turborepo  
@@ -44,7 +44,7 @@ Integrar la API de Skydropx para cotizar tarifas de envío en tiempo real durant
 Ofrecer un CRUD completo de productos con soporte para múltiples variantes (tueste × peso × molienda × método), control de inventario y carga de imágenes a Supabase Storage.
 
 **OE-08 — Gestión operativa de pedidos**
-Permitir al equipo de Commerce CMS visualizar todos los pedidos, actualizar su estado en un flujo definido (Pendiente → Procesando → Enviado → Entregado), descargar guías de envío y programar recolecciones masivas con Skydropx.
+Permitir al equipo de Merkiai visualizar todos los pedidos, actualizar su estado en un flujo definido (Pendiente → Procesando → Enviado → Entregado), descargar guías de envío y programar recolecciones masivas con Skydropx.
 
 **OE-09 — Control de contenido editorial**
 Brindar un panel para crear, editar, publicar y despublicar artículos del blog con previsualización antes de publicar.
@@ -433,7 +433,7 @@ Cada historia incluye sus criterios de aceptación y el estado de implementació
 ---
 
 **HU-003 — Hero carrusel**
-> Como visitante, quiero ver un hero visual impactante al ingresar al sitio para entender rápidamente quién es Commerce CMS y qué ofrece.
+> Como visitante, quiero ver un hero visual impactante al ingresar al sitio para entender rápidamente quién es Merkiai y qué ofrece.
 
 **Criterios de aceptación:**
 - El hero ocupa el 100% del viewport en desktop y 70% en móvil.
@@ -447,7 +447,7 @@ Cada historia incluye sus criterios de aceptación y el estado de implementació
 ---
 
 **HU-004 — Servicios en home**
-> Como potencial cliente B2B, quiero ver los servicios de Maquila y Asesorías en la página principal para contactar fácilmente a Commerce CMS sin buscar en el menú.
+> Como potencial cliente B2B, quiero ver los servicios de Maquila y Asesorías en la página principal para contactar fácilmente a Merkiai sin buscar en el menú.
 
 **Criterios de aceptación:**
 - La sección muestra dos bloques lado a lado: Maquila y Asesorías.
@@ -460,7 +460,7 @@ Cada historia incluye sus criterios de aceptación y el estado de implementació
 ---
 
 **HU-005 — Suscripción al newsletter**
-> Como visitante interesado en café, quiero suscribirme al boletín de Commerce CMS para recibir recetas, orígenes y novedades en mi correo.
+> Como visitante interesado en café, quiero suscribirme al boletín de Merkiai para recibir recetas, orígenes y novedades en mi correo.
 
 **Criterios de aceptación:**
 - El formulario acepta un email y muestra un mensaje de confirmación al enviar.
@@ -573,7 +573,7 @@ Cada historia incluye sus criterios de aceptación y el estado de implementació
 - La página muestra un ícono de éxito, el número de orden y un mensaje explicativo.
 - Se indica que el cliente recibirá un email con los detalles y el número de tracking.
 - Hay un enlace a "Ver mis pedidos" y otro a "Seguir comprando".
-- Se muestra el número de WhatsApp de Commerce CMS para consultas.
+- Se muestra el número de WhatsApp de Merkiai para consultas.
 
 **Estado:** ✅ Implementado
 
@@ -584,7 +584,7 @@ Cada historia incluye sus criterios de aceptación y el estado de implementació
 ---
 
 **HU-013 — Conocer el servicio de Maquila**
-> Como empresario o emprendedor cafetero, quiero conocer en detalle el servicio de tueste a maquila de Commerce CMS para evaluar si se adapta a mis necesidades y cotizar.
+> Como empresario o emprendedor cafetero, quiero conocer en detalle el servicio de tueste a maquila de Merkiai para evaluar si se adapta a mis necesidades y cotizar.
 
 **Criterios de aceptación:**
 - La página tiene un hero de impacto con título en Ahsing y CTA a WhatsApp.
@@ -597,7 +597,7 @@ Cada historia incluye sus criterios de aceptación y el estado de implementació
 ---
 
 **HU-014 — Solicitar asesoría profesional**
-> Como propietario de cafetería o marca de café, quiero conocer los servicios de asesoría de Commerce CMS y contactar a un experto para mejorar mi propuesta.
+> Como propietario de cafetería o marca de café, quiero conocer los servicios de asesoría de Merkiai y contactar a un experto para mejorar mi propuesta.
 
 **Criterios de aceptación:**
 - La página describe los cuatro tipos de asesoría: catación, perfiles, formación, consultoría.
@@ -614,7 +614,7 @@ Cada historia incluye sus criterios de aceptación y el estado de implementació
 ---
 
 **HU-015 — Leer artículos sobre café**
-> Como amante del café, quiero explorar el blog de Commerce CMS para aprender sobre orígenes, métodos de preparación y la cultura cafetera.
+> Como amante del café, quiero explorar el blog de Merkiai para aprender sobre orígenes, métodos de preparación y la cultura cafetera.
 
 **Criterios de aceptación:**
 - El listado muestra el artículo más reciente como destacado en formato horizontal.
@@ -702,7 +702,7 @@ Cada historia incluye sus criterios de aceptación y el estado de implementació
 ---
 
 **HU-021 — Gestionar pedidos**
-> Como operador de Commerce CMS, quiero ver todos los pedidos, filtrarlos por estado y actualizar su estado para coordinar el proceso de despacho.
+> Como operador de Merkiai, quiero ver todos los pedidos, filtrarlos por estado y actualizar su estado para coordinar el proceso de despacho.
 
 **Criterios de aceptación:**
 - La tabla muestra número de orden, cliente, fecha, total, estado y tracking.
@@ -729,7 +729,7 @@ Cada historia incluye sus criterios de aceptación y el estado de implementació
 ---
 
 **HU-023 — Gestionar artículos del blog**
-> Como editor de Commerce CMS, quiero crear, editar y publicar artículos del blog desde el panel admin para publicar contenido sin depender de un desarrollador.
+> Como editor de Merkiai, quiero crear, editar y publicar artículos del blog desde el panel admin para publicar contenido sin depender de un desarrollador.
 
 **Criterios de aceptación:**
 - La tabla muestra título, slug, categoría, fecha de publicación y estado (publicado/borrador).
@@ -868,7 +868,7 @@ Cada historia incluye sus criterios de aceptación y el estado de implementació
 - Un preview en tiempo real muestra cómo se verá el tema antes de guardarlo.
 - Al activar un tema, el sitio público lo refleja en la siguiente carga sin redeploy.
 - Solo puede haber un tema activo; activar uno desactiva automáticamente el anterior.
-- El tema "Commerce CMS (Por defecto)" no se puede eliminar.
+- El tema "Merkiai (Por defecto)" no se puede eliminar.
 - Los colores se almacenan en hex; el sitio los convierte a canales RGB para soporte de opacidad de Tailwind.
 
 **Estado:** ✅ Implementado
@@ -959,7 +959,7 @@ Cada historia incluye sus criterios de aceptación y el estado de implementació
 **Escenarios de borde:**
 
 - Si el usuario llega a `/checkout/confirmation` sin haber pasado por el checkout (sin `order` en query), se redirige a `/`.
-- El número de orden usa padding cero hasta 4 dígitos (`VPS-0001`); a partir de 9999 sigue incrementando sin padding.
+- El número de orden usa padding cero hasta 4 dígitos (`ORD-0001`); a partir de 9999 sigue incrementando sin padding.
 - `shipping_cost` es `0` si el subtotal supera $100.000 COP, independientemente de lo que devuelva Skydropx.
 
 **Criterios de rechazo:**
@@ -1010,7 +1010,7 @@ Cada historia incluye sus criterios de aceptación y el estado de implementació
 
 ### HU-R04 — Cotización de envío multi-proveedor (refinada)
 
-> Como comprador, quiero ver el costo y el tiempo estimado de envío después de ingresar mi dirección para decidir qué transportadora usar, independientemente del proveedor que tenga configurado Commerce CMS.
+> Como comprador, quiero ver el costo y el tiempo estimado de envío después de ingresar mi dirección para decidir qué transportadora usar, independientemente del proveedor que tenga configurado Merkiai.
 
 **Estimación:** L (8 puntos)  
 **Módulo:** `lib/shipping/` + `api/shipping/rates/route.ts`  
@@ -1065,7 +1065,7 @@ Para agregar un nuevo proveedor (ej. FedEx): crear `providers/fedex/index.ts`, a
 
 ### HU-R04 — Actualización de estado de pedido por webhook (refinada)
 
-> Como sistema de logística (Skydropx), necesito notificar a Commerce CMS sobre cambios en el estado del envío para que los pedidos se actualicen automáticamente sin intervención manual.
+> Como sistema de logística (Skydropx), necesito notificar a Merkiai sobre cambios en el estado del envío para que los pedidos se actualicen automáticamente sin intervención manual.
 
 **Estimación:** M (5 puntos)  
 **Módulo:** Webhooks · `api/webhooks/skydropx/route.ts`
@@ -1099,7 +1099,7 @@ Para agregar un nuevo proveedor (ej. FedEx): crear `providers/fedex/index.ts`, a
 
 ### HU-R05 — Gestión de estado de pedido desde admin (refinada)
 
-> Como operador de Commerce CMS, quiero cambiar el estado de un pedido (Pendiente → Procesando → Enviado → Entregado) desde el panel para comunicar el avance al cliente.
+> Como operador de Merkiai, quiero cambiar el estado de un pedido (Pendiente → Procesando → Enviado → Entregado) desde el panel para comunicar el avance al cliente.
 
 **Estimación:** S (2 puntos)  
 **Módulo:** Admin · `app/pedidos/[id]/` + `api/admin/orders/[id]/status/route.ts`
@@ -1131,7 +1131,7 @@ Para agregar un nuevo proveedor (ej. FedEx): crear `providers/fedex/index.ts`, a
 
 ### HU-R06 — Generación automática de guía de envío post-pago (nueva)
 
-> Como sistema de pagos, tras confirmar un pago quiero que se genere automáticamente la guía de envío en Skydropx para que el equipo de Commerce CMS pueda despachar sin intervención manual.
+> Como sistema de pagos, tras confirmar un pago quiero que se genere automáticamente la guía de envío en Skydropx para que el equipo de Merkiai pueda despachar sin intervención manual.
 
 **Estimación:** L (8 puntos)  
 **Módulo:** `lib/shipping/shipments.ts` + webhooks Wompi/MercadoPago  
@@ -1365,15 +1365,15 @@ Para agregar un nuevo proveedor (ej. FedEx): crear `providers/fedex/index.ts`, a
 
 **Estimación:** S (2 puntos)  
 **Módulo:** `packages/ui/src/components/SearchableSelect.tsx`; eliminar copia de `apps/web` y `apps/admin`  
-**Estado:** ✅ Completado (v12) — nota: `apps/web` mantiene copia local por limitación de Turbopack con `'use client'` en barrels; `apps/admin` usa `@vps/ui`
+**Estado:** ✅ Completado (v12) — nota: `apps/web` mantiene copia local por limitación de Turbopack con `'use client'` en barrels; `apps/admin` usa `@merkiai/ui`
 
 **Criterios de aceptación:**
 
 | # | Escenario | Resultado esperado |
 |---|-----------|-------------------|
-| AC-1 | Existe `packages/ui/src/components/SearchableSelect.tsx` | Exportado desde el barrel de `@vps/ui` |
-| AC-2 | `apps/web` importa desde `@vps/ui` | Sin copia local |
-| AC-3 | `apps/admin` importa desde `@vps/ui` | Sin copia local |
+| AC-1 | Existe `packages/ui/src/components/SearchableSelect.tsx` | Exportado desde el barrel de `@merkiai/ui` |
+| AC-2 | `apps/web` importa desde `@merkiai/ui` | Sin copia local |
+| AC-3 | `apps/admin` importa desde `@merkiai/ui` | Sin copia local |
 | AC-4 | El componente sigue funcionando en checkout, Mi Cuenta y ShippingConfigForm | Tests + inspección visual |
 
 ---
@@ -1383,15 +1383,15 @@ Para agregar un nuevo proveedor (ej. FedEx): crear `providers/fedex/index.ts`, a
 > Como desarrollador, quiero que la lista de departamentos y ciudades de Colombia esté en un único lugar para no tener que sincronizar cambios en dos archivos idénticos.
 
 **Estimación:** XS (1 punto)  
-**Módulo:** `packages/ui/src/colombia-locations.ts`; exportar desde `@vps/ui`; eliminar copias locales  
+**Módulo:** `packages/ui/src/colombia-locations.ts`; exportar desde `@merkiai/ui`; eliminar copias locales  
 **Estado:** ✅ Completado (v12) — movido a `packages/ui` (no a `packages/database`) para evitar que client components importen del barrel server-only
 
 **Criterios de aceptación:**
 
 | # | Escenario | Resultado esperado |
 |---|-----------|-------------------|
-| AC-1 | Existe un único `colombia-locations.ts` en `packages/database` | Exportado vía `@vps/database` |
-| AC-2 | `apps/web` y `apps/admin` importan desde `@vps/database` | Cero copias locales |
+| AC-1 | Existe un único `colombia-locations.ts` en `packages/database` | Exportado vía `@merkiai/database` |
+| AC-2 | `apps/web` y `apps/admin` importan desde `@merkiai/database` | Cero copias locales |
 | AC-3 | `SearchableSelect` de departamento/ciudad sigue funcionando | Sin cambios de comportamiento |
 
 ---
@@ -1409,7 +1409,7 @@ Para agregar un nuevo proveedor (ej. FedEx): crear `providers/fedex/index.ts`, a
 | # | Escenario | Resultado esperado |
 |---|-----------|-------------------|
 | AC-1 | `sendShippingNotification` existe solo en `packages/` | No duplicada en `apps/web/lib/email.ts` ni `apps/admin/lib/email.ts` |
-| AC-2 | Los webhooks de pago y el endpoint de status la importan desde `@vps/database` o `@vps/utils` | Sin rutas relativas entre apps |
+| AC-2 | Los webhooks de pago y el endpoint de status la importan desde `@merkiai/database` o `@merkiai/utils` | Sin rutas relativas entre apps |
 | AC-3 | Emails de shipping/status siguen funcionando | Sin regresión en flujo de pedidos |
 
 ---
@@ -1655,7 +1655,7 @@ Para agregar un nuevo proveedor (ej. FedEx): crear `providers/fedex/index.ts`, a
 | AC-1 | `01_schema.sql` ejecutado en Supabase vacío | Todas las tablas, índices, triggers, RLS, constraints y comentarios creados |
 | AC-2 | No tiene código de migración incremental (`ALTER TABLE ADD COLUMN IF NOT EXISTS`) | Solo `CREATE TABLE`, `CREATE INDEX`, `CREATE TRIGGER` |
 | AC-3 | `seeds/01_config.sql` ejecutado después | Tema activo, variant_types, categorías, nav items base insertados |
-| AC-4 | `seeds/02_content.sql` ejecutado después | Páginas, page_sections e items del CMS para el sitio Commerce CMS |
+| AC-4 | `seeds/02_content.sql` ejecutado después | Páginas, page_sections e items del CMS para el sitio Merkiai |
 | AC-5 | Seeds son idempotentes | Re-ejecutar no genera duplicados (`ON CONFLICT DO NOTHING`) |
 | AC-6 | Las 20 migraciones históricas se conservan en la carpeta | Registro de la evolución del schema para referencia |
 | AC-7 | `tsc --noEmit` pasa tras aplicar el esquema | `types.ts` es coherente con `01_schema.sql` |
@@ -1764,7 +1764,7 @@ Para agregar un nuevo proveedor (ej. FedEx): crear `providers/fedex/index.ts`, a
 |---|-----------|-------------------|
 | AC-1 | Tabla `admin_config` creada con migración 22 | Singleton `id=1 CHECK (id=1)`, columnas `accent_color` y `sidebar_color` (TEXT, no null), trigger `updated_at` |
 | AC-2 | Seed por defecto | `accent_color = '#4F46E5'` (indigo-600) y `sidebar_color = '#0F172A'` (slate-900) insertados en `seeds/01_config.sql` |
-| AC-3 | `getAdminConfig()` y `updateAdminConfig()` en `@vps/database` | Funciones tipadas que usan el cliente servidor de Supabase |
+| AC-3 | `getAdminConfig()` y `updateAdminConfig()` en `@merkiai/database` | Funciones tipadas que usan el cliente servidor de Supabase |
 | AC-4 | `apps/admin/layout.tsx` inyecta CSS vars en cada request | `hexToRgb(accent_color)` → `--brand-primary`, `hexToRgb(sidebar_color)` → `--brand-sidebar` en `<html style>` |
 | AC-5 | `apps/admin/tailwind.config.ts` usa `rgb(var(--brand-primary))` y `rgb(var(--brand-sidebar))` | Tokens `brand.primary` y `brand.sidebar` funcionales con alpha modifiers de Tailwind |
 | AC-6 | Página `/sistema/apariencia` visible para super_admin y admin | Muestra color pickers nativos + presets para accent (7 colores) y sidebar (6 colores); preview en tiempo real |
@@ -1844,7 +1844,7 @@ Para agregar un nuevo proveedor (ej. FedEx): crear `providers/fedex/index.ts`, a
 
 ### HU-065 — Configurar proveedor de email Resend desde el admin
 
-> Como administrador, quiero ingresar mis credenciales de Resend y el email remitente desde el panel de configuración, para que los emails transaccionales salgan con el dominio de Commerce CMS sin tocar código.
+> Como administrador, quiero ingresar mis credenciales de Resend y el email remitente desde el panel de configuración, para que los emails transaccionales salgan con el dominio de Merkiai sin tocar código.
 
 **Estimación:** S (2 puntos)  
 **Módulo:** `apps/admin/src/app/configuracion/email/`, `packages/database/src/queries/store-config.ts`  
@@ -1877,7 +1877,7 @@ Para agregar un nuevo proveedor (ej. FedEx): crear `providers/fedex/index.ts`, a
 | AC-1 | Webhook de Wompi recibe evento `TRANSACTION.UPDATED` con estado `APPROVED` | Se llama `sendOrderConfirmation()` con los datos del pedido |
 | AC-2 | Webhook de MercadoPago recibe notificación de pago aprobado | Ídem para MercadoPago |
 | AC-3 | Email recibido por el cliente | Asunto: "Pedido confirmado — VPS-XXXX"; contiene número de orden, listado de productos con variantes, subtotal, envío y total |
-| AC-4 | `store_name` en el email | Nombre configurable; por defecto "Commerce CMS" |
+| AC-4 | `store_name` en el email | Nombre configurable; por defecto "Merkiai" |
 | AC-5 | Resend API key no configurada | Error logueado en servidor; pedido se crea igual; no falla el flujo de compra |
 | AC-6 | Dirección de envío incluida | Ciudad, departamento, dirección completa del comprador |
 
@@ -1908,7 +1908,7 @@ Para agregar un nuevo proveedor (ej. FedEx): crear `providers/fedex/index.ts`, a
 
 ### HU-068 — Email de bienvenida al registrarse
 
-> Como nuevo cliente, quiero recibir un email de bienvenida al crear mi cuenta, para sentir que Commerce CMS me reconoce como parte de su comunidad.
+> Como nuevo cliente, quiero recibir un email de bienvenida al crear mi cuenta, para sentir que Merkiai me reconoce como parte de su comunidad.
 
 **Estimación:** S (1 punto)  
 **Módulo:** `packages/database/src/email.ts`, `apps/web/src/app/api/auth/welcome/route.ts`  
@@ -1927,7 +1927,7 @@ Para agregar un nuevo proveedor (ej. FedEx): crear `providers/fedex/index.ts`, a
 
 ### HU-069 — Email de confirmación de suscripción al newsletter
 
-> Como suscriptor, quiero recibir un email de confirmación cuando me suscribo al boletín de Commerce CMS, para saber que mi suscripción fue exitosa.
+> Como suscriptor, quiero recibir un email de confirmación cuando me suscribo al boletín de Merkiai, para saber que mi suscripción fue exitosa.
 
 **Estimación:** S (1 punto)  
 **Módulo:** `packages/database/src/email.ts`, `apps/web/src/app/api/newsletter/route.ts`  
@@ -1964,7 +1964,7 @@ Para agregar un nuevo proveedor (ej. FedEx): crear `providers/fedex/index.ts`, a
 |---|-----------|-------------------|
 | AC-1 | `layout.tsx` exporta `generateMetadata` | `title.template: '%s — [store_name]'`; fallback `title.default` cuando la página no define título |
 | AC-2 | `store_name` se lee desde `store_config` | Cambiar el nombre en admin actualiza el template sin redeploy (ISR) |
-| AC-3 | Página de producto | Título: "Café Etiopía Yirgacheffe — Commerce CMS" |
+| AC-3 | Página de producto | Título: "Café Etiopía Yirgacheffe — Merkiai" |
 | AC-4 | Página de inicio | Título default de `store_config.store_description` o nombre de la tienda |
 
 ---
@@ -4627,7 +4627,7 @@ Cobertura destacada: pasarelas (Wompi/MercadoPago/Tu Compra/**Bold** + factory +
 
 | # | Escenario | Resultado esperado |
 |---|-----------|-------------------|
-| AC-1 | Búsqueda por número de pedido (`VPS-0042`) | Filtra resultados con `.or()` en Supabase |
+| AC-1 | Búsqueda por número de pedido (`ORD-0042`) | Filtra resultados con `.or()` en Supabase |
 | AC-2 | Búsqueda por nombre del cliente | Funciona con coincidencia parcial |
 | AC-3 | Búsqueda por email del cliente | Funciona con coincidencia parcial |
 | AC-4 | Sin resultados con `q` activo | Mensaje `Sin resultados para "término"` |
@@ -4641,4 +4641,4 @@ Cobertura destacada: pasarelas (Wompi/MercadoPago/Tu Compra/**Bold** + factory +
 
 ---
 
-*Commerce CMS · Parquesoft TI · Julio 2026*
+*Merkiai · Parquesoft TI · Julio 2026*

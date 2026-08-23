@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { createServerClient, getStoreConfig } from '@vps/database'
+import { createServerClient, getStoreConfig } from '@merkiai/database'
 import { sendNewsletterConfirmation, buildEmailConfig } from '@/lib/email'
 
 export async function POST(req: NextRequest) {

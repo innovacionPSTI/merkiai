@@ -18,7 +18,7 @@ const mockGetUser = jest.fn()
 jest.mock('@/stack', () => ({ stackServerApp: { getUser: () => mockGetUser() } }))
 
 const mockFrom = jest.fn()
-jest.mock('@vps/database', () => ({
+jest.mock('@merkiai/database', () => ({
   createServerClient: () => ({ from: mockFrom }),
 }))
 

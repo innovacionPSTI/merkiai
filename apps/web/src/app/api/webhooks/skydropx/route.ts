@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { createServerClient, getStoreConfig } from '@vps/database'
+import { createServerClient, getStoreConfig } from '@merkiai/database'
 import { sendShippingNotification, buildEmailConfig } from '@/lib/email'
-import type { Order } from '@vps/database'
+import type { Order } from '@merkiai/database'
 
 /**
  * Webhook de Skydropx PRO — eventos de seguimiento y entrega.

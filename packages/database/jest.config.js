@@ -1,11 +1,11 @@
 /** @type {import('jest').Config} */
 const config = {
-  displayName: '@vps/database',
+  displayName: '@merkiai/database',
   testEnvironment: 'node',
   preset: 'ts-jest',
   setupFilesAfterEnv: ['<rootDir>/jest.setup.ts'],
   moduleNameMapper: {
-    '^@vps/database$': '<rootDir>/src/index.ts',
+    '^@merkiai/database$': '<rootDir>/src/index.ts',
   },
   testMatch: ['**/__tests__/**/*.test.ts', '**/*.test.ts'],
   collectCoverageFrom: [

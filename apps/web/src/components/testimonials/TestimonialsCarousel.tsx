@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useEffect, useCallback } from 'react'
-import type { SectionItem } from '@vps/database'
+import type { SectionItem } from '@merkiai/database'
 
 const STARS = [1, 2, 3, 4, 5]
 const AUTO_ADVANCE_MS = 5000

@@ -1,4 +1,4 @@
-# Commerce CMS — Guía de Despliegue en Vercel + GitHub
+# Merkiai — Guía de Despliegue en Vercel + GitHub
 
 > **Stack:** Next.js 16 · Turborepo · pnpm · Supabase  
 > **Repositorio:** monorepo con dos apps (`apps/web` y `apps/admin`)  
@@ -202,7 +202,7 @@ En la pantalla de configuración del nuevo proyecto:
 | **Project Name** | `vps-coffee-web` |
 | **Framework Preset** | `Next.js` (detección automática) |
 | **Root Directory** | `apps/web` |
-| **Build Command** | `cd ../.. && pnpm turbo build --filter=@vps/web` |
+| **Build Command** | `cd ../.. && pnpm turbo build --filter=@merkiai/web` |
 | **Output Directory** | `.next` *(relativo a `apps/web` — dejar por defecto)* |
 | **Install Command** | `cd ../.. && pnpm install --frozen-lockfile` |
 | **Node.js Version** | `20.x` |
@@ -211,7 +211,7 @@ En la pantalla de configuración del nuevo proyecto:
 
 > **Por qué `cd ../..` en los comandos:** Vercel ejecuta los comandos desde el Root Directory (`apps/web`). El `cd ../..` sube a la raíz del monorepo para que `pnpm install` instale todos los `packages/*` del workspace y Turborepo resuelva las dependencias correctamente.
 
-> **Nombre del filtro:** Debe coincidir con `"name"` en `apps/web/package.json` → `@vps/web`.
+> **Nombre del filtro:** Debe coincidir con `"name"` en `apps/web/package.json` → `@merkiai/web`.
 
 ### 5.3 vercel.json — **método recomendado**
 
@@ -221,7 +221,7 @@ El archivo ya está creado en el repositorio en `apps/web/vercel.json`:
 
 ```json
 {
-  "buildCommand": "cd ../.. && pnpm turbo build --filter=@vps/web",
+  "buildCommand": "cd ../.. && pnpm turbo build --filter=@merkiai/web",
   "outputDirectory": ".next",
   "installCommand": "cd ../.. && pnpm install --frozen-lockfile",
   "framework": "nextjs"
@@ -230,7 +230,7 @@ El archivo ya está creado en el repositorio en `apps/web/vercel.json`:
 
 > Con este archivo en el repo, los campos **Build Command** e **Install Command** en la UI de Vercel quedan sobreescritos. Se pueden dejar en blanco en la UI.
 
-> **Error frecuente:** `pnpm build --filter=web` falla porque pnpm interpreta `--filter=web` como un filtro de workspace (busca el paquete con `"name": "web"`). El comando correcto invoca `turbo` directamente: `pnpm turbo build --filter=@vps/web`.
+> **Error frecuente:** `pnpm build --filter=web` falla porque pnpm interpreta `--filter=web` como un filtro de workspace (busca el paquete con `"name": "web"`). El comando correcto invoca `turbo` directamente: `pnpm turbo build --filter=@merkiai/web`.
 
 ### 5.4 Agregar variables de entorno
 
@@ -268,12 +268,12 @@ Si el build falla, revisar el log en la pestaña **Deployments** → clic en el 
 | **Project Name** | `vps-coffee-admin` |
 | **Framework Preset** | `Next.js` |
 | **Root Directory** | `apps/admin` |
-| **Build Command** | `cd ../.. && pnpm turbo build --filter=@vps/admin` |
+| **Build Command** | `cd ../.. && pnpm turbo build --filter=@merkiai/admin` |
 | **Output Directory** | `.next` *(relativo a `apps/admin` — dejar por defecto)* |
 | **Install Command** | `cd ../.. && pnpm install --frozen-lockfile` |
 | **Node.js Version** | `20.x` |
 
-> El filtro `@vps/admin` coincide con `"name": "@vps/admin"` en `apps/admin/package.json`. La misma lógica que el proyecto web: Root Directory apunta a la app para que Vercel detecte Next.js, y los comandos suben a la raíz para instalar todo el workspace.
+> El filtro `@merkiai/admin` coincide con `"name": "@merkiai/admin"` en `apps/admin/package.json`. La misma lógica que el proyecto web: Root Directory apunta a la app para que Vercel detecte Next.js, y los comandos suben a la raíz para instalar todo el workspace.
 
 ### 6.2 vercel.json — **método recomendado**
 
@@ -281,7 +281,7 @@ El archivo ya está creado en el repositorio en `apps/admin/vercel.json`:
 
 ```json
 {
-  "buildCommand": "cd ../.. && pnpm turbo build --filter=@vps/admin",
+  "buildCommand": "cd ../.. && pnpm turbo build --filter=@merkiai/admin",
   "outputDirectory": ".next",
   "installCommand": "cd ../.. && pnpm install --frozen-lockfile",
   "framework": "nextjs"
@@ -419,7 +419,7 @@ Developer                    GitHub                      Vercel
     ├── git push origin main ──▶│                           │
     │                           ├── trigger build ─────────▶│
     │                           │                           ├── pnpm install
-    │                           │                           ├── turbo build --filter=@vps/web|@vps/admin
+    │                           │                           ├── turbo build --filter=@merkiai/web|@merkiai/admin
     │                           │                           ├── deploy to CDN
     │                           │◀── notify status ─────────┤
     │◀── GitHub check status ───┤                           │
@@ -606,7 +606,7 @@ Completar antes de hacer el primer deploy a producción:
 ### Vercel — vps-coffee-web
 
 - [ ] Root Directory: `apps/web`
-- [ ] Build Command: `cd ../.. && pnpm turbo build --filter=@vps/web`
+- [ ] Build Command: `cd ../.. && pnpm turbo build --filter=@merkiai/web`
 - [ ] Output Directory: `.next` (por defecto)
 - [ ] Install Command: `cd ../.. && pnpm install --frozen-lockfile`
 - [ ] Node.js 20.x seleccionado
@@ -617,7 +617,7 @@ Completar antes de hacer el primer deploy a producción:
 ### Vercel — vps-coffee-admin
 
 - [ ] Root Directory: `apps/admin`
-- [ ] Build Command: `cd ../.. && pnpm turbo build --filter=@vps/admin`
+- [ ] Build Command: `cd ../.. && pnpm turbo build --filter=@merkiai/admin`
 - [ ] Output Directory: `.next` (por defecto)
 - [ ] Install Command: `cd ../.. && pnpm install --frozen-lockfile`
 - [ ] Node.js 20.x seleccionado
@@ -767,7 +767,7 @@ Las credenciales de las pasarelas **no** son variables de entorno: se guardan en
 ┌──────────────────────────────────────────────────────────────────── ┐
 │                          Vercel CI                                  │
 │                                                                     │
-│  turbo build --filter=@vps/web  turbo build --filter=@vps/admin     │
+│  turbo build --filter=@merkiai/web  turbo build --filter=@merkiai/admin     │
 │         │                               │                           │
 │  Production Deploy              Production Deploy                   │
 │  tienda.example.com                  admin.tienda.example.com                 │
@@ -789,4 +789,4 @@ Las credenciales de las pasarelas **no** son variables de entorno: se guardan en
 
 ---
 
-*Commerce CMS · Parquesoft TI · Julio 2026*
+*Merkiai · Parquesoft TI · Julio 2026*

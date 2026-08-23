@@ -1,4 +1,4 @@
-import { getProducts } from '@vps/database'
+import { getProducts } from '@merkiai/database'
 import ShopClient from '@/components/shop/ShopClient'
 import type { Metadata } from 'next'
 

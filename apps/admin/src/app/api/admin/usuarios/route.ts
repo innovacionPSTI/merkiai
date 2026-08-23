@@ -1,6 +1,6 @@
 import { randomUUID } from 'crypto'
 import { NextRequest, NextResponse } from 'next/server'
-import { createServerClient } from '@vps/database'
+import { createServerClient } from '@merkiai/database'
 import { getAdminUser } from '@/lib/auth'
 import { ASSIGNABLE_ROLES, ROLE_CONFIG } from '@/lib/roles'
 import type { AssignableRole, AdminRole } from '@/lib/roles'

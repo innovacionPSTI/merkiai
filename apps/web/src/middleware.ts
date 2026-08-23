@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { stackServerApp } from './stack'
 
 /**
- * Middleware de Commerce CMS Web.
+ * Middleware de Merkiai Web.
  *
  * 1. Modo mantenimiento: si está activo redirige todo a /maintenance
  *    (excepto la propia página, APIs y rutas de auth).

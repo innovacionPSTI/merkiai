@@ -1,7 +1,7 @@
 'use client'
 
 import { useState } from 'react'
-import type { NewsletterSubscriber } from '@vps/database'
+import type { NewsletterSubscriber } from '@merkiai/database'
 
 interface Props {
   initialSubscribers: NewsletterSubscriber[]

@@ -1,6 +1,6 @@
 import { redirect } from 'next/navigation'
 import type { Metadata } from 'next'
-import { getShippingConfig } from '@vps/database'
+import { getShippingConfig } from '@merkiai/database'
 import { getAdminUser } from '@/lib/auth'
 import { canAccess } from '@/lib/roles'
 import ShippingConfigForm from '../ShippingConfigForm'

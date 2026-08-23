@@ -10,12 +10,12 @@
 
 import { NextRequest } from 'next/server'
 
-jest.mock('@vps/database', () => ({
+jest.mock('@merkiai/database', () => ({
   getStoreConfig: jest.fn(),
   updateStoreConfig: jest.fn(),
 }))
 
-import { getStoreConfig, updateStoreConfig } from '@vps/database'
+import { getStoreConfig, updateStoreConfig } from '@merkiai/database'
 import { GET, PATCH } from '../route'
 
 const mockGet = getStoreConfig as jest.MockedFunction<typeof getStoreConfig>
@@ -27,7 +27,7 @@ const mockUpdate = updateStoreConfig as jest.MockedFunction<typeof updateStoreCo
 const baseConfig = {
   id: 1,
   whatsapp_number: '573001234567',
-  store_name: 'Commerce CMS',
+  store_name: 'Merkiai',
   store_email: null,
   logo_url: null,
   resend_api_key: 're_test_abcd1234',
@@ -62,7 +62,7 @@ describe('GET /api/admin/config', () => {
     const res = await GET()
     expect(res.status).toBe(200)
     const data = await res.json()
-    expect(data.store_name).toBe('Commerce CMS')
+    expect(data.store_name).toBe('Merkiai')
     expect(data.whatsapp_number).toBe('573001234567')
   })
 
@@ -161,15 +161,15 @@ describe('PATCH /api/admin/config — validación WhatsApp', () => {
 // ─────────────────────────────────────────────
 describe('PATCH /api/admin/config — happy path', () => {
   it('actualiza store_name correctamente', async () => {
-    const updated = { ...baseConfig, store_name: 'Commerce CMS' }
+    const updated = { ...baseConfig, store_name: 'Merkiai' }
     mockUpdate.mockResolvedValueOnce(updated)
 
-    const req = makePatchRequest({ store_name: 'Commerce CMS' })
+    const req = makePatchRequest({ store_name: 'Merkiai' })
     const res = await PATCH(req)
 
     expect(res.status).toBe(200)
     const data = await res.json()
-    expect(data.store_name).toBe('Commerce CMS')
+    expect(data.store_name).toBe('Merkiai')
   })
 
   it('actualiza logo_url correctamente', async () => {

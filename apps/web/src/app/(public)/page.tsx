@@ -1,4 +1,4 @@
-import { getWebHomeData } from '@vps/database'
+import { getWebHomeData } from '@merkiai/database'
 import HeroCarousel from '@/components/home/HeroCarousel'
 import FeaturedProducts from '@/components/home/FeaturedProducts'
 import ServicesSection from '@/components/home/ServicesSection'

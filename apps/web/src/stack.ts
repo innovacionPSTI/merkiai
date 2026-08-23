@@ -4,7 +4,7 @@ import { StackServerApp } from '@stackframe/stack'
  * Instancia del servidor de Stack Auth.
  * Lee las variables de entorno NEXT_PUBLIC_STACK_* y STACK_SECRET_SERVER_KEY.
  *
- * Las URLs de autenticación apuntan a las páginas personalizadas de Commerce CMS
+ * Las URLs de autenticación apuntan a las páginas personalizadas de Merkiai
  * en lugar de las páginas genéricas de Stack (/handler/sign-in).
  */
 export const stackServerApp = new StackServerApp({

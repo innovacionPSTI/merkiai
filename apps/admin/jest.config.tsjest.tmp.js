@@ -1,7 +1,7 @@
 // Config TEMPORAL de verificación (ts-jest) para correr los tests de admin sin SWC.
 /** @type {import('jest').Config} */
 module.exports = {
-  displayName: '@vps/admin-tsjest',
+  displayName: '@merkiai/admin-tsjest',
   preset: 'ts-jest',
   testEnvironment: 'node',
   setupFilesAfterEnv: ['<rootDir>/jest.setup.ts'],
@@ -9,8 +9,8 @@ module.exports = {
     '^.+\\.(jpg|jpeg|png|gif|webp|svg|ico)$': '<rootDir>/../web/__mocks__/fileMock.js',
     '^.+\\.(css|scss|sass)$': '<rootDir>/../web/__mocks__/styleMock.js',
     '^@/(.*)$': '<rootDir>/src/$1',
-    '^@vps/database$': '<rootDir>/../../packages/database/src/index.ts',
-    '^@vps/ui$': '<rootDir>/../../packages/ui/src/index.ts',
+    '^@merkiai/database$': '<rootDir>/../../packages/database/src/index.ts',
+    '^@merkiai/ui$': '<rootDir>/../../packages/ui/src/index.ts',
     '^jose(/.*)?$': '<rootDir>/__mocks__/esm-stub.js',
     '^export-to-csv$': '<rootDir>/__mocks__/esm-stub.js',
   },

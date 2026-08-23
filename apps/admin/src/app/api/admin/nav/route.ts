@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { getAdminUser } from '@/lib/auth'
-import { createServerClient } from '@vps/database'
+import { createServerClient } from '@merkiai/database'
 
 export async function GET() {
   try {

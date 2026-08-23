@@ -3,9 +3,9 @@
  *
  * Acción manual del operador para reconciliar un pago Tu Compra pendiente. Tu Compra
  * NO tiene webhook: se consulta el estado real a su API REST vía el núcleo compartido
- * `reconcileTuCompraOrder` de @vps/database (sin saltos HTTP entre apps).
+ * `reconcileTuCompraOrder` de @merkiai/database (sin saltos HTTP entre apps).
  */
-import { createServerClient, reconcileTuCompraOrder } from '@vps/database'
+import { createServerClient, reconcileTuCompraOrder } from '@merkiai/database'
 import { NextRequest, NextResponse } from 'next/server'
 import { getAdminUser } from '@/lib/auth'
 import { sendPaymentConfirmed } from '@/lib/email'

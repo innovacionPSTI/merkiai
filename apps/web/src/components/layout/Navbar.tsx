@@ -5,7 +5,7 @@ import Link from 'next/link'
 import { useCartStore } from '@/store/cart'
 import CartDrawer from '@/components/cart/CartDrawer'
 import NavAuthButton from '@/components/auth/NavAuthButton'
-import type { NavItemWithChildren } from '@vps/database'
+import type { NavItemWithChildren } from '@merkiai/database'
 
 interface NavbarProps {
   logoUrl?: string | null

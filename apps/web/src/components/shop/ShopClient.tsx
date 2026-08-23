@@ -4,7 +4,7 @@ import { useState, useMemo } from 'react'
 import Link from 'next/link'
 import { useCartStore } from '@/store/cart'
 import type { CartItem } from '@/store/cart'
-import type { ProductWithVariants } from '@vps/database'
+import type { ProductWithVariants } from '@merkiai/database'
 import { getProductOptions, getVariantAttrs, getVariantLabel, isColorValue, COLOR_HEX } from '@/lib/variant-utils'
 
 const SORTS = [

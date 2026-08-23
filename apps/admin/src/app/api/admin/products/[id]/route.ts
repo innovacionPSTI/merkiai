@@ -1,5 +1,5 @@
-import { createServerClient } from '@vps/database'
-import type { Database } from '@vps/database'
+import { createServerClient } from '@merkiai/database'
+import type { Database } from '@merkiai/database'
 import { NextRequest, NextResponse } from 'next/server'
 
 type ProductUpdate = Database['public']['Tables']['products']['Update']

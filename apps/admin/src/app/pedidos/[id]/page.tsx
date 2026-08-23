@@ -1,4 +1,4 @@
-import { createServerClient } from '@vps/database'
+import { createServerClient } from '@merkiai/database'
 import { notFound } from 'next/navigation'
 import Link from 'next/link'
 import type { Metadata } from 'next'

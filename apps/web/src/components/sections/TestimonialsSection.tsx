@@ -1,4 +1,4 @@
-import type { PageSection, SectionItem } from '@vps/database'
+import type { PageSection, SectionItem } from '@merkiai/database'
 import TestimonialsCarousel from '@/components/testimonials/TestimonialsCarousel'
 
 interface Props {

@@ -21,7 +21,7 @@
  * Solo accesible por super_admin y admin.
  * Body: JSON del snapshot (Content-Type: application/json)
  */
-import { createServerClient } from '@vps/database'
+import { createServerClient } from '@merkiai/database'
 import { NextRequest, NextResponse } from 'next/server'
 import { getAdminUser } from '@/lib/auth'
 

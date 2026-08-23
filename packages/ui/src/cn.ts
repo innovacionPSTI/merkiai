@@ -2,7 +2,7 @@
  * Lightweight className merger — zero external dependencies.
  *
  * Handles strings, arrays, objects ({ 'class': condition }), and falsy values,
- * covering the full clsx API surface used by @vps/ui components.
+ * covering the full clsx API surface used by @merkiai/ui components.
  *
  * Note: does NOT perform Tailwind-specific de-duplication (tailwind-merge).
  * For conflict resolution in app code, import from the app's own cn utility.

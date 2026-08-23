@@ -1,8 +1,8 @@
 import { redirect } from 'next/navigation'
 import type { Metadata } from 'next'
 import { getAdminUser } from '@/lib/auth'
-import { createServerClient } from '@vps/database'
-import type { NewsletterSubscriber } from '@vps/database'
+import { createServerClient } from '@merkiai/database'
+import type { NewsletterSubscriber } from '@merkiai/database'
 import NewsletterClient from './NewsletterClient'
 
 export const metadata: Metadata = { title: 'Newsletter' }

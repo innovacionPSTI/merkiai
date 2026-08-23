@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { updateAdminConfig } from '@vps/database'
+import { updateAdminConfig } from '@merkiai/database'
 import { getAdminUser } from '@/lib/auth'
 
 export async function PATCH(req: NextRequest) {

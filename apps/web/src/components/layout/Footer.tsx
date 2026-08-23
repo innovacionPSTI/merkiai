@@ -1,5 +1,5 @@
 import Link from 'next/link'
-import type { Page } from '@vps/database'
+import type { Page } from '@merkiai/database'
 
 /* ── SVG brand icons ────────────────────────────────────────────────────── */
 

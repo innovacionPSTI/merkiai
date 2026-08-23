@@ -1,8 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { stackServerApp } from '@/stack'
-import { getCartItems, replaceCart, clearCart } from '@vps/database'
+import { getCartItems, replaceCart, clearCart } from '@merkiai/database'
 import { createClient } from '@supabase/supabase-js'
-import type { Database } from '@vps/database'
+import type { Database } from '@merkiai/database'
 
 const supabase = createClient<Database>(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,

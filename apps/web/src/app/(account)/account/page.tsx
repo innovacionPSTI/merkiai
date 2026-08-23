@@ -1,7 +1,7 @@
 import Link from 'next/link'
 import type { Metadata } from 'next'
 import { stackServerApp } from '@/stack'
-import { createServerClient } from '@vps/database'
+import { createServerClient } from '@merkiai/database'
 
 export const metadata: Metadata = { title: 'Mi perfil' }
 

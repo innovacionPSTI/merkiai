@@ -1,5 +1,5 @@
 import type { MetadataRoute } from 'next'
-import { getProducts, getBlogPosts } from '@vps/database'
+import { getProducts, getBlogPosts } from '@merkiai/database'
 
 const BASE_URL = (process.env.NEXT_PUBLIC_SITE_URL ?? '').replace(/\/$/, '')
 

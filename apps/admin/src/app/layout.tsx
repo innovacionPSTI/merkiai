@@ -7,7 +7,7 @@ import { StackProvider, StackTheme } from '@stackframe/stack'
 import { stackServerApp } from '../stack'
 import AdminSidebar from '@/components/layout/AdminSidebar'
 import { getAdminUser } from '@/lib/auth'
-import { getAdminConfig } from '@vps/database'
+import { getAdminConfig } from '@merkiai/database'
 
 const cormorant = Cormorant_Garamond({
   subsets: ['latin'],

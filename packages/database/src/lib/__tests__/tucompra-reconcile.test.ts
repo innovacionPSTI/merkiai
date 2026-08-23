@@ -1,5 +1,5 @@
 /**
- * Unit tests — núcleo compartido reconcileTuCompraOrder (@vps/database).
+ * Unit tests — núcleo compartido reconcileTuCompraOrder (@merkiai/database).
  * Tu Compra no tiene webhook: la confirmación se hace por reconsulta de estado.
  * Guard tucompra+pending, not_configured, aprobado (actualiza + descuenta stock), sin datos.
  */

@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { createOrder, getPaymentConfig, createServerClient, getPaymentGateway, getActiveProvider, getStockForVariants, TuCompraGateway } from '@vps/database'
+import { createOrder, getPaymentConfig, createServerClient, getPaymentGateway, getActiveProvider, getStockForVariants, TuCompraGateway } from '@merkiai/database'
 import { stackServerApp } from '@/stack'
 
 // ── Rate limiting (best-effort, per-instance) ──────────────────────────────────

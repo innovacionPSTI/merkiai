@@ -15,12 +15,12 @@
 
 import { NextRequest } from 'next/server'
 
-jest.mock('@vps/database', () => ({
+jest.mock('@merkiai/database', () => ({
   createServerClient: jest.fn(),
   getStoreConfig: jest.fn().mockResolvedValue(null), // no email config → skip email
 }))
 
-import { createServerClient } from '@vps/database'
+import { createServerClient } from '@merkiai/database'
 import { POST } from '../webhooks/skydropx/route'
 
 const mockCreateServerClient = createServerClient as jest.MockedFunction<typeof createServerClient>

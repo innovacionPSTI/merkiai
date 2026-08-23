@@ -11,7 +11,7 @@
 
 import { NextRequest, NextResponse } from 'next/server'
 import { getAdminUser } from '@/lib/auth'
-import { createServerClient } from '@vps/database'
+import { createServerClient } from '@merkiai/database'
 
 // ── Tipo de tabla CMS reconocida ─────────────────────────────────────────────
 // Note: section_settings and banners were dropped in migration 19 (unified CMS)

@@ -34,7 +34,7 @@ const mockFrom = jest.fn((table: string) => {
   return {}
 })
 
-jest.mock('@vps/database', () => ({
+jest.mock('@merkiai/database', () => ({
   createServerClient: jest.fn(() => ({ from: mockFrom })),
 }))
 

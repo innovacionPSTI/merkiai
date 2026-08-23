@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { getCoupons, createCoupon, updateCoupon, deleteCoupon } from '@vps/database'
+import { getCoupons, createCoupon, updateCoupon, deleteCoupon } from '@merkiai/database'
 import { getAdminUser } from '@/lib/auth'
 
 async function requireAdmin() {

@@ -1,7 +1,7 @@
 import type { Metadata } from 'next'
 import Link from 'next/link'
 import { stackServerApp } from '@/stack'
-import { getOrdersByCustomerEmail } from '@vps/database'
+import { getOrdersByCustomerEmail } from '@merkiai/database'
 
 export const metadata: Metadata = { title: 'Mis pedidos' }
 

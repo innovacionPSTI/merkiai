@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { stackServerApp } from './stack'
 
 /**
- * Middleware del panel admin Commerce CMS.
+ * Middleware del panel admin Merkiai.
  *
  * Responsabilidades:
  * 1. Inyectar header x-pathname para que el layout pueda leer la ruta actual

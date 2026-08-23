@@ -11,7 +11,7 @@
 
 import { NextRequest } from 'next/server'
 
-jest.mock('@vps/database', () => ({
+jest.mock('@merkiai/database', () => ({
   createServerClient: jest.fn(),
 }))
 
@@ -19,7 +19,7 @@ jest.mock('@/lib/auth', () => ({
   getAdminUser: jest.fn(),
 }))
 
-import { createServerClient } from '@vps/database'
+import { createServerClient } from '@merkiai/database'
 import { getAdminUser } from '@/lib/auth'
 import { PATCH } from '../[id]/notes/route'
 

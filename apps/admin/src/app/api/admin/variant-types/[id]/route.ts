@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { updateVariantType, deleteVariantType } from '@vps/database'
+import { updateVariantType, deleteVariantType } from '@merkiai/database'
 import { getAdminUser } from '@/lib/auth'
 import { canAccess } from '@/lib/roles'
 import type { AdminRole } from '@/lib/roles'

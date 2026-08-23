@@ -1,7 +1,7 @@
 import { notFound } from 'next/navigation'
 import type { Metadata } from 'next'
 import Link from 'next/link'
-import { createServerClient } from '@vps/database'
+import { createServerClient } from '@merkiai/database'
 import BlogPostForm from '../BlogPostForm'
 
 export const metadata: Metadata = { title: 'Editar artículo — Blog' }

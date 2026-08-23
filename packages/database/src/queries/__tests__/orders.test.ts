@@ -39,7 +39,7 @@ const baseInput: CreateOrderInput = {
 function buildOrderMock(overrides = {}) {
   return {
     id: 1,
-    order_number: 'VPS-0001',
+    order_number: 'ORD-0001',
     status: 'pending',
     payment_status: 'pending',
     discount: 0,
@@ -73,16 +73,16 @@ describe('createOrder', () => {
   }
 
   it('genera el número de orden vía RPC generate_order_number', async () => {
-    const expectedOrder = buildOrderMock({ order_number: 'VPS-0042' })
+    const expectedOrder = buildOrderMock({ order_number: 'ORD-0042' })
     const { rpcMock, insertMock } = setupMock(expectedOrder)
 
     const order = await createOrder(baseInput)
     expect(rpcMock).toHaveBeenCalledWith('generate_order_number')
     // El número devuelto por el RPC se usa como order_number del insert
     expect(insertMock).toHaveBeenCalledWith(
-      expect.objectContaining({ order_number: 'VPS-0042' })
+      expect.objectContaining({ order_number: 'ORD-0042' })
     )
-    expect(order.order_number).toBe('VPS-0042')
+    expect(order.order_number).toBe('ORD-0042')
   })
 
   it('lanza error si el RPC no devuelve número', async () => {
@@ -114,7 +114,7 @@ describe('createOrder', () => {
   })
 
   it('lanza error si Supabase falla al insertar', async () => {
-    const rpcMock = jest.fn().mockResolvedValue({ data: 'VPS-0001', error: null })
+    const rpcMock = jest.fn().mockResolvedValue({ data: 'ORD-0001', error: null })
     const supabase = {
       rpc: rpcMock,
       from: jest.fn(() => ({
@@ -213,8 +213,8 @@ describe('updateOrderStatus', () => {
 describe('getOrdersByCustomer', () => {
   it('retorna los pedidos del cliente ordenados por fecha descendente', async () => {
     const orders = [
-      buildOrderMock({ id: 2, order_number: 'VPS-0002', customer_id: 'user-abc' }),
-      buildOrderMock({ id: 1, order_number: 'VPS-0001', customer_id: 'user-abc' }),
+      buildOrderMock({ id: 2, order_number: 'ORD-0002', customer_id: 'user-abc' }),
+      buildOrderMock({ id: 1, order_number: 'ORD-0001', customer_id: 'user-abc' }),
     ]
     const orderMock = jest.fn().mockResolvedValue({ data: orders, error: null })
     const mockSupabase = {
@@ -228,7 +228,7 @@ describe('getOrdersByCustomer', () => {
 
     const result = await getOrdersByCustomer('user-abc')
     expect(result).toHaveLength(2)
-    expect(result[0].order_number).toBe('VPS-0002')
+    expect(result[0].order_number).toBe('ORD-0002')
     expect(orderMock).toHaveBeenCalledWith('created_at', { ascending: false })
   })
 
@@ -255,8 +255,8 @@ describe('getOrdersByCustomer', () => {
 describe('getOrdersByCustomerEmail', () => {
   it('busca por email en minúsculas, ordena desc y expone la info de seguimiento', async () => {
     const orders = [
-      buildOrderMock({ id: 2, order_number: 'VPS-0002', status: 'shipped', tracking_number: 'TRK-9', carrier_name: 'Servientrega' }),
-      buildOrderMock({ id: 1, order_number: 'VPS-0001', status: 'delivered' }),
+      buildOrderMock({ id: 2, order_number: 'ORD-0002', status: 'shipped', tracking_number: 'TRK-9', carrier_name: 'Servientrega' }),
+      buildOrderMock({ id: 1, order_number: 'ORD-0001', status: 'delivered' }),
     ]
     const eqMock = jest.fn().mockReturnValue({
       order: jest.fn().mockResolvedValue({ data: orders, error: null }),
@@ -271,7 +271,7 @@ describe('getOrdersByCustomerEmail', () => {
     // Email normalizado a minúsculas (los pedidos históricos se vinculan por email)
     expect(eqMock).toHaveBeenCalledWith('customer_email', 'carlos@example.com')
     expect(result).toHaveLength(2)
-    expect(result[0].order_number).toBe('VPS-0002')
+    expect(result[0].order_number).toBe('ORD-0002')
     // La vista de Mi Cuenta muestra el número de guía y la transportadora
     expect(result[0].tracking_number).toBe('TRK-9')
     expect(result[0].carrier_name).toBe('Servientrega')
@@ -296,7 +296,7 @@ describe('getOrdersByCustomerEmail', () => {
 // ─────────────────────────────────────────────
 describe('getOrderById', () => {
   it('retorna el pedido con el id indicado', async () => {
-    const mockOrder = buildOrderMock({ id: 5, order_number: 'VPS-0005' })
+    const mockOrder = buildOrderMock({ id: 5, order_number: 'ORD-0005' })
     const singleMock = jest.fn().mockResolvedValue({ data: mockOrder, error: null })
     const mockSupabase = {
       from: jest.fn().mockReturnValue({
@@ -309,7 +309,7 @@ describe('getOrderById', () => {
 
     const order = await getOrderById(5)
     expect(order.id).toBe(5)
-    expect(order.order_number).toBe('VPS-0005')
+    expect(order.order_number).toBe('ORD-0005')
   })
 
   it('lanza error si el pedido no existe', async () => {

@@ -104,7 +104,7 @@ describe('createMercadoPagoPreference', () => {
     })
 
     await createMercadoPagoPreference('TEST-token', {
-      externalReference: 'VPS-0001',
+      externalReference: 'ORD-0001',
       items: [{ id: '10', title: 'Café Huila', quantity: 1, unit_price: 45000 }],
       payerEmail: 'juan@example.com',
       backUrls: {
@@ -137,7 +137,7 @@ describe('createMercadoPagoPreference', () => {
 
     await expect(
       createMercadoPagoPreference('INVALID-token', {
-        externalReference: 'VPS-0001',
+        externalReference: 'ORD-0001',
         items: [{ id: '1', title: 'Test', quantity: 1, unit_price: 1000 }],
         payerEmail: 'test@example.com',
         backUrls: { success: '', failure: '', pending: '' },

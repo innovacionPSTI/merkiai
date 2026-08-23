@@ -21,7 +21,7 @@
  *   5. Update the admin configuración UI.
  */
 
-import { getShippingConfig } from '@vps/database'
+import { getShippingConfig } from '@merkiai/database'
 import { FixedRateProvider } from './providers/fixed-rate'
 import { SkydropxProvider } from './providers/skydropx'
 import type { ShippingProvider } from './types'

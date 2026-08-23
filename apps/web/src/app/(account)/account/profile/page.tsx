@@ -1,7 +1,7 @@
 import type { Metadata } from 'next'
 import { stackServerApp } from '@/stack'
 import { redirect } from 'next/navigation'
-import { createServerClient } from '@vps/database'
+import { createServerClient } from '@merkiai/database'
 import ProfileForm from '@/components/account/ProfileForm'
 import AddressesForm from '@/components/account/AddressesForm'
 

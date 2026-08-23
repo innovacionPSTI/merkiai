@@ -1,5 +1,5 @@
 import type { Metadata } from 'next'
-import { getStoreConfig, getPageWithSections } from '@vps/database'
+import { getStoreConfig, getPageWithSections } from '@merkiai/database'
 import LegalPage from '@/components/legal/LegalPage'
 
 export const dynamic = 'force-dynamic'

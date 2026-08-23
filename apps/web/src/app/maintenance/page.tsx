@@ -1,5 +1,5 @@
 import type { Metadata } from 'next'
-import { getStoreConfig } from '@vps/database'
+import { getStoreConfig } from '@merkiai/database'
 
 export const metadata: Metadata = {
   title: 'Sitio en mantenimiento',

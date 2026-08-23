@@ -1,7 +1,7 @@
 'use client'
 
 import { useState } from 'react'
-import type { Coupon } from '@vps/database'
+import type { Coupon } from '@merkiai/database'
 
 const fmt = (n: number) =>
   new Intl.NumberFormat('es-CO', { style: 'currency', currency: 'COP', maximumFractionDigits: 0 }).format(n)

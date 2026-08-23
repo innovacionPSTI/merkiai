@@ -155,20 +155,21 @@ describe('POST /api/shipping/rates — address mapping', () => {
 // Error handling
 // ─────────────────────────────────────────────
 describe('POST /api/shipping/rates — errores', () => {
-  it('retorna 500 si getShippingProvider lanza un error', async () => {
+  it('retorna 502 con mensaje de tarifa estándar si getShippingProvider lanza un error', async () => {
     mockGetShippingProvider.mockRejectedValueOnce(new Error('DB down'))
 
     const res = await POST(makeRequest({ address: validAddress, items: validItems }))
-    expect(res.status).toBe(500)
+    // Error no-validación → 502 con mensaje amigable (humanizeShippingError)
+    expect(res.status).toBe(502)
     const data = await res.json()
-    expect(data.error).toMatch(/tarifas/i)
+    expect(data.error).toMatch(/tarifa estándar/i)
   })
 
-  it('retorna 500 si getRates lanza un error inesperado', async () => {
+  it('retorna 502 si getRates lanza un error inesperado', async () => {
     const brokenProvider = { name: 'broken', getRates: jest.fn().mockRejectedValueOnce(new Error('unexpected')) }
     mockGetShippingProvider.mockResolvedValueOnce(brokenProvider as never)
 
     const res = await POST(makeRequest({ address: validAddress, items: validItems }))
-    expect(res.status).toBe(500)
+    expect(res.status).toBe(502)
   })
 })

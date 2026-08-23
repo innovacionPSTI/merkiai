@@ -17,7 +17,7 @@
  *
  * Solo accesible por super_admin y admin.
  */
-import { createServerClient } from '@vps/database'
+import { createServerClient } from '@merkiai/database'
 import { NextResponse } from 'next/server'
 import { getAdminUser } from '@/lib/auth'
 

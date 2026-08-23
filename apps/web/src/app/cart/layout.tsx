@@ -1,6 +1,6 @@
 import Navbar from '@/components/layout/Navbar'
 import Footer from '@/components/layout/Footer'
-import { getStoreConfig, getFooterPages, getNavTree } from '@vps/database'
+import { getStoreConfig, getFooterPages, getNavTree } from '@merkiai/database'
 
 export const dynamic = 'force-dynamic'
 

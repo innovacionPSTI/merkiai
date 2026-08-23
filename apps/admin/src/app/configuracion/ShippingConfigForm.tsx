@@ -1,8 +1,8 @@
 'use client'
 
 import { useState, useTransition } from 'react'
-import type { ShippingConfig } from '@vps/database'
-import { SearchableSelect, DEPARTMENTS, getCitiesForDepartment } from '@vps/ui'
+import type { ShippingConfig } from '@merkiai/database'
+import { SearchableSelect, DEPARTMENTS, getCitiesForDepartment } from '@merkiai/ui'
 
 interface Props {
   initialConfig: ShippingConfig | null

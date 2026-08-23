@@ -2,7 +2,7 @@
 
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
-import type { AdminConfig } from '@vps/database'
+import type { AdminConfig } from '@merkiai/database'
 
 interface Props {
   initialConfig: AdminConfig

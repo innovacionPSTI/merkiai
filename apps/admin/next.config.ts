@@ -27,7 +27,7 @@ const SECURITY_HEADERS = [
 // ── Config ─────────────────────────────────────────────────────────────────────
 
 const nextConfig: NextConfig = {
-  transpilePackages: ['@vps/ui', '@vps/database'],
+  transpilePackages: ['@merkiai/ui', '@merkiai/database'],
   images: {
     remotePatterns: [
       {

@@ -10,7 +10,7 @@ import {
   isColorValue,
   COLOR_HEX,
 } from '../variant-utils'
-import type { ProductVariant, ProductWithVariants } from '@vps/database'
+import type { ProductVariant, ProductWithVariants } from '@merkiai/database'
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 

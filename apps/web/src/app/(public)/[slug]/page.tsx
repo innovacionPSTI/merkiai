@@ -13,7 +13,7 @@
  */
 import type { Metadata } from 'next'
 import { notFound } from 'next/navigation'
-import { getPageWithSections, getStoreConfig } from '@vps/database'
+import { getPageWithSections, getStoreConfig } from '@merkiai/database'
 import SectionRenderer from '@/components/sections/SectionRenderer'
 
 export const dynamic = 'force-dynamic'

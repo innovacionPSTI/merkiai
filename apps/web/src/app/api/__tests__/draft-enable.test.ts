@@ -53,9 +53,9 @@ describe('GET /api/draft/enable — validación', () => {
 
 // ─────────────────────────────────────────────────────────────────────────────
 describe('GET /api/draft/enable — cookie y redirección', () => {
-  it('setea la cookie __vps_draft=1 con httpOnly y maxAge=3600', async () => {
+  it('setea la cookie __merkiai_draft=1 con httpOnly y maxAge=3600', async () => {
     await GET(makeRequest({ secret: VALID_SECRET, slug: 'mi-articulo' }))
-    expect(mockCookieSet).toHaveBeenCalledWith('__vps_draft', '1', expect.objectContaining({
+    expect(mockCookieSet).toHaveBeenCalledWith('__merkiai_draft', '1', expect.objectContaining({
       httpOnly: true,
       maxAge:   3600,
     }))
@@ -72,9 +72,9 @@ describe('GET /api/draft/enable — cookie y redirección', () => {
 
 // ─────────────────────────────────────────────────────────────────────────────
 describe('DELETE /api/draft/enable — limpiar cookie', () => {
-  it('elimina la cookie __vps_draft y retorna ok', async () => {
+  it('elimina la cookie __merkiai_draft y retorna ok', async () => {
     const res = await DELETE()
-    expect(mockCookieDelete).toHaveBeenCalledWith('__vps_draft')
+    expect(mockCookieDelete).toHaveBeenCalledWith('__merkiai_draft')
     expect(res.status).toBe(200)
     const body = await res.json()
     expect(body.ok).toBe(true)

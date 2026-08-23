@@ -1,9 +1,9 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import type { CustomerAddress } from '@vps/database'
+import type { CustomerAddress } from '@merkiai/database'
 import SearchableSelect from '@/components/ui/SearchableSelect'
-import { DEPARTMENTS, getCitiesForDepartment } from '@vps/ui'
+import { DEPARTMENTS, getCitiesForDepartment } from '@merkiai/ui'
 
 interface AddrForm {
   label:       string

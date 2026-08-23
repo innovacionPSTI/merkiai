@@ -31,13 +31,13 @@ jobs:
         run: pnpm install --frozen-lockfile
 
       - name: Build packages
-        run: pnpm --filter @vps/database build
+        run: pnpm --filter @merkiai/database build
 
       - name: Type-check apps/web
-        run: pnpm --filter @vps/web exec tsc --noEmit --skipLibCheck
+        run: pnpm --filter @merkiai/web exec tsc --noEmit --skipLibCheck
 
       - name: Type-check apps/admin
-        run: pnpm --filter @vps/admin exec tsc --noEmit --skipLibCheck
+        run: pnpm --filter @merkiai/admin exec tsc --noEmit --skipLibCheck
 
   # ── Unit + integration tests ─────────────────────────────────────────────────
   test:
@@ -63,13 +63,13 @@ jobs:
         run: pnpm install --frozen-lockfile
 
       - name: Run tests (packages/database)
-        run: pnpm --filter @vps/database test --passWithNoTests
+        run: pnpm --filter @merkiai/database test --passWithNoTests
 
       - name: Run tests (apps/web)
-        run: pnpm --filter @vps/web test --passWithNoTests
+        run: pnpm --filter @merkiai/web test --passWithNoTests
 
       - name: Run tests (apps/admin)
-        run: pnpm --filter @vps/admin test --passWithNoTests
+        run: pnpm --filter @merkiai/admin test --passWithNoTests
 
   # ── Deploy web to Vercel (main branch only) ──────────────────────────────────
   deploy-web:

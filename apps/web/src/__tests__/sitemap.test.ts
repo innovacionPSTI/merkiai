@@ -12,12 +12,12 @@
 process.env.NEXT_PUBLIC_SITE_URL = 'https://shop.example.com'
 
 // ── Mocks ────────────────────────────────────────────────────────────────────
-jest.mock('@vps/database', () => ({
+jest.mock('@merkiai/database', () => ({
   getProducts:  jest.fn(),
   getBlogPosts: jest.fn(),
 }))
 
-import { getProducts, getBlogPosts } from '@vps/database'
+import { getProducts, getBlogPosts } from '@merkiai/database'
 import sitemap from '../app/sitemap'
 
 const mockGetProducts  = getProducts  as jest.MockedFunction<typeof getProducts>

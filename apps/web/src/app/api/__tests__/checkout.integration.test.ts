@@ -11,13 +11,13 @@
  *   - SEGURIDAD: el `payment_method` del cliente se ignora; manda active_provider
  *   - Fallo de DB: retorna 500
  *
- * Se mockea @vps/database (getActiveProvider + getPaymentGateway) y @/stack.
+ * Se mockea @merkiai/database (getActiveProvider + getPaymentGateway) y @/stack.
  */
 
 import { NextRequest } from 'next/server'
 
 // Mock DB layer — debe ir antes de los imports
-jest.mock('@vps/database', () => ({
+jest.mock('@merkiai/database', () => ({
   createOrder: jest.fn(),
   getPaymentConfig: jest.fn(),
   getPaymentGateway: jest.fn(),
@@ -31,7 +31,7 @@ jest.mock('@/stack', () => ({
   stackServerApp: { getUser: jest.fn().mockResolvedValue(null) },
 }))
 
-import { createOrder, getPaymentConfig, getPaymentGateway, getActiveProvider, getStockForVariants } from '@vps/database'
+import { createOrder, getPaymentConfig, getPaymentGateway, getActiveProvider, getStockForVariants } from '@merkiai/database'
 import { POST } from '../checkout/route'
 
 const mockCreateOrder = createOrder as jest.MockedFunction<typeof createOrder>
@@ -80,7 +80,7 @@ const mpConfig  = { id: 1, active_provider: 'mercadopago', mercadopago_access_to
 const boldConfig = { id: 1, active_provider: 'bold', bold_api_key: 'bk', bold_secret_key: 'sk' }
 const noneConfig = { id: 1, active_provider: 'none' }
 
-const WOMPI_PAYMENT_URL = 'https://checkout.wompi.co/p/?public-key=pub_test_abc123&reference=VPS-0042'
+const WOMPI_PAYMENT_URL = 'https://checkout.wompi.co/p/?public-key=pub_test_abc123&reference=ORD-0042'
 const MP_SANDBOX_URL    = 'https://sandbox.mercadopago.com.co/checkout/v1/redirect?pref_id=pref-123'
 
 // Replica la lógica real de getActiveProvider (fail-closed).
@@ -141,7 +141,7 @@ describe('POST /api/checkout — validación', () => {
 // ─────────────────────────────────────────────
 describe('POST /api/checkout — rate limiting', () => {
   it('retorna 429 al superar el límite (10) por IP en la ventana', async () => {
-    mockCreateOrder.mockResolvedValue({ id: 1, order_number: 'VPS-0001' } as never)
+    mockCreateOrder.mockResolvedValue({ id: 1, order_number: 'ORD-0001' } as never)
     const ip = '203.0.113.77' // IP fija para acumular en el mismo cubo
     const req = () =>
       new NextRequest('http://localhost/api/checkout', {
@@ -178,7 +178,7 @@ describe('POST /api/checkout — validación de stock', () => {
     mockGetStockForVariants.mockResolvedValueOnce([
       { variant_id: 10, stock: 0, allow_backorder: true },
     ])
-    mockCreateOrder.mockResolvedValueOnce({ id: 1, order_number: 'VPS-0001' } as never)
+    mockCreateOrder.mockResolvedValueOnce({ id: 1, order_number: 'ORD-0001' } as never)
     const res = await POST(makeRequest(validBody))
     expect(res.status).toBe(200)
   })
@@ -193,7 +193,7 @@ describe('POST /api/checkout — sin pasarela activa (manual)', () => {
   })
 
   it('crea el pedido como manual, sin payment_url, con flag manual', async () => {
-    mockCreateOrder.mockResolvedValueOnce({ id: 7, order_number: 'VPS-0007' } as never)
+    mockCreateOrder.mockResolvedValueOnce({ id: 7, order_number: 'ORD-0007' } as never)
 
     const res = await POST(makeRequest(validBody))
     const data = await res.json()
@@ -201,11 +201,11 @@ describe('POST /api/checkout — sin pasarela activa (manual)', () => {
     expect(res.status).toBe(200)
     expect(data.manual).toBe(true)
     expect(data.payment_url).toBeNull()
-    expect(data.order_number).toBe('VPS-0007')
+    expect(data.order_number).toBe('ORD-0007')
   })
 
   it('persiste payment_method = "manual"', async () => {
-    mockCreateOrder.mockResolvedValueOnce({ id: 7, order_number: 'VPS-0007' } as never)
+    mockCreateOrder.mockResolvedValueOnce({ id: 7, order_number: 'ORD-0007' } as never)
 
     await POST(makeRequest(validBody))
 
@@ -213,7 +213,7 @@ describe('POST /api/checkout — sin pasarela activa (manual)', () => {
   })
 
   it('NO invoca ninguna pasarela de pago', async () => {
-    mockCreateOrder.mockResolvedValueOnce({ id: 7, order_number: 'VPS-0007' } as never)
+    mockCreateOrder.mockResolvedValueOnce({ id: 7, order_number: 'ORD-0007' } as never)
 
     await POST(makeRequest(validBody))
 
@@ -226,19 +226,19 @@ describe('POST /api/checkout — sin pasarela activa (manual)', () => {
 // ─────────────────────────────────────────────
 describe('POST /api/checkout — happy path', () => {
   it('retorna order_number, order_id y payment_url con Wompi activo', async () => {
-    mockCreateOrder.mockResolvedValueOnce({ id: 42, order_number: 'VPS-0042', status: 'pending' } as never)
+    mockCreateOrder.mockResolvedValueOnce({ id: 42, order_number: 'ORD-0042', status: 'pending' } as never)
 
     const res = await POST(makeRequest(validBody))
     const data = await res.json()
 
     expect(res.status).toBe(200)
-    expect(data.order_number).toBe('VPS-0042')
+    expect(data.order_number).toBe('ORD-0042')
     expect(data.order_id).toBe(42)
     expect(data.payment_url).toBe(WOMPI_PAYMENT_URL)
   })
 
   it('persiste payment_method = pasarela activa (wompi)', async () => {
-    mockCreateOrder.mockResolvedValueOnce({ id: 1, order_number: 'VPS-0001' } as never)
+    mockCreateOrder.mockResolvedValueOnce({ id: 1, order_number: 'ORD-0001' } as never)
 
     await POST(makeRequest(validBody))
 
@@ -247,7 +247,7 @@ describe('POST /api/checkout — happy path', () => {
   })
 
   it('usa shipping_cost = 0 si no se proporciona', async () => {
-    mockCreateOrder.mockResolvedValueOnce({ id: 1, order_number: 'VPS-0001' } as never)
+    mockCreateOrder.mockResolvedValueOnce({ id: 1, order_number: 'ORD-0001' } as never)
 
     await POST(makeRequest({ ...validBody, shipping_cost: undefined }))
 
@@ -256,7 +256,7 @@ describe('POST /api/checkout — happy path', () => {
 
   it('devuelve una URL sandbox de MercadoPago cuando es la pasarela activa', async () => {
     mockGetPaymentConfig.mockResolvedValueOnce(mpConfig as never)
-    mockCreateOrder.mockResolvedValueOnce({ id: 5, order_number: 'VPS-0005' } as never)
+    mockCreateOrder.mockResolvedValueOnce({ id: 5, order_number: 'ORD-0005' } as never)
 
     const res = await POST(makeRequest({ ...validBody, payment_method: 'mercadopago' }))
     const data = await res.json()
@@ -268,7 +268,7 @@ describe('POST /api/checkout — happy path', () => {
 
   it('usa Bold cuando es la pasarela activa (payment_method = bold)', async () => {
     mockGetPaymentConfig.mockResolvedValueOnce(boldConfig as never)
-    mockCreateOrder.mockResolvedValueOnce({ id: 6, order_number: 'VPS-0006' } as never)
+    mockCreateOrder.mockResolvedValueOnce({ id: 6, order_number: 'ORD-0006' } as never)
 
     const res = await POST(makeRequest({ ...validBody, payment_method: 'wompi' })) // cliente miente
     const data = await res.json()
@@ -287,7 +287,7 @@ describe('POST /api/checkout — seguridad (no bypass de pasarela)', () => {
   it('ignora el payment_method del cliente y usa la pasarela activa del servidor', async () => {
     // Servidor activo = wompi; el cliente intenta forzar mercadopago
     mockGetPaymentConfig.mockResolvedValue(wompiConfig as never)
-    mockCreateOrder.mockResolvedValueOnce({ id: 9, order_number: 'VPS-0009' } as never)
+    mockCreateOrder.mockResolvedValueOnce({ id: 9, order_number: 'ORD-0009' } as never)
 
     await POST(makeRequest({ ...validBody, payment_method: 'mercadopago' }))
 
@@ -298,7 +298,7 @@ describe('POST /api/checkout — seguridad (no bypass de pasarela)', () => {
 
   it('con active_provider="none" ignora payment_method="wompi" del cliente y crea pedido manual', async () => {
     mockGetPaymentConfig.mockResolvedValue(noneConfig as never)
-    mockCreateOrder.mockResolvedValueOnce({ id: 10, order_number: 'VPS-0010' } as never)
+    mockCreateOrder.mockResolvedValueOnce({ id: 10, order_number: 'ORD-0010' } as never)
 
     const res = await POST(makeRequest({ ...validBody, payment_method: 'wompi' }))
     const data = await res.json()
@@ -314,7 +314,7 @@ describe('POST /api/checkout — seguridad (no bypass de pasarela)', () => {
 // ─────────────────────────────────────────────
 describe('POST /api/checkout — shipping_rate', () => {
   it('pasa carrier_name y skydropx_rate_id a createOrder cuando se incluye shipping_rate', async () => {
-    mockCreateOrder.mockResolvedValueOnce({ id: 1, order_number: 'VPS-0001' } as never)
+    mockCreateOrder.mockResolvedValueOnce({ id: 1, order_number: 'ORD-0001' } as never)
 
     await POST(makeRequest({
       ...validBody,
@@ -327,7 +327,7 @@ describe('POST /api/checkout — shipping_rate', () => {
   })
 
   it('pasa carrier_name=null cuando shipping_rate es null', async () => {
-    mockCreateOrder.mockResolvedValueOnce({ id: 2, order_number: 'VPS-0002' } as never)
+    mockCreateOrder.mockResolvedValueOnce({ id: 2, order_number: 'ORD-0002' } as never)
 
     await POST(makeRequest({ ...validBody, shipping_rate: null }))
 

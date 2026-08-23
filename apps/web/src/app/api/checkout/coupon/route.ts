@@ -3,7 +3,7 @@
  * Valida un código de cupón y retorna el descuento calculado.
  */
 import { NextRequest, NextResponse } from 'next/server'
-import { getCouponByCode, validateCoupon } from '@vps/database'
+import { getCouponByCode, validateCoupon } from '@merkiai/database'
 
 export async function POST(req: NextRequest) {
   try {

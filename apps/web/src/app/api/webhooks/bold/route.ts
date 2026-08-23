@@ -1,9 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { createServerClient, getPaymentConfig, getStoreConfig, BoldGateway, applyStockForOrder, markWebhookEventProcessed } from '@vps/database'
+import { createServerClient, getPaymentConfig, getStoreConfig, BoldGateway, applyStockForOrder, markWebhookEventProcessed } from '@merkiai/database'
 import { amountCoversOrder } from '@/lib/payment-guards'
 import { sendOrderConfirmation, buildEmailConfig } from '@/lib/email'
 import { createShipmentForOrder } from '@/lib/shipping/shipments'
-import type { Order, Database } from '@vps/database'
+import type { Order, Database } from '@merkiai/database'
 
 type OrderUpdate = Database['public']['Tables']['orders']['Update']
 

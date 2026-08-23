@@ -22,9 +22,9 @@ describe('buildWompiCheckoutUrl', () => {
   const baseParams = {
     publicKey: 'pub_test_abc123',
     integritySecret: 'test_int_secret',
-    reference: 'VPS-0042',
+    reference: 'ORD-0042',
     amountInCents: 9800000,
-    redirectUrl: 'https://shop.example.com/checkout/confirmation?order=VPS-0042',
+    redirectUrl: 'https://shop.example.com/checkout/confirmation?order=ORD-0042',
   }
 
   it('genera una URL que empieza en el dominio de Wompi', () => {
@@ -37,14 +37,14 @@ describe('buildWompiCheckoutUrl', () => {
     expect(url.searchParams.get('public-key')).toBe('pub_test_abc123')
     expect(url.searchParams.get('currency')).toBe('COP')
     expect(url.searchParams.get('amount-in-cents')).toBe('9800000')
-    expect(url.searchParams.get('reference')).toBe('VPS-0042')
+    expect(url.searchParams.get('reference')).toBe('ORD-0042')
     expect(url.searchParams.get('redirect-url')).toBe(baseParams.redirectUrl)
   })
 
   it('calcula correctamente la firma SHA256 de integridad', () => {
     const url = new URL(buildWompiCheckoutUrl(baseParams))
     const expected = createHash('sha256')
-      .update(`VPS-00429800000COPtest_int_secret`)
+      .update(`ORD-00429800000COPtest_int_secret`)
       .digest('hex')
     expect(url.searchParams.get('signature:integrity')).toBe(expected)
   })
@@ -58,7 +58,7 @@ describe('buildWompiCheckoutUrl', () => {
     const url = new URL(buildWompiCheckoutUrl({ ...baseParams, currency: 'USD' }))
     expect(url.searchParams.get('currency')).toBe('USD')
     const expected = createHash('sha256')
-      .update(`VPS-00429800000USDtest_int_secret`)
+      .update(`ORD-00429800000USDtest_int_secret`)
       .digest('hex')
     expect(url.searchParams.get('signature:integrity')).toBe(expected)
   })

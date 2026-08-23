@@ -1,6 +1,6 @@
-# apps/web — Sitio público Commerce CMS
+# apps/web — Sitio público Merkiai
 
-Aplicación Next.js (App Router) que implementa el sitio público de Commerce CMS: e-commerce, servicios B2B (maquila y asesorías) y blog.
+Aplicación Next.js (App Router) que implementa el sitio público de Merkiai: e-commerce, servicios B2B (maquila y asesorías) y blog.
 
 **URL local:** `http://localhost:3000`
 
@@ -61,7 +61,7 @@ src/app/
     │   └── addresses/
     │       ├── route.ts                ← GET/POST direcciones guardadas
     │       └── [id]/route.ts           ← PATCH/DELETE dirección por ID
-    ├── draft/enable/route.ts           ← Blog Draft Mode (cookie __vps_draft)
+    ├── draft/enable/route.ts           ← Blog Draft Mode (cookie __merkiai_draft)
     └── webhooks/                       ← wompi · mercadopago · tucompra · bold · skydropx
 ```
 
@@ -147,7 +147,7 @@ Permite al equipo admin previsualizar artículos borrador antes de publicarlos.
 **Flujo:**
 1. Admin hace clic en "Previsualizar ↗" en `apps/admin/src/app/blog/BlogPostForm.tsx`
 2. Redirige a `GET /api/draft/enable?slug=<slug>&secret=<DRAFT_SECRET>`
-3. El endpoint valida el secreto, setea una cookie `__vps_draft=1` (httpOnly, 1h) y redirige a `/blog/<slug>?draft=1`
+3. El endpoint valida el secreto, setea una cookie `__merkiai_draft=1` (httpOnly, 1h) y redirige a `/blog/<slug>?draft=1`
 4. La página `/blog/[slug]` detecta la cookie y carga el artículo aunque `published = false`
 5. Se muestra un banner amarillo: _"Modo borrador — Este artículo no está publicado"_
 
@@ -200,7 +200,7 @@ Lista las direcciones guardadas del cliente / crea una nueva dirección. Requier
 Edita campos de una dirección existente (incluyendo marcarla como predeterminada) o la elimina. Requiere sesión y que la dirección pertenezca al cliente autenticado.
 
 ### `GET /api/draft/enable` · `DELETE /api/draft/enable`
-Activa/desactiva Blog Draft Mode mediante cookie `__vps_draft`.
+Activa/desactiva Blog Draft Mode mediante cookie `__merkiai_draft`.
 
 ### `POST /api/webhooks/skydropx`
 Mapea eventos PRO API → status de la orden:

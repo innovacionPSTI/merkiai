@@ -1,7 +1,7 @@
 import { redirect } from 'next/navigation'
 import { getAdminUser } from '@/lib/auth'
 import { canAccess } from '@/lib/roles'
-import { getThemes } from '@vps/database'
+import { getThemes } from '@merkiai/database'
 import TemasClient from './TemasClient'
 
 export const metadata = { title: 'Temas' }

@@ -10,7 +10,7 @@
 
 import { NextRequest } from 'next/server'
 
-jest.mock('@vps/database', () => ({
+jest.mock('@merkiai/database', () => ({
   createServerClient: jest.fn(),
   restoreStockForOrder: jest.fn().mockResolvedValue(undefined),
 }))
@@ -21,7 +21,7 @@ jest.mock('@/lib/email', () => ({
   sendStatusNotification:   jest.fn().mockResolvedValue(undefined),
 }))
 
-import { createServerClient } from '@vps/database'
+import { createServerClient } from '@merkiai/database'
 import { sendShippingNotification, sendStatusNotification } from '@/lib/email'
 import { PATCH } from '../[id]/status/route'
 
@@ -40,7 +40,7 @@ function makeRequest(body: object, id = '42'): NextRequest {
 
 const mockOrder = {
   id: 42,
-  order_number:   'VPS-0042',
+  order_number:   'ORD-0042',
   customer_name:  'Ana García',
   customer_email: 'ana@example.com',
   status:         'shipped',
@@ -53,7 +53,7 @@ const mockOrder = {
 const mockStoreConfig = {
   resend_api_key:    're_test_key',
   resend_from_email: 'noreply@tienda.example.com',
-  store_name:        'Commerce CMS',
+  store_name:        'Merkiai',
 }
 
 /**
@@ -101,7 +101,7 @@ describe('PATCH /api/admin/orders/[id]/status — happy path', () => {
 
     expect(res.status).toBe(200)
     expect(data.status).toBe('shipped')
-    expect(data.order_number).toBe('VPS-0042')
+    expect(data.order_number).toBe('ORD-0042')
   })
 
   it('filtra la actualización por el id correcto', async () => {
@@ -166,7 +166,7 @@ describe('PATCH /api/admin/orders/[id]/status — email triggers', () => {
     await new Promise((r) => setTimeout(r, 20))
 
     expect(sendShippingNotification).toHaveBeenCalledWith(
-      expect.objectContaining({ order_number: 'VPS-0042', tracking_number: 'TRK123' }),
+      expect.objectContaining({ order_number: 'ORD-0042', tracking_number: 'TRK123' }),
       expect.objectContaining({ apiKey: 're_test_key' }),
     )
   })
@@ -179,7 +179,7 @@ describe('PATCH /api/admin/orders/[id]/status — email triggers', () => {
     await new Promise((r) => setTimeout(r, 20))
 
     expect(sendStatusNotification).toHaveBeenCalledWith(
-      expect.objectContaining({ order_number: 'VPS-0042' }),
+      expect.objectContaining({ order_number: 'ORD-0042' }),
       'cancelled',
       expect.objectContaining({ apiKey: 're_test_key' }),
     )

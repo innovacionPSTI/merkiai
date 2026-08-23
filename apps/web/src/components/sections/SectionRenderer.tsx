@@ -13,7 +13,7 @@
  *   testimonials → TestimonialsSection (carrusel de testimonios)
  *   whatsapp     → WhatsAppSection  (botón/formulario de WhatsApp)
  */
-import type { PageSection, SectionItem } from '@vps/database'
+import type { PageSection, SectionItem } from '@merkiai/database'
 
 import HeroSection         from './HeroSection'
 import TextSection         from './TextSection'

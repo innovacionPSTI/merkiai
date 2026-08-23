@@ -5,11 +5,11 @@
  * returns the correct provider instance based on the config.
  */
 
-jest.mock('@vps/database', () => ({
+jest.mock('@merkiai/database', () => ({
   getShippingConfig: jest.fn(),
 }))
 
-import { getShippingConfig } from '@vps/database'
+import { getShippingConfig } from '@merkiai/database'
 import { getShippingProvider } from '../index'
 import { FixedRateProvider } from '../providers/fixed-rate'
 import { SkydropxProvider } from '../providers/skydropx'
@@ -38,7 +38,7 @@ const BASE_CONFIG = {
 }
 
 const FULL_ORIGIN = {
-  origin_name:        'Commerce CMS',
+  origin_name:        'Merkiai',
   origin_street:      'Calle 10 # 5-20',
   origin_neighborhood:'El Centro',
   origin_city:        'Medellín',

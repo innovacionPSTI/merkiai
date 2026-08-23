@@ -9,11 +9,11 @@
  * so the webhook can still respond 200 and avoid retries.
  */
 
-import { createServerClient, getShippingConfig } from '@vps/database'
+import { createServerClient, getShippingConfig } from '@merkiai/database'
 import { SkydropxProvider } from './providers/skydropx'
 import { calculateParcel } from './types'
 import type { ShippingAddress } from './types'
-import type { OrderItem, ShippingAddress as DBShippingAddress } from '@vps/database'
+import type { OrderItem, ShippingAddress as DBShippingAddress } from '@merkiai/database'
 
 interface ShipmentOutcome {
   shipmentId: string

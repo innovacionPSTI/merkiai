@@ -1,6 +1,6 @@
-# apps/admin — Panel de administración Commerce CMS
+# apps/admin — Panel de administración Merkiai
 
-Aplicación Next.js 16 (App Router) para la gestión interna de Commerce CMS. Protegida con Stack Auth + sistema de roles en Supabase.
+Aplicación Next.js 16 (App Router) para la gestión interna de Merkiai. Protegida con Stack Auth + sistema de roles en Supabase.
 
 **URL local:** `http://localhost:3001`
 
@@ -121,7 +121,7 @@ src/app/
 El editor de artículos permite previsualizar borradores sin publicarlos:
 
 1. El botón "Previsualizar ↗" en `BlogPostForm.tsx` llama a `GET /api/draft/enable?slug=<slug>&secret=<DRAFT_SECRET>` en el sitio web
-2. El sitio setea una cookie segura `__vps_draft=1` (1 hora) y redirige al artículo
+2. El sitio setea una cookie segura `__merkiai_draft=1` (1 hora) y redirige al artículo
 3. La página del artículo muestra un banner amarillo indicando que es un borrador
 
 **Variable de entorno necesaria:**

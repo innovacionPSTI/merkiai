@@ -1,5 +1,5 @@
 /**
- * Definición de roles y permisos del panel de administración Commerce CMS.
+ * Definición de roles y permisos del panel de administración Merkiai.
  *
  * Roles con acceso al panel:
  *  - super_admin   : Acceso total + gestión de usuarios incluyendo otros admins

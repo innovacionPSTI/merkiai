@@ -11,7 +11,7 @@ import { GET } from '../maintenance-status/route'
 
 const mockGetStoreConfig = jest.fn()
 
-jest.mock('@vps/database', () => ({
+jest.mock('@merkiai/database', () => ({
   getStoreConfig: () => mockGetStoreConfig(),
 }))
 

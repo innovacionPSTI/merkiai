@@ -33,7 +33,7 @@ beforeEach(() => jest.clearAllMocks())
 const fullConfig = {
   id: 1,
   whatsapp_number: '573001234567',
-  store_name: 'Commerce CMS',
+  store_name: 'Merkiai',
   store_email: 'info@tienda.example.com',
   logo_url: 'https://example.com/logo.png',
   resend_api_key: null,
@@ -60,7 +60,7 @@ describe('getStoreConfig', () => {
 
     expect(result.whatsapp_number).toBe('573001234567')
     expect(result.logo_url).toBe('https://example.com/logo.png')
-    expect(result.store_name).toBe('Commerce CMS')
+    expect(result.store_name).toBe('Merkiai')
   })
 
   it('devuelve DEFAULT_CONFIG cuando la BD devuelve error', async () => {
@@ -126,7 +126,7 @@ describe('updateStoreConfig', () => {
   it('incluye updated_at en el upsert', async () => {
     mockUpsertChain.mockResolvedValueOnce({ data: fullConfig, error: null })
 
-    await updateStoreConfig({ store_name: 'Commerce CMS Nuevo' })
+    await updateStoreConfig({ store_name: 'Merkiai Nuevo' })
 
     const upsertArg = mockUpsert.mock.calls[0]![0]
     expect(upsertArg).toHaveProperty('updated_at')

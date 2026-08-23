@@ -90,7 +90,7 @@
 | `/shop` | `app/(public)/shop/page.tsx` | ISR 60s |
 | `/shop/[slug]` | `app/(public)/shop/[slug]/page.tsx` | `force-dynamic`; OG image desde `images[0].url` |
 | `/blog` | `app/(public)/blog/page.tsx` | ISR 60s |
-| `/blog/[slug]` | `app/(public)/blog/[slug]/page.tsx` | SSG+ISR; Draft Mode con cookie `__vps_draft`; banner borrador |
+| `/blog/[slug]` | `app/(public)/blog/[slug]/page.tsx` | SSG+ISR; Draft Mode con cookie `__merkiai_draft`; banner borrador |
 | `/account` | `app/(account)/account/page.tsx` | SSR · user real |
 | `/account/profile` | `app/(account)/account/profile/page.tsx` | SSR · editar nombre, teléfono y direcciones |
 | `/account/orders` | `app/(account)/account/orders/page.tsx` | SSR |
@@ -114,7 +114,7 @@
 | `DELETE /api/account/addresses/[id]` | Elimina dirección verificando que pertenece al cliente |
 | `GET /api/account/profile` | Devuelve nombre y teléfono del customer logueado |
 | `PATCH /api/account/profile` | Actualiza nombre y teléfono; sincroniza `displayName` en Stack Auth |
-| `GET /api/draft/enable` | Activa modo borrador (cookie `__vps_draft` 1h) + redirect a `/blog/[slug]?draft=1` |
+| `GET /api/draft/enable` | Activa modo borrador (cookie `__merkiai_draft` 1h) + redirect a `/blog/[slug]?draft=1` |
 | `POST /api/webhooks/wompi` | Verifica firma SHA256, actualiza estado de pago → `createShipmentForOrder()` → email de tracking |
 | `POST /api/webhooks/mercadopago` | Consulta pago en API MP, actualiza estado → `createShipmentForOrder()` → email de tracking |
 | `POST /api/webhooks/skydropx` | Mapea `workflow_status` / eventos PRO a estado de orden; envía email de tracking al entrar en tránsito |
@@ -280,12 +280,12 @@ Se reorganizó la configuración de pagos con la misma lógica de "Proveedor act
 - [x] **`BoldGateway.queryStatusByReference`** — consulta el servicio de fallback `GET /payments/webhook/notifications/<ref>?is_external_reference=true` (por `metadata.reference` = order_number), prioriza `SALE_APPROVED`, devuelve el estado mapeado o `null` ✅
 - [x] **`reconcileBoldOrder` (`apps/web/src/lib/bold-reconcile.ts`)** — guard `bold` + `pending`, estado tomado SOLO de la API autenticada de Bold, idempotente, mismos efectos que el webhook (email + guía) ✅
 - [x] **Disparadores** — endpoint público `POST /api/checkout/bold/reconcile` (rate-limited 6/min por IP) invocado una vez desde la confirmación (`BoldReconcileOnLoad`); endpoint admin `POST /api/admin/orders/[id]/reconcile-bold` (guard admin) + botón "Verificar pago con Bold" en el detalle del pedido ✅
-- [x] **Fix (ago-2026): reconcile compartido sin salto HTTP** — el núcleo `reconcileBoldOrder` se movió a `@vps/database` (`lib/bold-reconcile.ts`); el endpoint admin lo llama **directo** (antes hacía `fetch` a `NEXT_PUBLIC_SITE_URL`, que en local fallaba con `UNABLE_TO_GET_ISSUER_CERT_LOCALLY`). Al aprobar, el admin envía email `sendPaymentConfirmed`. Test `bold-reconcile.test.ts` en database (5). **Nota:** en desarrollo local los webhooks de Bold no llegan a `localhost` (usar túnel o el botón de verificación) ✅
+- [x] **Fix (ago-2026): reconcile compartido sin salto HTTP** — el núcleo `reconcileBoldOrder` se movió a `@merkiai/database` (`lib/bold-reconcile.ts`); el endpoint admin lo llama **directo** (antes hacía `fetch` a `NEXT_PUBLIC_SITE_URL`, que en local fallaba con `UNABLE_TO_GET_ISSUER_CERT_LOCALLY`). Al aprobar, el admin envía email `sendPaymentConfirmed`. Test `bold-reconcile.test.ts` en database (5). **Nota:** en desarrollo local los webhooks de Bold no llegan a `localhost` (usar túnel o el botón de verificación) ✅
 - [x] **Tests** — `bold-gateway.test.ts` ampliado (13 total), `bold-reconcile.test.ts` (5) ✅
 
 ### Validación manual del pago por el admin (HU-096)
 - [x] **`PATCH /api/admin/orders/[id]/payment-status`** — guard admin (super_admin/admin/vendedor); acepta solo `approved`/`rejected`; al aprobar fija `payment_status='approved'` + `status='processing'`; email de confirmación al cliente (fire-and-forget) ✅
-- [x] **`sendPaymentConfirmed`** — email compartido en `@vps/database` ("hemos confirmado tu pago"); re-exportado en admin ✅
+- [x] **`sendPaymentConfirmed`** — email compartido en `@merkiai/database` ("hemos confirmado tu pago"); re-exportado en admin ✅
 - [x] **UI** — `PaymentStatusValidator` (botones "Confirmar pago"/"Rechazar pago") en el detalle del pedido, visible mientras el pago no esté aprobado ✅
 - [x] **Fix constraint BD** — `orders_payment_method_check` ampliado a `('wompi','mercadopago','tucompra','bold','manual')` en `01_schema.sql` y `upgrade.sql` (antes solo permitía wompi/mercadopago → rompía los pedidos `manual`) ✅
 - [x] **Tests** — `payment-status.integration.test.ts` (5) + `sendPaymentConfirmed` en `email.test.ts` ✅
@@ -356,7 +356,7 @@ Se reorganizó la configuración de pagos con la misma lógica de "Proveedor act
 - [x] **Edición de perfil** en `/account/profile` — nombre, teléfono, y gestión de direcciones guardadas ✅
 - [x] **Email de confirmación de newsletter** — vía Resend, solo en primera suscripción ✅
 - [x] **Modal de despacho masivo** — `PickupModal` en `/pedidos` para seleccionar órdenes con guía y programar recolección Skydropx ✅
-- [x] **Blog Draft Mode** — botón "Previsualizar" en el editor activa cookie `__vps_draft` por 1h; artículo se renderiza con banner de borrador ✅
+- [x] **Blog Draft Mode** — botón "Previsualizar" en el editor activa cookie `__merkiai_draft` por 1h; artículo se renderiza con banner de borrador ✅
 
 ### Completado en v4
 - [x] **Sub-navegación de Configuración** — sidebar con grupo expandible y 5 sub-rutas (General, Envíos, Pagos, Emails, Legal) ✅
@@ -439,9 +439,9 @@ Se reorganizó la configuración de pagos con la misma lógica de "Proveedor act
 ### Completado en v12 — Épica 9: Arquitectura Limpia y Generalización CMS
 - [x] **HU-044 — Eliminar rutas API zombie** — eliminadas `/api/admin/banners/` (sin auth guard, security hole), `/api/admin/sections/` y `/api/admin/pages/` (legacy, sin usar); ~800 líneas de código muerto removidas ✅
 - [x] **HU-045 — Eliminar directorios zombie** — eliminados `/banners/`, `/secciones/` y `/paginas/` en apps/admin; las rutas en sidebar ya apuntaban a `/home` y `/contenido` ✅
-- [x] **HU-046 — Consolidar `SearchableSelect` en `packages/ui`** — componente movido a `packages/ui/src/SearchableSelect.tsx`; admin usa `@vps/ui`; web mantiene copia local por limitación de Turbopack con `'use client'` en barrels ✅
+- [x] **HU-046 — Consolidar `SearchableSelect` en `packages/ui`** — componente movido a `packages/ui/src/SearchableSelect.tsx`; admin usa `@merkiai/ui`; web mantiene copia local por limitación de Turbopack con `'use client'` en barrels ✅
 - [x] **HU-047 — Consolidar `colombia-locations` en `packages/ui`** — `DEPARTMENTS`, `COLOMBIA_LOCATIONS`, `getCitiesForDepartment` movidos a `packages/ui/src/colombia-locations.ts`; eliminados de web, admin y database; tests actualizados al nuevo import ✅
-- [x] **HU-048 — Consolidar `email.ts` compartido** — creado `packages/database/src/lib/email.ts` con `EmailConfig`, `sendShippingNotification` y `sendStatusNotification` (unificadas con firma flexible); `apps/admin/src/lib/email.ts` reducido a 2 líneas de re-export; `apps/web/src/lib/email.ts` conserva solo funciones web-only (`buildEmailConfig`, `sendOrderConfirmation`, `sendNewsletterConfirmation`, `sendWelcomeEmail`) e importa el resto de `@vps/database` ✅
+- [x] **HU-048 — Consolidar `email.ts` compartido** — creado `packages/database/src/lib/email.ts` con `EmailConfig`, `sendShippingNotification` y `sendStatusNotification` (unificadas con firma flexible); `apps/admin/src/lib/email.ts` reducido a 2 líneas de re-export; `apps/web/src/lib/email.ts` conserva solo funciones web-only (`buildEmailConfig`, `sendOrderConfirmation`, `sendNewsletterConfirmation`, `sendWelcomeEmail`) e importa el resto de `@merkiai/database` ✅
 - [x] **HU-049 — Migrar `/privacy` y `/terms` al CMS** — migración `18_legal_pages.sql`: seed idempotente de páginas + secciones de texto por defecto; rutas web actualizan a `getPageWithSections()` con fallback a `store_config` para compatibilidad retroactiva; `meta_title` y `meta_description` desde la página del CMS ✅
 - [x] **HU-050 — Crear `getWebHomeData()`** — `packages/database/src/queries/home.ts` consolida las 6 queries paralelas del home; `apps/web/(public)/page.tsx` hace una sola llamada; nombre `getWebHomeData` evita colisión con `getHomeData` existente en `sections.ts` (admin editor) ✅
 - [x] **`packages/ui` zero-dependency** — `cn.ts` reescrito en JS puro sin `clsx`/`tailwind-merge`; resuelve fallo de build por resolución estricta de pnpm en Vercel ✅

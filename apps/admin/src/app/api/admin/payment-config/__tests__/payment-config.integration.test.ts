@@ -12,17 +12,17 @@
  *   PATCH → error de BD → 500
  *   GET  → error de BD → 500
  *
- * Mocks: @vps/database (getPaymentConfig, updatePaymentConfig)
+ * Mocks: @merkiai/database (getPaymentConfig, updatePaymentConfig)
  */
 
 import { NextRequest } from 'next/server'
 
-jest.mock('@vps/database', () => ({
+jest.mock('@merkiai/database', () => ({
   getPaymentConfig: jest.fn(),
   updatePaymentConfig: jest.fn(),
 }))
 
-import { getPaymentConfig, updatePaymentConfig } from '@vps/database'
+import { getPaymentConfig, updatePaymentConfig } from '@merkiai/database'
 import { GET, PATCH } from '../route'
 
 const mockGet = getPaymentConfig as jest.MockedFunction<typeof getPaymentConfig>

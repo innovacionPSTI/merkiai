@@ -1,7 +1,7 @@
 /**
  * @jest-environment jsdom
  *
- * Unit tests for the Commerce CMS cart store (Zustand + localStorage persist).
+ * Unit tests for the Merkiai cart store (Zustand + localStorage persist).
  * Each test gets a fresh store to avoid cross-test contamination.
  */
 import { act } from '@testing-library/react'

@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { cookies } from 'next/headers'
 
 const DRAFT_SECRET = process.env.DRAFT_SECRET ?? 'vps-draft-preview'
-const COOKIE_NAME  = '__vps_draft'
+const COOKIE_NAME  = '__merkiai_draft'
 const COOKIE_MAX_AGE = 60 * 60 // 1 hour
 
 /**

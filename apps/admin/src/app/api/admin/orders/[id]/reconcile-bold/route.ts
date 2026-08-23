@@ -3,9 +3,9 @@
  *
  * Acción manual del operador para reconciliar un pago Bold pendiente contra el
  * servicio de fallback de Bold. Llama al núcleo compartido `reconcileBoldOrder`
- * de @vps/database DIRECTAMENTE (sin saltos HTTP entre apps).
+ * de @merkiai/database DIRECTAMENTE (sin saltos HTTP entre apps).
  */
-import { createServerClient, reconcileBoldOrder } from '@vps/database'
+import { createServerClient, reconcileBoldOrder } from '@merkiai/database'
 import { NextRequest, NextResponse } from 'next/server'
 import { getAdminUser } from '@/lib/auth'
 import { sendPaymentConfirmed } from '@/lib/email'

@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { createServerClient, getPaymentConfig, TuCompraGateway } from '@vps/database'
+import { createServerClient, getPaymentConfig, TuCompraGateway } from '@merkiai/database'
 import { reconcileTuCompraOrder } from '@/lib/tucompra-reconcile'
 
 /**

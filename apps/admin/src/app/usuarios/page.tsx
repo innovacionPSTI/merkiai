@@ -1,6 +1,6 @@
 import { redirect } from 'next/navigation'
 import type { Metadata } from 'next'
-import { createServerClient } from '@vps/database'
+import { createServerClient } from '@merkiai/database'
 import { getAdminUser } from '@/lib/auth'
 import { ROLE_CONFIG } from '@/lib/roles'
 import type { AdminRole } from '@/lib/roles'

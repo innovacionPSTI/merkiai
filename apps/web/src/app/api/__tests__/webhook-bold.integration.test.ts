@@ -11,7 +11,7 @@
  *   - Idempotencia: pago ya aprobado + SALE_APPROVED → 200 sin re-procesar
  *   - extractWebhookData null → 200 ok
  *
- * Mocks: @vps/database (getPaymentConfig, getStoreConfig, createServerClient, BoldGateway),
+ * Mocks: @merkiai/database (getPaymentConfig, getStoreConfig, createServerClient, BoldGateway),
  *        @/lib/email, @/lib/shipping/shipments
  */
 
@@ -29,7 +29,7 @@ const mockFrom = jest.fn(() => ({
   update: jest.fn(() => ({ eq: jest.fn(() => ({ select: jest.fn(() => ({ single: mockSingle, maybeSingle: mockSingle })) })) })),
 }))
 
-jest.mock('@vps/database', () => ({
+jest.mock('@merkiai/database', () => ({
   createServerClient: jest.fn(() => ({ from: mockFrom })),
   getPaymentConfig: jest.fn(),
   getStoreConfig: jest.fn(),
@@ -52,7 +52,7 @@ jest.mock('@/lib/shipping/shipments', () => ({
   createShipmentForOrder: jest.fn().mockResolvedValue(null),
 }))
 
-import { getPaymentConfig, getStoreConfig } from '@vps/database'
+import { getPaymentConfig, getStoreConfig } from '@merkiai/database'
 import { POST } from '../webhooks/bold/route'
 
 const mockGetPaymentConfig = getPaymentConfig as jest.MockedFunction<typeof getPaymentConfig>
@@ -68,14 +68,14 @@ function makeRequest(body: object, signature = 'sig'): NextRequest {
   })
 }
 
-const approvedEvent = { type: 'SALE_APPROVED', subject: 'TXN-1', data: { payment_id: 'PAY-1', metadata: { reference: 'VPS-0042' } } }
+const approvedEvent = { type: 'SALE_APPROVED', subject: 'TXN-1', data: { payment_id: 'PAY-1', metadata: { reference: 'ORD-0042' } } }
 
 beforeEach(() => {
   jest.clearAllMocks()
   mockGetPaymentConfig.mockResolvedValue(configWithBold as never)
   mockGetStoreConfig.mockResolvedValue(null as never) // sin email para simplificar
   mockMap.mockReturnValue('approved')
-  mockExtract.mockReturnValue({ orderReference: 'VPS-0042', rawStatus: 'SALE_APPROVED', paymentId: 'PAY-1' })
+  mockExtract.mockReturnValue({ orderReference: 'ORD-0042', rawStatus: 'SALE_APPROVED', paymentId: 'PAY-1' })
 })
 
 describe('POST /api/webhooks/bold', () => {
@@ -96,7 +96,7 @@ describe('POST /api/webhooks/bold', () => {
     mockVerify.mockReturnValue(true)
     mockSingle
       .mockResolvedValueOnce({ data: { payment_status: 'pending' } }) // idempotency read
-      .mockResolvedValueOnce({ data: { order_number: 'VPS-0042', customer_email: 'a@b.co' }, error: null }) // update
+      .mockResolvedValueOnce({ data: { order_number: 'ORD-0042', customer_email: 'a@b.co' }, error: null }) // update
 
     const res = await POST(makeRequest(approvedEvent))
     const data = await res.json()

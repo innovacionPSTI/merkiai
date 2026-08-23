@@ -1,4 +1,4 @@
-import { getAdminConfig } from '@vps/database'
+import { getAdminConfig } from '@merkiai/database'
 import AdminConfigForm from './AdminConfigForm'
 
 export const metadata = { title: 'Apariencia del Panel' }

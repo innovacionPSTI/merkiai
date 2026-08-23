@@ -1,4 +1,4 @@
-# Commerce CMS — Plataforma Digital
+# Merkiai — Plataforma Digital
 
 > CMS de e-commerce general y personalizable (white-label), con integraciones intercambiables (pagos, envíos, email) y componentes de IA, más panel de administración.  
 > **Desarrollado por [Parquesoft TI](mailto:produccion@parquesoftti.com)**
@@ -30,7 +30,7 @@
 
 ## 1. Visión general
 
-**Commerce CMS** es una plataforma de e-commerce **general y personalizable** (white-label): sirve para cualquier negocio que venda productos en línea, gestione contenido y ofrezca páginas de servicios. No está atada a un vertical específico — el catálogo, las secciones del sitio, los servicios, el blog, la identidad visual y los proveedores se configuran desde el panel de administración, sin tocar código.
+**Merkiai** es una plataforma de e-commerce **general y personalizable** (white-label): sirve para cualquier negocio que venda productos en línea, gestione contenido y ofrezca páginas de servicios. No está atada a un vertical específico — el catálogo, las secciones del sitio, los servicios, el blog, la identidad visual y los proveedores se configuran desde el panel de administración, sin tocar código.
 
 Pilares de la plataforma:
 
@@ -42,7 +42,7 @@ Pilares de la plataforma:
 
 El proyecto se compone de **dos aplicaciones Next.js** en un monorepo Turborepo: el sitio público (`apps/web`) y el panel de administración (`apps/admin`), más paquetes compartidos de UI, base de datos y configuración.
 
-> **Nota de branding:** este documento usa el nombre genérico *Commerce CMS*. El nombre real de la tienda, el logo, los colores, las redes y el contenido se configuran por instancia desde `store_config` y el CMS.
+> **Nota de branding:** este documento usa el nombre genérico *Merkiai*. El nombre real de la tienda, el logo, los colores, las redes y el contenido se configuran por instancia desde `store_config` y el CMS.
 
 ### Roadmap (dirección del producto)
 
@@ -512,7 +512,7 @@ Crea una orden en Supabase al finalizar el checkout.
 
 **Respuesta 200 (varía por flujo):**
 ```json
-{ "order_number": "VPS-0042", "order_id": 42, "payment_url": "https://…",
+{ "order_number": "ORD-0042", "order_id": 42, "payment_url": "https://…",
   "tucompra": { "method": "pse", "flow": "redirect|confirm|push|otp|voucher" } }
 ```
 - `payment_url` → redirección (Wompi/MercadoPago/Bold, PSE).
@@ -630,7 +630,7 @@ Devuelve la configuración de la tienda (`store_config`): nombre, email, WhatsAp
 ```json
 {
   "id": 1,
-  "store_name": "Commerce CMS",
+  "store_name": "Merkiai",
   "store_email": "info@shop.example.com",
   "whatsapp_number": "573001234567",
   "logo_url": "https://<supabase>/storage/v1/object/public/logos/logo.png",
@@ -648,7 +648,7 @@ Actualiza la configuración de la tienda.
 ```json
 {
   "whatsapp_number": "573001234567",
-  "store_name": "Commerce CMS",
+  "store_name": "Merkiai",
   "store_email": "info@shop.example.com",
   "logo_url": "https://..."
 }
@@ -852,7 +852,7 @@ statements: ≥ 80%
 
 ### Patrones de mock
 
-- **Supabase** → `jest.mock('@vps/database')` con chains de `.from().select().eq()...`
+- **Supabase** → `jest.mock('@merkiai/database')` con chains de `.from().select().eq()...`
 - **fetch global** → `global.fetch = jest.fn()` dentro de `jest.isolateModulesAsync()`
 - **ShippingProvider** → `jest.mock('@/lib/shipping')` para tests de API routes
 
@@ -963,7 +963,7 @@ pnpm format        # Código formateado con Prettier
 
 1. Crear `packages/ui/src/<nombre>.tsx`
 2. Exportar desde `packages/ui/src/index.ts`
-3. Usar `import { Nombre } from '@vps/ui'` en cualquier app
+3. Usar `import { Nombre } from '@merkiai/ui'` en cualquier app
 
 ### Agregar una nueva tabla en la BD
 
@@ -998,7 +998,7 @@ pnpm format        # Código formateado con Prettier
 - **Configuración de proveedor de envíos desde el admin** (sin redespliegue)
 - **Generación automática de guía Skydropx** tras pago confirmado (cualquier pasarela)
 - **Modal de despacho masivo** (pickups Skydropx) desde `/admin/pedidos`
-- **Blog Draft Mode** — previsualización de borradores con cookie segura (`__vps_draft`)
+- **Blog Draft Mode** — previsualización de borradores con cookie segura (`__merkiai_draft`)
 - **Edición de perfil** (`/account/profile`) — nombre, teléfono, sincronización con Stack Auth
 - **Email de confirmación de newsletter** — solo al primer registro (sin duplicados)
 - **Página 404 personalizada**
@@ -1041,4 +1041,4 @@ NEXT_PUBLIC_DRAFT_SECRET=cambia-este-secreto  # debe coincidir con DRAFT_SECRET 
 ## Licencia
 
 Proyecto privado. Todos los derechos reservados.  
-© 2026 Commerce CMS · Desarrollado por **Parquesoft TI**
+© 2026 Merkiai · Desarrollado por **Parquesoft TI**

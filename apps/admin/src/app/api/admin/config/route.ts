@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { getStoreConfig, updateStoreConfig } from '@vps/database'
-import type { UpdateStoreConfigInput } from '@vps/database'
+import { getStoreConfig, updateStoreConfig } from '@merkiai/database'
+import type { UpdateStoreConfigInput } from '@merkiai/database'
 
 function maskSecret(value: string | null): string | null {
   if (!value) return null

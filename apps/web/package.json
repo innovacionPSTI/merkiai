@@ -1,5 +1,5 @@
 {
-  "name": "@vps/web",
+  "name": "@merkiai/web",
   "version": "0.0.1",
   "private": true,
   "scripts": {
@@ -18,8 +18,8 @@
     "@stackframe/stack": "^2.7.4",
     "@supabase/ssr": "^0.4.0",
     "@supabase/supabase-js": "^2.43.0",
-    "@vps/database": "workspace:*",
-    "@vps/ui": "workspace:*",
+    "@merkiai/database": "workspace:*",
+    "@merkiai/ui": "workspace:*",
     "clsx": "^2.1.1",
     "embla-carousel-react": "^8.1.3",
     "next": "16.2.10",

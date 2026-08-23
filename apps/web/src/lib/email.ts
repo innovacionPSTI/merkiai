@@ -2,19 +2,19 @@
  * Utilidades de email para apps/web.
  *
  * Las funciones compartidas (sendShippingNotification, sendStatusNotification,
- * EmailConfig) provienen de @vps/database y se re-exportan aquí para que los
+ * EmailConfig) provienen de @merkiai/database y se re-exportan aquí para que los
  * callers internos no cambien su ruta de importación.
  *
  * Este archivo define únicamente las funciones exclusivas de la tienda web:
  * buildEmailConfig, sendOrderConfirmation, sendNewsletterConfirmation, sendWelcomeEmail.
  */
 
-import type { Order } from '@vps/database'
+import type { Order } from '@merkiai/database'
 
-export type { EmailConfig } from '@vps/database'
-export { sendShippingNotification, sendStatusNotification } from '@vps/database'
+export type { EmailConfig } from '@merkiai/database'
+export { sendShippingNotification, sendStatusNotification } from '@merkiai/database'
 
-import type { EmailConfig } from '@vps/database'
+import type { EmailConfig } from '@merkiai/database'
 
 // ── sendEmail helper (privado — solo para funciones web-only) ────────────────
 

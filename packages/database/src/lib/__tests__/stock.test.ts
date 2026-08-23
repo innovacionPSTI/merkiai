@@ -36,7 +36,7 @@ describe('applyStockForOrder', () => {
       { variant_id: 11, qty: 1 },
     ] } })
 
-    await applyStockForOrder('VPS-0001')
+    await applyStockForOrder('ORD-0001')
 
     expect(mockRpc).toHaveBeenCalledWith('decrement_variant_stock', { p_variant_id: 10, p_qty: 2 })
     expect(mockRpc).toHaveBeenCalledWith('decrement_variant_stock', { p_variant_id: 11, p_qty: 1 })
@@ -44,7 +44,7 @@ describe('applyStockForOrder', () => {
 
   it('es idempotente: si el pedido ya estaba descontado no llama al RPC', async () => {
     mockMaybeSingle.mockResolvedValueOnce({ data: null }) // no reclamó (ya aplicado)
-    await applyStockForOrder('VPS-0001')
+    await applyStockForOrder('ORD-0001')
     expect(mockRpc).not.toHaveBeenCalled()
   })
 })
@@ -52,13 +52,13 @@ describe('applyStockForOrder', () => {
 describe('restoreStockForOrder', () => {
   it('repone el stock de cada ítem cuando reclama el pedido', async () => {
     mockMaybeSingle.mockResolvedValueOnce({ data: { items: [{ variant_id: 10, qty: 2 }] } })
-    await restoreStockForOrder('VPS-0002')
+    await restoreStockForOrder('ORD-0002')
     expect(mockRpc).toHaveBeenCalledWith('restore_variant_stock', { p_variant_id: 10, p_qty: 2 })
   })
 
   it('no hace nada si no reclama (ya repuesto o nunca descontado)', async () => {
     mockMaybeSingle.mockResolvedValueOnce({ data: null })
-    await restoreStockForOrder('VPS-0002')
+    await restoreStockForOrder('ORD-0002')
     expect(mockRpc).not.toHaveBeenCalled()
   })
 })
