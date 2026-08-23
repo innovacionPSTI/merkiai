@@ -182,6 +182,28 @@ describe('updateStoreConfig', () => {
     expect(upsertArg).toHaveProperty('privacy_content')
   })
 
+  it('reenvía email_provider en el upsert (PRV-09 · selector de proveedor de email)', async () => {
+    mockUpsertChain.mockResolvedValueOnce({ data: { ...fullConfig, email_provider: 'resend' }, error: null })
+
+    const result = await updateStoreConfig({ email_provider: 'resend' })
+
+    expect(mockUpsert).toHaveBeenCalledWith(
+      expect.objectContaining({ id: 1, email_provider: 'resend' })
+    )
+    expect(result.email_provider).toBe('resend')
+  })
+
+  it('reenvía analytics_enabled en el upsert (HU-060 · tracking/analytics)', async () => {
+    mockUpsertChain.mockResolvedValueOnce({ data: { ...fullConfig, analytics_enabled: true }, error: null })
+
+    const result = await updateStoreConfig({ analytics_enabled: true })
+
+    expect(mockUpsert).toHaveBeenCalledWith(
+      expect.objectContaining({ id: 1, analytics_enabled: true })
+    )
+    expect(result.analytics_enabled).toBe(true)
+  })
+
   it('guarda redes sociales con url y enabled', async () => {
     const socialConfig = {
       ...fullConfig,

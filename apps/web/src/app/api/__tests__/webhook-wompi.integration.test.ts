@@ -28,17 +28,23 @@ const mockSingle = jest.fn()
 const mockSelect = jest.fn(() => ({ single: mockSingle }))
 const mockEq = jest.fn(() => ({ select: mockSelect }))
 const mockUpdate = jest.fn(() => ({ eq: mockEq }))
-const mockFrom = jest.fn(() => ({ update: mockUpdate }))
+// Lectura previa del total del pedido: from('orders').select('total').eq().maybeSingle()
+const mockMaybeSingle = jest.fn()
+const mockReadEq = jest.fn(() => ({ maybeSingle: mockMaybeSingle }))
+const mockReadSelect = jest.fn(() => ({ eq: mockReadEq }))
+const mockFrom = jest.fn(() => ({ update: mockUpdate, select: mockReadSelect }))
 
 jest.mock('@vps/database', () => ({
   createServerClient: jest.fn(() => ({ from: mockFrom })),
   getPaymentConfig: jest.fn(),
   getStoreConfig: jest.fn(),
   applyStockForOrder: jest.fn(),
+  markWebhookEventProcessed: jest.fn(async () => ({ duplicate: false })),
 }))
 
 jest.mock('@/lib/wompi', () => ({
   verifyWompiWebhook: jest.fn(),
+  isWompiTimestampFresh: jest.fn(() => true),
   mapWompiStatus: jest.fn(),
 }))
 
@@ -128,6 +134,8 @@ beforeEach(() => {
   mockVerifyWebhook.mockReturnValue(true)
   mockMapStatus.mockReturnValue('approved')
   mockSingle.mockResolvedValue({ data: mockOrder, error: null })
+  // El pedido cubre el monto (el body de prueba no trae amount_in_cents → no bloquea)
+  mockMaybeSingle.mockResolvedValue({ data: { total: 98000 }, error: null })
   mockSendEmail.mockResolvedValue(undefined)
 })
 
@@ -145,8 +153,8 @@ describe('POST /api/webhooks/wompi — verificación de firma', () => {
     expect(data.error).toMatch(/signature/i)
   })
 
-  it('procesa normalmente si la verificación de firma hace bypass (sin secret)', async () => {
-    // verifyWompiWebhook retorna true (bypass cuando secret está vacío — comportamiento de la lib)
+  it('procesa cuando la verificación de firma es válida', async () => {
+    // La verificación real (fail-closed con secret vacío) se cubre en wompi.test.ts.
     mockVerifyWebhook.mockReturnValueOnce(true)
 
     const req = makeRequest(makeTransactionBody())

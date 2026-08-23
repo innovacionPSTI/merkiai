@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { createServerClient, getPaymentConfig, getStoreConfig, BoldGateway, applyStockForOrder } from '@vps/database'
+import { createServerClient, getPaymentConfig, getStoreConfig, BoldGateway, applyStockForOrder, markWebhookEventProcessed } from '@vps/database'
+import { amountCoversOrder } from '@/lib/payment-guards'
 import { sendOrderConfirmation, buildEmailConfig } from '@/lib/email'
 import { createShipmentForOrder } from '@/lib/shipping/shipments'
 import type { Order, Database } from '@vps/database'
@@ -52,20 +53,30 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ ok: true })
   }
 
-  const { orderReference, rawStatus, paymentId } = webhookData
-  const paymentStatus = gateway.mapStatus(rawStatus)
+  const { orderReference, rawStatus, paymentId, amountCop } = webhookData
+  let paymentStatus = gateway.mapStatus(rawStatus)
+
+  // Idempotencia por id de evento (no reprocesar reintentos del mismo evento).
+  const { duplicate } = await markWebhookEventProcessed('bold', `${orderReference}:${rawStatus}:${paymentId ?? ''}`)
+  if (duplicate) return NextResponse.json({ ok: true, idempotent: true })
 
   const supabase = createServerClient()
 
   // 2) Idempotencia: si el pago ya estaba aprobado y llega otro SALE_APPROVED, no reprocesar
   const { data: existing } = await supabase
     .from('orders')
-    .select('payment_status')
+    .select('payment_status, total')
     .eq('order_number', orderReference)
     .single()
 
   if (existing?.payment_status === 'approved' && paymentStatus === 'approved') {
     return NextResponse.json({ ok: true, idempotent: true })
+  }
+
+  // Guarda anti-subpago: el monto viene del payload firmado de Bold.
+  if (paymentStatus === 'approved' && existing && !amountCoversOrder(amountCop, existing.total)) {
+    console.warn(`[webhook/bold] SUBPAGO reference="${orderReference}" pagado=${amountCop} total=${existing.total}; se deja pendiente`)
+    paymentStatus = 'pending'
   }
 
   const updatePayload: OrderUpdate = {

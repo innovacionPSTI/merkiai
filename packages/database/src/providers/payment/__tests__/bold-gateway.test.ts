@@ -91,6 +91,12 @@ describe('BoldGateway — verifyWebhook', () => {
     const sig = boldSign(body, '') // Bold firma con llave vacía en pruebas
     expect(sandboxGw.verifyWebhook(body, { 'x-bold-signature': sig })).toBe(true)
   })
+
+  it('fail-closed: en producción con llave secreta vacía rechaza (no se puede forjar)', () => {
+    const prodNoSecret = new BoldGateway({ ...cfg, sandbox: false, secretKey: '' })
+    const sig = boldSign(body, '') // firma calculada con llave vacía
+    expect(prodNoSecret.verifyWebhook(body, { 'x-bold-signature': sig })).toBe(false)
+  })
 })
 
 describe('BoldGateway — queryStatusByReference (fallback)', () => {
@@ -131,17 +137,18 @@ describe('BoldGateway — mapStatus / extractWebhookData', () => {
     expect(gw.mapStatus('VOID_REJECTED')).toBe('pending')
   })
 
-  it('extrae la referencia del pedido y el estado del body', () => {
+  it('extrae la referencia, el estado y el monto (amountCop) del body', () => {
     const gw = new BoldGateway(cfg)
     const body = JSON.stringify({
       type: 'SALE_APPROVED',
       subject: 'TXN-1',
-      data: { payment_id: 'PAY-1', metadata: { reference: 'VPS-0042' } },
+      data: { payment_id: 'PAY-1', amount: { total: 98000 }, metadata: { reference: 'VPS-0042' } },
     })
     expect(gw.extractWebhookData(body)).toEqual({
       orderReference: 'VPS-0042',
       rawStatus: 'SALE_APPROVED',
       paymentId: 'PAY-1',
+      amountCop: 98000,
     })
   })
 

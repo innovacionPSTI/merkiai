@@ -1,4 +1,4 @@
-import { createHash } from 'crypto'
+import { createHash, timingSafeEqual } from 'crypto'
 
 const WOMPI_CHECKOUT_BASE = 'https://checkout.wompi.co/p/'
 
@@ -67,14 +67,32 @@ export function verifyWompiWebhook(
   checksum: string,
   eventsSecret: string,
 ): boolean {
-  if (!eventsSecret) {
-    console.warn('[wompi] eventsSecret vacío; omitiendo verificación de firma')
-    return true
+  // Fail-closed: sin secreto o sin checksum NO se puede verificar → se rechaza.
+  // (Antes se omitía la verificación con secreto vacío, lo que permitía forjar un
+  // evento "APPROVED" y validar un pago inexistente.)
+  if (!eventsSecret || !checksum) {
+    console.warn('[wompi] eventsSecret/checksum ausente; se rechaza el webhook (fail-closed)')
+    return false
   }
   const expected = createHash('sha256')
     .update(`${payload}${timestamp}${eventsSecret}`)
     .digest('hex')
-  return expected === checksum
+  // Comparación en tiempo constante (evita timing attacks sobre el checksum).
+  const a = Buffer.from(expected, 'utf-8')
+  const b = Buffer.from(checksum, 'utf-8')
+  if (a.length !== b.length) return false
+  try { return timingSafeEqual(a, b) } catch { return false }
+}
+
+/**
+ * Ventana de replay: el webhook trae `x-timestamp` (Unix en ms). Se rechaza si es
+ * demasiado antiguo (o futuro), para mitigar el reenvío de un evento válido antiguo.
+ * La firma cubre el timestamp, así que no se puede alterar sin invalidarla.
+ */
+export function isWompiTimestampFresh(timestamp: string, maxAgeMs = 300_000): boolean {
+  const ts = Number(timestamp)
+  if (!Number.isFinite(ts) || ts <= 0) return false
+  return Math.abs(Date.now() - ts) <= maxAgeMs
 }
 
 /** Mapea el status de Wompi a nuestros valores internos */

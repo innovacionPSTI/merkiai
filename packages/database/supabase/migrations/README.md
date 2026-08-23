@@ -1,26 +1,30 @@
 # Migraciones — guía compacta
 
-Para desplegar la base de datos **solo necesitas 2 rutas**. No ejecutes los archivos numerados uno por uno.
+El esquema se despliega con **2 archivos** (más los seeds). Los antiguos archivos numerados (`1_*` … `29_*`) se **eliminaron**: eran redundantes porque todo su contenido ya está consolidado en `01_schema.sql` (y en `upgrade.sql` para actualizaciones).
+
+```
+migrations/
+├── 01_schema.sql   ← esquema canónico completo (única fuente de verdad)
+├── upgrade.sql     ← parche idempotente para BD existentes
+└── README.md
+```
 
 ## Despliegue NUEVO (desde cero)
 
 Ejecuta en el SQL Editor de Supabase, en orden:
 
-1. `01_schema.sql` — **esquema canónico completo** (todas las tablas, columnas, constraints, índices, triggers y funciones RPC). Es la única fuente de verdad del esquema.
-2. `../seeds/01_config.sql` — tema por defecto, tipos de variante, categorías, nav base.
+1. `01_schema.sql` — **esquema canónico completo**: 24 tablas (con FKs, constraints, índices), triggers, funciones RPC (`generate_order_number`, `decrement_variant_stock`, `restore_variant_stock`), RLS habilitado en **todas** las tablas y políticas públicas.
+2. `../seeds/01_config.sql` — tema por defecto, tipos de variante, categorías, navegación base.
 3. `../seeds/02_content.sql` — páginas, secciones e ítems del CMS.
 
 ## BD EXISTENTE (actualizar una instalación previa)
 
 Ejecuta **solo**:
 
-- `upgrade.sql` — parche idempotente consolidado que lleva una BD del baseline v13 hasta v16 (favicon, `admin_config`, `email_provider` + Tu Compra, `active_provider` + Bold, e inventario). Es seguro re-ejecutarlo.
+- `upgrade.sql` — parche **idempotente** consolidado. Es seguro re-ejecutarlo. Lleva una BD previa hasta el estado actual: favicon, `admin_config`, proveedores de email/envío, `active_provider` + Bold, inventario (stock/backorder), número de orden (secuencia + prefijo), **Tu Compra REST/integrador** (seguimiento de transacción + llave de firma), **endurecimiento de webhooks** (`processed_webhook_events` + `mercadopago_webhook_secret`) y la habilitación de RLS que faltaba en `admin_config` y `processed_webhook_events`.
 
-## Archivos históricos (`1_*` … `25_*`)
+## Coherencia del modelo
 
-Se conservan **solo como registro** de la evolución del esquema. **No forman parte del flujo de despliegue** y no deben ejecutarse en instalaciones nuevas — su contenido ya está incorporado en `01_schema.sql` (y consolidado en `upgrade.sql` para actualizaciones).
-
-| Rango | Contenido | Estado |
-|-------|-----------|--------|
-| `1_*` … `20_*` | Esquema base + CMS unificado + integridad (baseline v13) | Fusionado en `01_schema.sql` |
-| `21_*` … `26_*` | Favicon, admin_config, proveedores, pasarela única + Bold, inventario, número de orden (secuencia + prefijo) | Fusionado en `01_schema.sql` y `upgrade.sql` |
+- **RLS en todas las tablas** (24/24). Las tablas solo-`service_role` (config singletons, `admin_config`, `processed_webhook_events`) tienen RLS habilitado sin política pública → deniegan a `anon`/`authenticated`; el `service_role` omite RLS.
+- **Sin tablas huérfanas problemáticas.** Las tablas sin FK son intencionales: config singletons (`store_config`, `payment_config`, `shipping_config`, `admin_config`), catálogos/logs (`themes`, `variant_types`, `newsletter_subscribers`, `processed_webhook_events`) y snapshots (`orders.items`/`orders.coupon_code` son copias inmutables, no FKs, para preservar el pedido si cambia el catálogo o el cupón).
+- **Nota de deuda técnica (HU-191):** `shipping_profiles` (perfil de envío por email) se solapa con `customer_addresses` (direcciones por `customer_id`). Ambas están en uso; la consolidación en una fuente única está redactada como **HU-191** en `PRODUCT_BACKLOG.md` (no se toca aquí para no romper el feature vivo `/api/shipping-profile`).

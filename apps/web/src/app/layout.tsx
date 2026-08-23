@@ -5,8 +5,8 @@ import { StackProvider, StackTheme } from '@stackframe/stack'
 import { Analytics } from '@vercel/analytics/react'
 import { stackServerApp } from '../stack'
 import { getStoreConfig, getActiveTheme } from '@vps/database'
-import type { Theme } from '@vps/database'
 import CartSyncOnLogin from '@/components/auth/CartSyncOnLogin'
+import { buildThemeCSS } from '@/lib/theme-css'
 import './globals.css'
 
 // ── Fuentes (next/font: build-time, self-hosted) ──────────────────────────────
@@ -78,53 +78,6 @@ const nunito = Nunito({
   variable: '--font-nunito',
   display: 'swap',
 })
-
-// ── Helpers ───────────────────────────────────────────────────────────────────
-
-/** Convierte hex #RRGGBB a canales RGB separados por espacios para CSS vars */
-function hexToRgb(hex: string): string {
-  const h = hex.replace('#', '')
-  const r = parseInt(h.slice(0, 2), 16)
-  const g = parseInt(h.slice(2, 4), 16)
-  const b = parseInt(h.slice(4, 6), 16)
-  return `${r} ${g} ${b}`
-}
-
-/** Mapeo de identificador de fuente → valor de CSS var */
-const FONT_DISPLAY_MAP: Record<string, string> = {
-  cormorant:    'var(--font-ahsing), Georgia, serif',
-  playfair:     'var(--font-playfair), Georgia, serif',
-  lora:         'var(--font-lora), Georgia, serif',
-  merriweather: 'var(--font-merriweather), Georgia, serif',
-}
-const FONT_BODY_MAP: Record<string, string> = {
-  'dm-sans':   'var(--font-geeeki), system-ui, sans-serif',
-  inter:       'var(--font-inter), system-ui, sans-serif',
-  montserrat:  'var(--font-montserrat), system-ui, sans-serif',
-  nunito:      'var(--font-nunito), system-ui, sans-serif',
-}
-
-/**
- * Genera el bloque CSS que sobreescribe las CSS vars del tema activo.
- * Se inyecta como <style> inline en el <head> del documento.
- * Los defaults en globals.css actúan como fallback si este bloque no existe.
- */
-function buildThemeCSS(theme: Theme): string {
-  const fontDisplay = FONT_DISPLAY_MAP[theme.font_display] ?? FONT_DISPLAY_MAP.cormorant
-  const fontBody    = FONT_BODY_MAP[theme.font_body]       ?? FONT_BODY_MAP['dm-sans']
-
-  return `:root {
-  --brand-primary:     ${hexToRgb(theme.color_primary)};
-  --brand-dark:        ${hexToRgb(theme.color_dark)};
-  --brand-cream:       ${hexToRgb(theme.color_cream)};
-  --brand-cream-warm:  ${hexToRgb(theme.color_cream_warm)};
-  --brand-yellow:      ${hexToRgb(theme.color_yellow)};
-  --brand-yellow-pale: ${hexToRgb(theme.color_yellow_pale)};
-  --brand-text:        ${hexToRgb(theme.color_text)};
-  --font-display:      ${fontDisplay};
-  --font-body:         ${fontBody};
-}`
-}
 
 // ── Metadata ──────────────────────────────────────────────────────────────────
 

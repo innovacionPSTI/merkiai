@@ -92,12 +92,47 @@ describe('TuCompraGateway — listarBancos', () => {
 })
 
 describe('TuCompraGateway — constructores de MetodoPago', () => {
-  it('metodoPSE arma id + banco + tipo persona + url retorno', () => {
-    expect(TuCompraGateway.metodoPSE('41', '1022', '0', 'https://shop/ret'))
-      .toEqual({ id: '41', campo1: '1022', campo3: '0', campo4: 'https://shop/ret' })
+  it('metodoPSE arma id + banco (código y nombre) + tipo persona + url retorno', () => {
+    expect(TuCompraGateway.metodoPSE('41', '1022', 'Banco Test', '0', 'https://shop/ret'))
+      .toEqual({ id: '41', campo1: '1022', campo2: 'Banco Test', campo3: '0', campo4: 'https://shop/ret' })
   })
   it('metodoSimple solo el id (Referenciado/Billetera)', () => {
     expect(TuCompraGateway.metodoSimple('72')).toEqual({ id: '72' })
+  })
+})
+
+describe('TuCompraGateway — finalizarPagoDaviplata (OTP)', () => {
+  it('autentica y confirma el pago con el OTP', async () => {
+    const fetchMock = mockFetchSequence([
+      { json: { codigoRespuesta: '0', tokenSeguridad: 'JWT-123' } },
+      { json: { CodigoRespuesta: '0', estado: 'OK', numeroAutorizacion: 'AUT-9', numeroTransaccion: 'TX-7' } },
+    ])
+    const r = await new TuCompraGateway(cfg).finalizarPagoDaviplata('SEG-55', '123456')
+    expect(r.codigoRespuesta).toBe('0')
+    const body = JSON.parse(String(fetchMock.mock.calls[1][1].body))
+    expect(body).toEqual({ codigoSeguimiento: 'SEG-55', terminal: 'TERM-9', tokenSeguridad: 'JWT-123', codigoOTP: '123456' })
+    expect(String(fetchMock.mock.calls[1][0])).toContain('/finalizaPagoDaviplata')
+  })
+})
+
+describe('TuCompraGateway — verifyConfirmationSignature', () => {
+  const key = 'llave-md5'
+  // MD5("llave-md5;ORD-1;1000;AUT-9")
+  const crypto = require('crypto') as typeof import('crypto')
+  const firma = crypto.createHash('md5').update(`${key};ORD-1;1000;AUT-9`).digest('hex')
+
+  it('valida la firma correcta (case-insensitive)', () => {
+    const gw = new TuCompraGateway({ ...cfg, encryptionKey: key })
+    expect(gw.verifyConfirmationSignature({ codigoFactura: 'ORD-1', valorFactura: '1000', codigoAutorizacion: 'AUT-9', firmaTuCompra: firma.toUpperCase() })).toBe(true)
+  })
+  it('rechaza una firma incorrecta', () => {
+    const gw = new TuCompraGateway({ ...cfg, encryptionKey: key })
+    expect(gw.verifyConfirmationSignature({ codigoFactura: 'ORD-1', valorFactura: '1000', codigoAutorizacion: 'AUT-9', firmaTuCompra: 'deadbeef' })).toBe(false)
+  })
+  it('devuelve null si no hay llave o no llega firma', () => {
+    expect(new TuCompraGateway(cfg).verifyConfirmationSignature({ codigoFactura: 'ORD-1', valorFactura: '1000', codigoAutorizacion: 'AUT-9', firmaTuCompra: firma })).toBeNull()
+    const gw = new TuCompraGateway({ ...cfg, encryptionKey: key })
+    expect(gw.verifyConfirmationSignature({ codigoFactura: 'ORD-1', valorFactura: '1000', codigoAutorizacion: 'AUT-9', firmaTuCompra: '' })).toBeNull()
   })
 })
 
@@ -124,6 +159,7 @@ describe('TuCompraGateway — mapStatus y extractWebhookData', () => {
   const g = new TuCompraGateway(cfg)
   it('mapea estados', () => {
     expect(g.mapStatus('APROBADA')).toBe('approved')
+    expect(g.mapStatus('OK')).toBe('approved')
     expect(g.mapStatus('PENDIENTE')).toBe('pending')
     expect(g.mapStatus('RECHAZADA')).toBe('rejected')
     expect(g.mapStatus('FALLIDA')).toBe('rejected')

@@ -32,7 +32,7 @@ export async function reconcileTuCompraOrder(orderNumber: string): Promise<TuCom
 
   const { data: order } = await supabase
     .from('orders')
-    .select('payment_method, payment_status')
+    .select('payment_method, payment_status, tucompra_codigo_seguimiento, total')
     .eq('order_number', orderNumber)
     .single()
 
@@ -55,9 +55,19 @@ export async function reconcileTuCompraOrder(orderNumber: string): Promise<TuCom
     apiUrl:   config.tucompra_api_url ?? undefined,
   })
 
-  const result = await gateway.queryStatusByReference(orderNumber)
+  const result = await gateway.queryStatusByReference(orderNumber, order.tucompra_codigo_seguimiento ?? '')
   if (!result) return { ok: true, status: 'pending', reason: 'no_data' }
   if (result.status === 'pending') return { ok: true, status: 'pending' }
+
+  // Guarda anti-subpago: si el monto pagado (de la API) no cubre el total, se deja pendiente.
+  if (
+    result.status === 'approved' &&
+    result.amountCop != null && Number.isFinite(result.amountCop) &&
+    Math.round(result.amountCop) + 1 < order.total
+  ) {
+    console.warn(`[tucompra-reconcile] SUBPAGO order="${orderNumber}" pagado=${result.amountCop} total=${order.total}; se deja pendiente`)
+    return { ok: true, status: 'pending' }
+  }
 
   const paymentStatus = result.status
   const updatePayload: OrderUpdate = {

@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { createServerClient, getPaymentConfig, getStoreConfig, applyStockForOrder } from '@vps/database'
-import { verifyWompiWebhook, mapWompiStatus } from '@/lib/wompi'
+import { createServerClient, getPaymentConfig, getStoreConfig, applyStockForOrder, markWebhookEventProcessed } from '@vps/database'
+import { verifyWompiWebhook, isWompiTimestampFresh, mapWompiStatus } from '@/lib/wompi'
+import { amountCoversOrder } from '@/lib/payment-guards'
 import { sendOrderConfirmation, sendShippingNotification, buildEmailConfig } from '@/lib/email'
 import { createShipmentForOrder } from '@/lib/shipping/shipments'
 import type { Order, Database } from '@vps/database'
@@ -37,6 +38,12 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: 'Invalid signature' }, { status: 401 })
   }
 
+  // Ventana de replay: rechaza eventos con timestamp fuera de ±5 min.
+  if (!isWompiTimestampFresh(timestamp)) {
+    console.warn('[webhook/wompi] Timestamp fuera de ventana (posible replay)')
+    return NextResponse.json({ error: 'Stale timestamp' }, { status: 401 })
+  }
+
   let event: Record<string, unknown>
   try {
     event = JSON.parse(rawBody)
@@ -56,11 +63,26 @@ export async function POST(req: NextRequest) {
   const reference = transaction.reference as string | undefined
   const wompiStatus = transaction.status as string | undefined
   const paymentId = transaction.id as string | undefined
+  const amountInCents = typeof transaction.amount_in_cents === 'number' ? transaction.amount_in_cents : undefined
 
   if (!reference || !wompiStatus) return NextResponse.json({ ok: true })
 
-  const paymentStatus = mapWompiStatus(wompiStatus)
+  // Idempotencia por id de evento: no reprocesar reintentos del mismo estado.
+  const { duplicate } = await markWebhookEventProcessed('wompi', `${paymentId ?? reference}:${wompiStatus}`)
+  if (duplicate) return NextResponse.json({ ok: true, idempotent: true })
+
+  let paymentStatus = mapWompiStatus(wompiStatus)
   const supabase = createServerClient()
+
+  // Guarda anti-subpago: si el pago aprobado no cubre el total, no se aprueba.
+  if (paymentStatus === 'approved') {
+    const { data: ord } = await supabase.from('orders').select('total').eq('order_number', reference).maybeSingle()
+    const paidCop = amountInCents != null ? amountInCents / 100 : null
+    if (ord && !amountCoversOrder(paidCop, ord.total)) {
+      console.warn(`[webhook/wompi] SUBPAGO reference="${reference}" pagado=${paidCop} total=${ord.total}; se deja pendiente`)
+      paymentStatus = 'pending'
+    }
+  }
 
   const updatePayload: OrderUpdate = {
     payment_status: paymentStatus,

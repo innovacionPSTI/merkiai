@@ -7,7 +7,7 @@
  *   - getOrderById: manejo de not-found
  */
 
-import { createOrder, updateOrderStatus, getOrdersByCustomer, getOrderById } from '../orders'
+import { createOrder, updateOrderStatus, getOrdersByCustomer, getOrdersByCustomerEmail, getOrderById } from '../orders'
 import { createServerClient } from '../../client'
 import type { CreateOrderInput } from '../orders'
 
@@ -246,6 +246,48 @@ describe('getOrdersByCustomer', () => {
 
     const result = await getOrdersByCustomer('user-sin-pedidos')
     expect(result).toHaveLength(0)
+  })
+})
+
+// ─────────────────────────────────────────────
+// getOrdersByCustomerEmail — HU-060 (Tracking en Mi Cuenta)
+// ─────────────────────────────────────────────
+describe('getOrdersByCustomerEmail', () => {
+  it('busca por email en minúsculas, ordena desc y expone la info de seguimiento', async () => {
+    const orders = [
+      buildOrderMock({ id: 2, order_number: 'VPS-0002', status: 'shipped', tracking_number: 'TRK-9', carrier_name: 'Servientrega' }),
+      buildOrderMock({ id: 1, order_number: 'VPS-0001', status: 'delivered' }),
+    ]
+    const eqMock = jest.fn().mockReturnValue({
+      order: jest.fn().mockResolvedValue({ data: orders, error: null }),
+    })
+    const mockSupabase = {
+      from: jest.fn().mockReturnValue({ select: jest.fn().mockReturnValue({ eq: eqMock }) }),
+    }
+    mockCreateServerClient.mockReturnValue(mockSupabase as never)
+
+    const result = await getOrdersByCustomerEmail('Carlos@Example.com')
+
+    // Email normalizado a minúsculas (los pedidos históricos se vinculan por email)
+    expect(eqMock).toHaveBeenCalledWith('customer_email', 'carlos@example.com')
+    expect(result).toHaveLength(2)
+    expect(result[0].order_number).toBe('VPS-0002')
+    // La vista de Mi Cuenta muestra el número de guía y la transportadora
+    expect(result[0].tracking_number).toBe('TRK-9')
+    expect(result[0].carrier_name).toBe('Servientrega')
+  })
+
+  it('retorna arreglo vacío si el email no tiene pedidos', async () => {
+    const mockSupabase = {
+      from: jest.fn().mockReturnValue({
+        select: jest.fn().mockReturnValue({
+          eq: jest.fn().mockReturnValue({ order: jest.fn().mockResolvedValue({ data: [], error: null }) }),
+        }),
+      }),
+    }
+    mockCreateServerClient.mockReturnValue(mockSupabase as never)
+
+    expect(await getOrdersByCustomerEmail('nadie@example.com')).toHaveLength(0)
   })
 })
 

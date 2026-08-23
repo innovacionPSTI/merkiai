@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { createServerClient, getPaymentConfig, getStoreConfig, applyStockForOrder } from '@vps/database'
-import { getMercadoPagoPayment, mapMercadoPagoStatus } from '@/lib/mercadopago'
+import { createServerClient, getPaymentConfig, getStoreConfig, applyStockForOrder, markWebhookEventProcessed } from '@vps/database'
+import { getMercadoPagoPayment, mapMercadoPagoStatus, verifyMercadoPagoSignature } from '@/lib/mercadopago'
+import { amountCoversOrder } from '@/lib/payment-guards'
 import { sendOrderConfirmation, sendShippingNotification, buildEmailConfig } from '@/lib/email'
 import { createShipmentForOrder } from '@/lib/shipping/shipments'
 import type { Order, Database } from '@vps/database'
@@ -31,12 +32,30 @@ export async function POST(req: NextRequest) {
   const paymentId = data?.id as string | undefined
   if (!paymentId) return NextResponse.json({ ok: true })
 
-  // Cargar access_token desde la BD
+  // Cargar credenciales desde la BD
   const paymentConfig = await getPaymentConfig().catch(() => null)
   if (!paymentConfig?.mercadopago_access_token) {
     console.error('[webhook/mercadopago] access_token no configurado en BD')
     return NextResponse.json({ error: 'MP not configured' }, { status: 503 })
   }
+
+  // Verificación de firma x-signature (defensa en profundidad; el control primario
+  // es la re-consulta del pago). Solo se exige si hay un secret configurado.
+  const sigValid = verifyMercadoPagoSignature({
+    xSignature: req.headers.get('x-signature'),
+    xRequestId: req.headers.get('x-request-id'),
+    dataId: paymentId,
+    secret: paymentConfig.mercadopago_webhook_secret,
+  })
+  if (sigValid === false) {
+    console.warn('[webhook/mercadopago] Firma x-signature inválida')
+    return NextResponse.json({ error: 'Invalid signature' }, { status: 401 })
+  }
+
+  // Idempotencia por id de evento (la notificación de MP trae un id).
+  const notifId = typeof body.id === 'string' || typeof body.id === 'number' ? String(body.id) : paymentId
+  const { duplicate } = await markWebhookEventProcessed('mercadopago', notifId)
+  if (duplicate) return NextResponse.json({ ok: true, idempotent: true })
 
   let payment: Awaited<ReturnType<typeof getMercadoPagoPayment>>
   try {
@@ -52,8 +71,17 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ ok: true })
   }
 
-  const paymentStatus = mapMercadoPagoStatus(mpStatus)
+  let paymentStatus = mapMercadoPagoStatus(mpStatus)
   const supabase = createServerClient()
+
+  // Guarda anti-subpago: el monto lo da la API de MP (no el cliente).
+  if (paymentStatus === 'approved') {
+    const { data: ord } = await supabase.from('orders').select('total').eq('order_number', reference).maybeSingle()
+    if (ord && !amountCoversOrder(payment.transaction_amount, ord.total)) {
+      console.warn(`[webhook/mercadopago] SUBPAGO reference="${reference}" pagado=${payment.transaction_amount} total=${ord.total}; se deja pendiente`)
+      paymentStatus = 'pending'
+    }
+  }
 
   const updatePayload: OrderUpdate = {
     payment_status: paymentStatus,

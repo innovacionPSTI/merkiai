@@ -24,18 +24,24 @@ const mockSingle = jest.fn()
 const mockSelect = jest.fn(() => ({ single: mockSingle }))
 const mockEq = jest.fn(() => ({ select: mockSelect }))
 const mockUpdate = jest.fn(() => ({ eq: mockEq }))
-const mockFrom = jest.fn(() => ({ update: mockUpdate }))
+// Lectura previa del total del pedido: from('orders').select('total').eq().maybeSingle()
+const mockMaybeSingle = jest.fn()
+const mockReadEq = jest.fn(() => ({ maybeSingle: mockMaybeSingle }))
+const mockReadSelect = jest.fn(() => ({ eq: mockReadEq }))
+const mockFrom = jest.fn(() => ({ update: mockUpdate, select: mockReadSelect }))
 
 jest.mock('@vps/database', () => ({
   createServerClient: jest.fn(() => ({ from: mockFrom })),
   getPaymentConfig: jest.fn(),
   getStoreConfig: jest.fn(),
   applyStockForOrder: jest.fn(),
+  markWebhookEventProcessed: jest.fn(async () => ({ duplicate: false })),
 }))
 
 jest.mock('@/lib/mercadopago', () => ({
   getMercadoPagoPayment: jest.fn(),
   mapMercadoPagoStatus: jest.fn(),
+  verifyMercadoPagoSignature: jest.fn(() => null),
 }))
 
 jest.mock('@/lib/email', () => ({
@@ -111,6 +117,8 @@ beforeEach(() => {
   mockGetMPPayment.mockResolvedValue(mockMPPayment)
   mockMapMPStatus.mockReturnValue('approved')
   mockSingle.mockResolvedValue({ data: mockOrder, error: null })
+  // El total del pedido coincide con transaction_amount (98000) → cubre el pago.
+  mockMaybeSingle.mockResolvedValue({ data: { total: 98000 }, error: null })
   mockSendEmail.mockResolvedValue(undefined)
 })
 

@@ -34,6 +34,7 @@ jest.mock('@vps/database', () => ({
   getPaymentConfig: jest.fn(),
   getStoreConfig: jest.fn(),
   applyStockForOrder: jest.fn(),
+  markWebhookEventProcessed: jest.fn(async () => ({ duplicate: false })),
   BoldGateway: jest.fn().mockImplementation(() => ({
     verifyWebhook: mockVerify,
     extractWebhookData: mockExtract,

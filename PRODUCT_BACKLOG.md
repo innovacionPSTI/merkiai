@@ -21,7 +21,7 @@ Desarrollar una plataforma de e-commerce **general y reutilizable** que permita 
 #### Producto — Sitio Público
 
 **OE-01 — Canal de venta directa**
-Habilitar una tienda en línea funcional que permita al consumidor final explorar, filtrar, seleccionar y comprar café de especialidad con variantes de tueste, peso y molienda, integrando pasarelas de pago colombianas (Wompi y MercadoPago).
+Habilitar una tienda en línea funcional (CMS e-commerce general) que permita al consumidor final explorar, filtrar, seleccionar y comprar productos con variantes, integrando pasarelas de pago colombianas — Wompi, MercadoPago, **Tu Compra** (integrador REST) y **Bold** — con una activa a la vez.
 
 **OE-02 — Experiencia de compra fluida**
 Implementar un flujo de compra completo —carrito persistente, checkout de tres pasos, confirmación de orden y seguimiento de pedido— que minimice la fricción y maximice la conversión.
@@ -103,7 +103,7 @@ Consolidar todo el contenido gestionable (banners, secciones del home, testimoni
 
 | Épica (v2) | Alcance | HU / códigos |
 |-----------|---------|--------------|
-| **E6 · Pagos y pasarelas** | Checkout 3 pasos; pasarela única (`active_provider`); Wompi, MercadoPago, Tu Compra, **Bold**; webhooks + firma; validación manual del admin; fallback de estado · *(roadmap: devoluciones/reembolsos [107a/b], pasarela internacional, gift cards/saldo, impuestos multi-región)* | P-01…12, PRV-04…07, HU-082…096 (pagos), HU-107a/b, HU-108/148/149, HU-164 (pricing) / HU-166 (DIAN), HU-188 (Tu Compra integrador) / HU-189 (UX config pagos) 🔲 |
+| **E6 · Pagos y pasarelas** | Checkout 3 pasos; pasarela única (`active_provider`); Wompi, MercadoPago, **Tu Compra integrador** (PSE/Nequi/Daviplata/Referenciado), **Bold**; webhooks firmados + **anti-forja/anti-subpago/idempotencia**; confirmación con estado real; validación manual del admin; fallback/reconcile · *(roadmap: devoluciones/reembolsos [107a/b], pasarela internacional, gift cards/saldo, impuestos multi-región)* | P-01…12, PRV-04…07, HU-082…096 (pagos), HU-107a/b, HU-108/148/149, HU-164 (pricing) / HU-166 (DIAN), HU-188a…e (Tu Compra integrador) / HU-189 (UX config pagos) / HU-190 (hardening webhooks) |
 | **E7 · Envíos** | Skydropx (OAuth, cotización, guías, webhook, pickups), tarifa fija, proveedor intercambiable, UX de tarifas · *(roadmap: click & collect)* | S-01…08, PRV-01…03, HU-110 🔲 |
 | **E8 · Emails y newsletter** | Resend, plantillas, proveedor intercambiable, newsletter broadcast · *(roadmap: notificaciones multicanal WhatsApp/SMS, EmailProvider multi-proveedor [SES/Postmark/SMTP], plantillas editables, entregabilidad/DKIM + suppression, email_log, newsletter externo Beehiiv y similares)* | E-01…05, PRV-08/09, HU-153/159/160/161/162/163 🔲 |
 | **E9 · Inventario y stock** | Descuento/reposición por estado de pago, backorder, topes de cantidad en el front · *(roadmap: back-in-stock, alertas de stock bajo)* | HU-097…100, HU-105/106 🔲 |
@@ -387,7 +387,7 @@ Consolidar todo el contenido gestionable (banners, secciones del home, testimoni
 | PRV-06 | Checkout muestra únicamente las pasarelas con `enabled = true` | Alta | ✅ | `checkout.integration.test.ts` (casos 503 pasarela inactiva) |
 | PRV-07 | Integración Tu Compra como tercera pasarela de pago con webhook y redireccionamiento | Alta | 🔲 | En progreso vía **HU-188** (modalidad integrador `confirmacionTransaccionMedioPago`, multi-método). Núcleo (gateway/webhook/reconcile/URLs) listo; falta el checkout por método (PSE→Nequi/Daviplata→Referenciado→Tarjeta) |
 | PRV-08 | Interfaz `EmailProvider` con método `send({ to, subject, html })`; Resend como implementación concreta | Media | ✅ | `packages/database/.../email.test.ts`, `apps/admin/.../email.test.ts` (POST a Resend, headers, errores) |
-| PRV-09 | Selector de proveedor de email activo en `/configuracion/email`; campo `email_provider` en `store_config` | Media | 🟡 | **Sin prueba dedicada** del selector `email_provider` (solo se prueba el envío Resend) |
+| PRV-09 | Selector de proveedor de email activo en `/configuracion/email`; campo `email_provider` en `store_config` | Media | ✅ | `email-provider.test.ts` (factory `getEmailProvider`) + `store-config.test.ts` (round-trip `email_provider`) |
 
 ---
 
@@ -1664,7 +1664,7 @@ Para agregar un nuevo proveedor (ej. FedEx): crear `providers/fedex/index.ts`, a
 
 ## Detalle · E14 — Despliegue, Seguridad e Identidad del Panel  *(histórico: "Épica 11")*
 
-> **Contexto:** v14 (julio 2026) — seis historias. **Validación ago-2026:** favicon (HU-063) y colores del panel (HU-064) completos con pruebas ✅; CI/CD (HU-061) implementado ✅; tracking (HU-060), audit de seguridad (HU-062), responsive admin (HU-079), JSON-LD (HU-080) y fuentes de tema (HU-081) están implementados y cableados pero **sin pruebas definidas** (🟡).
+> **Contexto:** v14 (julio 2026) — seis historias. **Validación ago-2026:** favicon (HU-063) y colores del panel (HU-064) completos con pruebas ✅; CI/CD (HU-061) implementado ✅; tracking (HU-060), audit de seguridad (HU-062), responsive admin (HU-079), JSON-LD (HU-080) y fuentes de tema (HU-081) están implementados **y ahora con pruebas** (✅, v20).
 
 ---
 
@@ -1674,7 +1674,7 @@ Para agregar un nuevo proveedor (ej. FedEx): crear `providers/fedex/index.ts`, a
 
 **Estimación:** M (5 puntos)  
 **Módulo:** `apps/web/src/app/(account)/account/orders/`  
-**Estado:** 🟡 Implementado sin pruebas (v15) — `pedidos/[id]/page.tsx` existe y está cableado; sin test (server component)
+**Estado:** ✅ Implementado con pruebas (v20) — vista `account/orders/[id]` cableada; `orders.test.ts` cubre `getOrdersByCustomerEmail` (email en minúsculas, orden desc, `tracking_number`/`carrier_name`) y `getOrderById`
 
 **Criterios de aceptación:**
 
@@ -1781,7 +1781,7 @@ Para agregar un nuevo proveedor (ej. FedEx): crear `providers/fedex/index.ts`, a
 
 **Estimación:** M (5 puntos)  
 **Módulo:** `apps/admin/src/components/layout/AdminSidebar.tsx`, `apps/admin/src/app/layout.tsx`  
-**Estado:** 🟡 Implementado sin pruebas (v15) — `AdminSidebar` con hamburguesa/drawer responsive cableado; sin test de UI
+**Estado:** ✅ Implementado con pruebas (v20) — `AdminSidebar.test.tsx` valida nav por rol, drawer hamburguesa (responsive) y expansión de grupos
 
 **Criterios de aceptación:**
 
@@ -1802,7 +1802,7 @@ Para agregar un nuevo proveedor (ej. FedEx): crear `providers/fedex/index.ts`, a
 
 **Estimación:** M (3 puntos)  
 **Módulo:** `apps/web/src/app/shop/[slug]/page.tsx`, `apps/web/src/app/blog/[slug]/page.tsx`  
-**Estado:** 🟡 Implementado sin pruebas (v15) — JSON-LD `Product` y `Article` inyectados en ambas páginas; sin test que valide el schema
+**Estado:** ✅ Implementado con pruebas (v20) — builders extraídos a `lib/json-ld.ts`; `json-ld.test.ts` valida `@context/@type`, offers/brand y el schema Article
 
 **Criterios de aceptación:**
 
@@ -1822,7 +1822,7 @@ Para agregar un nuevo proveedor (ej. FedEx): crear `providers/fedex/index.ts`, a
 
 **Estimación:** S (2 puntos)  
 **Módulo:** `apps/admin/src/app/configuracion/temas/`, `apps/web/src/app/layout.tsx`  
-**Estado:** 🟡 Implementado sin pruebas (v15) — fuentes Lora/Merriweather/Montserrat/Nunito añadidas al editor y mapas de `layout.tsx`; sin test
+**Estado:** ✅ Implementado con pruebas (v20) — mapas de fuentes extraídos a `lib/theme-css.ts`; `theme-css.test.ts` valida el mapeo de cada fuente display/body, el fallback y los colores
 
 **Criterios de aceptación:**
 
@@ -2273,7 +2273,7 @@ Para agregar un nuevo proveedor (ej. FedEx): crear `providers/fedex/index.ts`, a
 
 **Estimación:** L (8 puntos)
 **Módulo:** `packages/database/src/providers/payment/TuCompraGateway.ts`, `apps/web/src/app/api/webhooks/tucompra/`
-**Estado:** 🔲 Pendiente
+**Estado:** ⛔ **REEMPLAZADA por HU-188.** Describía el modelo antiguo (`tucompra_merchant_id`/`secret_key`, redirección a "página de pago de Tu Compra", firma **HMAC**) que **no corresponde** a la API REST integrador. Ver HU-188 (a–e).
 **Bloqueada por:** HU-085, HU-086
 
 **Criterios de aceptación:**
@@ -3695,19 +3695,21 @@ Para agregar un nuevo proveedor (ej. FedEx): crear `providers/fedex/index.ts`, a
 
 ### HU-160 — Plantillas de email editables con variables · E8
 
-> Como administrador, quiero editar el asunto y el contenido de los emails (confirmación, envío, bienvenida, recuperación) con variables, para personalizarlos sin tocar código.
+> Como administrador, quiero editar el **asunto y el contenido de cada email** (confirmación de pago, cada cambio de estado del pedido, bienvenida, recuperación) con variables, para personalizarlos sin tocar código.
 
 **Estimación:** L (8 puntos)
-**Módulo:** layout MJML/React Email + plantillas en BD (`email_templates`), interpolación de variables, preview en admin
-**Estado:** 🔲 Pendiente (roadmap v18)
+**Módulo:** layout MJML/React Email + plantillas en BD (`email_templates`), interpolación de variables, preview en admin, `lib/email` (reemplazar HTML fijo)
+**Estado:** 🔲 Pendiente (roadmap v18).
+**Baseline actual (v20):** los correos transaccionales **ya se envían** con Resend vía el proveedor activo — confirmación de pago (al aprobarse), notificación de envío (con tracking) y en los cambios de estado del pedido —, pero con **plantillas HTML fijas en código** (`lib/email`). Esta HU las hace **editables por tipo/estado desde el admin**.
 
 | # | Escenario | Resultado esperado |
 |---|-----------|-------------------|
 | AC-1 | Layout compartido | Header con logo, colores del theme y footer legal; HTML responsive renderizado **en la app** (no plantillas del proveedor, para no amarrarse) |
-| AC-2 | Contenido editable | Asunto y bloques por tipo de email editables desde el admin, con variables (`{{order_number}}`, `{{customer_name}}`, `{{tracking_url}}`) |
-| AC-3 | Previsualización | Vista previa con datos de ejemplo antes de guardar |
-| AC-4 | Envío agnóstico | Se renderiza el HTML y se envía por el proveedor activo (HU-159) |
-| AC-5 | i18n-ready | Variante de plantilla por idioma (se apoya en HU-114) |
+| AC-2 | Contenido editable por tipo/estado | Asunto y bloques editables desde el admin para **cada mensaje**: confirmación de pago, pago rechazado, y por **estado del pedido** (procesando, enviado, entregado, cancelado, excepción), además de bienvenida y recuperación; con variables (`{{order_number}}`, `{{customer_name}}`, `{{tracking_url}}`, `{{status}}`, `{{total}}`) |
+| AC-3 | Previsualización | Vista previa con datos de ejemplo antes de guardar; envío de correo de prueba |
+| AC-4 | Envío agnóstico | Se renderiza el HTML de la plantilla activa y se envía por el proveedor activo (HU-159); si no hay plantilla personalizada, usa la de sistema por defecto (fallback) |
+| AC-5 | Activar/desactivar por tipo | El admin puede habilitar/silenciar el envío de cada tipo de correo (p. ej. no notificar "procesando") |
+| AC-6 | i18n-ready | Variante de plantilla por idioma (se apoya en HU-114) |
 
 ---
 
@@ -4187,18 +4189,26 @@ Para agregar un nuevo proveedor (ej. FedEx): crear `providers/fedex/index.ts`, a
 
 > Como plataforma, quiero integrar Tu Compra en su **modalidad integrador** (`confirmacionTransaccionMedioPago`, transaccional por medio de pago, con `Referencia`=order_number), para cobrar y correlacionar los pedidos. Reemplaza tanto el modelo antiguo (form-POST+MD5) como el intento con `crearBotonPago` (botón reutilizable, sin referencia). **Configurable** para cualquier comercio (medios habilitados e IDs de método parametrizables), no atado a la config de una pasarela concreta.
 
-**Estimación:** XL (13+ puntos)
-**Módulo:** `TuCompraGateway` (integrador), `payment_config` (config de medios), factory, admin (URLs + config de medios), checkout (selector de medio + banco/celular), webhook (URL de Confirmación), reconcile
-**Estado:** 🔲 Casi completo (v19). **Hecho:** gateway integrador (`/autenticar`, `/confirmacionTransaccionMedioPago` → `urlBanco` con `Referencia`, `listarBancos`, `/consultarEstadoTransaccion`, `mapStatus`, constructores `MetodoPago`), 5 campos + URL base + **config de medios habilitados (`tucompra_methods`, IDs por demo/prod)** en `payment_config`/admin (JSON), **URL de Confirmación y Retorno** copiables en el admin, webhook autoritativo, reconcile web+admin, **checkout cableado** (selector de medio + banco PSE vía `listarBancos` + celular/documento Nequi/Daviplata + Referenciado) → `urlBanco`, tests del gateway/reconcile. **Pendiente:** **Tarjeta** (cifrado RSA en la página → rompe SAQ A, opt-in) y **validación sandbox** (valores de `estadoPago`/params de confirmación). Doc: `desarrolladores.tucompra.net/manuales/rest`
+**Estimación:** XL (13+ puntos) → **dividida en 188a–188d + 188e (enabler)**
+**Módulo:** `TuCompraGateway` (integrador), `payment_config` (config de medios + llave de firma), `orders` (seguimiento), factory, admin (URLs + config de medios), checkout (flujo por medio), webhook (URL de Confirmación + firma), reconcile
+**Estado:** 🔲 En progreso (v20). Alcance confirmado: **PSE, Nequi, Daviplata, Referenciado**. **Tarjeta queda FUERA** (cifrado RSA rompe PCI SAQ A) y se **quitó** de la interfaz de administración. **HU-088 queda reemplazada por esta HU.** **Hecho:** gateway integrador (`/autenticar`, `/confirmacionTransaccionMedioPago`, `listarBancos`, `/consultarEstadoTransaccion`, `finalizaPagoDaviplata`, `verifyConfirmationSignature`, `mapStatus`), config de medios (`tucompra_methods`) + llave de firma (`tucompra_encryption_key`) + seguimiento persistido (`orders.tucompra_codigo_seguimiento/numero_transaccion`), flujo por medio en el checkout, webhook con verificación de **firmaTuCompra** + re-consulta autoritativa, reconcile web+admin, tests. **Pendiente:** validación end-to-end en sandbox de los 4 medios. Doc: `desarrolladores.tucompra.net/manuales/rest` + `Tu-Compra-Integracion-Referencia.md` (raíz del workspace).
+
+**Sub-HU:**
+
+- **HU-188a · PSE** — `MetodoPago` con `campo1`=código banco, **`campo2`=nombre banco**, `campo3`=tipo persona, `campo4`=URL retorno; `listarBancos` puebla el selector; respuesta `urlBanco` → **redirección al banco**. (IDs demo 41 / prod 3.)
+- **HU-188b · Nequi** — push: `CodigoRespuesta 2` PENDIENTE → pantalla "aprueba en tu app Nequi" + **polling** de `consultarEstadoTransaccion` (vigencia 15 min). Sin redirección.
+- **HU-188c · Daviplata** — OTP: `CodigoRespuesta 2` → el cliente ingresa el OTP → `finalizaPagoDaviplata {codigoSeguimiento, terminal, tokenSeguridad, codigoOTP}` → confirma.
+- **HU-188d · Referenciado** — `MetodoPago` solo `id`; respuesta `urlBanco` = **PDF/comprobante** con código de barras; pedido pendiente hasta el pago en efectivo.
+- **HU-188e · Enabler** — persistir `CodigoSeguimiento`/`numeroTransaccion` (migración 28), llave de firma `tucompra_encryption_key`, verificación de `firmaTuCompra` en el webhook y re-consulta autoritativa por API.
 
 | # | Escenario | Resultado esperado |
 |---|-----------|-------------------|
-| AC-1 | Credenciales reales | `payment_config` guarda **usuario**, **clave**, **terminal** (Id Sistema), **URL base** (demo/prod) y **llave pública** (solo tarjeta); expuestos en el admin |
+| AC-1 | Credenciales reales | `payment_config` guarda **usuario**, **clave**, **terminal** (Id Sistema), **URL base** (demo/prod) y **llave de encriptación** (MD5, firma); expuestos en el admin. La llave RSA (tarjeta) no se usa. |
 | AC-2 | Autenticación | `POST /autenticar` con `{usuario, clave, terminal}` → `tokenSeguridad` (JWT) en cada servicio; manejo de `codigoRespuesta` |
-| AC-3 | Transacción integrador | `POST /confirmacionTransaccionMedioPago` con `Referencia`=order_number + `MetodoPago{id, campos}` → `urlBanco` (redirect) + `CodigoSeguimiento`. **NO** `crearBotonPago` |
-| AC-4 | Multi-método configurable | Medios habilitados (PSE/Nequi/Daviplata/Referenciado/Tarjeta) e **IDs de `MetodoPago`** parametrizables (Ver Tabla de Valores). PSE usa `listarBancos`; Tarjeta cifra con RSA (rompe SAQ A → opt-in) |
+| AC-3 | Flujo por medio | Cada medio tiene su flujo: **PSE** redirige a `urlBanco`; **Nequi** push+polling; **Daviplata** OTP+`finalizaPagoDaviplata`; **Referenciado** PDF/comprobante. Todos con `Referencia`=order_number. **NO** `crearBotonPago` |
+| AC-4 | Multi-método configurable | Medios habilitados (**PSE/Nequi/Daviplata/Referenciado**) e **IDs de `MetodoPago`** parametrizables por entorno (Tabla de Valores). **Tarjeta excluida** por PCI SAQ A. |
 | AC-5 | URLs configurables | **URL de Confirmación** (server-to-server, webhook autoritativo por `Referencia`) y **URL de Retorno** (navegador → confirmación) visibles/copiables en el admin |
-| AC-6 | Seguridad y pruebas | Deriva del `active_provider` (HU-092); estado autoritativo por API (nunca el cliente); tests de gateway/reconcile; la confirmación incluye **Firma TuCompra** (verificable) |
+| AC-6 | Seguridad y pruebas | Deriva del `active_provider` (HU-092); **verificación de `firmaTuCompra`** (MD5) + estado autoritativo por API (nunca el cliente); `CodigoSeguimiento` persistido para consultar estado y finalizar Daviplata; tests de gateway/reconcile |
 
 ---
 
@@ -4214,10 +4224,60 @@ Para agregar un nuevo proveedor (ej. FedEx): crear `providers/fedex/index.ts`, a
 |---|-----------|-------------------|
 | AC-1 | Entorno por pasarela | Indicador **Demo/Producción**: toggle donde la API lo permite (Bold `sandbox`, Tu Compra URL base), badge **auto-detectado** donde lo implica la credencial (Wompi `pub_test/pub_prod`, MercadoPago `TEST/APP_USR`) |
 | AC-2 | Estado activo claro | La pasarela **activa** y su entorno se ven de un vistazo (badge "Activa · Demo/Producción") |
-| AC-3 | Tu Compra sin JSON | Reemplaza el textarea por una **lista de métodos** (PSE/Nequi/Daviplata/Referenciado/Tarjeta) con switch de habilitado + **drag-and-drop para ordenar** |
-| AC-4 | IDs por entorno | El toggle Demo/Prod aplica los IDs correctos por método desde una tabla interna (PSE 41/3, Nequi 72, Daviplata 71, Tarjeta 37-40/1-5, Referenciado 42-50); editable en modo avanzado |
+| AC-3 | Tu Compra sin JSON | Reemplaza el textarea por una **lista de métodos** (**PSE/Nequi/Daviplata/Referenciado** — Tarjeta excluida por PCI) con switch de habilitado + **drag-and-drop para ordenar** |
+| AC-4 | IDs por entorno | El toggle Demo/Prod aplica los IDs correctos por método desde una tabla interna (PSE 41/3, Nequi 72, Daviplata 71, Referenciado 45); editable en modo avanzado |
 | AC-5 | Reflejo en checkout | El orden/habilitados se reflejan en el selector de medio del checkout |
 | AC-6 | UX | Estético, intuitivo y accesible por teclado |
+
+---
+
+### HU-190 — Endurecimiento de confirmaciones de pago (anti-forja + anti-subpago) · E6
+
+> Como plataforma, quiero que ninguna confirmación de pago pueda ser forjada ni por un monto menor al del pedido, para que solo se marquen como pagados los pedidos realmente pagados por su valor total. Aplica a **todas las pasarelas** (Wompi, MercadoPago, Bold, Tu Compra).
+
+**Estimación:** M (5 puntos)
+**Módulo:** `lib/wompi`, `BoldGateway`, `TuCompraGateway`, webhooks (wompi/mercadopago/bold/tucompra), `lib/payment-guards`, reconcile (web+db), `GET /api/checkout/status`
+**Estado:** ✅ Implementado (v20)
+
+| # | Escenario | Resultado esperado |
+|---|-----------|-------------------|
+| AC-1 | El estado nunca viene del cliente | Solo se acepta un pago aprobado si (a) la firma del webhook es válida o (b) se re-consulta el estado a la API autenticada del proveedor. Un pedido inexistente no actualiza nada |
+| AC-2 | Wompi fail-closed | `verifyWompiWebhook` **rechaza** si falta el events-secret o el checksum (antes hacía bypass) y compara con `timingSafeEqual` |
+| AC-3 | Bold fail-closed | `verifyWebhook` rechaza en **producción** con llave secreta vacía; `timingSafeEqual`; llave vacía solo en sandbox |
+| AC-4 | Tu Compra / MercadoPago | Tu Compra: firma `firmaTuCompra` (timing-safe) + re-consulta autoritativa. MercadoPago: re-consulta el pago con nuestro token (ignora el estado del body) |
+| AC-5 | Anti-subpago | Al aprobar, se verifica que el monto pagado cubre `order.total` (`amountCoversOrder`); si es menor → el pedido queda `pending` y se registra en el log |
+| AC-6 | Superficie mínima | `GET /api/checkout/status` con rate-limit por IP; los endpoints de reconcile/finalize también; sin exponer datos del cliente |
+| AC-7 | Ventana de replay (Wompi) | Se rechaza (401) un webhook de Wompi con `x-timestamp` fuera de ±5 min (`isWompiTimestampFresh`) |
+| AC-8 | Firma MercadoPago | Verificación de `x-signature` (`verifyMercadoPagoSignature`, HMAC del manifest `id;request-id;ts`) cuando hay `mercadopago_webhook_secret`; defensa en profundidad sobre la re-consulta |
+| AC-9 | Idempotencia por evento | Tabla `processed_webhook_events` (PK provider+event_id); un reintento del mismo evento se ignora (200 idempotent). Aplica a las 4 pasarelas (`markWebhookEventProcessed`) |
+
+**Pendiente (hardening futuro):** purga programada de `processed_webhook_events`; `x-signature`/replay para Bold si su API lo expone.
+
+---
+
+### HU-191 — Consolidar `shipping_profiles` en `customer_addresses` (deuda de modelo de datos) · E12 (toca E2/E6)
+
+> Como plataforma, quiero un **único origen de verdad** para las direcciones de envío del comprador, para eliminar la redundancia entre `shipping_profiles` (perfil único por email, sin FK) y `customer_addresses` (múltiples direcciones por `customer_id`, con `is_default`), simplificando el modelo y evitando datos divergentes.
+
+**Contexto:** Hoy coexisten dos tablas que guardan lo mismo (nombre, teléfono, dirección, ciudad, departamento, código postal). `shipping_profiles` es anterior y se llena desde `/api/shipping-profile` + `ShippingProfileForm` (Mi Cuenta), indexada por email y **sin relación con `customers`**. `customer_addresses` es el modelo correcto (FK a `customers`, varias direcciones, `is_default`, `label`) y ya alimenta el checkout. Mantener ambas genera incoherencia (un usuario puede tener perfil y direcciones distintos) y una tabla huérfana respecto al grafo de `customers`.
+
+**Estimación:** M (5 puntos)
+**Módulo:** `migrations/upgrade.sql` (+ `01_schema.sql`), `queries/shipping-profile.ts` (deprecar), `queries/customer-addresses.ts`, `api/shipping-profile/` → `api/account/addresses/`, `components/account/ShippingProfileForm.tsx`, checkout (pre-llenado)
+**Estado:** 🔲 Pendiente (deuda técnica detectada en la revisión del modelo v20)
+**Depende de:** que el usuario esté autenticado (Stack Auth) para tener `customer_id`.
+
+| # | Escenario | Resultado esperado |
+|---|-----------|-------------------|
+| AC-1 | Fuente única | Las direcciones de envío viven **solo** en `customer_addresses`. La UI de "perfil de envío" pasa a gestionar la dirección **por defecto** (`is_default = true`) de ese cliente |
+| AC-2 | Migración de datos | Migración idempotente que copia cada `shipping_profiles` a `customer_addresses` del `customer` con el mismo email (match por `customers.email`), marcándola `is_default` si el cliente no tiene otra; filas sin cliente asociado se omiten y se registran |
+| AC-3 | Deprecación de la tabla | Tras migrar, `shipping_profiles` queda **deprecada**: se elimina la tabla y su índice (o se conserva un periodo con comentario "DEPRECATED" antes del `DROP`), y se retiran `getShippingProfile`/`upsertShippingProfile` |
+| AC-4 | API unificada | `/api/shipping-profile` se elimina o se redirige a `/api/account/addresses`; la cuenta usa el CRUD de direcciones existente (crear/editar/borrar/def.) |
+| AC-5 | Cuenta (Mi Cuenta) | `ShippingProfileForm` se reemplaza por (o se integra en) la gestión de direcciones; editar "mi dirección" = editar/crear la dirección por defecto |
+| AC-6 | Checkout coherente | El pre-llenado del checkout toma la dirección `is_default` del cliente (una sola lógica; hoy ya usa `customer_addresses`) |
+| AC-7 | Unicidad de default | Se garantiza a lo sumo **una** `is_default = true` por `customer_id` (constraint parcial `UNIQUE (customer_id) WHERE is_default` o control en la app) |
+| AC-8 | Coherencia de modelo | Ninguna tabla queda huérfana del grafo de `customers`; RLS solo-`service_role` se mantiene; tests de migración + queries en verde |
+
+> Nota: es un refactor de datos con feature vivo (`/api/shipping-profile`). Ejecutar en 2 fases si se despliega en caliente: (1) migrar datos + doble escritura, (2) `DROP` de `shipping_profiles` cuando ya nadie la lea.
 
 ---
 
@@ -4232,22 +4292,22 @@ Para agregar un nuevo proveedor (ej. FedEx): crear `providers/fedex/index.ts`, a
 | E3 · Sitio público (layout, home, navegación) | 22 | 15 | 0 | 7 |
 | E4 · Tienda y catálogo | 20 | 15 | 0 | 5 |
 | E5 · Carrito | 10 | 8 | 0 | 2 |
-| E6 · Pagos y pasarelas | 31 | 21 | 0 | 10 |
+| E6 · Pagos y pasarelas | 32 | 22 | 0 | 10 |
 | E7 · Envíos | 12 | 11 | 0 | 1 |
-| E8 · Emails y newsletter | 13 | 6 | 1 | 6 |
+| E8 · Emails y newsletter | 13 | 7 | 0 | 6 |
 | E9 · Inventario y stock | 6 | 4 | 0 | 2 |
 | E10 · Blog | 8 | 8 | 0 | 0 |
 | E11 · Páginas de contenido y servicios | 6 | 6 | 0 | 0 |
-| E12 · Autenticación y Mi Cuenta | 16 | 10 | 1 | 5 |
+| E12 · Autenticación y Mi Cuenta | 17 | 11 | 0 | 6 |
 | E13 · Panel de administración | 46 | 38 | 0 | 8 |
-| E14 · Despliegue, seguridad e identidad del panel | 18 | 5 | 2 | 11 |
-| E15 · SEO y rendimiento | 12 | 9 | 1 | 2 |
+| E14 · Despliegue, seguridad e identidad del panel | 18 | 7 | 0 | 11 |
+| E15 · SEO y rendimiento | 12 | 10 | 0 | 2 |
 | E16 · Aplicación inteligente (IA) *(roadmap)* | 17 | 0 | 0 | 17 |
 | E17 · Plataforma multi-tienda (control plane) *(roadmap)* | 8 | 0 | 0 | 8 |
 | E18 · Inventario multi-ubicación y fulfillment *(roadmap)* | 8 | 0 | 0 | 8 |
-| **TOTAL** | **286** | **182** | **5** | **99** |
+| **TOTAL** | **288** | **188** | **0** | **100** |
 
-**Lectura:** del **MVP** (191 ítems) el 98 % tiene código (✅+🟡 = 188) y el 95 % tiene pruebas (✅ = 181). El roadmap **v17** suma **34 HU 🔲** (HU-101…134) para un total de 225. Bloque HU-101…119: catálogo, inventario, pagos, cuentas, SEO e IA. Bloque HU-120…125 (configurabilidad y operación de datos): drag-and-drop de secciones, **sistema de plantillas de diseño** (theme por defecto + variantes de disposición de navbar/home/tienda/PDP/carrito), import/export extensible y versionado, carga masiva de productos por CSV y respaldos de productos/pedidos/clientes. Bloque **HU-126…134 (personalización avanzada y operación de datos):** drag-and-drop generalizado, historial de versiones del CMS, vista previa/publicación y paquetes de plantilla, export CSV de productos, acciones masivas, importadores CSV multi-entidad, restauración + respaldos programados y control de acceso por rol a operaciones de datos. Bloque **E16 v2 — aplicación inteligente (HU-135…145):** cimientos (proveedor de IA intercambiable, captura de eventos, vector store) y features (asistente de compra, búsqueda visual, personalización, clustering, patrones de compra, apariencia por chat, generación de imágenes y detección de fraude). Revisión **v18:** se dividieron 5 HU grandes en incrementos (HU-107→a/b, HU-114→a/b/c, HU-122→a/b/c, HU-138→a/b, y HU-117 quedó solo 2FA), se extrajo el **registro de auditoría** (HU-146) como enabler, se sumaron HU-147…155 (descuentos, gift cards, impuestos multi-región, consulta de pedido como invitado, portabilidad/borrado de datos, consentimiento de cookies, notificaciones multicanal, accesibilidad y Core Web Vitals) y se creó la épica **E17 · Multi-tienda** (HU-156…158). Bloque **v18 (emails):** EmailProvider multi-proveedor, plantillas editables, entregabilidad, email_log y newsletter externo (Beehiiv y similares) — HU-159…163. Bloque **v19 (enablers de plataforma):** pipeline de pricing unificado, webhooks salientes/API pública, facturación electrónica (DIAN), fidelización, bundles, onboarding, monitoreo de errores y spike de auth multi-tenant — HU-164…171. Épica **E18 · Inventario multi-ubicación** (HU-176…183): ubicaciones tipo Shopify (stock por variante+ubicación, fulfillment por lugar, transferencias, click & collect), con migración del stock único actual. Bloque **hardening PCI DSS** (HU-184…187): gestión/rotación de llaves, logging seguro, alcance SAQ A + evidencia e integridad de scripts de pago (la plataforma usa flujo redirect/hosted → no maneja datos de tarjeta → alcance mínimo SAQ A). Revisión **v19 (Tu Compra):** al contrastar contra la doc oficial se detectó que la integración de Tu Compra usa un modelo antiguo (form-POST + MD5) que **no corresponde** a su API REST (token JWT + cifrado de valores); PRV-07 pasa de 🟡 a 🔲 y se agrega la HU-188 correctiva. Además, rate-limit/CSP (HU-062) pasó a ✅ con pruebas. Total roadmap: **98 HU 🔲** (285 ítems); ver el plan de olas más abajo. Los 🟡 (5) restantes son features sin pruebas dedicadas (selector de email, tracking, JSON-LD, responsive admin, fuentes de tema).
+**Lectura:** del **MVP** (191 ítems) el 98 % tiene código (✅+🟡 = 188) y el 95 % tiene pruebas (✅ = 181). El roadmap **v17** suma **34 HU 🔲** (HU-101…134) para un total de 225. Bloque HU-101…119: catálogo, inventario, pagos, cuentas, SEO e IA. Bloque HU-120…125 (configurabilidad y operación de datos): drag-and-drop de secciones, **sistema de plantillas de diseño** (theme por defecto + variantes de disposición de navbar/home/tienda/PDP/carrito), import/export extensible y versionado, carga masiva de productos por CSV y respaldos de productos/pedidos/clientes. Bloque **HU-126…134 (personalización avanzada y operación de datos):** drag-and-drop generalizado, historial de versiones del CMS, vista previa/publicación y paquetes de plantilla, export CSV de productos, acciones masivas, importadores CSV multi-entidad, restauración + respaldos programados y control de acceso por rol a operaciones de datos. Bloque **E16 v2 — aplicación inteligente (HU-135…145):** cimientos (proveedor de IA intercambiable, captura de eventos, vector store) y features (asistente de compra, búsqueda visual, personalización, clustering, patrones de compra, apariencia por chat, generación de imágenes y detección de fraude). Revisión **v18:** se dividieron 5 HU grandes en incrementos (HU-107→a/b, HU-114→a/b/c, HU-122→a/b/c, HU-138→a/b, y HU-117 quedó solo 2FA), se extrajo el **registro de auditoría** (HU-146) como enabler, se sumaron HU-147…155 (descuentos, gift cards, impuestos multi-región, consulta de pedido como invitado, portabilidad/borrado de datos, consentimiento de cookies, notificaciones multicanal, accesibilidad y Core Web Vitals) y se creó la épica **E17 · Multi-tienda** (HU-156…158). Bloque **v18 (emails):** EmailProvider multi-proveedor, plantillas editables, entregabilidad, email_log y newsletter externo (Beehiiv y similares) — HU-159…163. Bloque **v19 (enablers de plataforma):** pipeline de pricing unificado, webhooks salientes/API pública, facturación electrónica (DIAN), fidelización, bundles, onboarding, monitoreo de errores y spike de auth multi-tenant — HU-164…171. Épica **E18 · Inventario multi-ubicación** (HU-176…183): ubicaciones tipo Shopify (stock por variante+ubicación, fulfillment por lugar, transferencias, click & collect), con migración del stock único actual. Bloque **hardening PCI DSS** (HU-184…187): gestión/rotación de llaves, logging seguro, alcance SAQ A + evidencia e integridad de scripts de pago (la plataforma usa flujo redirect/hosted → no maneja datos de tarjeta → alcance mínimo SAQ A). Revisión **v19 (Tu Compra):** al contrastar contra la doc oficial se detectó que la integración de Tu Compra usa un modelo antiguo (form-POST + MD5) que **no corresponde** a su API REST (token JWT + cifrado de valores); PRV-07 pasa de 🟡 a 🔲 y se agrega la HU-188 correctiva. Además, rate-limit/CSP (HU-062) pasó a ✅ con pruebas. Total roadmap: **100 HU 🔲** (288 ítems); ver el plan de olas más abajo. **Revisión v20:** se cerraron los **5 🟡** con pruebas dedicadas (selector de email → `email-provider.test.ts`, tracking en Mi Cuenta → `getOrdersByCustomerEmail` en `orders.test.ts`, JSON-LD → `json-ld.test.ts`, responsive admin → `AdminSidebar.test.tsx`, fuentes de tema → `theme-css.test.ts`) → **0 🟡**; cobertura ✅ pasa a 188.
 
 ---
 
@@ -4259,7 +4319,7 @@ Para agregar un nuevo proveedor (ej. FedEx): crear `providers/fedex/index.ts`, a
 
 | Ola | Foco | HU (🔲) | Prioridad | Size aprox. |
 |-----|------|---------|-----------|-------------|
-| **0 · Cimientos y decisiones** | Enablers que desbloquean todo | HU-171 (spike auth) · HU-164 (pipeline pricing) · HU-146 (auditoría) · HU-136 (eventos) + HU-152 (cookies) · HU-159 (EmailProvider) · cerrar los 7 🟡 | **Alta** | ~55 pts |
+| **0 · Cimientos y decisiones** | Enablers que desbloquean todo | HU-171 (spike auth) · HU-164 (pipeline pricing) · HU-146 (auditoría) · HU-136 (eventos) + HU-152 (cookies) · HU-159 (EmailProvider) · cerrar los 🟡 | **Alta** | ~55 pts |
 | **1 · Conversión y catálogo** | Quick wins de venta | HU-102 · HU-101 · HU-104 · HU-103 · HU-105 · HU-106 · HU-113 · HU-147 · HU-148 · HU-168 | **Alta** | ~55 pts |
 | **2 · Operación y postventa** | Admin operable | HU-120 · HU-126 · HU-124 · HU-130 · HU-131 · HU-132 · HU-116 · HU-107a/b · HU-125 · HU-133 · HU-134 · HU-112 · HU-150 · HU-160 · HU-162 | Alta/Media | ~70 pts |
 | **3 · Confianza, privacidad, seguridad y rendimiento** | Seguridad, PCI y UX | HU-117 (2FA) · HU-146 (auditoría) · **HU-184…187 (hardening PCI)** · HU-151 · HU-154 · HU-155 · HU-170 · HU-111 · HU-153 · HU-161 | Media/Alta | ~75 pts |
@@ -4433,7 +4493,7 @@ Cobertura destacada: pasarelas (Wompi/MercadoPago/Tu Compra/**Bold** + factory +
 > Como sistema, quiero que los ítems del carrito en BD siempre referencien productos y variantes válidos para que el carrito nunca contenga datos inconsistentes que rompan el checkout.
 
 **Estimación:** S (2 puntos)
-**Módulo:** DB · `migrations/5_customers.sql` + `api/account/cart/route.ts`
+**Módulo:** DB · `migrations/01_schema.sql` (tabla `cart_items`) + `api/account/cart/route.ts`
 **Estado:** ✅ Implementado
 
 **Criterios de aceptación:**

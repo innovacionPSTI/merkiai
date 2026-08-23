@@ -213,6 +213,8 @@ export type Database = {
           shipping_cost_final: number | null
           pickup_id: string | null
           pickup_date: string | null
+          tucompra_codigo_seguimiento: string | null
+          tucompra_numero_transaccion: string | null
           coupon_code: string | null
           stock_applied: boolean
           stock_restored: boolean
@@ -246,6 +248,8 @@ export type Database = {
           shipping_cost_final?: number | null
           pickup_id?: string | null
           pickup_date?: string | null
+          tucompra_codigo_seguimiento?: string | null
+          tucompra_numero_transaccion?: string | null
           coupon_code?: string | null
           stock_applied?: boolean
           stock_restored?: boolean
@@ -279,6 +283,8 @@ export type Database = {
           shipping_cost_final?: number | null
           pickup_id?: string | null
           pickup_date?: string | null
+          tucompra_codigo_seguimiento?: string | null
+          tucompra_numero_transaccion?: string | null
           coupon_code?: string | null
           stock_applied?: boolean
           stock_restored?: boolean
@@ -829,6 +835,7 @@ export type Database = {
           wompi_events_secret: string | null
           mercadopago_access_token: string | null
           mercadopago_public_key: string | null
+          mercadopago_webhook_secret: string | null
           tucompra_merchant_id: string | null
           tucompra_secret_key: string | null
           tucompra_sandbox: boolean
@@ -837,6 +844,7 @@ export type Database = {
           tucompra_terminal: string | null
           tucompra_api_url: string | null
           tucompra_public_key: string | null
+          tucompra_encryption_key: string | null
           tucompra_methods: Json | null
           bold_api_key: string | null
           bold_secret_key: string | null
@@ -852,6 +860,7 @@ export type Database = {
           wompi_events_secret?: string | null
           mercadopago_access_token?: string | null
           mercadopago_public_key?: string | null
+          mercadopago_webhook_secret?: string | null
           tucompra_merchant_id?: string | null
           tucompra_secret_key?: string | null
           tucompra_sandbox?: boolean
@@ -860,6 +869,7 @@ export type Database = {
           tucompra_terminal?: string | null
           tucompra_api_url?: string | null
           tucompra_public_key?: string | null
+          tucompra_encryption_key?: string | null
           tucompra_methods?: Json | null
           bold_api_key?: string | null
           bold_secret_key?: string | null
@@ -875,6 +885,7 @@ export type Database = {
           wompi_events_secret?: string | null
           mercadopago_access_token?: string | null
           mercadopago_public_key?: string | null
+          mercadopago_webhook_secret?: string | null
           tucompra_merchant_id?: string | null
           tucompra_secret_key?: string | null
           tucompra_sandbox?: boolean
@@ -883,11 +894,30 @@ export type Database = {
           tucompra_terminal?: string | null
           tucompra_api_url?: string | null
           tucompra_public_key?: string | null
+          tucompra_encryption_key?: string | null
           tucompra_methods?: Json | null
           bold_api_key?: string | null
           bold_secret_key?: string | null
           bold_sandbox?: boolean
           updated_at?: string
+        }
+        Relationships: []
+      }
+      processed_webhook_events: {
+        Row: {
+          provider: string
+          event_id: string
+          created_at: string
+        }
+        Insert: {
+          provider: string
+          event_id: string
+          created_at?: string
+        }
+        Update: {
+          provider?: string
+          event_id?: string
+          created_at?: string
         }
         Relationships: []
       }

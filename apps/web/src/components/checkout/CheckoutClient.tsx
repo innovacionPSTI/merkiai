@@ -86,6 +86,14 @@ export default function CheckoutClient({ initialEmail = '', defaultAddress = nul
   const [tc, setTc] = useState<{ method: string; bankCode: string; personType: string; phone: string; document: string; docType: string }>(
     { method: '', bankCode: '', personType: '0', phone: '', document: '', docType: '1' }
   )
+  // Flujo post-creación de Tu Compra que se resuelve en la propia página:
+  // Nequi (push/aprobación en app + polling) y Daviplata (OTP).
+  const [tcFlow, setTcFlow] = useState<{ flow: string; order: string } | null>(null)
+  const [tcOtp, setTcOtp]   = useState('')
+  const [tcBusy, setTcBusy] = useState(false)
+  const [tcError, setTcError] = useState('')
+  // Error de envío del pedido, mostrado inline (no bloqueante) en el paso de pago.
+  const [submitError, setSubmitError] = useState('')
 
   // Envío
   const [shippingCfg, setShippingCfg]       = useState<ShippingPublicConfig>(FALLBACK_CFG)
@@ -93,6 +101,7 @@ export default function CheckoutClient({ initialEmail = '', defaultAddress = nul
   const [selectedRateId, setSelectedRateId] = useState<string | null>(null)
   const [ratesLoading, setRatesLoading]     = useState(false)
   const [ratesFetched, setRatesFetched]     = useState(false)
+  const [ratesError, setRatesError]         = useState('')
 
   // Cupón
   const [couponCode, setCouponCode]         = useState('')
@@ -138,6 +147,47 @@ export default function CheckoutClient({ initialEmail = '', defaultAddress = nul
     }
   }, [paymentMethod, tc.method, tcBanks.length])
 
+  // Nequi (push): consulta el estado cada 5s hasta aprobar/rechazar.
+  useEffect(() => {
+    if (tcFlow?.flow !== 'push') return
+    let stopped = false
+    const poll = async () => {
+      if (stopped) return
+      try {
+        const r = await fetch('/api/checkout/tucompra/reconcile', {
+          method: 'POST', headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ order: tcFlow.order }),
+        })
+        const d = await r.json()
+        if (d.status === 'approved') { stopped = true; window.location.href = `/checkout/confirmation?order=${tcFlow.order}`; return }
+        if (d.status === 'rejected') { stopped = true; setTcError('El pago fue rechazado o expiró. Intenta con otro medio.'); return }
+      } catch { /* reintenta */ }
+      if (!stopped) setTimeout(poll, 5000)
+    }
+    const t = setTimeout(poll, 5000)
+    return () => { stopped = true; clearTimeout(t) }
+  }, [tcFlow])
+
+  // Daviplata (OTP): confirma con el código que recibió el cliente.
+  async function submitDaviplataOtp() {
+    if (!tcFlow) return
+    setTcBusy(true); setTcError('')
+    try {
+      const r = await fetch('/api/checkout/tucompra/finalize-daviplata', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ order: tcFlow.order, otp: tcOtp }),
+      })
+      const d = await r.json()
+      if (!r.ok) throw new Error(d.error || 'No se pudo confirmar el pago')
+      if (d.status === 'approved') { window.location.href = `/checkout/confirmation?order=${tcFlow.order}`; return }
+      setTcError('El pago sigue pendiente. Verifica el código e intenta de nuevo.')
+    } catch (e) {
+      setTcError(e instanceof Error ? e.message : 'Error')
+    } finally {
+      setTcBusy(false)
+    }
+  }
+
   // Obtener tarifas Skydropx
   const fetchRates = async () => {
     if (shippingCfg.provider !== 'skydropx') return
@@ -145,6 +195,7 @@ export default function CheckoutClient({ initialEmail = '', defaultAddress = nul
     setAvailableRates([])
     setSelectedRateId(null)
     setRatesFetched(false)
+    setRatesError('')
     try {
       const res = await fetch('/api/shipping/rates', {
         method: 'POST',
@@ -175,8 +226,14 @@ export default function CheckoutClient({ initialEmail = '', defaultAddress = nul
         const rates: ShippingRate[] = data.rates ?? []
         setAvailableRates(rates)
         if (rates.length > 0) setSelectedRateId(rates[0].id)
+      } else {
+        // Error de cotización (p.ej. total muy bajo, dirección inválida): mensaje inline.
+        const data = await res.json().catch(() => ({}))
+        setRatesError(data.error || 'No pudimos calcular las tarifas de envío. Se aplicará la tarifa estándar al confirmar.')
       }
-    } catch { /* fallback a tarifa fija */ }
+    } catch {
+      setRatesError('No pudimos calcular las tarifas de envío. Se aplicará la tarifa estándar al confirmar.')
+    }
     finally {
       setRatesLoading(false)
       setRatesFetched(true)
@@ -234,6 +291,7 @@ export default function CheckoutClient({ initialEmail = '', defaultAddress = nul
 
   async function handleConfirm() {
     setLoading(true)
+    setSubmitError('')
     try {
       const res = await fetch('/api/checkout', {
         method: 'POST',
@@ -260,26 +318,108 @@ export default function CheckoutClient({ initialEmail = '', defaultAddress = nul
           total,
           payment_method: paymentMethod,
           tucompra: paymentMethod === 'tucompra'
-            ? { method: tc.method, bankCode: tc.bankCode, personType: tc.personType, phone: tc.phone || shipping.phone, document: tc.document, docType: tc.docType }
+            ? {
+                method: tc.method,
+                bankCode: tc.bankCode,
+                bankName: tcBanks.find((b) => b.codigo === tc.bankCode)?.nombre ?? '',
+                personType: tc.personType,
+                phone: tc.phone || shipping.phone,
+                document: tc.document,
+                docType: tc.docType,
+              }
             : undefined,
         }),
       })
-      if (!res.ok) throw new Error('Error creando el pedido')
-      const { payment_url, order_number } = await res.json()
+      if (!res.ok) {
+        const data = await res.json().catch(() => ({}))
+        // Pago rechazado (402): no es un error del sistema; se muestra inline y se
+        // permite reintentar con otro banco/medio sin salir del checkout.
+        if (res.status === 402 || data.rejected) {
+          setSubmitError(data.error || 'El pago fue rechazado. Intenta con otro banco o medio de pago.')
+          setLoading(false)
+          return
+        }
+        throw new Error(data.error || 'Error creando el pedido')
+      }
+      const data = await res.json()
+      const order_number = data.order_number
       clearCart()
       // Guarda el pedido para recuperarlo al volver de la pasarela cuando la URL de
-      // Retorno no trae el parámetro (p.ej. Tu Compra: Nequi/Daviplata/Referenciado
-      // usan la URL de Retorno global del panel, sin ?order=).
+      // Retorno no trae el parámetro.
       try { sessionStorage.setItem('lastOrder', order_number) } catch { /* ignore */ }
-      // Sin pasarela activa: el pedido queda pendiente de validación del admin
-      window.location.href = payment_url
-        ? payment_url
+
+      // Flujos de Tu Compra que se resuelven en la propia página.
+      const flow = data?.tucompra?.flow as string | undefined
+      if (flow === 'push' || flow === 'otp') {
+        setTcFlow({ flow, order: order_number })
+        setLoading(false)
+        return
+      }
+      if (flow === 'voucher') {
+        if (data?.tucompra?.voucher_url) { try { window.open(data.tucompra.voucher_url, '_blank') } catch { /* ignore */ } }
+        window.location.href = `/checkout/confirmation?order=${order_number}`
+        return
+      }
+      if (flow === 'confirm') {
+        // PSE resuelto sin redirección (demo/inmediato): la confirmación reconcilia el estado.
+        window.location.href = `/checkout/confirmation?order=${order_number}`
+        return
+      }
+      // Redirección estándar (PSE, Wompi, MercadoPago, Bold) o pago manual.
+      window.location.href = data.payment_url
+        ? data.payment_url
         : `/checkout/confirmation?order=${order_number}&manual=1`
     } catch (err) {
       console.error('[checkout]', err)
-      alert('Ocurrió un error al procesar tu pedido. Por favor intenta de nuevo.')
+      setSubmitError(err instanceof Error && err.message ? err.message : 'Ocurrió un error al procesar tu pedido. Por favor intenta de nuevo.')
       setLoading(false)
     }
+  }
+
+  // Overlay para los flujos de Tu Compra que continúan en la página (Nequi/Daviplata).
+  if (tcFlow) {
+    return (
+      <div className="bg-brand-cream min-h-screen flex items-center justify-center px-6">
+        <div className="max-w-md w-full text-center bg-white rounded-2xl border border-brand-primary/10 p-8">
+          {tcFlow.flow === 'push' ? (
+            <>
+              <div className="w-16 h-16 rounded-full bg-brand-cream flex items-center justify-center mx-auto mb-5 text-3xl">📲</div>
+              <h1 className="font-display text-brand-primary text-3xl mb-2">Aprueba el pago en Nequi</h1>
+              <p className="font-brand text-brand-primary/60 mb-6">
+                Abre tu app <strong>Nequi</strong> y aprueba el cobro del pedido <strong>{tcFlow.order}</strong>.
+                Tienes 15 minutos. Esta página se actualizará automáticamente cuando confirmes.
+              </p>
+              {!tcError && (
+                <div className="flex items-center justify-center gap-2 text-brand-primary/50 font-brand text-sm">
+                  <span className="inline-block w-4 h-4 border-2 border-brand-primary/30 border-t-brand-primary rounded-full animate-spin" />
+                  Esperando tu aprobación…
+                </div>
+              )}
+            </>
+          ) : (
+            <>
+              <div className="w-16 h-16 rounded-full bg-brand-cream flex items-center justify-center mx-auto mb-5 text-3xl">📱</div>
+              <h1 className="font-display text-brand-primary text-3xl mb-2">Confirma con Daviplata</h1>
+              <p className="font-brand text-brand-primary/60 mb-5">
+                Ingresa el <strong>código OTP</strong> que Daviplata te envió para confirmar el pago del pedido <strong>{tcFlow.order}</strong>.
+              </p>
+              <input
+                type="text" inputMode="numeric" value={tcOtp}
+                onChange={(e) => setTcOtp(e.target.value)} placeholder="Código OTP"
+                className="w-full border border-brand-primary/20 rounded-xl px-4 py-3 font-brand text-center text-lg tracking-widest mb-3 focus:outline-none focus:border-brand-primary"
+              />
+              <button
+                onClick={submitDaviplataOtp} disabled={tcBusy || !tcOtp.trim()}
+                className="w-full bg-brand-primary text-brand-cream rounded-full py-3 font-brand font-medium hover:bg-brand-dark transition-colors disabled:opacity-50"
+              >
+                {tcBusy ? 'Confirmando…' : 'Confirmar pago'}
+              </button>
+            </>
+          )}
+          {tcError && <p className="font-brand text-sm text-red-600 mt-4">{tcError}</p>}
+        </div>
+      </div>
+    )
   }
 
   return (
@@ -427,7 +567,14 @@ export default function CheckoutClient({ initialEmail = '', defaultAddress = nul
                     </div>
                   )}
 
-                  {shippingCfg.provider === 'skydropx' && !isFreeShipping && ratesFetched && availableRates.length === 0 && (
+                  {/* Error específico de cotización (total muy bajo, dirección inválida, etc.) */}
+                  {shippingCfg.provider === 'skydropx' && !isFreeShipping && ratesFetched && ratesError && (
+                    <p className="font-brand text-sm text-amber-700 bg-amber-50 border border-amber-200 rounded-xl px-4 py-3">
+                      {ratesError}
+                    </p>
+                  )}
+
+                  {shippingCfg.provider === 'skydropx' && !isFreeShipping && ratesFetched && !ratesError && availableRates.length === 0 && (
                     <p className="font-brand text-sm text-amber-600 bg-amber-50 rounded-xl px-4 py-3">
                       No se encontraron tarifas para esta dirección. Se aplicará tarifa estándar al confirmar.
                     </p>
@@ -541,11 +688,20 @@ export default function CheckoutClient({ initialEmail = '', defaultAddress = nul
                             </div>
                           </div>
                         )}
+                        {tc.method && (
+                          <div className="flex gap-2">
+                            <select value={tc.docType} onChange={(e) => setTc((p) => ({ ...p, docType: e.target.value }))} className="shrink-0 border border-brand-primary/20 rounded-xl px-3 py-2.5 font-brand text-sm focus:outline-none focus:border-brand-primary">
+                              <option value="1">CC</option>
+                              <option value="3">CE</option>
+                              <option value="4">TI</option>
+                              <option value="2">NIT</option>
+                              <option value="5">Pasaporte</option>
+                            </select>
+                            <input type="text" inputMode="numeric" value={tc.document} onChange={(e) => setTc((p) => ({ ...p, document: e.target.value }))} placeholder="Número de documento" className="flex-1 border border-brand-primary/20 rounded-xl px-4 py-2.5 font-brand text-sm focus:outline-none focus:border-brand-primary" />
+                          </div>
+                        )}
                         {(tc.method === 'nequi' || tc.method === 'daviplata') && (
                           <input type="tel" value={tc.phone} onChange={(e) => setTc((p) => ({ ...p, phone: e.target.value }))} placeholder="Celular (ej. 3001234567)" className="w-full border border-brand-primary/20 rounded-xl px-4 py-2.5 font-brand text-sm focus:outline-none focus:border-brand-primary" />
-                        )}
-                        {tc.method === 'daviplata' && (
-                          <input type="text" value={tc.document} onChange={(e) => setTc((p) => ({ ...p, document: e.target.value }))} placeholder="Documento del titular" className="w-full border border-brand-primary/20 rounded-xl px-4 py-2.5 font-brand text-sm focus:outline-none focus:border-brand-primary" />
                         )}
                         <p className="font-brand text-[11px] text-brand-primary/40">Al confirmar te llevaremos a Tu Compra para completar el pago de forma segura.</p>
                       </div>
@@ -557,6 +713,11 @@ export default function CheckoutClient({ initialEmail = '', defaultAddress = nul
                       </div>
                     )}
                   </>
+                )}
+                {submitError && (
+                  <div role="alert" className="mb-4 rounded-xl border border-red-200 bg-red-50 px-4 py-3">
+                    <p className="font-brand text-sm text-red-700">{submitError}</p>
+                  </div>
                 )}
                 <div className="flex gap-3">
                   <button onClick={() => setStep(2)} className="flex-1 border border-brand-primary/20 text-brand-primary rounded-full py-3 font-brand font-medium hover:border-brand-primary transition-colors">← Atrás</button>

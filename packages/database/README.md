@@ -61,7 +61,8 @@ Tablas eliminadas en v13: `banners`, `section_settings`, `testimonials` (el cont
 | `customer_addresses` | FK customer | Direcciones guardadas para checkout |
 | `store_config` | Singleton (`CHECK id=1`) | Branding, Resend, redes sociales, toggles |
 | `shipping_config` | Singleton (`CHECK id=1`) | Proveedor, tarifa, credenciales Skydropx |
-| `payment_config` | Singleton (`CHECK id=1`) | Credenciales Wompi y MercadoPago |
+| `payment_config` | Singleton (`CHECK id=1`) | Credenciales de pasarelas (Wompi, MercadoPago, **Tu Compra**, **Bold**); `active_provider` (una activa) + llaves de firma de webhook |
+| `processed_webhook_events` | PK `(provider,event_id)` | Idempotencia de webhooks de pago (un reintento choca y se ignora) |
 | `themes` | Uno activo a la vez | Paleta CSS y tipografía inyectadas en `<head>` |
 | `nav_items` | Árbol de 1 nivel | Menú de navegación con `nav_key` estable |
 | `media_assets` | Inventario | Assets subidos con referencias `used_in` JSONB |
@@ -94,8 +95,8 @@ packages/database/
 │       └── variant-types.ts    ← getVariantTypes, CRUD
 └── supabase/
     ├── migrations/
-    │   ├── 01_schema.sql       ← ★ ESQUEMA CANÓNICO — usar para despliegue nuevo
-    │   └── 1_initial_schema.sql … 20_integrity_and_indexes.sql  ← historial evolutivo
+    │   ├── 01_schema.sql       ← ★ ESQUEMA CANÓNICO — despliegue nuevo
+    │   └── upgrade.sql         ← parche idempotente para BD existentes
     └── seeds/
         ├── 01_config.sql       ← Tema, variantes, categorías, nav base
         └── 02_content.sql      ← Páginas, secciones e ítems CMS de Commerce CMS
@@ -118,7 +119,9 @@ Para un entorno nuevo (staging, local, CI), ejecutar en orden en el SQL Editor d
 \i packages/database/supabase/seeds/02_content.sql
 ```
 
-Los archivos `1_initial_schema.sql` … `20_integrity_and_indexes.sql` documentan la evolución histórica y se aplican automáticamente en entornos Supabase con historial existente. Para un despliegue limpio, usar únicamente `01_schema.sql` + los seeds — el resultado es idéntico.
+Para **actualizar una BD existente** ejecuta solo `migrations/upgrade.sql` (parche idempotente, seguro de re-ejecutar). Los antiguos archivos numerados (`1_*`…`29_*`) se eliminaron por redundantes: su contenido ya está consolidado en `01_schema.sql` y `upgrade.sql`.
+
+> **RLS:** el esquema habilita Row Level Security en **las 24 tablas**. Las tablas solo-`service_role` (config singletons, `admin_config`, `processed_webhook_events`) tienen RLS sin política pública → deniegan `anon`; el `service_role` omite RLS.
 
 ---
 

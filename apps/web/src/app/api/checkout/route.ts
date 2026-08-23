@@ -228,7 +228,7 @@ export async function POST(req: NextRequest) {
     // configurables (payment_config.tucompra_methods; difieren demo/prod).
     if (activeProvider === 'tucompra') {
       const tc = (tucompra ?? {}) as {
-        method?: string; bankCode?: string; personType?: string; document?: string; docType?: string; phone?: string
+        method?: string; bankCode?: string; bankName?: string; personType?: string; document?: string; docType?: string; phone?: string
       }
       const methods = (Array.isArray(paymentConfig.tucompra_methods) ? paymentConfig.tucompra_methods : []) as Array<{ tipo: string; id: string; enabled?: boolean }>
       const cfgMethod = methods.find((m) => m.tipo === tc.method && m.enabled !== false)
@@ -237,6 +237,10 @@ export async function POST(req: NextRequest) {
       }
       if (tc.method === 'pse' && !tc.bankCode) {
         return NextResponse.json({ error: 'Selecciona tu banco para PSE.' }, { status: 400 })
+      }
+      // Tu Compra exige el documento del comprador en TODOS los medios (PSE incluido).
+      if (!tc.document || !tc.document.trim()) {
+        return NextResponse.json({ error: 'Ingresa tu número de documento (cédula) para pagar con Tu Compra.' }, { status: 400 })
       }
 
       const order = await createOrder({
@@ -255,7 +259,7 @@ export async function POST(req: NextRequest) {
       })
       const returnUrl = `${siteUrl}/checkout/confirmation?order=${order.order_number}`
       const metodo = tc.method === 'pse'
-        ? TuCompraGateway.metodoPSE(cfgMethod.id, tc.bankCode!, tc.personType === '1' ? '1' : '0', returnUrl)
+        ? TuCompraGateway.metodoPSE(cfgMethod.id, tc.bankCode!, tc.bankName ?? '', tc.personType === '1' ? '1' : '0', returnUrl)
         : TuCompraGateway.metodoSimple(cfgMethod.id)
 
       try {
@@ -273,11 +277,77 @@ export async function POST(req: NextRequest) {
           pais: 'CO',
         }, metodo)
 
-        if (result.codigoRespuesta === '1' || !result.urlBanco) {
-          console.error('[checkout/tucompra]', result.descripcion, result.codigoRespuesta)
-          return NextResponse.json({ error: result.descripcion ?? 'Tu Compra rechazó la transacción.' }, { status: 502 })
+        console.log('[checkout/tucompra] result:', JSON.stringify(result), 'método:', tc.method, 'id:', cfgMethod.id)
+
+        // Persistir el CodigoSeguimiento (obligatorio para consultar estado y para
+        // finalizar Daviplata) y el número de transacción en la orden.
+        if (result.codigoSeguimiento || result.numeroTransaccion) {
+          await createServerClient()
+            .from('orders')
+            .update({
+              tucompra_codigo_seguimiento: result.codigoSeguimiento ?? null,
+              tucompra_numero_transaccion: result.numeroTransaccion ?? null,
+              updated_at: new Date().toISOString(),
+            })
+            .eq('id', order.id)
         }
-        return NextResponse.json({ order_number: order.order_number, order_id: order.id, payment_url: result.urlBanco })
+
+        // Se distingue el RECHAZO del cliente (código 1) del ERROR/CONFIGURACIÓN
+        // (código 99). En ambos casos se marca el pedido rechazado (no huérfano).
+        if (result.codigoRespuesta === '1' || result.codigoRespuesta === '99') {
+          await createServerClient()
+            .from('orders')
+            .update({ payment_status: 'rejected', updated_at: new Date().toISOString() })
+            .eq('id', order.id)
+
+          if (result.codigoRespuesta === '1') {
+            // Rechazo de la entidad (resultado de negocio, NO error de servidor).
+            console.warn('[checkout/tucompra] rechazada →', result.descripcion, 'estado:', result.estado)
+            const motivo = (result.descripcion ?? '').replace(/^\s*\d+\s*-\s*/, '').trim()
+            return NextResponse.json({
+              rejected: true,
+              error: motivo ? `Pago rechazado: ${motivo}` : 'El pago fue rechazado. Intenta con otro banco o medio de pago.',
+            }, { status: 402 })
+          }
+
+          // Código 99 = error inesperado / medio no configurado o inactivo. Es un
+          // problema de configuración del comercio, no del comprador: se registra el
+          // detalle técnico para el admin y se muestra un mensaje genérico al cliente.
+          console.error('[checkout/tucompra] error/config (código 99) →', result.descripcion, 'método:', tc.method)
+          return NextResponse.json({
+            error: 'Este medio de pago no está disponible en este momento. Por favor intenta con otro medio.',
+          }, { status: 502 })
+        }
+
+        // Flujo según el medio de pago (cada uno es distinto en la modalidad integrador).
+        const base = { order_number: order.order_number, order_id: order.id, codigoSeguimiento: result.codigoSeguimiento ?? null }
+        if (tc.method === 'pse') {
+          // Producción: redirección a la página del banco.
+          if (result.urlBanco) {
+            return NextResponse.json({ ...base, tucompra: { method: 'pse', flow: 'redirect' }, payment_url: result.urlBanco })
+          }
+          // Demo (bancos de prueba APROBADAS/RECHAZADAS/PENDIENTES) o resolución
+          // inmediata: no hay urlBanco. Si la transacción se aceptó (código 0), se
+          // envía a confirmación y el reconcile determina el estado real por API.
+          if (result.codigoRespuesta === '0' || result.codigoRespuesta === '2') {
+            return NextResponse.json({ ...base, tucompra: { method: 'pse', flow: 'confirm' } })
+          }
+          return NextResponse.json({ error: `Tu Compra no devolvió la URL del banco (código ${result.codigoRespuesta}).` }, { status: 502 })
+        }
+        if (tc.method === 'referenciado') {
+          // Comprobante/PDF con código de barras; el pedido queda pendiente hasta el pago.
+          return NextResponse.json({ ...base, tucompra: { method: 'referenciado', flow: 'voucher', voucher_url: result.urlBanco ?? null } })
+        }
+        if (tc.method === 'nequi') {
+          // Push a la app Nequi: el cliente aprueba en su teléfono; luego se consulta estado.
+          return NextResponse.json({ ...base, tucompra: { method: 'nequi', flow: 'push' } })
+        }
+        if (tc.method === 'daviplata') {
+          // Requiere OTP: el cliente ingresa el código y se llama finalizaPagoDaviplata.
+          return NextResponse.json({ ...base, tucompra: { method: 'daviplata', flow: 'otp' } })
+        }
+        // Fallback defensivo.
+        return NextResponse.json({ ...base, tucompra: { method: tc.method, flow: 'unknown' }, payment_url: result.urlBanco ?? null })
       } catch (err) {
         console.error('[checkout/tucompra] transacción falló:', err)
         return NextResponse.json({ error: 'No se pudo iniciar el pago con Tu Compra.' }, { status: 502 })

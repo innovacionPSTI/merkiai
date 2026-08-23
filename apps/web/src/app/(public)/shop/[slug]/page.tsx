@@ -2,6 +2,7 @@ import { getProductBySlug, getProducts, getStoreConfig } from '@vps/database'
 import { notFound } from 'next/navigation'
 import type { Metadata } from 'next'
 import ProductDetail from '@/components/shop/ProductDetail'
+import { buildProductJsonLd } from '@/lib/json-ld'
 
 interface Props {
   params: Promise<{ slug: string }>
@@ -51,34 +52,16 @@ export default async function ProductPage({ params }: Props) {
 
   const trustBadges = (storeConfig?.trust_badges ?? []).filter((b) => b.enabled)
 
-  // JSON-LD — Product schema
-  const siteUrl = (process.env.NEXT_PUBLIC_SITE_URL ?? '').replace(/\/$/, '')
-  const lowestPrice = (product.variants ?? []).reduce(
-    (min: number | null, v: { price: number }) => (min === null || v.price < min ? v.price : min),
-    null as number | null,
-  )
-  const jsonLd = {
-    '@context': 'https://schema.org',
-    '@type': 'Product',
+  // JSON-LD — Product schema (lógica pura en @/lib/json-ld)
+  const jsonLd = buildProductJsonLd({
     name: product.name,
-    ...(product.description ? { description: product.description } : {}),
-    ...(product.images?.length
-      ? { image: product.images.map((img: { url: string }) => img.url) }
-      : {}),
-    url: `${siteUrl}/shop/${product.slug}`,
-    ...(lowestPrice !== null
-      ? {
-          offers: {
-            '@type': 'Offer',
-            priceCurrency: 'COP',
-            price: lowestPrice,
-            availability: 'https://schema.org/InStock',
-            url: `${siteUrl}/shop/${product.slug}`,
-          },
-        }
-      : {}),
-    ...(storeConfig?.store_name ? { brand: { '@type': 'Brand', name: storeConfig.store_name } } : {}),
-  }
+    description: product.description,
+    images: product.images,
+    slug: product.slug,
+    variants: product.variants,
+    storeName: storeConfig?.store_name,
+    siteUrl: process.env.NEXT_PUBLIC_SITE_URL,
+  })
 
   return (
     <>

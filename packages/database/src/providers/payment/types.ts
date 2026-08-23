@@ -44,6 +44,8 @@ export interface WebhookPaymentData {
   rawStatus: string
   /** Gateway-specific payment ID */
   paymentId?: string
+  /** Amount actually paid, in COP (pesos). Used to guard against underpayment. */
+  amountCop?: number
 }
 
 // ─── Interface ────────────────────────────────────────────────────────────────

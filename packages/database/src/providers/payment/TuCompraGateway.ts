@@ -17,6 +17,7 @@
  * además exige cifrar los datos con la llave pública RSA (rompe PCI SAQ A).
  */
 
+import { createHash, timingSafeEqual } from 'crypto'
 import type { PaymentGateway, CreatePaymentParams, PaymentStatus, WebhookPaymentData } from './types'
 
 export interface TuCompraConfig {
@@ -27,6 +28,8 @@ export interface TuCompraConfig {
   apiUrl?: string
   /** Llave pública RSA (solo pago de tarjeta directo — "Cifrado de Valores"). */
   publicKey?: string
+  /** "Llave de encriptación" (MD5) para verificar la firma `firmaTuCompra` de la URL de Confirmación. */
+  encryptionKey?: string
 }
 
 /** Objeto MetodoPago del servicio confirmacionTransaccionMedioPago. */
@@ -90,8 +93,9 @@ export class TuCompraGateway implements PaymentGateway {
    *   Billetera (Nequi/Daviplata): el celular/documento viajan en los datos del comprador
    *   Referenciado: solo el id
    */
-  static metodoPSE(id: string, bankCode: string, personType: '0' | '1', returnUrl: string): TuCompraMetodoPago {
-    return { id, campo1: bankCode, campo3: personType, campo4: returnUrl }
+  static metodoPSE(id: string, bankCode: string, bankName: string, personType: '0' | '1', returnUrl: string): TuCompraMetodoPago {
+    // campo1 = código banco, campo2 = nombre banco, campo3 = tipo persona, campo4 = url retorno
+    return { id, campo1: bankCode, campo2: bankName, campo3: personType, campo4: returnUrl }
   }
 
   static metodoSimple(id: string): TuCompraMetodoPago {
@@ -182,15 +186,97 @@ export class TuCompraGateway implements PaymentGateway {
       const text = await res.text().catch(() => '(sin cuerpo)')
       throw new Error(`Tu Compra confirmacionTransaccion falló ${res.status}: ${text}`)
     }
-    const d = (await res.json()) as Record<string, string>
-    return {
-      codigoRespuesta: d.CodigoRespuesta ?? d.codigoRespuesta ?? '99',
-      descripcion: d.Descripcion ?? d.descripcion,
-      codigoSeguimiento: d.CodigoSeguimiento ?? d.codigoSeguimiento,
-      estado: d.estado,
-      urlBanco: d.urlBanco,
-      numeroTransaccion: d.numeroTransaccion,
+    const d = (await res.json()) as Record<string, unknown>
+    // La API demo/prod puede variar el casing de las llaves; buscamos sin distinguir
+    // mayúsculas y probando nombres alternativos de la URL de redirección.
+    const pick = (...keys: string[]): string | undefined => {
+      for (const k of keys) {
+        const found = Object.keys(d).find((dk) => dk.toLowerCase() === k.toLowerCase())
+        if (found != null && d[found] != null) {
+          const v = String(d[found]).trim() // Tu Compra puede devolver " " (espacio) como vacío
+          if (v !== '') return v
+        }
+      }
+      return undefined
     }
+    // Log crudo (sin secretos: la respuesta no contiene el token) para diagnóstico
+    // del flujo integrador. Aparece en los logs del servidor Next.js.
+    console.log('[TuCompra confirmacionTransaccion] respuesta:', JSON.stringify(d))
+    return {
+      codigoRespuesta: pick('CodigoRespuesta', 'codigoRespuesta') ?? '99',
+      descripcion: pick('Descripcion', 'descripcion', 'mensaje', 'Mensaje'),
+      codigoSeguimiento: pick('CodigoSeguimiento', 'codigoSeguimiento'),
+      estado: pick('estado', 'Estado'),
+      urlBanco: pick('urlBanco', 'UrlBanco', 'url', 'urlRedireccion', 'urlPago', 'urlTransaccion', 'link'),
+      numeroTransaccion: pick('numeroTransaccion', 'NumeroTransaccion'),
+    }
+  }
+
+  /**
+   * Finaliza un pago Daviplata: cuando `confirmacionTransaccionMedioPago` devuelve
+   * `CodigoRespuesta 2` (pendiente), el usuario recibe un OTP; con ese OTP y el
+   * `codigoSeguimiento` de la transacción se confirma el débito.
+   * POST /finalizaPagoDaviplata { codigoSeguimiento, terminal, tokenSeguridad, codigoOTP }
+   */
+  async finalizarPagoDaviplata(codigoSeguimiento: string, codigoOTP: string): Promise<TuCompraTxnResult> {
+    const token = await this.authenticate()
+    const res = await fetch(`${this.base()}/finalizaPagoDaviplata`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        codigoSeguimiento,
+        terminal: this.cfg.terminal,
+        tokenSeguridad: token,
+        codigoOTP,
+      }),
+    })
+    if (!res.ok) {
+      const text = await res.text().catch(() => '(sin cuerpo)')
+      throw new Error(`Tu Compra finalizaPagoDaviplata falló ${res.status}: ${text}`)
+    }
+    const d = (await res.json()) as Record<string, unknown>
+    const pick = (...keys: string[]): string | undefined => {
+      for (const k of keys) {
+        const found = Object.keys(d).find((dk) => dk.toLowerCase() === k.toLowerCase())
+        if (found != null && d[found] != null) {
+          const v = String(d[found]).trim()
+          if (v !== '') return v
+        }
+      }
+      return undefined
+    }
+    return {
+      codigoRespuesta: pick('CodigoRespuesta', 'codigoRespuesta') ?? '99',
+      descripcion: pick('Descripcion', 'descripcion', 'mensaje'),
+      codigoSeguimiento: pick('CodigoSeguimiento', 'codigoSeguimiento'),
+      estado: pick('estado', 'Estado'),
+      urlBanco: pick('urlBanco', 'UrlBanco', 'url'),
+      numeroTransaccion: pick('numeroTransaccion', 'NumeroTransaccion'),
+    }
+  }
+
+  /**
+   * Verifica la firma `firmaTuCompra` de la URL de Confirmación:
+   *   firmaTuCompra = MD5( llaveEncripcion ";" codigoFactura ";" valorFactura ";" codigoAutorizacion )
+   * Devuelve `true` si coincide (case-insensitive). Si no hay `encryptionKey`
+   * configurada o no llega firma, devuelve `null` (no se puede verificar → el caller
+   * debe recurrir a la re-consulta por API como fuente de verdad).
+   */
+  verifyConfirmationSignature(params: {
+    codigoFactura: string
+    valorFactura: string
+    codigoAutorizacion: string
+    firmaTuCompra: string
+  }): boolean | null {
+    const key = this.cfg.encryptionKey
+    if (!key || !params.firmaTuCompra) return null
+    const raw = `${key};${params.codigoFactura};${params.valorFactura};${params.codigoAutorizacion}`
+    const expected = createHash('md5').update(raw).digest('hex').toLowerCase()
+    const received = params.firmaTuCompra.trim().toLowerCase()
+    const a = Buffer.from(expected, 'utf-8')
+    const b = Buffer.from(received, 'utf-8')
+    if (a.length !== b.length) return false
+    try { return timingSafeEqual(a, b) } catch { return false }
   }
 
   /**
@@ -210,7 +296,8 @@ export class TuCompraGateway implements PaymentGateway {
    */
   async queryStatusByReference(
     reference: string,
-  ): Promise<{ status: PaymentStatus; rawStatus: string; paymentId?: string } | null> {
+    codigoSeguimiento = '',
+  ): Promise<{ status: PaymentStatus; rawStatus: string; paymentId?: string; amountCop?: number } | null> {
     try {
       const token = await this.authenticate()
       const res = await fetch(`${this.base()}/consultarEstadoTransaccion`, {
@@ -220,10 +307,13 @@ export class TuCompraGateway implements PaymentGateway {
           terminal: this.cfg.terminal,
           tokenSeguridad: token,
           referencia: reference,
-          codigoSeguimiento: '',
+          // Obligatorio según la doc; se persiste al crear la transacción.
+          codigoSeguimiento,
           estadoPago: true,
           transaccionConfirmada: true,
           numeroTransaccion: true,
+          valorPagado: true,
+          valorTotal: true,
         }),
       })
       if (!res.ok) return null
@@ -232,11 +322,15 @@ export class TuCompraGateway implements PaymentGateway {
         estadoPago?: string
         transaccionConfirmada?: string
         numeroTransaccion?: string
+        valorPagado?: string
+        valorTotal?: string
       }
       if (data.codigoRespuesta !== '0') return null // 1 sin info, 99 error
       const rawStatus = data.estadoPago ?? (data.transaccionConfirmada === 'true' ? 'CONFIRMADA' : '')
       if (!rawStatus) return null
-      return { status: this.mapStatus(rawStatus), rawStatus, paymentId: data.numeroTransaccion ?? undefined }
+      const paidRaw = data.valorPagado ?? data.valorTotal
+      const amountCop = paidRaw != null && paidRaw !== '' && Number.isFinite(Number(paidRaw)) ? Number(paidRaw) : undefined
+      return { status: this.mapStatus(rawStatus), rawStatus, paymentId: data.numeroTransaccion ?? undefined, amountCop }
     } catch {
       return null
     }
@@ -281,7 +375,8 @@ export class TuCompraGateway implements PaymentGateway {
 
   mapStatus(rawStatus: string): PaymentStatus {
     const s = (rawStatus || '').toUpperCase()
-    if (s === 'TRUE' || s === '0' || /APROB|CONFIRM|PAGAD|EXITOS|ACEPT/.test(s)) return 'approved'
+    // 'OK' = transacción exitosa (PSE con banco aprobado, Daviplata finalizado, etc.)
+    if (s === 'TRUE' || s === '0' || s === 'OK' || /APROB|CONFIRM|PAGAD|EXITOS|ACEPT/.test(s)) return 'approved'
     if (s === '1' || /RECHAZ|ANUL|FALL|CANCEL|DECLIN/.test(s)) return 'rejected'
     return 'pending' // PENDIENTE, '2', etc.
   }

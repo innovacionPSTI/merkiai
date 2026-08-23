@@ -131,3 +131,28 @@ ALTER TABLE payment_config
   ADD COLUMN IF NOT EXISTS tucompra_api_url    TEXT,
   ADD COLUMN IF NOT EXISTS tucompra_public_key TEXT,
   ADD COLUMN IF NOT EXISTS tucompra_methods    JSONB NOT NULL DEFAULT '[]';
+
+-- ── 28 · Tu Compra — seguimiento de transacción + llave de firma ─────────────
+ALTER TABLE orders
+  ADD COLUMN IF NOT EXISTS tucompra_codigo_seguimiento TEXT,
+  ADD COLUMN IF NOT EXISTS tucompra_numero_transaccion TEXT;
+ALTER TABLE payment_config
+  ADD COLUMN IF NOT EXISTS tucompra_encryption_key TEXT;
+
+-- ── 29 · Endurecimiento de webhooks: idempotencia + firma MP ─────────────────
+CREATE TABLE IF NOT EXISTS processed_webhook_events (
+  provider   TEXT        NOT NULL,
+  event_id   TEXT        NOT NULL,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+  PRIMARY KEY (provider, event_id)
+);
+CREATE INDEX IF NOT EXISTS processed_webhook_events_created_at_idx
+  ON processed_webhook_events (created_at);
+ALTER TABLE payment_config
+  ADD COLUMN IF NOT EXISTS mercadopago_webhook_secret TEXT;
+
+-- ── Coherencia de RLS: habilitar en las tablas solo-service_role que faltaban ──
+-- (admin_config e idempotencia de webhooks). Sin política pública → deniega anon;
+-- el service_role omite RLS. Es idempotente (re-ejecutar ENABLE no falla).
+ALTER TABLE admin_config             ENABLE ROW LEVEL SECURITY;
+ALTER TABLE processed_webhook_events ENABLE ROW LEVEL SECURITY;

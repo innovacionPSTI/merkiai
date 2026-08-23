@@ -23,8 +23,10 @@ interface PaymentConfigData {
   has_wompi_integrity_secret: boolean
   has_wompi_events_secret: boolean
   has_mercadopago_access_token: boolean
+  has_mercadopago_webhook_secret: boolean
   has_tucompra_password: boolean
   has_tucompra_public_key: boolean
+  has_tucompra_encryption_key: boolean
   has_bold_secret_key: boolean
 }
 
@@ -47,8 +49,8 @@ const PROVIDER_LABEL: Record<ActiveProvider, string> = {
 
 const STRING_FIELDS = [
   'wompi_public_key', 'wompi_private_key', 'wompi_integrity_secret', 'wompi_events_secret',
-  'mercadopago_access_token', 'mercadopago_public_key',
-  'tucompra_user', 'tucompra_password', 'tucompra_terminal', 'tucompra_api_url', 'tucompra_public_key',
+  'mercadopago_access_token', 'mercadopago_public_key', 'mercadopago_webhook_secret',
+  'tucompra_user', 'tucompra_password', 'tucompra_terminal', 'tucompra_api_url', 'tucompra_public_key', 'tucompra_encryption_key',
   'bold_api_key', 'bold_secret_key',
 ]
 
@@ -121,19 +123,20 @@ const TC_URLS = {
   prod: 'https://ws2.tucompra.com.co/tcWSDRest/api',
 }
 
-/** Catálogo de medios de pago de Tu Compra (modalidad integrador). */
+/** Catálogo de medios de pago de Tu Compra (modalidad integrador).
+ *  Tarjeta se excluye a propósito: su flujo exige cifrar los datos de tarjeta en
+ *  el sitio (RSA), lo que rompe PCI SAQ A. */
 const TC_METHODS: { tipo: string; label: string; icon: string; desc: string; pci?: boolean }[] = [
   { tipo: 'pse',          label: 'PSE',          icon: '🏦', desc: 'Débito bancario en línea (redirección al banco)' },
   { tipo: 'nequi',        label: 'Nequi',        icon: '📲', desc: 'Billetera móvil — notificación push al celular' },
-  { tipo: 'daviplata',    label: 'Daviplata',    icon: '📱', desc: 'Billetera móvil Davivienda' },
-  { tipo: 'referenciado', label: 'Referenciado', icon: '🧾', desc: 'Efectivo en corresponsales / bancos' },
-  { tipo: 'tarjeta',      label: 'Tarjeta',      icon: '💳', desc: 'Crédito/débito — requiere cifrado RSA (afecta PCI SAQ A)', pci: true },
+  { tipo: 'daviplata',    label: 'Daviplata',    icon: '📱', desc: 'Billetera móvil Davivienda (confirmación por OTP)' },
+  { tipo: 'referenciado', label: 'Referenciado', icon: '🧾', desc: 'Efectivo en corresponsales / bancos (comprobante)' },
 ]
 
 /** IDs de método por entorno (difieren demo/prod — Tabla de Valores Tu Compra). */
 const TC_IDS: Record<'demo' | 'prod', Record<string, string>> = {
-  demo: { pse: '41', nequi: '72', daviplata: '71', referenciado: '45', tarjeta: '37' },
-  prod: { pse: '3',  nequi: '72', daviplata: '71', referenciado: '45', tarjeta: '2'  },
+  demo: { pse: '41', nequi: '72', daviplata: '71', referenciado: '45' },
+  prod: { pse: '3',  nequi: '72', daviplata: '71', referenciado: '45' },
 }
 
 function tucompraEnv(apiUrl: string | null | undefined): Env {
@@ -550,6 +553,7 @@ export default function PaymentConfigForm({ initialConfig }: Props) {
           <p className="font-brand text-xs text-brand-primary/40 mt-1">Usada en el frontend (checkout Brick). Panel MP → Credenciales.</p>
         </div>
         <SecretInput label="Access Token (TEST-… o APP_USR-…)" name="mercadopago_access_token" hasExisting={cfg?.has_mercadopago_access_token ?? false} placeholder="TEST-abc123… o APP_USR-abc123…" hint="Credencial privada de servidor. TEST-… = sandbox, APP_USR-… = producción." />
+        <SecretInput label="Clave secreta del webhook (x-signature)" name="mercadopago_webhook_secret" hasExisting={cfg?.has_mercadopago_webhook_secret ?? false} placeholder="Clave secreta de la firma" hint="Verifica la firma x-signature del webhook. Panel MP → Webhooks → Configurar notificaciones → Clave secreta. Opcional (el estado se re-consulta a la API)." />
         <WebhookUrl provider="mercadopago" note="Pégala en MercadoPago → Tus integraciones → Webhooks (notificaciones)." />
         <ActivateRow provider="mercadopago" />
       </div>
@@ -571,7 +575,7 @@ export default function PaymentConfigForm({ initialConfig }: Props) {
           <input type="text" name="tucompra_terminal" defaultValue={cfg?.tucompra_terminal ?? ''} placeholder="Terminal / Id Sistema"
             className="w-full border border-brand-primary/20 rounded-xl px-4 py-2.5 font-mono text-sm focus:outline-none focus:border-brand-primary" />
         </div>
-        <SecretInput label="Llave pública (opcional)" name="tucompra_public_key" hasExisting={cfg?.has_tucompra_public_key ?? false} placeholder="Llave pública RSA" hint="Solo para pago de tarjeta directo (Cifrado de Valores). No se usa en el flujo de checkout redirect." />
+        <SecretInput label="Llave de encriptación (firma)" name="tucompra_encryption_key" hasExisting={cfg?.has_tucompra_encryption_key ?? false} placeholder="Llave de encriptación (MD5)" hint="La «Llave de encriptación» que entrega Tu Compra. Verifica la firma de la URL de Confirmación. Habilita «Firma TuCompra» en la sonda del panel." />
 
         {/* Entorno + medios de pago (visual) → hidden tucompra_api_url / tucompra_methods_json */}
         <TuCompraMethods

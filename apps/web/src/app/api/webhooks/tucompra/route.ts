@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { createServerClient, getPaymentConfig, getStoreConfig, TuCompraGateway, applyStockForOrder } from '@vps/database'
+import { createServerClient, getPaymentConfig, getStoreConfig, TuCompraGateway, applyStockForOrder, markWebhookEventProcessed } from '@vps/database'
+import { amountCoversOrder } from '@/lib/payment-guards'
 import { sendOrderConfirmation, buildEmailConfig } from '@/lib/email'
 import { createShipmentForOrder } from '@/lib/shipping/shipments'
 import type { Order, Database } from '@vps/database'
@@ -37,20 +38,69 @@ export async function POST(req: NextRequest) {
     terminal:  paymentConfig.tucompra_terminal,
     apiUrl:    paymentConfig.tucompra_api_url ?? undefined,
     publicKey: paymentConfig.tucompra_public_key ?? undefined,
+    encryptionKey: paymentConfig.tucompra_encryption_key ?? undefined,
   })
 
   const webhookData = gateway.extractWebhookData(rawBody)
   if (!webhookData) return NextResponse.json({ ok: true })
   const orderReference = webhookData.orderReference
 
+  // Verificación de firma (defensa en profundidad). Si la firma viene y NO coincide,
+  // se rechaza. Si no hay llave/firma, `verify` devuelve null y seguimos: el estado
+  // real lo confirma la re-consulta autenticada por API (fuente de verdad).
+  const fields = ((): Record<string, string> => {
+    const out: Record<string, string> = {}
+    try {
+      const s = rawBody.trim()
+      if (s.startsWith('{')) {
+        const j = JSON.parse(s) as Record<string, unknown>
+        for (const k of Object.keys(j)) out[k.toLowerCase()] = String(j[k] ?? '')
+      } else {
+        new URLSearchParams(s).forEach((v, k) => { out[k.toLowerCase()] = v })
+      }
+    } catch { /* ignore */ }
+    return out
+  })()
+  const firma = fields['firmatucompra']
+  if (firma) {
+    const valid = gateway.verifyConfirmationSignature({
+      codigoFactura: fields['codigofactura'] ?? orderReference,
+      valorFactura: fields['valorfactura'] ?? '',
+      codigoAutorizacion: fields['codigoautorizacion'] ?? '',
+      firmaTuCompra: firma,
+    })
+    if (valid === false) {
+      console.warn(`[webhook/tucompra] Firma inválida para reference="${orderReference}"`)
+      return NextResponse.json({ error: 'invalid signature' }, { status: 401 })
+    }
+  }
+
+  // codigoSeguimiento persistido (obligatorio para consultarEstadoTransaccion).
+  const supabasePre = createServerClient()
+  const { data: preOrder } = await supabasePre
+    .from('orders')
+    .select('tucompra_codigo_seguimiento, total')
+    .eq('order_number', orderReference)
+    .maybeSingle()
+
   // Estado autoritativo: re-consulta a la API (no se confía en el payload).
-  const status = await gateway.queryStatusByReference(orderReference)
+  const status = await gateway.queryStatusByReference(orderReference, preOrder?.tucompra_codigo_seguimiento ?? '')
   if (!status) {
     console.warn(`[webhook/tucompra] Sin estado para reference="${orderReference}"; se ignora`)
     return NextResponse.json({ ok: true, warning: 'no_status' })
   }
-  const paymentStatus = status.status
+  let paymentStatus = status.status
   const paymentId = status.paymentId
+
+  // Guarda anti-subpago: el monto pagado lo da la API (consultarEstadoTransaccion).
+  if (paymentStatus === 'approved' && preOrder && !amountCoversOrder(status.amountCop, preOrder.total)) {
+    console.warn(`[webhook/tucompra] SUBPAGO reference="${orderReference}" pagado=${status.amountCop} total=${preOrder.total}; se deja pendiente`)
+    paymentStatus = 'pending'
+  }
+
+  // Idempotencia por id de evento (referencia + estado resuelto).
+  const { duplicate } = await markWebhookEventProcessed('tucompra', `${orderReference}:${paymentStatus}`)
+  if (duplicate) return NextResponse.json({ ok: true, idempotent: true })
 
   const supabase = createServerClient()
   const updatePayload: OrderUpdate = {

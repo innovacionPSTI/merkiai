@@ -1,3 +1,5 @@
+import { createHmac, timingSafeEqual } from 'crypto'
+
 const MP_API_BASE = 'https://api.mercadopago.com'
 
 export interface MPItem {
@@ -92,6 +94,48 @@ export async function getMercadoPagoPayment(
   }
 
   return res.json()
+}
+
+/**
+ * Verifica la firma `x-signature` de MercadoPago (defensa en profundidad; el control
+ * primario es la re-consulta del pago a la API de MP).
+ * Doc: https://www.mercadopago.com/developers/es/docs/your-integrations/notifications/webhooks
+ *
+ * `x-signature` = "ts=<unix>,v1=<hmac_hex>"; el manifest es
+ *   `id:<data.id>;request-id:<x-request-id>;ts:<ts>;`
+ * y v1 = HMAC-SHA256(manifest, secret) en hex.
+ *
+ * Devuelve `true`/`false` si se puede verificar, o `null` si no hay secreto
+ * configurado (se omite y se confía en la re-consulta).
+ */
+export function verifyMercadoPagoSignature(params: {
+  xSignature: string | null
+  xRequestId: string | null
+  dataId: string
+  secret: string | null | undefined
+}): boolean | null {
+  const { xSignature, xRequestId, dataId, secret } = params
+  if (!secret) return null
+  if (!xSignature || !dataId) return false
+
+  const parts: Record<string, string> = {}
+  for (const kv of xSignature.split(',')) {
+    const idx = kv.indexOf('=')
+    if (idx === -1) continue
+    parts[kv.slice(0, idx).trim()] = kv.slice(idx + 1).trim()
+  }
+  const ts = parts['ts']
+  const v1 = parts['v1']
+  if (!ts || !v1) return false
+
+  // MP recomienda usar el data.id en minúsculas si es alfanumérico.
+  const id = /^[a-zA-Z0-9]+$/.test(dataId) ? dataId.toLowerCase() : dataId
+  const manifest = `id:${id};request-id:${xRequestId ?? ''};ts:${ts};`
+  const expected = createHmac('sha256', secret).update(manifest).digest('hex')
+  const a = Buffer.from(expected, 'utf-8')
+  const b = Buffer.from(v1, 'utf-8')
+  if (a.length !== b.length) return false
+  try { return timingSafeEqual(a, b) } catch { return false }
 }
 
 /** Mapea el status de MercadoPago a nuestros valores internos */

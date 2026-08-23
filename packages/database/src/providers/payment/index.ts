@@ -86,6 +86,7 @@ export function getPaymentGateway(
         terminal:  config.tucompra_terminal,
         apiUrl:    config.tucompra_api_url ?? undefined,
         publicKey: config.tucompra_public_key ?? undefined,
+        encryptionKey: config.tucompra_encryption_key ?? undefined,
       })
     }
 

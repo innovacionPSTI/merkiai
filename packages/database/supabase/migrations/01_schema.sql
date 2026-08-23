@@ -231,6 +231,10 @@ CREATE TABLE IF NOT EXISTS orders (
   shipping_cost_final   INT,
   pickup_id             TEXT,
   pickup_date           DATE,
+  -- Tu Compra (integrador): seguimiento de la transacción para consultar estado
+  -- y finalizar Daviplata (finalizaPagoDaviplata requiere el codigoSeguimiento)
+  tucompra_codigo_seguimiento TEXT,
+  tucompra_numero_transaccion TEXT,
   created_at            TIMESTAMPTZ NOT NULL DEFAULT now(),
   updated_at            TIMESTAMPTZ NOT NULL DEFAULT now()
 );
@@ -406,6 +410,7 @@ CREATE TABLE IF NOT EXISTS payment_config (
   -- MercadoPago
   mercadopago_access_token TEXT,
   mercadopago_public_key   TEXT,
+  mercadopago_webhook_secret TEXT,  -- verificación de firma x-signature
   -- Tu Compra
   tucompra_merchant_id     TEXT,          -- [deprecated] modelo antiguo
   tucompra_secret_key      TEXT,          -- [deprecated] modelo antiguo
@@ -416,6 +421,7 @@ CREATE TABLE IF NOT EXISTS payment_config (
   tucompra_terminal        TEXT,          -- terminal (Id Sistema)
   tucompra_api_url         TEXT,          -- URL base (demo/prod) configurable
   tucompra_public_key      TEXT,          -- llave pública RSA (solo tarjeta directa)
+  tucompra_encryption_key  TEXT,          -- "Llave de encriptación" MD5 → verificar firmaTuCompra
   -- Medios habilitados + su id de MetodoPago (difieren demo/prod → configurable).
   -- Ej: [{"tipo":"pse","id":"41","enabled":true},{"tipo":"nequi","id":"72","enabled":true}]
   tucompra_methods         JSONB     NOT NULL DEFAULT '[]',
@@ -430,6 +436,16 @@ CREATE TABLE IF NOT EXISTS payment_config (
 INSERT INTO payment_config (id) VALUES (1) ON CONFLICT DO NOTHING;
 
 COMMENT ON TABLE payment_config IS 'Singleton de credenciales de pasarelas de pago (Wompi, MercadoPago, Tu Compra, Bold). Una sola pasarela activa a la vez vía active_provider. Acceso exclusivo vía service role.';
+
+-- Idempotencia de webhooks de pago: cada evento procesado se registra; un reintento
+-- con el mismo (provider,event_id) choca con la PK (23505) y se ignora.
+CREATE TABLE IF NOT EXISTS processed_webhook_events (
+  provider   TEXT        NOT NULL,
+  event_id   TEXT        NOT NULL,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+  PRIMARY KEY (provider, event_id)
+);
+CREATE INDEX IF NOT EXISTS processed_webhook_events_created_at_idx ON processed_webhook_events (created_at);
 
 -- ─── ADMIN CONFIG ──────────────────────────────────────────────────────────────
 -- Apariencia del panel de administración.
@@ -712,6 +728,8 @@ ALTER TABLE shipping_config       ENABLE ROW LEVEL SECURITY;
 ALTER TABLE shipping_profiles     ENABLE ROW LEVEL SECURITY;
 ALTER TABLE store_config          ENABLE ROW LEVEL SECURITY;
 ALTER TABLE payment_config        ENABLE ROW LEVEL SECURITY;
+ALTER TABLE admin_config          ENABLE ROW LEVEL SECURITY;   -- solo service_role (sin política pública)
+ALTER TABLE processed_webhook_events ENABLE ROW LEVEL SECURITY; -- ledger de idempotencia; solo service_role
 ALTER TABLE pages                 ENABLE ROW LEVEL SECURITY;
 ALTER TABLE nav_items             ENABLE ROW LEVEL SECURITY;
 ALTER TABLE page_sections         ENABLE ROW LEVEL SECURITY;

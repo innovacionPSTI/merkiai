@@ -12,6 +12,7 @@ import { createServerClient, getPaymentConfig, getStoreConfig, TuCompraGateway, 
 import type { Order, Database } from '@vps/database'
 import { sendOrderConfirmation, buildEmailConfig } from '@/lib/email'
 import { createShipmentForOrder } from '@/lib/shipping/shipments'
+import { amountCoversOrder } from '@/lib/payment-guards'
 
 type OrderUpdate = Database['public']['Tables']['orders']['Update']
 
@@ -28,7 +29,7 @@ export async function reconcileTuCompraOrder(orderNumber: string): Promise<Recon
 
   const { data: order } = await supabase
     .from('orders')
-    .select('payment_method, payment_status')
+    .select('payment_method, payment_status, tucompra_codigo_seguimiento, total')
     .eq('order_number', orderNumber)
     .single()
 
@@ -52,9 +53,15 @@ export async function reconcileTuCompraOrder(orderNumber: string): Promise<Recon
     apiUrl:   config.tucompra_api_url ?? undefined,
   })
 
-  const result = await gateway.queryStatusByReference(orderNumber)
+  const result = await gateway.queryStatusByReference(orderNumber, order.tucompra_codigo_seguimiento ?? '')
   if (!result) return { ok: true, status: 'pending', reason: 'no_data' }
   if (result.status === 'pending') return { ok: true, status: 'pending' }
+
+  // Guarda anti-subpago: si el pago aprobado no cubre el total, se deja pendiente.
+  if (result.status === 'approved' && !amountCoversOrder(result.amountCop, order.total)) {
+    console.warn(`[tucompra-reconcile] SUBPAGO order="${orderNumber}" pagado=${result.amountCop} total=${order.total}; se deja pendiente`)
+    return { ok: true, status: 'pending' }
+  }
 
   const paymentStatus = result.status
 

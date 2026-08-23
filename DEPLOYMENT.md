@@ -134,33 +134,35 @@ git push
 
 ## 4. Migraciones en Supabase (producción)
 
-Antes de desplegar, el schema de producción debe estar al día. Ejecutar en el **SQL Editor** del proyecto Supabase de producción, en este orden exacto:
+Antes de desplegar, el schema de producción debe estar al día. **Solo existen 2 archivos de migración** (`01_schema.sql` y `upgrade.sql`). Ver también `packages/database/supabase/migrations/README.md`.
 
-> **Consejo:** Copia el contenido de cada archivo `.sql` y pégalo en el SQL Editor de Supabase → **Run**.
+> **Consejo:** Copia el contenido del archivo `.sql` y pégalo en el SQL Editor de Supabase → **Run**.
+
+**Despliegue NUEVO (BD desde cero):**
 
 | # | Archivo | Qué hace |
 |---|---------|----------|
-| 1 | `1_initial_schema.sql` | Tablas base (profiles, products, orders, blog, etc.), RLS, políticas públicas, seed de categorías y banners |
-| 2 | `2_shipping_config.sql` | Tabla `shipping_config` (singleton) + RLS |
-| 3 | `3_banner_mobile_image.sql` | Columna `image_url_mobile` en banners |
-| 4 | `4_store_config.sql` | Tabla `store_config` con `logo_url` (singleton) + RLS |
-| 5 | `5_payment_config.sql` | Tabla `payment_config` para credenciales de Wompi y MercadoPago + RLS |
-| 6 | `6_email_config.sql` | Campos `resend_api_key` y `resend_from_email` en `store_config` |
-| 7 | `7_shipping_profiles.sql` | Tabla `shipping_profiles` (perfil de envío del usuario web) + RLS |
-| 8 | `8_customers.sql` | Tabla `customers` (mirror de compradores web desde Stack Auth); FK `orders.customer_id → customers.id` |
-| 9 | `9_customer_addresses.sql` | Tabla `customer_addresses` (direcciones guardadas por cliente para pre-llenar checkout) |
+| 1 | `migrations/01_schema.sql` | **Esquema canónico completo**: todas las tablas (incl. `payment_config`, `orders`, `processed_webhook_events`), columnas, constraints, índices, triggers y RPC |
+| 2 | `seeds/01_config.sql` | Tema por defecto, tipos de variante, categorías, navegación base |
+| 3 | `seeds/02_content.sql` | Páginas, secciones e ítems del CMS |
+
+**BD EXISTENTE (actualizar una instalación previa):**
+
+| # | Archivo | Qué hace |
+|---|---------|----------|
+| 1 | `migrations/upgrade.sql` | Parche **idempotente** consolidado hasta la migración 29 (favicon, admin_config, proveedores, `active_provider`+Bold, inventario, número de orden, **Tu Compra REST/integrador** — seguimiento + llave de firma —, **endurecimiento de webhooks** — `processed_webhook_events` + `mercadopago_webhook_secret`). Seguro re-ejecutarlo. |
 
 ### Verificar el schema
 
-Después de aplicar las migraciones, verificar en **Table Editor** que existen:
+Después de aplicar, verificar en **Table Editor** que existen (entre otras):
 
 - `profiles`, `categories`, `products`, `product_variants`
-- `orders`, `banners`, `blog_posts`, `newsletter_subscribers`
-- `shipping_config` (con una fila id=1)
-- `store_config` (con una fila id=1)
-- `payment_config` (con una fila id=1)
-- `shipping_profiles`
-- `customers`, `customer_addresses`
+- `orders` (con `tucompra_codigo_seguimiento`, `tucompra_numero_transaccion`)
+- `banners`, `blog_posts`, `newsletter_subscribers`
+- `shipping_config`, `store_config`, `payment_config` (una fila id=1 cada una)
+- `payment_config` con `active_provider`, `tucompra_*`, `bold_*`, `mercadopago_webhook_secret`
+- `processed_webhook_events` (idempotencia de webhooks)
+- `shipping_profiles`, `customers`, `customer_addresses`
 
 Verificar que RLS esté activo en todas las tablas:
 
@@ -394,6 +396,17 @@ https://tienda.example.com/api/webhooks/skydropx
 | `shipment.delivered` | `delivered` |
 | `shipment.exception` | `exception` |
 
+### Webhooks de pago
+
+Además del de envíos, registra la **URL de webhook de la pasarela activa** en su panel (la URL exacta aparece copiable en Admin → Pagos):
+
+- Wompi → `https://<sitio>/api/webhooks/wompi` (Eventos)
+- MercadoPago → `https://<sitio>/api/webhooks/mercadopago` (Notificaciones/Webhooks)
+- Bold → `https://<sitio>/api/webhooks/bold`
+- Tu Compra → `https://<sitio>/api/webhooks/tucompra` como **URL de Confirmación**, y **URL de Retorno** = `https://<sitio>/checkout/confirmation`
+
+Seguridad de estos webhooks: firma verificada por pasarela + re-consulta a la API, idempotencia por id de evento y verificación de monto (anti-subpago). Detalle en `Tu-Compra-Integracion-Referencia.md` §11.5.
+
 ---
 
 ## 10. Pipeline CI/CD automático
@@ -578,13 +591,13 @@ Completar antes de hacer el primer deploy a producción:
 
 - [ ] `pnpm lint` pasa sin errores en todas las apps
 - [ ] `pnpm type-check` pasa sin errores de TypeScript
-- [ ] `pnpm test` — todos los 227 tests pasan
+- [ ] `pnpm test` — todas las suites pasan (database 160 · web 316 · admin 165)
 - [ ] No hay `console.log` de debug en el código
 - [ ] No hay credenciales hardcodeadas en el código
 
 ### Supabase (producción)
 
-- [ ] Las 9 migraciones SQL aplicadas correctamente (1 → 9)
+- [ ] Schema aplicado: `01_schema.sql` (BD nueva) o `upgrade.sql` (BD existente, hasta la migración 29)
 - [ ] RLS activado en todas las tablas (verificar en **Authentication → Policies**)
 - [ ] Buckets de Storage creados: `products`, `banners`, `blog`, `private`
 - [ ] Políticas de Storage configuradas (público/privado según la tabla)
@@ -699,17 +712,18 @@ Configurar alertas en Vercel → **Observability** → **Alerts** para recibir n
 | `NEXT_PUBLIC_SITE_URL` | web | URL pública del sitio | `https://tienda.example.com` |
 | `NEXT_PUBLIC_ADMIN_URL` | admin | URL del panel admin | `https://admin.tienda.example.com` |
 
-### Pasarelas de pago — *(pendiente de integrar)*
+### Pasarelas de pago — *(configuradas desde el admin, NO por variables de entorno)*
 
-| Variable | App | Descripción |
-|----------|-----|-------------|
-| `WOMPI_PUBLIC_KEY` | web | Clave pública de Wompi |
-| `WOMPI_PRIVATE_KEY` | web | Clave privada de Wompi (**secreta**) |
-| `WOMPI_EVENTS_SECRET` | web | Secret para validar webhooks de Wompi (**secreto**) |
-| `MERCADOPAGO_ACCESS_TOKEN` | web | Token de acceso de MercadoPago (**secreto**) |
-| `NEXT_PUBLIC_MERCADOPAGO_PUBLIC_KEY` | web | Clave pública de MercadoPago |
+Las credenciales de las pasarelas **no** son variables de entorno: se guardan en la tabla `payment_config` (singleton, solo `service_role`) y se gestionan en **Admin → Configuración → Pagos**. Una sola pasarela activa a la vez (`active_provider`).
 
-> Obtener en: [Panel de Wompi](https://comercios.wompi.co) y [Panel de MercadoPago](https://www.mercadopago.com.co/developers)
+| Pasarela | Campos que se configuran en el admin |
+|----------|--------------------------------------|
+| Wompi | Llave pública, privada, de integridad y de eventos (webhook) |
+| MercadoPago | Public Key, Access Token, **clave secreta del webhook** (`x-signature`) |
+| Tu Compra (integrador) | Usuario, clave, terminal, URL base (Demo/Prod), **llave de encriptación** (firma) + medios habilitados (PSE/Nequi/Daviplata/Referenciado) |
+| Bold | Llave de identidad (API key), llave secreta (webhook), sandbox |
+
+> Único requisito de entorno: `NEXT_PUBLIC_SITE_URL` (para construir las URLs de webhook/retorno que se pegan en cada panel). Registrar en cada pasarela: `https://<sitio>/api/webhooks/{wompi|mercadopago|tucompra|bold}` (Tu Compra: como "URL de Confirmación"; y "URL de Retorno" = `https://<sitio>/checkout/confirmation`).
 
 ### Emails con Resend — *(pendiente de integrar)*
 

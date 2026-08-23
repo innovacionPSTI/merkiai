@@ -49,7 +49,11 @@ src/app/
 ├── sitemap.ts              → /sitemap.xml (dinámico: productos + blog)
 ├── robots.ts               → /robots.txt
 └── api/
-    ├── checkout/route.ts
+    ├── checkout/route.ts               ← crea pedido + inicia pago (pasarela del servidor)
+    ├── checkout/gateways/route.ts      ← pasarelas activas + medios de Tu Compra
+    ├── checkout/status/route.ts        ← estado de pago del pedido (confirmación)
+    ├── checkout/tucompra/             ← banks · reconcile · finalize-daviplata (OTP)
+    ├── checkout/bold/reconcile/route.ts
     ├── newsletter/route.ts
     ├── shipping/rates/route.ts
     ├── account/
@@ -58,7 +62,7 @@ src/app/
     │       ├── route.ts                ← GET/POST direcciones guardadas
     │       └── [id]/route.ts           ← PATCH/DELETE dirección por ID
     ├── draft/enable/route.ts           ← Blog Draft Mode (cookie __vps_draft)
-    └── webhooks/skydropx/route.ts
+    └── webhooks/                       ← wompi · mercadopago · tucompra · bold · skydropx
 ```
 
 ### Estrategia de renderizado

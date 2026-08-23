@@ -89,6 +89,9 @@ export class BoldGateway implements PaymentGateway {
       if (!signature) return false
 
       const secret  = this.cfg.sandbox ? '' : this.cfg.secretKey
+      // Fail-closed en producción: sin llave secreta no se puede verificar la firma
+      // (cualquiera podría forjar el HMAC con llave vacía). En sandbox se permite ''.
+      if (!this.cfg.sandbox && !secret) return false
       const encoded = Buffer.from(rawBody, 'utf-8').toString('base64')
       const hashed  = createHmac('sha256', secret).update(encoded).digest('hex')
 
@@ -155,14 +158,15 @@ export class BoldGateway implements PaymentGateway {
       const evt = (typeof body === 'string' ? JSON.parse(body) : body) as {
         type?: string
         subject?: string
-        data?: { payment_id?: string; metadata?: { reference?: string } }
+        data?: { payment_id?: string; amount?: { total?: number }; metadata?: { reference?: string } }
       }
       const orderReference = evt.data?.metadata?.reference
       const rawStatus      = evt.type
       const paymentId      = evt.data?.payment_id ?? evt.subject ?? undefined
+      const amountCop      = typeof evt.data?.amount?.total === 'number' ? evt.data.amount.total : undefined
 
       if (!orderReference || !rawStatus) return null
-      return { orderReference, rawStatus, paymentId: paymentId ?? undefined }
+      return { orderReference, rawStatus, paymentId: paymentId ?? undefined, amountCop }
     } catch {
       return null
     }

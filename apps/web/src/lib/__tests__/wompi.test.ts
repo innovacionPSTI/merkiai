@@ -3,7 +3,7 @@
  *
  * Covers:
  *   buildWompiCheckoutUrl  — estructura de URL, firma SHA256
- *   verifyWompiWebhook     — firma válida, inválida, sin secret (bypass)
+ *   verifyWompiWebhook     — firma válida, inválida, sin secret (fail-closed)
  *   mapWompiStatus         — todos los estados de Wompi
  */
 
@@ -11,6 +11,7 @@ import { createHash } from 'crypto'
 import {
   buildWompiCheckoutUrl,
   verifyWompiWebhook,
+  isWompiTimestampFresh,
   mapWompiStatus,
 } from '../wompi'
 
@@ -116,9 +117,29 @@ describe('verifyWompiWebhook', () => {
     expect(verifyWompiWebhook(alteredPayload, timestamp, checksum, secret)).toBe(false)
   })
 
-  it('retorna true (bypass) cuando eventsSecret está vacío', () => {
-    // Sin secret configurado, se omite la verificación para no bloquear el webhook
-    expect(verifyWompiWebhook(payload, timestamp, 'cualquier_cosa', '')).toBe(true)
+  it('retorna false (fail-closed) cuando eventsSecret está vacío', () => {
+    // Endurecimiento: sin secret NO se puede verificar → se rechaza (antes hacía
+    // bypass, lo que permitía forjar un evento "APPROVED" y validar un pago falso).
+    expect(verifyWompiWebhook(payload, timestamp, 'cualquier_cosa', '')).toBe(false)
+    const checksum = computeChecksum(payload, timestamp, secret)
+    expect(verifyWompiWebhook(payload, timestamp, checksum, '')).toBe(false)
+  })
+
+  it('retorna false cuando falta el checksum', () => {
+    expect(verifyWompiWebhook(payload, timestamp, '', secret)).toBe(false)
+  })
+})
+
+describe('isWompiTimestampFresh', () => {
+  it('acepta un timestamp reciente', () => {
+    expect(isWompiTimestampFresh(String(Date.now()))).toBe(true)
+  })
+  it('rechaza un timestamp antiguo (replay)', () => {
+    expect(isWompiTimestampFresh(String(Date.now() - 10 * 60_000))).toBe(false)
+  })
+  it('rechaza un timestamp inválido', () => {
+    expect(isWompiTimestampFresh('')).toBe(false)
+    expect(isWompiTimestampFresh('abc')).toBe(false)
   })
 })
 

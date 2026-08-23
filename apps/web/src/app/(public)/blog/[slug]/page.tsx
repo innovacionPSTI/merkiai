@@ -5,6 +5,7 @@ import Link from 'next/link'
 import type { Metadata } from 'next'
 import ShareWhatsApp from '@/components/blog/ShareWhatsApp'
 import { markdownToHtml } from '@/lib/markdown'
+import { buildArticleJsonLd } from '@/lib/json-ld'
 
 const DRAFT_COOKIE = '__vps_draft'
 
@@ -74,29 +75,18 @@ export default async function BlogPostPage({ params, searchParams }: Props) {
     .then((posts) => posts.filter((p) => p.id !== post.id).slice(0, 2))
     .catch(() => [])
 
-  // JSON-LD — Article schema
-  const siteUrl = (process.env.NEXT_PUBLIC_SITE_URL ?? '').replace(/\/$/, '')
-  const jsonLd = {
-    '@context': 'https://schema.org',
-    '@type': 'Article',
-    headline: post.title,
-    ...(post.excerpt ? { description: post.excerpt } : {}),
-    ...(post.cover_image ? { image: post.cover_image } : {}),
-    datePublished: post.published_at ?? post.created_at,
-    dateModified: post.published_at ?? post.created_at,
-    url: `${siteUrl}/blog/${post.slug}`,
-    author: {
-      '@type': 'Organization',
-      name: storeConfig?.store_name ?? 'Commerce CMS',
-      url: siteUrl,
-    },
-    publisher: {
-      '@type': 'Organization',
-      name: storeConfig?.store_name ?? 'Commerce CMS',
-      url: siteUrl,
-      ...(storeConfig?.logo_url ? { logo: { '@type': 'ImageObject', url: storeConfig.logo_url } } : {}),
-    },
-  }
+  // JSON-LD — Article schema (lógica pura en @/lib/json-ld)
+  const jsonLd = buildArticleJsonLd({
+    title: post.title,
+    excerpt: post.excerpt,
+    cover_image: post.cover_image,
+    published_at: post.published_at,
+    created_at: post.created_at,
+    slug: post.slug,
+    storeName: storeConfig?.store_name,
+    logoUrl: storeConfig?.logo_url,
+    siteUrl: process.env.NEXT_PUBLIC_SITE_URL,
+  })
 
   return (
     <>

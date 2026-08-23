@@ -5,6 +5,7 @@ export * from './lib/email'
 export * from './lib/stock'
 export * from './lib/bold-reconcile'
 export * from './lib/tucompra-reconcile'
+export * from './lib/webhook-idempotency'
 
 // ─── Provider abstractions ────────────────────────────────────────────────────
 export * from './providers/payment/index'

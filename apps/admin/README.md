@@ -83,7 +83,7 @@ src/app/
 │   ├── page.tsx                  → redirige a /configuracion/general
 │   ├── general/page.tsx          → identidad + redes + mantenimiento + analytics
 │   ├── envios/page.tsx           → proveedor de envíos + Skydropx + envío gratis
-│   ├── pagos/page.tsx            → Wompi + MercadoPago
+│   ├── pagos/page.tsx            → pasarela activa + Demo/Prod: Wompi, MercadoPago, Tu Compra, Bold
 │   ├── emails/page.tsx           → Resend
 │   ├── legal/page.tsx            → Términos + Privacidad (Markdown)
 │   └── temas/

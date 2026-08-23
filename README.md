@@ -46,7 +46,7 @@ El proyecto se compone de **dos aplicaciones Next.js** en un monorepo Turborepo:
 
 ### Roadmap (dirección del producto)
 
-El **MVP está completo** (E1–E15, sin IA): catálogo, carrito, checkout multi-pasarela, pedidos, CMS, envíos, emails y panel de administración, con 181 features cubiertas por pruebas. Sobre esa base hay un **roadmap de expansión** de 92 historias organizado en 18 épicas y 8 olas de entrega (fuente de verdad: `PRODUCT_BACKLOG.md` §2.0, §11 y §11.1):
+El **MVP está completo** (E1–E15, sin IA): catálogo, carrito, checkout multi-pasarela, pedidos, CMS, envíos, emails y panel de administración, con 183 features cubiertas por pruebas (287 ítems totales; ver tabla de cobertura). Sobre esa base hay un **roadmap de expansión** de 99 historias 🔲 organizado en 18 épicas y 8 olas de entrega (fuente de verdad: `PRODUCT_BACKLOG.md` §2.0, §11 y §11.1):
 
 - **E16 · Aplicación inteligente (IA)** — proveedor de IA *swappable* + captura de eventos + vector store, sobre los que corren asistente de compra, búsqueda visual, personalización, clustering, patrones de compra, generación de imágenes y detección de fraude.
 - **E17 · Plataforma multi-tienda (control plane)** — multi-tenant (aislamiento por `store_id`/RLS, resolución por dominio), consola de administración de todos los tenants, **planes y entitlements** (habilitar funcionalidades por plan) y **gestión de dominios** (dominios web personalizados con ciclo DNS→certificado→CDN→activo, y dominios de envío de email).
@@ -70,7 +70,7 @@ Además, refuerzos transversales: reseñas y búsqueda de catálogo, motor de de
 | Estilos | Tailwind CSS | 3.4 |
 | Formularios | React Hook Form + Zod | 7.x / 3.x |
 | Envíos | Capa propia multi-proveedor (Skydropx / tarifa fija) | — |
-| Pagos | Wompi + MercadoPago *(widget pendiente)* | — |
+| Pagos | Capa propia multi-pasarela: Wompi, MercadoPago, **Tu Compra** (integrador REST), **Bold** — una activa a la vez, webhooks firmados + anti-forja/anti-subpago | — |
 | Emails | Resend *(scaffolded)* | 3.x |
 | Testing | Jest + Testing Library + ts-jest | 29.x |
 | Linting / formato | ESLint + Prettier | — |
@@ -181,7 +181,7 @@ vps-coffee/
     │   │   ├── sections.ts                 ← isSectionEnabled (fail-open)
     │   │   ├── themes.ts                   ← getActiveTheme, setActiveTheme, etc.
     │   │   └── variant-types.ts            ← getVariantTypes, CRUD, toVariantType()
-    │   └── supabase/migrations/            ← 1_initial_schema.sql … 9_indexes.sql (9 archivos)
+    │   └── supabase/migrations/            ← 01_schema.sql (canónico) + upgrade.sql (parche idempotente)
     └── config/
         ├── tailwind.config.ts              ← Design system VPS (colores, fuentes, etc.)
         └── tsconfig.json                   ← Configuración TypeScript base
@@ -245,10 +245,10 @@ packages/database/supabase/seeds/02_content.sql       ← páginas, secciones e 
 **Actualizar una BD existente** — ejecuta solo:
 
 ```
-packages/database/supabase/migrations/upgrade.sql     ← parche idempotente v13 → v16
+packages/database/supabase/migrations/upgrade.sql     ← parche idempotente consolidado
 ```
 
-> Los archivos numerados `1_*` … `25_*` se conservan **solo como registro histórico**; su contenido ya está en `01_schema.sql` (y consolidado en `upgrade.sql`). No los ejecutes uno por uno.
+> Solo existen **2 archivos** de migración (`01_schema.sql` y `upgrade.sql`). Los antiguos archivos numerados (`1_*`…`29_*`) se eliminaron por redundantes: su contenido ya está consolidado en ambos.
 
 ### Paso 5 — Levantar el proyecto
 
@@ -343,7 +343,7 @@ newsletter_subscribers      ← lista de correos
 shipping_config             ← proveedor de envíos + credenciales (singleton)
 shipping_profiles           ← perfiles de envío por zona
 store_config                ← branding, WhatsApp, Resend, legal, redes, mantenimiento (singleton)
-payment_config              ← credenciales Wompi y MercadoPago (singleton)
+payment_config              ← credenciales de pasarelas: Wompi, MercadoPago, Tu Compra, Bold (singleton)
 section_settings            ← toggles del home (hero, featured, services…)
 coupons                     ← cupones de descuento (percentage/fixed, usos, expiración)
 testimonials                ← testimonios (asociables a páginas de contenido)
@@ -368,7 +368,8 @@ themes                      ← paletas de color y tipografía (solo uno activo 
 | `newsletter_subscribers` | Suscriptores del boletín | Solo admins |
 | `shipping_config` | Proveedor activo + credenciales Skydropx (singleton) | Lectura pública; escritura service_role |
 | `store_config` | Branding, Resend, legal, redes sociales, mantenimiento (singleton) | Lectura pública; escritura service_role |
-| `payment_config` | Credenciales Wompi y MercadoPago (singleton) | Solo service_role |
+| `payment_config` | Credenciales de pasarelas (Wompi, MercadoPago, Tu Compra, Bold) + `active_provider` + llaves de firma de webhook (singleton) | Solo service_role |
+| `processed_webhook_events` | Idempotencia de webhooks de pago (PK provider+event_id) | Solo service_role |
 | `coupons` | Cupones de descuento | Lectura pública; escritura admin |
 | `testimonials` | Testimonios de clientes | Lectura pública (activos); escritura admin |
 | `themes` | Paletas de color y tipografía (único activo) | Lectura pública; escritura admin |
@@ -495,7 +496,8 @@ Crea una orden en Supabase al finalizar el checkout.
   "subtotal": 90000,
   "shipping_cost": 8000,
   "total": 98000,
-  "payment_method": "wompi | mercadopago",
+  "payment_method": "(informativo; la pasarela real se deriva del servidor vía active_provider)",
+  "tucompra": { "method": "pse|nequi|daviplata|referenciado", "bankCode": "...", "bankName": "...", "personType": "0|1", "document": "...", "docType": "1", "phone": "..." },
   "shipping_rate": {
     "id": "rate-abc123",
     "carrier_name": "Servientrega",
@@ -506,12 +508,17 @@ Crea una orden en Supabase al finalizar el checkout.
 }
 ```
 
-**Respuesta 200:**
-```json
-{ "order_number": "VPS-0042", "order_id": 42 }
-```
+> La pasarela **NUNCA** se toma del `payment_method` del cliente: se deriva del `active_provider` de `payment_config` (seguridad). El objeto `tucompra` solo aplica cuando la pasarela activa es Tu Compra (modalidad integrador).
 
-**Errores:** `400` datos incompletos · `500` error interno
+**Respuesta 200 (varía por flujo):**
+```json
+{ "order_number": "VPS-0042", "order_id": 42, "payment_url": "https://…",
+  "tucompra": { "method": "pse", "flow": "redirect|confirm|push|otp|voucher" } }
+```
+- `payment_url` → redirección (Wompi/MercadoPago/Bold, PSE).
+- `flow: push` (Nequi) / `otp` (Daviplata) / `voucher` (Referenciado) / `confirm` (PSE resuelto) → el checkout continúa en la página.
+
+**Errores:** `400` datos incompletos · `402` pago rechazado (`rejected:true`) · `409` stock insuficiente · `429` rate-limit · `502` error de la pasarela · `503` sin config. Detalle completo del flujo por medio en `Tu-Compra-Integracion-Referencia.md`.
 
 ---
 
@@ -568,6 +575,21 @@ Recibe notificaciones de Skydropx y actualiza el estado de la orden correspondie
 | `shipment.out_for_delivery` | `shipped` |
 | `shipment.delivered` | `delivered` |
 | `shipment.exception` | `exception` |
+
+---
+
+#### Webhooks de pago — `POST /api/webhooks/{wompi|mercadopago|tucompra|bold}`
+
+Confirmación de pago de cada pasarela. **El estado nunca se toma del payload sin verificar:**
+
+| Pasarela | Verificación de autenticidad | Notas |
+|----------|------------------------------|-------|
+| Wompi | Firma `x-checksum` (fail-closed) + ventana de replay `x-timestamp` (±5 min) | — |
+| MercadoPago | Re-consulta del pago a la API de MP + firma `x-signature` (si hay secret) | El estado lo da la API, no el body |
+| Tu Compra | Firma `firmaTuCompra` (MD5) + re-consulta `consultarEstadoTransaccion` | Sin webhook nativo: es la "URL de Confirmación" |
+| Bold | HMAC-SHA256 `x-bold-signature` (`timingSafeEqual`, fail-closed en prod) | — |
+
+Controles transversales: **idempotencia por id de evento** (`processed_webhook_events`), **anti-subpago** (el monto pagado debe cubrir `order.total`) y descuento de stock atómico + emails al aprobar. Ver `Tu-Compra-Integracion-Referencia.md` §11.5.
 
 ---
 
@@ -878,9 +900,10 @@ Cliente →  /shop  →  Selecciona variante
         →  /cart  →  Revisa totales + cupón
         →  /checkout  (Paso 1: Contacto)
                      (Paso 2: Envío → selecciona depto/ciudad → "Ver opciones" → POST /api/shipping/rates → elige transportadora)
-                     (Paso 3: Pago → elige Wompi/MercadoPago)
+                     (Paso 3: Pago → pasarela activa: Wompi / MercadoPago / Tu Compra / Bold, o pago manual)
         →  POST /api/checkout  →  Orden creada en Supabase (status: pending)
-        →  /checkout/confirmation  →  Muestra VPS-XXXX
+        →  Redirección/aprobación según el medio (redirect, push Nequi, OTP Daviplata, comprobante)
+        →  /checkout/confirmation  →  Muestra el estado REAL del pago (aprobado/en proceso/rechazado)
 ```
 
 ### Flujo de despacho (Admin)
@@ -970,10 +993,10 @@ pnpm format        # Código formateado con Prettier
 - **Logo** cargado desde admin, visible en Navbar y Footer del sitio público
 - **WhatsApp desde BD** — sin variables de entorno; usado en todos los CTAs
 - **Auto-creación de buckets** en Storage al subir la primera imagen
-- API Routes: checkout, newsletter, webhooks Skydropx, shipping rates, config, upload
+- API Routes: checkout (multi-pasarela), newsletter, webhooks (pago + Skydropx), shipping rates, reconcile/estado de pago, config, upload
 - **Capa multi-proveedor de envíos** con FixedRateProvider y SkydropxProvider
 - **Configuración de proveedor de envíos desde el admin** (sin redespliegue)
-- **Generación automática de guía Skydropx** tras pago confirmado (Wompi + MercadoPago)
+- **Generación automática de guía Skydropx** tras pago confirmado (cualquier pasarela)
 - **Modal de despacho masivo** (pickups Skydropx) desde `/admin/pedidos`
 - **Blog Draft Mode** — previsualización de borradores con cookie segura (`__vps_draft`)
 - **Edición de perfil** (`/account/profile`) — nombre, teléfono, sincronización con Stack Auth
@@ -981,12 +1004,12 @@ pnpm format        # Código formateado con Prettier
 - **Página 404 personalizada**
 - **SEO completo**: `sitemap.xml` dinámico, `robots.txt`, Open Graph y Twitter Cards por página
 - **Inventario**: stock por variante con descuento/reposición atómico por estado de pago, backorder y topes en el front
-- **Pagos**: pasarela única activa (Wompi, MercadoPago, Tu Compra, Bold) con webhooks firmados, validación manual y fallback de estado
-- **596 casos de prueba** (51 suites: 135 database · 296 web · 165 admin) — unitarias + integración
+- **Pagos**: pasarela única activa (Wompi, MercadoPago, **Tu Compra integrador** — PSE/Nequi/Daviplata/Referenciado —, Bold) con webhooks firmados, **anti-forja + anti-subpago + idempotencia por evento**, validación manual y fallback/reconcile de estado. Tarjeta directa excluida por PCI (SAQ A).
+- **641 casos de prueba** — database 160 · web 316 · admin 165 (unitarias + integración)
 
 ### Roadmap 🔲
 
-Expansión planificada en 18 épicas / 92 historias (ver `PRODUCT_BACKLOG.md`): **E16** Aplicación inteligente (IA), **E17** Plataforma multi-tienda + control plane (planes/entitlements, dominios personalizados), **E18** Inventario multi-ubicación, más reseñas, búsqueda, descuentos, i18n, entregabilidad de email, newsletter externo (Beehiiv), pricing unificado, webhooks salientes, facturación electrónica (DIAN), accesibilidad y monitoreo. Priorizado en 8 olas de entrega (`§11.1`).
+Expansión planificada en 18 épicas / 99 historias 🔲 (ver `PRODUCT_BACKLOG.md`): **E16** Aplicación inteligente (IA), **E17** Plataforma multi-tienda + control plane (planes/entitlements, dominios personalizados), **E18** Inventario multi-ubicación, más reseñas, búsqueda, descuentos, i18n, entregabilidad de email, newsletter externo (Beehiiv), pricing unificado, webhooks salientes, facturación electrónica (DIAN), accesibilidad y monitoreo. Priorizado en 8 olas de entrega (`§11.1`).
 
 ### Variables de entorno nuevas (v3)
 
