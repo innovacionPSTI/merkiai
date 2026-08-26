@@ -58,12 +58,13 @@ create policy orders_own_read on public.orders for select to authenticated
 
 ## Migración y gate (implementado)
 - **SQL:** `packages/database/supabase/migrations/e17/05_rls_session_flows.sql` (idempotente): habilita RLS + políticas `customers_own`, `addresses_own`, `cart_own`, `orders_own_read`.
-- **Gate de cableado:** `apps/web/src/lib/tenant-db.ts` → `getRequestUserDb(userId)` devuelve el cliente `authenticated` **solo** si `SESSION_RLS_ENABLED === 'true'` **y** `SUPABASE_JWT_SECRET` está definido; en otro caso `undefined` → la query usa server-role (comportamiento actual). El cableado se despliega **inerte** y se activa por config tras validar. Prueba: `apps/web/src/lib/__tests__/tenant-db.test.ts`.
+- **Fail-closed (hardening):** `apps/web/src/lib/tenant-db.ts` → `getRequestUserDb(userId)` y `getRequestCatalogDb()` devuelven **siempre** el cliente tenant-scoped (`authenticated`/`anon`) y **exigen `SUPABASE_JWT_SECRET`**; si falta, **lanzan** (no hay degradación a service-role en el plano de tienda). Se eliminó el flag `SESSION_RLS_ENABLED` y los fallbacks `?? createServerClient()` de las rutas de comprador → no existe vía que opere sin RLS. Escrituras privilegiadas (crear pedido, stock, webhooks, `ensureCustomer`) siguen por su vía server-to-server, no por el comprador. Prueba: `tenant-db.test.ts` (lanza sin secreto).
 
 ## Orden de cableado
 1. ✅ Aplicar `e17/05` en **staging** + prueba de aislamiento entre compradores (obligatoria, ver arriba).
 2. ✅ **Cuenta + carrito cableados** (gated): lecturas `/account`, `/account/orders` (por `customer_id`), `/account/orders/[id]` (+guardia por email); mutaciones `api/account/profile` (GET/PATCH), `api/account/addresses` (GET/POST), **`api/account/addresses/[id]` (PATCH/DELETE)** y **`api/account/cart` (GET/POST/DELETE)** → todas con `ensureCustomer` (garantiza fila, evita 404) + cliente `authenticated` cuando el flag está activo + `tenant_id` explícito en escrituras (dirección y carrito). Tipos: `tenant_id` tipado en `customers`/`customer_addresses`/`orders`/`cart_items`.
 3. Lecturas del comprador en checkout: cubiertas por `api/account/addresses` (direcciones guardadas) y `api/account/cart` (sync de carrito), ya cableadas.
+4. ✅ **Contenido del storefront (RLS por tenant)**: migración `e17/06_rls_content.sql` — reemplaza las políticas `*_public_read` amplias por `*_tenant_read` acotadas por `tenant_id` en `pages`/`page_sections`/`section_items`/`blog_posts`/`nav_items`. La página CMS `(public)/[slug]` lee con `getRequestCatalogDb()` (host→tenant). **Pendiente:** cablear blog y `nav_items` (Navbar) al cliente por host, y **config singletons por tenant** (`store_config`/`admin_config`/`payment_config`/`shipping_config`: hoy fila `id=1`; su conversión a fila-por-tenant + seed en el onboarding es parte de HU-158).
 3. 🔲 Checkout: **lecturas** del comprador con el cliente authenticated; la **creación de orden + stock + webhooks** se quedan privilegiadas (order_number, pago, reconcile).
 4. `customers` sin `stack_id` (guest checkout) se crean/gestionan por la vía privilegiada.
 
@@ -74,5 +75,5 @@ Antes: **nadie creaba filas en `customers`** (el registro solo tocaba Stack Auth
 - **Cuenta**: provisioning al entrar a `/account` y `/account/orders`; la lista lee por `customer_id` (`getOrdersByCustomer`), consistente con `orders_own_read`.
 > Nota: los tipos generados (`types.ts`) aún no incluyen `tenant_id`; `ensureCustomer` usa una vista sin tipar acotada para esa columna (regenerar tipos es trabajo aparte).
 
-## Activación (tras validar en staging)
-Definir en el entorno de web: `SESSION_RLS_ENABLED=true` (+ `SUPABASE_JWT_SECRET` ya presente). Antes de esto, todo el cableado corre con server-role (sin cambios).
+## Requisito de despliegue (RLS obligatoria)
+`apps/web` **requiere `SUPABASE_JWT_SECRET`** (Legacy JWT secret) en **todos** los entornos que sirven la tienda + migraciones `e17/02` (catálogo), `e17/05` (sesión) y `e17/06` (contenido) aplicadas. Sin el secreto, el storefront y las rutas de comprador **fallan de forma explícita** (fail-closed, por diseño). No hay flag ni fallback a service-role. Verificar en prod: login → perfil/direcciones/carrito/"Mis pedidos" muestran solo lo del comprador, y un pedido nuevo trae `customer_id`.

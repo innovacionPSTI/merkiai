@@ -15,6 +15,7 @@ import type { Metadata } from 'next'
 import { notFound } from 'next/navigation'
 import { getPageWithSections, getStoreConfig } from '@merkiai/database'
 import SectionRenderer from '@/components/sections/SectionRenderer'
+import { getRequestCatalogDb } from '@/lib/tenant-db'
 
 export const dynamic = 'force-dynamic'
 
@@ -24,7 +25,7 @@ interface Props {
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { slug } = await params
-  const page = await getPageWithSections(slug).catch(() => null)
+  const page = await getPageWithSections(slug, true, await getRequestCatalogDb()).catch(() => null)
   if (!page) return {}
 
   return {
@@ -36,7 +37,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 export default async function CmsPage({ params }: Props) {
   const { slug } = await params
   const [pageData, config] = await Promise.all([
-    getPageWithSections(slug, true).catch(() => null),
+    getPageWithSections(slug, true, await getRequestCatalogDb()).catch(() => null),
     getStoreConfig().catch(() => null),
   ])
 

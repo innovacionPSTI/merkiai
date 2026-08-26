@@ -23,8 +23,8 @@ jest.mock('@merkiai/database', () => ({
   // HU-156: provisioning idempotente → siempre devuelve el customer.
   ensureCustomer: jest.fn(async () => ({ id: 'cust-1' })),
 }))
-// Flag de RLS de sesión apagado en test → cliente por defecto (mockFrom).
-jest.mock('@/lib/tenant-db', () => ({ getRequestUserDb: jest.fn(async () => undefined) }))
+// RLS obligatoria: el cliente `authenticated` en test es el mock (mockFrom).
+jest.mock('@/lib/tenant-db', () => ({ getRequestUserDb: jest.fn(async () => ({ from: mockFrom })) }))
 jest.mock('@/lib/tenant-context', () => ({ resolveTenant: jest.fn(async () => ({ tenantId: 'tenant-test' })) }))
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────

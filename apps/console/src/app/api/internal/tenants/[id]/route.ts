@@ -12,6 +12,31 @@ export const dynamic = 'force-dynamic'
 const STATUSES = ['trialing', 'active', 'past_due', 'suspended', 'canceled']
 const ISOLATION = ['shared', 'schema', 'dedicated']
 
+/** Devuelve el tenant + sus entitlements (features/limits del plan). HU-173. */
+export async function GET(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
+  if (!hasInternalSecret(req)) return NextResponse.json({ error: 'unauthorized' }, { status: 401 })
+  const { id } = await params
+  const db = platformDb()
+
+  const { data: tenant } = await db
+    .from('tenants')
+    .select('id, name, subdomain, primary_domain, plan, data_isolation, db_ref, status')
+    .eq('id', id)
+    .maybeSingle()
+  if (!tenant) return NextResponse.json({ error: 'not_found' }, { status: 404 })
+
+  const { data: plan } = await db
+    .from('plans')
+    .select('features, limits')
+    .eq('key', tenant.plan)
+    .maybeSingle()
+
+  return NextResponse.json({
+    tenant,
+    entitlements: { features: plan?.features ?? {}, limits: plan?.limits ?? {} },
+  })
+}
+
 export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   if (!hasInternalSecret(req)) return NextResponse.json({ error: 'unauthorized' }, { status: 401 })
   const { id } = await params

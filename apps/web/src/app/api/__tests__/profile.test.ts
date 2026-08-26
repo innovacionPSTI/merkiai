@@ -23,8 +23,8 @@ jest.mock('@merkiai/database', () => ({
   ensureCustomer: jest.fn(async () => ({ id: 'cust-1' })),
 }))
 
-// HU-156: el flag de RLS de sesión está apagado en test → cliente por defecto.
-jest.mock('@/lib/tenant-db', () => ({ getRequestUserDb: jest.fn(async () => undefined) }))
+// HU-156: cliente `authenticated` (RLS obligatoria). En test devuelve el mock.
+jest.mock('@/lib/tenant-db', () => ({ getRequestUserDb: jest.fn(async () => ({ from: mockFrom })) }))
 jest.mock('@/lib/tenant-context', () => ({ resolveTenant: jest.fn(async () => ({ tenantId: 'tenant-test' })) }))
 
 const mockUserUpdate = jest.fn()

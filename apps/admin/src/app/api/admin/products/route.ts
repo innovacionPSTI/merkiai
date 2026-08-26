@@ -1,6 +1,7 @@
 import { createServerClient } from '@merkiai/database'
 import type { Database } from '@merkiai/database'
 import { NextRequest, NextResponse } from 'next/server'
+import { getTenantEntitlements, withinLimit } from '@/lib/entitlements'
 
 type VariantInsert = Database['public']['Tables']['product_variants']['Insert']
 
@@ -14,6 +15,22 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: 'El producto debe tener al menos una variante' }, { status: 400 })
 
   const supabase = createServerClient()
+
+  // HU-173: límite de productos por plan. Regla de negocio: si el control plane
+  // no está configurado (sin entitlements), no bloquea.
+  const { tenantId, entitlements } = await getTenantEntitlements()
+  if (entitlements) {
+    const { count } = await supabase
+      .from('products')
+      .select('id', { count: 'exact', head: true })
+      .eq('tenant_id', tenantId)
+    if (!withinLimit(entitlements, 'products', count ?? 0)) {
+      return NextResponse.json(
+        { error: 'Límite de productos del plan alcanzado. Actualiza el plan para agregar más.' },
+        { status: 403 },
+      )
+    }
+  }
 
   // Crear producto
   const { data: product, error: productError } = await supabase

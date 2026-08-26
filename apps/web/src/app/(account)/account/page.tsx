@@ -19,12 +19,11 @@ interface DefaultAddress {
 async function getDefaultAddress(
   stackUserId: string,
   email: string,
-  db?: ReturnType<typeof createServerClient>,
+  db: ReturnType<typeof createServerClient>,
 ): Promise<DefaultAddress | null> {
   try {
-    // HU-156: bajo RLS (flag activo) el cliente authenticated acota a lo propio;
-    // si no, server-role (comportamiento actual).
-    const supabase = db ?? createServerClient()
+    // HU-156: cliente `authenticated` (RLS `addresses_own`); el llamador lo pasa.
+    const supabase = db
 
     let { data: customer } = await supabase
       .from('customers')

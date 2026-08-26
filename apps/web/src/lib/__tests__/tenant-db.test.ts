@@ -1,25 +1,22 @@
 /**
  * @jest-environment node
  *
- * HU-156 — gate de `getRequestUserDb` (flujos con sesión).
- * Verifica la degradación segura: sin el flag / sin secreto → `undefined`
- * (la query usa su cliente server-role; no se activa RLS de comprador).
+ * HU-156/157 — RLS obligatoria (fail-closed). Sin `SUPABASE_JWT_SECRET` no hay
+ * degradación a service-role en el plano de tienda: las funciones lanzan.
  */
-import { getRequestUserDb } from '../tenant-db'
+import { getRequestUserDb, getRequestCatalogDb } from '../tenant-db'
 
-describe('getRequestUserDb · gate seguro (HU-156)', () => {
+describe('RLS obligatoria · fail-closed', () => {
   const OLD = { ...process.env }
   afterEach(() => { process.env = { ...OLD } })
 
-  it('devuelve undefined si SESSION_RLS_ENABLED != "true"', async () => {
-    delete process.env.SESSION_RLS_ENABLED
-    process.env.SUPABASE_JWT_SECRET = 'secreto'
-    expect(await getRequestUserDb('user-1')).toBeUndefined()
+  it('getRequestUserDb lanza si falta SUPABASE_JWT_SECRET', async () => {
+    delete process.env.SUPABASE_JWT_SECRET
+    await expect(getRequestUserDb('user-1')).rejects.toThrow(/SUPABASE_JWT_SECRET/)
   })
 
-  it('devuelve undefined si falta SUPABASE_JWT_SECRET aunque el flag esté activo', async () => {
-    process.env.SESSION_RLS_ENABLED = 'true'
+  it('getRequestCatalogDb lanza si falta SUPABASE_JWT_SECRET', async () => {
     delete process.env.SUPABASE_JWT_SECRET
-    expect(await getRequestUserDb('user-1')).toBeUndefined()
+    await expect(getRequestCatalogDb()).rejects.toThrow(/SUPABASE_JWT_SECRET/)
   })
 })

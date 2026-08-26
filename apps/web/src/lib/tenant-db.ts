@@ -49,18 +49,15 @@ export async function getRequestTenantDb() {
 }
 
 /**
- * Cliente de **catálogo** para el request, con degradación segura (HU-157):
- *  - Con `SUPABASE_JWT_SECRET` presente → cliente **tenant-scoped** (rol `anon`
- *    + RLS), resolviendo el tenant desde el Host de la petición.
- *  - Sin el secreto (aún single-tenant / RLS no aplicado) → `undefined`, para
- *    que la query use su cliente server-role por defecto (comportamiento actual).
- *
- * Permite desplegar la resolución por host y **activarla por configuración**
- * (definir `SUPABASE_JWT_SECRET` + aplicar `e17/02_rls_catalog.sql` +
- * `CONTROL_PLANE_URL`/`INTERNAL_API_SECRET`) sin romper el despliegue single-tenant.
+ * Cliente de **catálogo/contenido** para el request: SIEMPRE tenant-scoped (rol
+ * `anon` + RLS) con el tenant resuelto desde el Host. **Fail-closed**: exige
+ * `SUPABASE_JWT_SECRET`; si falta, lanza (no hay degradación a service-role en el
+ * plano de tienda). La RLS es la frontera dura (ADR-001).
  */
 export async function getRequestCatalogDb() {
-  if (!process.env.SUPABASE_JWT_SECRET) return undefined
+  if (!process.env.SUPABASE_JWT_SECRET) {
+    throw new Error('[web] SUPABASE_JWT_SECRET requerido: la RLS de catálogo/contenido es obligatoria (sin service-role en el plano de tienda).')
+  }
   const { tenantId } = await resolveTenant()
   return getTenantDb(tenantId)
 }
@@ -91,19 +88,15 @@ export async function getRequestUserTenantDb(userId: string) {
 }
 
 /**
- * Cliente de **datos del comprador** para el request, con degradación segura y
- * **gate propio** (HU-156, flujos con sesión). Devuelve el cliente rol
- * `authenticated` (tenant + `sub`) SOLO cuando:
- *   - `SESSION_RLS_ENABLED === 'true'` (se activa TRAS validar aislamiento entre
- *     compradores en staging y aplicar `e17/05_rls_session_flows.sql`), y
- *   - `SUPABASE_JWT_SECRET` está definido.
- * En cualquier otro caso devuelve `undefined` → la query usa su cliente
- * server-role (comportamiento actual). Así el cableado se despliega inerte y se
- * activa por configuración, sin arriesgar fugas antes de la validación.
+ * Cliente de **datos del comprador** para el request: SIEMPRE rol `authenticated`
+ * (tenant + `sub`), acotado por la RLS de flujos con sesión (`e17/05`).
+ * **Fail-closed**: exige `SUPABASE_JWT_SECRET`; si falta, lanza (no hay
+ * degradación a service-role para datos del comprador). La escritura sensible
+ * (crear pedido, stock, webhooks) sigue por su vía privilegiada, no por aquí.
  */
 export async function getRequestUserDb(userId: string) {
-  if (process.env.SESSION_RLS_ENABLED !== 'true' || !process.env.SUPABASE_JWT_SECRET) {
-    return undefined
+  if (!process.env.SUPABASE_JWT_SECRET) {
+    throw new Error('[web] SUPABASE_JWT_SECRET requerido: la RLS de flujos con sesión es obligatoria.')
   }
   const { tenantId } = await resolveTenant()
   return getUserTenantDb(userId, tenantId)

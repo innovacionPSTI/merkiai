@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { stackServerApp } from '@/stack'
-import { getCartItems, replaceCart, clearCart, ensureCustomer, createServerClient } from '@merkiai/database'
+import { getCartItems, replaceCart, clearCart, ensureCustomer } from '@merkiai/database'
 import { getRequestUserDb } from '@/lib/tenant-db'
 import { resolveTenant } from '@/lib/tenant-context'
 
@@ -15,7 +15,7 @@ async function resolveBuyer(user: { id: string; primaryEmail: string; displayNam
   const customer = await ensureCustomer({
     stackUserId: user.id, email: user.primaryEmail, name: user.displayName, tenantId,
   })
-  const db = (await getRequestUserDb(user.id)) ?? createServerClient()
+  const db = await getRequestUserDb(user.id)
   return { tenantId, customerId: customer.id, db }
 }
 

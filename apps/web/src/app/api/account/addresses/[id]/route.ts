@@ -1,20 +1,20 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { stackServerApp } from '@/stack'
-import { createServerClient, ensureCustomer } from '@merkiai/database'
+import { ensureCustomer } from '@merkiai/database'
 import { getRequestUserDb } from '@/lib/tenant-db'
 import { resolveTenant } from '@/lib/tenant-context'
 
 /**
  * PATCH/DELETE /api/account/addresses/[id] — editar/eliminar una dirección.
  * HU-156: provisioning con `ensureCustomer` + cliente `authenticated` (RLS
- * `addresses_own`) cuando el flag está activo; ownership por `customer_id`.
+ * `addresses_own`, fail-closed); ownership por `customer_id`.
  */
 async function buyer(user: { id: string; primaryEmail: string; displayName: string | null }) {
   const { tenantId } = await resolveTenant()
   const customer = await ensureCustomer({
     stackUserId: user.id, email: user.primaryEmail, name: user.displayName, tenantId,
   })
-  const db = (await getRequestUserDb(user.id)) ?? createServerClient()
+  const db = await getRequestUserDb(user.id)
   return { customerId: customer.id, db }
 }
 

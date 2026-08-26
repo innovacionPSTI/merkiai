@@ -70,6 +70,7 @@ export type Database = {
       products: {
         Row: {
           id: number
+          tenant_id: string
           name: string
           slug: string
           description: string | null
@@ -85,6 +86,7 @@ export type Database = {
         }
         Insert: {
           id?: number
+          tenant_id?: string
           name: string
           slug: string
           description?: string | null

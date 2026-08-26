@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { stackServerApp } from '@/stack'
-import { createServerClient, ensureCustomer } from '@merkiai/database'
+import { ensureCustomer } from '@merkiai/database'
 import { getRequestUserDb } from '@/lib/tenant-db'
 import { resolveTenant } from '@/lib/tenant-context'
 
@@ -24,7 +24,7 @@ export async function GET() {
       stackUserId: user.id, email: user.primaryEmail, name: user.displayName, tenantId,
     })
 
-    const db = (await getRequestUserDb(user.id)) ?? createServerClient()
+    const db = await getRequestUserDb(user.id)
     const { data: addresses, error } = await db
       .from('customer_addresses').select('*')
       .eq('customer_id', customer.id)
@@ -59,7 +59,7 @@ export async function POST(request: NextRequest) {
       stackUserId: user.id, email: user.primaryEmail, name: user.displayName, tenantId,
     })
 
-    const db = (await getRequestUserDb(user.id)) ?? createServerClient()
+    const db = await getRequestUserDb(user.id)
 
     // Si la nueva es default, quitar el default anterior
     if (body.is_default) {

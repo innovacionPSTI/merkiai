@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { stackServerApp } from '@/stack'
-import { createServerClient, ensureCustomer } from '@merkiai/database'
+import { ensureCustomer } from '@merkiai/database'
 import { getRequestUserDb } from '@/lib/tenant-db'
 import { resolveTenant } from '@/lib/tenant-context'
 
@@ -23,7 +23,7 @@ export async function GET() {
       stackUserId: user.id, email: user.primaryEmail, name: user.displayName, tenantId,
     })
 
-    const db = (await getRequestUserDb(user.id)) ?? createServerClient()
+    const db = await getRequestUserDb(user.id)
     const { data } = await db
       .from('customers').select('name, phone, email').eq('id', customer.id).maybeSingle()
 
@@ -51,7 +51,7 @@ export async function PATCH(req: NextRequest) {
       stackUserId: user.id, email: user.primaryEmail, name: user.displayName, tenantId,
     })
 
-    const db = (await getRequestUserDb(user.id)) ?? createServerClient()
+    const db = await getRequestUserDb(user.id)
     const { error } = await db
       .from('customers')
       .update({
