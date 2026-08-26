@@ -4,7 +4,9 @@ Consola interna de Merkiai (operador de plataforma): alta/listado/suspensión de
 
 ## Rutas
 - `/login` — login branded (Stack Auth).
-- `/` — consola de tenants (requiere permiso `platform:operate`).
+- `/` — **Tenants**: alta, asignación de plan, suspender/reactivar (requiere `platform:operate`).
+- `/planes` — **Planes**: catálogo + crear/editar plan (features/limits).
+- Shell común (grupo `(dash)`): topbar con operador + logout, sidebar (Tenants · Planes · Dominios/Auditoría próximamente).
 - `/api/internal/resolve-tenant?host=` — resolución host→tenant (server-to-server; `x-internal-secret`).
 - `/api/internal/tenants` (GET/POST) · `/api/internal/tenants/[id]` (PATCH) — gestión de tenants.
 
