@@ -1,5 +1,6 @@
+import { PageHeader, PanelCard, StatusBadge } from '@merkiai/ui'
 import { getPlans } from '@/lib/plans'
-import { box, input, th, td, btn, mono, scroll, money } from '@/lib/styles'
+import { input, btn, th, td, mono, scroll, money } from '@/lib/styles'
 import { savePlan } from '../../actions'
 
 export const dynamic = 'force-dynamic'
@@ -9,10 +10,9 @@ export default async function PlanesPage() {
 
   return (
     <>
-      <h1 style={{ color: '#2E5A3B', fontSize: 22, marginTop: 0 }}>Planes</h1>
+      <PageHeader title="Planes" description="Catálogo de planes: funcionalidades y límites por plan." />
 
-      <section style={box}>
-        <h2 style={{ fontSize: 16 }}>Catálogo ({plans.length})</h2>
+      <PanelCard title={`Catálogo (${plans.length})`}>
         <div style={scroll}>
           <table style={{ width: '100%', borderCollapse: 'collapse', minWidth: 820 }}>
             <thead>
@@ -23,7 +23,7 @@ export default async function PlanesPage() {
                 <th style={th}>Features</th>
                 <th style={th}>Límites</th>
                 <th style={th}>Aislam.</th>
-                <th style={th}>Activo</th>
+                <th style={th}>Estado</th>
               </tr>
             </thead>
             <tbody>
@@ -35,18 +35,16 @@ export default async function PlanesPage() {
                   <td style={{ ...td, ...mono }}>{JSON.stringify(p.features)}</td>
                   <td style={{ ...td, ...mono }}>{JSON.stringify(p.limits)}</td>
                   <td style={td}>{p.data_isolation}</td>
-                  <td style={td}>{p.active ? 'sí' : 'no'}</td>
+                  <td style={td}><StatusBadge tone={p.active ? 'success' : 'neutral'}>{p.active ? 'activo' : 'inactivo'}</StatusBadge></td>
                 </tr>
               ))}
             </tbody>
           </table>
         </div>
-      </section>
+      </PanelCard>
 
-      <section style={box}>
-        <h2 style={{ fontSize: 16 }}>
-          Crear / editar plan <span style={{ color: '#888', fontWeight: 400, fontSize: 13 }}>(usa una key existente para sobrescribir)</span>
-        </h2>
+      <PanelCard title="Crear / editar plan">
+        <p style={{ margin: '0 0 12px', color: '#888', fontSize: 13 }}>Usa una key existente para sobrescribir.</p>
         <form action={savePlan} style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8, maxWidth: 760 }}>
           <input style={input} name="key" placeholder="key (p.ej. pro)" required />
           <input style={input} name="name" placeholder="Nombre visible" required />
@@ -65,7 +63,7 @@ export default async function PlanesPage() {
           </select>
           <button type="submit" style={{ ...btn, gridColumn: '1 / span 2' }}>Guardar plan</button>
         </form>
-      </section>
+      </PanelCard>
     </>
   )
 }
