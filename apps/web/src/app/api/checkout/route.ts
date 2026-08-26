@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createOrder, getPaymentConfig, createServerClient, getPaymentGateway, getActiveProvider, getStockForVariants, TuCompraGateway } from '@merkiai/database'
 import { stackServerApp } from '@/stack'
+import { baseUrlFromRequest } from '@/lib/base-url'
 
 // ── Rate limiting (best-effort, per-instance) ──────────────────────────────────
 // Allows MAX_REQUESTS per IP within WINDOW_MS. In Vercel's serverless model
@@ -177,7 +178,10 @@ export async function POST(req: NextRequest) {
     // pasarela distinta a la activa ni saltarse el pago en la creación del pedido.
     const activeProvider = getActiveProvider(paymentConfig)
 
-    const siteUrl = (process.env.NEXT_PUBLIC_SITE_URL ?? '').replace(/\/$/, '')
+    // E17/HU-157: la base URL (webhook + return de pagos) sale del host del
+    // tenant (subdominio/dominio propio), no de una env global. Fallback a
+    // NEXT_PUBLIC_SITE_URL en single-tenant/dev.
+    const siteUrl = baseUrlFromRequest(req)
 
     // Guarda la dirección del usuario logueado (silencioso, no bloquea el checkout)
     const autoSaveAddress = async () => {

@@ -1,4 +1,6 @@
 /**
+ * @jest-environment node
+ *
  * Tests de integración — GET /api/admin/newsletter
  *                        POST /api/admin/newsletter/send
  */

@@ -1,4 +1,4 @@
-import { createServerClient } from '../client'
+import { createServerClient, type Db } from '../client'
 import type { ShippingProviderType } from '../types'
 
 export type ShippingConfig = {
@@ -28,8 +28,8 @@ export type UpdateShippingConfigInput = Partial<Omit<ShippingConfig, 'id' | 'upd
  * Reads the singleton shipping_config row.
  * Falls back to a safe default if the table is empty (e.g. before migration runs).
  */
-export async function getShippingConfig(): Promise<ShippingConfig> {
-  const supabase = createServerClient()
+export async function getShippingConfig(db: Db = createServerClient()): Promise<ShippingConfig> {
+  const supabase = db
   const { data, error } = await supabase
     .from('shipping_config')
     .select('*')
@@ -68,9 +68,9 @@ export async function getShippingConfig(): Promise<ShippingConfig> {
  * Requires service_role key (admin context).
  */
 export async function updateShippingConfig(
-  input: UpdateShippingConfigInput
+  input: UpdateShippingConfigInput, db: Db = createServerClient()
 ): Promise<ShippingConfig> {
-  const supabase = createServerClient()
+  const supabase = db
   const { data, error } = await supabase
     .from('shipping_config')
     .update({ ...input, updated_at: new Date().toISOString() })

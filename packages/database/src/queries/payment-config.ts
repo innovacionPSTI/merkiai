@@ -1,9 +1,9 @@
-import { createServerClient } from '../client'
+import { createServerClient, type Db } from '../client'
 import type { PaymentConfig } from '../types'
 
 /** Lee la configuración de pasarelas de pago (singleton id=1) */
-export async function getPaymentConfig(): Promise<PaymentConfig | null> {
-  const supabase = createServerClient()
+export async function getPaymentConfig(db: Db = createServerClient()): Promise<PaymentConfig | null> {
+  const supabase = db
   const { data, error } = await supabase
     .from('payment_config')
     .select('*')
@@ -21,9 +21,9 @@ export async function getPaymentConfig(): Promise<PaymentConfig | null> {
  *  Los campos de secret que vengan como string vacío se omiten para
  *  evitar sobreescribir credenciales existentes accidentalmente. */
 export async function updatePaymentConfig(
-  input: Partial<Omit<PaymentConfig, 'id' | 'updated_at'>>,
+  input: Partial<Omit<PaymentConfig, 'id' | 'updated_at'>>, db: Db = createServerClient()
 ): Promise<PaymentConfig> {
-  const supabase = createServerClient()
+  const supabase = db
 
   // Filtrar strings vacíos en campos de credenciales secretas
   const secretFields = [

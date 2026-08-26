@@ -87,7 +87,7 @@ Consolidar todo el contenido gestionable (banners, secciones del home, testimoni
 | Épica (v2) | Alcance | HU / códigos |
 |-----------|---------|--------------|
 | **E1 · Fundación e infraestructura** | Monorepo Turborepo, DB Supabase, RLS, Storage, Stack Auth base, envs | F-01…10 |
-| **E2 · Arquitectura y CMS unificado** | Refactor limpio, modelo `pages → page_sections → section_items`, integridad DB, generalización, export/import · *(roadmap: i18n [114a/b/c], biblioteca de medios, import/export extensible, historial de versiones)* | HU-044…057, migraciones canónicas, HU-114a/b/c, HU-115/123/127/165 🔲 |
+| **E2 · Arquitectura y CMS unificado** | Refactor limpio, modelo `pages → page_sections → section_items`, integridad DB, generalización, export/import · *(roadmap: i18n [114a/b/c], biblioteca de medios, import/export extensible, historial de versiones; **preparación para servicios: bounded contexts + contratos, eventos de dominio + outbox, propiedad de datos por dominio**)* | HU-044…057, migraciones canónicas, HU-114a/b/c, HU-115/123/127/165, **HU-195/196/197** 🔲 |
 
 **Sitio público**
 
@@ -128,7 +128,7 @@ Consolidar todo el contenido gestionable (banners, secciones del home, testimoni
 
 | Épica (v2) | Alcance | HU / códigos |
 |-----------|---------|--------------|
-| **E17 · Plataforma multi-tienda (multi-tenant)** *(roadmap)* | Varias tiendas desde un mismo despliegue: aislamiento de datos por tenant, resolución por dominio/subdominio, panel multi-tienda. Capacidad estratégica del modelo white-label Incluye **control plane** (administración de todos los tenants, planes/entitlements) y **dominios** (web custom con ciclo DNS→cert→CDN→activo y dominios de envío). Sin facturación por suscripción; spike de auth previo | HU-171 (spike), HU-156/157/158, HU-172…175 🔲 |
+| **E17 · Plataforma multi-tienda (multi-tenant) + SaaS** *(roadmap)* | Varias tiendas (tenants) desde un mismo despliegue. **Aislamiento por tenant con RLS como frontera dura** (JWT con claim `tenant_id`, patrón oficial Hexclave↔Supabase; rol `authenticated`/`anon` sujeto a RLS, service-role solo en control plane; GUC como fallback server-only). Resolución por dominio/subdominio, panel multi-tienda. Nuevo **plano de plataforma**: `apps/console` (operador SaaS, con **BD de plataforma en proyecto Supabase propio**: registro de tenants/planes/subscripciones/`db_ref`) + packages `@merkiai/tenancy` (contexto + entitlements + connection factory) y `@merkiai/billing` (suscripción). `apps/web` y `apps/admin` comparten la BD del plano de tienda. Incluye **planes/entitlements**, **facturación por suscripción** (BillingProvider intercambiable: PayZen · Mercado Pago Suscripciones · Stripe), **suspensión por impago**, **niveles de aislamiento de datos por plan** (compartido/schema/BD dedicada vía `db_ref` + connection factory) y **dominios** (web custom DNS→cert→CDN→activo y dominios de envío). Spike de auth+RLS previo | HU-171 (spike auth+RLS), HU-156/157/158, HU-172/173/174/175, **HU-192/193/194 (billing)**, **HU-200 (aislamiento por plan)** 🔲 |
 
 > **Nota:** algunas HU son transversales y aparecen en su épica primaria (p. ej. HU-080 JSON-LD vive en E15 SEO aunque toca la PDP). Los códigos históricos (F-, N-, T-, PRV-, etc.) se conservan; las secciones de detalle 2.x son un apéndice de historias.
 
@@ -3618,24 +3618,67 @@ Para agregar un nuevo proveedor (ej. FedEx): crear `providers/fedex/index.ts`, a
 
 ---
 
-## Detalle · E17 — Plataforma multi-tienda (multi-tenant)  *(roadmap)*
+## Detalle · E17 — Plataforma multi-tienda (multi-tenant) + SaaS  *(roadmap)*
 
-> **Épica nueva.** Correr **varias tiendas desde un mismo despliegue** con datos, contenido, plantillas y configuración aislados por tienda. Es la capacidad más estratégica para el modelo white-label. *(No incluye facturación por suscripción por decisión de alcance.)* Todo **🔲 (roadmap)**.
+> **Épica nueva.** Correr **varias tiendas (tenants) desde un mismo despliegue** con datos, contenido, plantillas y configuración aislados por tenant, y operarlas como **plataforma SaaS** (planes, entitlements, facturación por suscripción y suspensión por impago). Es la capacidad más estratégica para el modelo white-label. Todo **🔲 (roadmap)**.
+
+### Arquitectura de referencia (decisiones tomadas · ago-2026)
+
+> Estas decisiones son la **fuente de verdad** para diseñar E17; las HU de abajo las materializan.
+
+**1. Modelo de tenancy — *pooled* single-DB + `tenant_id` + RLS.** Una sola BD Supabase; toda tabla tenant-scoped lleva `tenant_id`. **No** schema-por-tenant ni BD-por-tenant (costo operativo/migración). Se diseña para poder **aislar después** a un tenant grande sin reescribir.
+
+**2. Identidad — Stack Auth (Hexclave) Teams = tenants.** *(Validado contra doc oficial, ago-2026.)* 1 Team = 1 negocio-cliente; un usuario puede pertenecer a **varios** Teams (el tenant es *contexto*, no identidad). Confirmado en la doc: creación/gestión de Teams server-side (`createTeam`, `addUser`, `removeUser`, `delete`) → **provisioning desde el control plane**; **metadata de Team** (`serverMetadata` JSON) para espejar `tenant_id`/plan/estado; sincronización Team→fila `tenants` vía **webhooks** (la integración no sincroniza datos por sí sola). **RBAC confirmado y encaja mejor de lo previsto:** *Team Permissions* = roles **por tenant** (admin de tienda, editor…) → HU-158; *Project Permissions* = permisos **globales cross-team** → **rol de operador del control plane** (HU-172) y respaldo de entitlements de plan (HU-173). Checks autoritativos server-side (`user.hasPermission`). No se migra a FusionAuth.
+
+**3. Aislamiento de datos — RLS como frontera dura (prima la seguridad, cero fugas entre organizaciones).** *(Revisado tras validar la doc oficial Hexclave↔Supabase, ago-2026.)*
+> - **Estrategia primaria: JWT con claim `tenant_id` (patrón oficial soportado).** La integración documentada emite un **JWT de Supabase** firmado (server action con `SUPABASE_JWT_SECRET`) y lo pasa por el callback `accessToken` del cliente Supabase; las políticas RLS leen `auth.jwt()`/`auth.uid()`. Como el JWT lo firmamos nosotros, **añadimos el claim `tenant_id`** (= Team activo, verificado que el usuario pertenece a ese Team) y las policies filtran por `auth.jwt() ->> 'tenant_id'`.
+> - **Se usa el rol `authenticated`/`anon` (sujeto a RLS), no `service-role`.** Esta es la garantía dura: como **el service-role omite RLS**, el plano de tienda **nunca** lo usa; aunque una query olvide el filtro, la RLS impide la fuga. **`service-role` solo en el control plane** (cross-tenant, auditado).
+> - **Storefront público (anon, tenant resuelto por host):** se emite un token de vida corta con `tenant_id` del host (sin usuario) para lecturas públicas bajo RLS.
+> - **Fallback (rutas server-only host-resueltas: webhooks, cron, ISR):** donde emitir un JWT sea incómodo, se admite **GUC por request** (`SET LOCAL app.current_tenant` en la transacción, sobre el pooler) + rol Postgres dedicado, con policies que acepten **ambos** orígenes (`auth.jwt()` o `current_setting`).
+> - El filtro `.eq('tenant_id', …)` en la app queda como conveniencia; **la barrera real es la RLS**.
+> - **Los singletons dejan de serlo:** `store_config`, `payment_config`, `shipping_config`, `admin_config` y `themes` pasan de `CHECK id=1` a **una fila por `tenant_id`**.
+> - **Riesgo a confirmar en el PoC:** el ejemplo usa el **secreto JWT compartido (HS256)**; Supabase está migrando a **llaves asimétricas** — validar qué firma acepta el proyecto actual. El token porta el tenant activo → **cambiar de tenant = re-emitir** el JWT.
+
+**4. Estructura del monorepo — se añade el plano de plataforma.**
+> - **Nuevo `apps/console`** — consola del operador Merkiai: alta/baja de tenants, planes, suscripciones, facturación, suspensión, dominios y métricas globales. Corre sobre **su propio proyecto Supabase (BD de plataforma)** con `service-role` (ver punto 7).
+> - **`packages/@merkiai/tenancy`** — resolución de tenant, contexto por request (JWT-claim/GUC), **entitlements** (`can(tenant, feature)`, `withinLimit`) y **connection factory** (enruta a la BD del tenant según `tenants.db_ref`).
+> - **`packages/@merkiai/billing`** — abstracción `BillingProvider` (misma forma que pagos/envíos/email).
+> - `apps/web` (storefront) y `apps/admin` siguen como **plano de tienda**, ahora tenant-scoped.
+
+**5. Facturación por suscripción — cobra al tenant, distinto de las pasarelas de sus compradores.** Abstracción `BillingProvider` intercambiable: **PayZen**, **Mercado Pago Suscripciones** (mejor conversión CO) y **Stripe** (internacional). El ciclo de vida de la suscripción (`active/trialing/past_due/suspended`) gobierna la **suspensión por impago** vía webhooks del proveedor → gate de tenant en middleware.
+
+**6. Aislamiento de datos por niveles, según el plan (routing de BD).** El default es **pooled + RLS** (una sola Supabase para todos). Pero **desde el inicio** se incluye una **costura de enrutamiento** para no quedar amarrados: columna `tenants.db_ref` + un **connection factory en `@merkiai/tenancy`** que devuelve el cliente Supabase/Postgres correcto por tenant. Esto habilita **tres niveles de aislamiento como *entitlement* de plan** (gestionado por Merkiai desde el control plane, HU-173):
+> - **Compartido** *(planes base)* — tablas compartidas + `tenant_id` + RLS.
+> - **Schema dedicado** *(plan intermedio)* — un `schema` por tenant en el mismo proyecto.
+> - **BD/proyecto dedicado** *(plan enterprise / residencia de datos)* — proyecto Supabase propio o, a escala, **Neon** (Postgres, DB-por-tenant vía API, scale-to-zero) detrás del **mismo** factory.
+> Como `tenant_id` está en todas las tablas, **promover** un tenant = exportar sus filas + cambiar `db_ref`, **sin reescribir la app**. La RLS se mantiene como defensa en profundidad incluso con BD dedicada. *(Confirmar límites/precios de aprovisionamiento de Supabase/Neon en su doc actual.)*
+
+**7. Separación de bases de datos por plano — Merkiai tiene su BD propia (proyecto Supabase dedicado, desde el inicio).** Dos planos de datos con dueños distintos:
+> - **BD de plataforma (control plane) — proyecto Supabase propio, desde el día 1.** Contiene el registro de `tenants`, `plans`, `subscriptions`, billing, dominios, la tabla de routing **`db_ref`** y la auditoría de plataforma. Solo la toca `apps/console` con **service-role**; **no** está sujeta a RLS de tenant. Es un **proyecto Supabase separado** (backups, PII de tenants y billing aislados) — **no** un schema dentro de la BD de tiendas.
+> - **BD del plano de tienda.** Productos, pedidos, clientes, páginas, config, temas… *tenant-scoped* por RLS/`db_ref`. **`apps/web` y `apps/admin` la comparten** (misma data; se separan por identidad/permisos, no por datos), con rol `authenticated` + JWT `tenant_id`.
+> - **Resolución del routing:** el plano de tienda resuelve `host → tenant_id → db_ref` contra el registro de Merkiai vía una **API interna mínima del control plane** o un **caché/réplica** del mapa en el middleware (cambia poco); **nunca** accede directo a la BD de plataforma.
+> - **Blast radius:** un fallo del storefront no puede tocar billing/suscripciones/registro de tenants. La `db_ref` (mapa de dónde vive cada tenant) **debe** vivir aquí, no dentro de una BD de tenant (huevo-y-gallina).
+
+**8. Secuencia.** Los cimientos de tenancy (`tenant_id` + RLS + rol dedicado + config por-tenant + **costura de routing `db_ref`** + **BD de plataforma separada**) van **temprano** (Ola 0), antes de acumular features: introducirlos tarde es el refactor más caro del backlog.
 
 ### HU-156 — Modelo multi-tienda (aislamiento de datos por tenant) · E17
 
 > Como operador de plataforma, quiero que cada tienda tenga sus datos, contenido y configuración aislados, para servir múltiples negocios desde una instalación.
 
 **Estimación:** XL (13+ puntos)
-**Módulo:** `store_id`/tenant en el modelo de datos, RLS por tienda, migraciones
-**Estado:** 🔲 Pendiente (roadmap v18)
+**Módulo:** `tenant_id` en el modelo de datos, RLS por tenant, minteo de JWT con claim `tenant_id` (+ GUC/rol dedicado como fallback), `packages/@merkiai/tenancy`, migraciones
+**Estado:** 🔲 Pendiente (roadmap v18) — materializa la **Arquitectura de referencia** (arriba); depende de HU-171
 
 | # | Escenario | Resultado esperado |
 |---|-----------|-------------------|
-| AC-1 | Entidades con tenant | Productos, pedidos, clientes, páginas, config y plantillas quedan asociados a una tienda |
-| AC-2 | Aislamiento | RLS/consultas garantizan que una tienda nunca ve datos de otra |
-| AC-3 | Migración | Ruta desde el modelo actual (single-tenant) a multi-tienda sin pérdida |
-| AC-4 | Configuración por tienda | store_config, payment/shipping/email y plantillas son por tienda |
+| AC-1 | Entidades con tenant | Todas las tablas tenant-scoped (productos, pedidos, clientes, páginas, config, plantillas, `processed_webhook_events`, etc.) llevan `tenant_id` |
+| AC-2 | RLS como frontera dura | Policies que filtran por el `tenant_id` del contexto; una tienda **nunca** ve datos de otra aunque una query olvide el filtro. Cero fugas entre organizaciones = requisito no negociable |
+| AC-3 | Contexto por JWT-claim (primaria) | El tenant activo viaja como claim `tenant_id` en el JWT de Supabase (`accessToken` callback); policies usan `auth.jwt() ->> 'tenant_id'`. Verificado server-side que el usuario pertenece al Team |
+| AC-4 | Rol sujeto a RLS | El plano de tienda usa el rol `authenticated`/`anon` (sujeto a RLS), **nunca** `service-role` (omite RLS); éste queda **solo para el control plane**. Fallback GUC (`SET LOCAL`) + rol dedicado para rutas server-only. Tests de aislamiento cross-tenant obligatorios |
+| AC-5 | Config por tenant | `store_config`, `payment_config`, `shipping_config`, `admin_config` y `themes` pasan de `CHECK id=1` a **una fila por `tenant_id`** |
+| AC-6 | Espejo de tenants | Cada Team de Hexclave se espeja a una fila `tenants` vía **webhook** (`serverMetadata` porta `tenant_id`/plan); provisioning desde el control plane |
+| AC-7 | Costura de routing de BD | `db_ref` (en la **BD de plataforma**, HU-172) + **connection factory** en `@merkiai/tenancy` (default: BD compartida pooled+RLS). El plano de tienda resuelve `host→tenant_id→db_ref` vía API/caché del control plane. Deja preparado el salto a schema/BD dedicada **sin reescritura** (materializado en HU-200) |
+| AC-8 | Migración | Ruta desde el modelo actual (single-tenant) a multi-tenant sin pérdida: crea el tenant por defecto y le asigna los datos existentes |
 
 ---
 
@@ -3888,19 +3931,23 @@ Para agregar un nuevo proveedor (ej. FedEx): crear `providers/fedex/index.ts`, a
 
 ---
 
-### HU-171 — Spike: modelo de autenticación multi-tenant (Stack Auth vs FusionAuth) · E17
+### HU-171 — Spike: auth multi-tenant + estrategia de aislamiento RLS · E17
 
-> Como arquitecto, quiero decidir y documentar el modelo de auth para multi-tienda, para no acoplar E17 a una decisión no validada.
+> Como arquitecto, quiero validar con un PoC la decisión de auth + aislamiento y dejarla en un ADR, para no acoplar E17 a supuestos sin probar.
 
 **Estimación:** M (spike)
-**Módulo:** PoC + ADR (registro de decisión arquitectónica)
+**Módulo:** PoC (Stack Auth Teams + rol dedicado + GUC + RLS sobre el pooler) + ADR
 **Estado:** 🔲 Pendiente (roadmap) — **precede a HU-156/157/158**
+
+> **Decisión de referencia — validada contra doc oficial Hexclave (ago-2026):** **Teams = tenants** (no FusionAuth) ✅; **RBAC** cubre roles por tenant (*Team Permissions*) y rol de operador del control plane (*Project Permissions*) ✅; **estrategia RLS revisada → JWT con claim `tenant_id`** (patrón oficial Hexclave↔Supabase: `accessToken` callback + policies `auth.jwt() ->> 'tenant_id'`), usando el rol `authenticated`/`anon` sujeto a RLS (service-role solo en control plane). **GUC por request + rol dedicado** queda como **fallback** para rutas server-only. El PoC confirma la mecánica y los riesgos abiertos.
 
 | # | Escenario | Resultado esperado |
 |---|-----------|-------------------|
-| AC-1 | Comparativa | Stack Auth (Teams/Org + aislamiento en BD por `store_id`) vs FusionAuth (tenant = namespace, identidad separada por tienda) |
-| AC-2 | Decisión (ADR) | Criterios: aislamiento de clientes por tienda, branding/políticas de auth por tienda, self-hosting/residencia, costo de migración |
-| AC-3 | Diseño contenido | E17 se diseña **auth-agnóstico** (`store_id` + RLS como fuente de verdad) para acotar un eventual cambio de proveedor |
+| AC-1 | Auth = Teams (validado) | PoC: 1 Team = 1 tenant, provisioning server-side (`createTeam`/`addUser`), `serverMetadata` con `tenant_id`/plan, sync Team→`tenants` vía **webhook**. Confirmado: no requiere FusionAuth |
+| AC-2 | RBAC (validado) | PoC: *Team Permission* (rol por tienda) y *Project Permission* (operador de plataforma) con `hasPermission` server-side; base de entitlements (HU-173) |
+| AC-3 | RLS por JWT-claim (primaria) | PoC end-to-end: server action que firma un JWT con claim `tenant_id` (Team activo verificado) → cliente Supabase con `accessToken` → policy `auth.jwt() ->> 'tenant_id'` con rol `authenticated`. Se prueba que una query **no** ve datos de otro tenant y que **nunca** se usa service-role en el plano de tienda |
+| AC-4 | RLS por GUC (fallback) | PoC: para webhooks/cron/ISR host-resueltos, `SET LOCAL app.current_tenant` en la transacción sobre el **pooler** + rol dedicado; policy que acepte `auth.jwt()` **o** `current_setting` |
+| AC-5 | ADR + riesgos | Registra la decisión y los riesgos: **firma JWT compartida (HS256) vs migración de Supabase a llaves asimétricas** (confirmar qué acepta el proyecto), re-emisión de token al cambiar de tenant, e impacto de mover el data-layer de `service-role`→rol sujeto a RLS |
 
 ---
 
@@ -3913,15 +3960,16 @@ Para agregar un nuevo proveedor (ej. FedEx): crear `providers/fedex/index.ts`, a
 > Como operador de la plataforma, quiero una consola por encima de las tiendas para crear, listar, suspender y monitorear todos los tenants, para administrar el negocio white-label.
 
 **Estimación:** L (8 puntos)
-**Módulo:** control plane (rutas/rol de plataforma), acceso controlado cross-tenant, auditoría
+**Módulo:** `apps/console` sobre **proyecto Supabase propio** (BD de plataforma), rol de plataforma, acceso cross-tenant, auditoría
 **Estado:** 🔲 Pendiente (roadmap) — depende de HU-156
 
 | # | Escenario | Resultado esperado |
 |---|-----------|-------------------|
+| AC-0 | BD de plataforma propia | El registro de `tenants`, `plans`, `subscriptions`, billing, dominios, `db_ref` y auditoría vive en un **proyecto Supabase dedicado** (separado de la BD del plano de tienda), accedido solo por el control plane con service-role |
 | AC-1 | Vista global | Lista de todos los tenants: estado (activo/trial/suspendido), plan, dominios y uso básico |
 | AC-2 | Ciclo de vida | Crear, suspender, reactivar y eliminar tenant |
 | AC-3 | Soporte | Impersonar una tienda para soporte, **auditado** (HU-146) |
-| AC-4 | Aislamiento | Rol de **plataforma** separado del admin de tienda; un admin de tienda nunca ve otros tenants |
+| AC-4 | Aislamiento | Rol de **plataforma** separado del admin de tienda (vía *Project Permission* de Hexclave, p. ej. `platform:operate`); un admin de tienda (con *Team Permissions*) nunca ve otros tenants |
 
 ---
 
@@ -3930,16 +3978,17 @@ Para agregar un nuevo proveedor (ej. FedEx): crear `providers/fedex/index.ts`, a
 > Como operador, quiero definir planes y qué funcionalidades habilita cada uno, y asignar un plan por tenant, para ofrecer niveles (p. ej. Free/Pro/Enterprise).
 
 **Estimación:** L (8 puntos)
-**Módulo:** `plans` + `entitlements`, guard `can(tenant, feature)` en UI y API
-**Estado:** 🔲 Pendiente (roadmap) — **enabler transversal del control plane**
+**Módulo:** `plans` + `entitlements`, guard `can(tenant, feature)` en UI y API (`@merkiai/tenancy`)
+**Estado:** 🔶 Parcial — **hecho:** catálogo `plans` (features/limits JSONB) en la BD de plataforma + FK `tenants.plan` + seed free/pro/enterprise (`platform/03_plans.sql`); módulo de entitlements puro `@merkiai/tenancy/entitlements` (`hasFeature`/`withinLimit`/`limitOf`, 3 tests verdes); `resolve-tenant` devuelve los entitlements del plan y el plano de tienda los transporta en `ResolvedTenant`; **guard reusable** en `apps/web/src/lib/entitlements.ts` (`tenantHasFeature` para UI, `requireFeature`/`requireWithinLimit` → 403 para API), **sin cablear a ninguna feature aún** (cada módulo aplicará el suyo al construirse). **Pendiente:** cablear el gating a features reales cuando existan (POS/dropshipping/IA no están construidos) y límites (products/users) al iniciar onboarding; gestión de planes en la consola. Se acopla a billing (HU-192/193)
 
 | # | Escenario | Resultado esperado |
 |---|-----------|-------------------|
-| AC-1 | Catálogo de planes | Planes y mapa de funcionalidades (entitlements) configurables desde el control plane |
-| AC-2 | Gating | Las features se habilitan por entitlement en front y **back (autoritativo server-side)** según el plan del tenant |
-| AC-3 | Límites | Límites cuantitativos por plan si aplica (nº de productos, usuarios, envíos…) |
-| AC-4 | Desacoplado de billing | El plan se asigna manualmente hoy; la **facturación por suscripción** queda como extensión futura (fuera de alcance actual) |
+| AC-1 | Catálogo de planes | Planes (`plans`) con matriz de funcionalidades (`features JSONB`) y límites (`limits JSONB`) configurables desde el control plane |
+| AC-2 | Gating (3 capas) | Entitlement en **UI** (ocultar), **API** (middleware `requireEntitlement`, autoritativo server-side) y **datos** (RLS solo para aislamiento, no para features) según el plan del tenant |
+| AC-3 | Límites | Límites cuantitativos por plan (nº de productos, usuarios, envíos…) vía `withinLimit` |
+| AC-4 | Origen del plan | El plan puede asignarse manualmente desde el control plane **o** derivarse de la suscripción activa (HU-193); un cambio de estado de suscripción actualiza el plan efectivo |
 | AC-5 | Cambio de plan | Actualiza entitlements de inmediato; degradación controlada (no rompe datos existentes) |
+| AC-6 | Nivel de aislamiento de datos | El plan define `data_isolation` (`compartido` \| `schema` \| `dedicado`); el **connection factory** (HU-156/HU-200) enruta según `tenants.db_ref`. Planes enterprise/residencia → BD dedicada; cambiar de nivel es una operación auditada del control plane |
 
 ---
 
@@ -3976,6 +4025,266 @@ Para agregar un nuevo proveedor (ej. FedEx): crear `providers/fedex/index.ts`, a
 | AC-3 | Verificación | Vía el proveedor de email activo (HU-159/161); estado visible en el admin de la tienda |
 | AC-4 | Activo | Los emails del tenant salen con su `from`/dominio; si falla, cae al dominio de la plataforma |
 | AC-5 | Unicidad | Un dominio de envío por tenant; no reutilizable entre tenants |
+
+---
+
+## Detalle · E17 — Facturación por suscripción / SaaS billing (HU-192…194)
+
+> Convierte el control plane en **plataforma SaaS que cobra a sus tenants**. Ojo con la distinción clave: esto es **Merkiai cobrándole al negocio-cliente** por usar la plataforma, y es **independiente** de las pasarelas (Wompi/Bold/Tu Compra/MercadoPago pagos) que cada tenant usa para cobrarle a **sus** compradores. Todo **🔲 (roadmap)**. Depende de HU-172 (control plane) y HU-173 (planes/entitlements).
+
+### HU-192 — Abstracción `BillingProvider` (PayZen · Mercado Pago Suscripciones · Stripe) · E17
+
+> Como plataforma, quiero una interfaz de facturación por suscripción intercambiable (mismo patrón que pagos/envíos/email), para cobrar a los tenants por distintos proveedores sin acoplar el código.
+
+**Estimación:** L (8 puntos)
+**Módulo:** `packages/@merkiai/billing` (interfaz + factory), config en control plane
+**Estado:** 🔲 Pendiente (roadmap) — **enabler de HU-193/194**
+
+| # | Escenario | Resultado esperado |
+|---|-----------|-------------------|
+| AC-1 | Interfaz | `BillingProvider` con `createCustomer`, `createSubscription`, `updateSubscription`, `cancelSubscription`, `getSubscription` y `verifyWebhook` |
+| AC-2 | Proveedores | **PayZen**, **Mercado Pago Suscripciones** (recomendado para arranque en CO/COP con métodos locales) y **Stripe** (expansión internacional), registrados en un factory con **proveedor activo** configurable |
+| AC-3 | Config | Credenciales + proveedor activo desde el control plane; llaves sensibles vía service_role (no expuestas al plano de tienda) |
+| AC-4 | Webhooks firmados | Cada proveedor verifica firma/HMAC + idempotencia (mismo hardening que las pasarelas de pago: fail-closed, replay window, `processed_webhook_events`) |
+| AC-5 | Portabilidad | Cambiar de proveedor no cambia el modelo de datos (`plans`/`subscriptions`); el mapeo vive en cada implementación |
+
+---
+
+### HU-193 — Planes, suscripciones y ciclo de vida del tenant · E17
+
+> Como operador, quiero suscribir cada tenant a un plan y que su estado se sincronice con el proveedor de billing, para gobernar el acceso según el pago.
+
+**Estimación:** L (8 puntos)
+**Módulo:** tablas `plans` (ext. HU-173) + `subscriptions`, webhooks de billing → estado, control plane
+**Estado:** 🔲 Pendiente (roadmap) — usa HU-192; alimenta el plan efectivo de HU-173
+
+| # | Escenario | Resultado esperado |
+|---|-----------|-------------------|
+| AC-1 | Suscripción por tenant | `subscriptions` (`tenant_id → plan_id`, `status`, `current_period_end`, `provider`, `provider_ref`); un tenant tiene una suscripción activa |
+| AC-2 | Ciclo de vida | `status ∈ {trialing, active, past_due, suspended, canceled}` gobernado por los webhooks del proveedor (`payment_failed`, `subscription.updated`, etc.) |
+| AC-3 | Plan efectivo | El plan de la suscripción activa determina los entitlements (HU-173); trial expira a `past_due` si no hay pago |
+| AC-4 | Prorrateo/cambios | Upgrade/downgrade delega prorrateo al proveedor; el cambio de plan aplica entitlements al confirmarse |
+| AC-5 | Auditoría | Cambios de estado y de plan quedan auditados (HU-146) |
+
+---
+
+### HU-194 — Suspensión por impago (dunning + gate de tenant) · E17
+
+> Como operador, quiero pausar el servicio de un tenant que no paga (sin borrar sus datos) y reactivarlo al regularizarse, para proteger el negocio sin penalizar la recuperación.
+
+**Estimación:** M (5 puntos)
+**Módulo:** gate de tenant en middleware (`@merkiai/tenancy`), estados de dunning, control plane
+**Estado:** 🔲 Pendiente (roadmap) — usa HU-193
+
+| # | Escenario | Resultado esperado |
+|---|-----------|-------------------|
+| AC-1 | `past_due` (gracia) | Periodo de gracia configurable: sigue operando con banner/avisos y recordatorios (dunning); reintentos delegados al proveedor |
+| AC-2 | `suspended` | Vencida la gracia, el gate pone la tienda en **solo-lectura o página "servicio pausado por facturación"**; storefront público apagado o con aviso |
+| AC-3 | Sin pérdida de datos | Suspender **no** borra datos; reactivar restablece el servicio al instante al confirmarse el pago (webhook → `active`) |
+| AC-4 | Alcance | El gate aplica al plano de tienda (`apps/web`/`apps/admin`); el control plane sigue accesible para regularizar |
+| AC-5 | Auditoría/aviso | Suspensión y reactivación se auditan (HU-146) y notifican al tenant por email (HU-159) |
+
+---
+
+## Detalle · E17 — Niveles de aislamiento de datos + promoción a BD dedicada (HU-200)
+
+> Materializa el **routing de BD por plan** de la Arquitectura de referencia (punto 6): del default *pooled + RLS* a **schema o BD dedicada** según el plan del cliente, gestionado por Merkiai desde el control plane. Todo **🔲 (roadmap)**. Depende de HU-156 (costura `db_ref` + factory) y se acopla a HU-173 (plan) y HU-172 (control plane).
+
+### HU-200 — Niveles de aislamiento de datos (routing por plan) · E17
+
+> Como operador de plataforma, quiero enrutar cada tenant a su almacenamiento según su plan (compartido / schema / BD dedicada) y poder promover un tenant sin reescribir la app, para ofrecer aislamiento y residencia de datos como parte de la oferta comercial.
+
+**Estimación:** XL (13+ puntos)
+**Módulo:** `tenants.db_ref` + connection factory (`@merkiai/tenancy`), herramientas de provisioning/migración en el control plane, orquestación de migraciones multi-destino
+**Estado:** 🔲 Pendiente (roadmap) — depende de HU-156; se acopla a HU-172/173
+
+| # | Escenario | Resultado esperado |
+|---|-----------|-------------------|
+| AC-1 | Routing por tenant | El connection factory resuelve el cliente de datos por tenant desde `tenants.db_ref`; **default = BD compartida** (pooled + RLS) |
+| AC-2 | Tres niveles | Soporta **compartido** (tablas + RLS), **schema dedicado** (un `schema` por tenant) y **BD/proyecto dedicado** (proyecto Supabase propio o **Neon** a escala) tras el mismo factory |
+| AC-3 | Ligado al plan | El nivel es un *entitlement* del plan (HU-173), asignable y observable desde el control plane; residencia de datos por región cuando aplique |
+| AC-4 | Promoción sin reescritura | Migrar un tenant `compartido → dedicado` = exportar sus filas (por `tenant_id`) + cambiar `db_ref`, **auditado** (HU-146) y sin downtime perceptible; reversible |
+| AC-5 | Migraciones multi-destino | El esquema se versiona y se aplica de forma consistente a **todos** los destinos (BD compartida + schemas + BDs dedicadas) |
+| AC-6 | RLS defensa en profundidad | Con BD dedicada la RLS se mantiene igualmente como segunda barrera |
+| AC-7 | Observabilidad/costos | Métricas y costo por destino visibles en el control plane (base para pricing del nivel) |
+
+---
+
+## Detalle · E17 — Abstracción del proveedor de identidad (HU-201)
+
+> Garantiza que migrar de **Stack Auth** a otro proveedor de identidad sea de bajo costo, con el mismo patrón interfaz+factory de pagos/email/billing. Ver `docs/identidad-abstraccion-y-migracion.md`. **🔲 (roadmap; base ya implementada).**
+
+### HU-201 — `IdentityProvider` intercambiable (identidad/RBAC/provisioning) · E17
+
+> Como arquitecto, quiero que la app dependa de una abstracción de identidad y no de Stack Auth directamente, para poder migrar de proveedor escribiendo solo un adaptador.
+
+**Estimación:** L (8 puntos)
+**Módulo:** interfaz `@merkiai/tenancy/identity` + adaptador(es) por proveedor; consumidores (guards, provisioning) vía la interfaz
+**Estado:** 🔲 Pendiente (roadmap) — **base implementada:** interfaz `IdentityProvider` + adaptador Stack Auth (console) + `platform-auth` refactorizado a la interfaz
+
+| # | Escenario | Resultado esperado |
+|---|-----------|-------------------|
+| AC-1 | Interfaz agnóstica | `getCurrentUser`, `hasPlatformPermission`, `hasOrgPermission`, provisioning (`createOrg`/`addMember`/`grantOrgPermission`/`inviteMember`/`setOrgMetadata`) con vocabulario neutral (org = tenant) |
+| AC-2 | Adaptador | Implementación Stack Auth **parametrizable por proyecto** (sesión = console; provisioning de orgs = proyecto admin); único archivo acoplado al proveedor |
+| AC-3 | Consumidores agnósticos | Guards, provisioning y onboarding usan la interfaz; migrar = nuevo adaptador + SDK cliente/handler + config del dashboard |
+| AC-4 | Portabilidad de datos | Aislamiento en RLS por claim `tenant_id` (no en el proveedor); permisos por IDs neutrales (`platform:operate`, `store:admin`) |
+| AC-5 | Provisioning por API vs dashboard | Documentado qué se automatiza por API (crear org, miembros, permisos, metadata) vs qué es solo dashboard (definición de permisos, OAuth, MFA, plantillas, JWT keys, dominios) |
+
+---
+
+## Detalle · E14 — Seguridad transversal y hardening (HU-202…206)
+
+> Refuerza la seguridad más allá de lo ya hecho (CSP básica + rate-limit HU-062 ✅; firmas/idempotencia/anti-subpago en webhooks ✅; PCI SAQ A HU-184…187; RLS). Cubre CORS, XSS, abuso, validación, secretos y dependencias. Todo **🔲 (roadmap)**.
+
+### HU-202 — Política CORS + hardening de endpoints internos/API · E14
+> Como plataforma, quiero una política CORS explícita y endpoints internos blindados, para no exponer APIs a orígenes no autorizados.
+
+**Estimación:** M (5 puntos) · **Estado:** 🔶 Parcial — **hecho:** `hasInternalSecret` con comparación timing-safe + rechazo de `Origin` (deny navegador) en los `/api/internal` del console; host validado con charset estricto. Pendiente: allowlist CORS de APIs públicas.
+
+| # | Escenario | Resultado esperado |
+|---|-----------|-------------------|
+| AC-1 | CORS explícito | APIs públicas con allowlist de orígenes (incl. dominios propios de tenants, HU-174); por defecto **deny** cross-origin |
+| AC-2 | Internos deny | `/api/internal/*` (console) rechazan cross-origin y navegador; solo server-to-server |
+| AC-3 | Comparación segura | Secretos internos comparados con **timing-safe** (no `===`); host validado con charset estricto *(hecho para resolve-tenant)* |
+| AC-4 | Métodos/headers | Sólo métodos/headers necesarios; sin comodines `*` con credenciales |
+
+### HU-203 — CSP endurecida (nonce) + sanitización XSS de contenido · E14
+> Como plataforma, quiero eliminar `unsafe-inline`/`unsafe-eval` y sanitizar el HTML de contenido, para cerrar la superficie XSS.
+
+**Estimación:** L (8 puntos) · **Estado:** 🔶 Parcial — **hecho:** sanitización XSS del contenido de tenant en `markdownToHtml` (escape de HTML + `href` seguro contra `javascript:`/`data:`) + pruebas (`markdown.test.ts`). Pendiente: CSP con nonce (quitar `unsafe-inline`/`unsafe-eval`) y sanitizar cualquier otro HTML no-markdown.
+
+| # | Escenario | Resultado esperado |
+|---|-----------|-------------------|
+| AC-1 | CSP con nonce/hash | Reemplazar `'unsafe-inline'`/`'unsafe-eval'` por nonce/hash en las 3 apps (web/admin/console) |
+| AC-2 | Sanitización | Contenido HTML de tenant (blog, páginas, legales, descripciones) renderizado con `dangerouslySetInnerHTML` pasa por **sanitizer** (DOMPurify/rehype-sanitize) |
+| AC-3 | Headers en todas | Security headers (CSP, HSTS, X-Frame-Options, etc.) en web/admin/console y en dominios propios |
+| AC-4 | Escapes | Interpolaciones en JSON-LD/estilos verificadas contra inyección |
+
+### HU-204 — Rate limiting distribuido + anti-abuso · E14
+> Como plataforma, quiero límites de tasa reales y protección anti-bot, para resistir fuerza bruta y abuso.
+
+**Estimación:** L (8 puntos) · **Estado:** 🔲 Pendiente (roadmap) — reemplaza el rate-limit in-memory por-instancia actual
+
+| # | Escenario | Resultado esperado |
+|---|-----------|-------------------|
+| AC-1 | Distribuido | Rate limit con store compartido (Upstash/Redis) para login, checkout, newsletter, webhooks y APIs |
+| AC-2 | Anti-bot | Captcha/Turnstile en formularios públicos (registro, newsletter, contacto) |
+| AC-3 | Brute-force | Backoff/bloqueo por credenciales fallidas (complementa Stack Auth) |
+| AC-4 | Por tenant | Cuotas por tenant/plan (se conecta con entitlements HU-173) |
+
+### HU-205 — Validación de entradas + CSRF · E14
+> Como plataforma, quiero validar toda entrada en los bordes y proteger las mutaciones con sesión, para evitar inyección y CSRF.
+
+**Estimación:** M (5 puntos) · **Estado:** 🔲 Pendiente (roadmap)
+
+| # | Escenario | Resultado esperado |
+|---|-----------|-------------------|
+| AC-1 | zod en bordes | Todos los route handlers validan body/params con **zod**; rechazo 400 uniforme |
+| AC-2 | Sin inyección | Filtros de Supabase/PostgREST nunca interpolan entrada sin validar *(fix aplicado en resolve-tenant)* |
+| AC-3 | CSRF | Mutaciones autenticadas por cookie verifican origen/token; cookies `SameSite`/`HttpOnly`/`Secure` confirmadas |
+| AC-4 | Uploads | Subida de medios valida mime, tamaño y extensión; nombres saneados |
+
+### HU-206 — Gestión de secretos + escaneo de dependencias (SCA) · E14
+> Como responsable, quiero rotación de secretos y escaneo continuo de dependencias, para reducir el riesgo de fuga y CVEs.
+
+**Estimación:** M (5 puntos) · **Estado:** 🔲 Pendiente (roadmap) — extiende HU-184 (rotación de llaves de pago) a los demás secretos
+
+| # | Escenario | Resultado esperado |
+|---|-----------|-------------------|
+| AC-1 | Rotación | Procedimiento de rotación para `INTERNAL_API_SECRET`, `SUPABASE_JWT_SECRET` y llaves de pasarela (HU-184) |
+| AC-2 | SCA en CI | Escaneo de dependencias (Dependabot/Snyk) y alertas de CVE en el pipeline |
+| AC-3 | Secret scanning | Detección de secretos en commits (pre-commit / GitHub) |
+| AC-4 | Mínimo privilegio | Revisión de que ninguna llave sensible esté en `NEXT_PUBLIC_` ni en el cliente |
+
+---
+
+## Detalle · Preparación para extracción a servicios — endurecer el monolito modular (HU-195…199)
+
+> **Decisión (ago-2026):** *de momento* la app sigue siendo un **monolito modular** (no se extraen microservicios todavía). Pero se adoptan **desde ahora** las prácticas que dejan la costura lista, para que una migración futura a servicios sea mecánica y no un refactor grande. Estas HU no cambian el despliegue actual; endurecen límites, datos, contexto y observabilidad. Todo **🔲 (roadmap)**.
+
+### HU-195 — Endurecer límites de bounded contexts + contratos · E2
+
+> Como arquitecto, quiero que cada dominio tenga una API pública explícita y contratos validados en sus bordes, para poder extraerlo a un servicio sin reescribir a sus consumidores.
+
+**Estimación:** L (8 puntos)
+**Módulo:** `packages/database` (payments, shipping, email, billing, tenancy, inventory), contratos zod, lint de límites
+**Estado:** 🔲 Pendiente (roadmap) — **fase actual: prioritario**
+
+| # | Escenario | Resultado esperado |
+|---|-----------|-------------------|
+| AC-1 | API pública por dominio | Cada dominio expone solo su `index.ts`; prohibido importar internals de otro dominio (regla de lint/CI) |
+| AC-2 | Contratos en los bordes | DTOs de entrada/salida validados con **zod** en las fronteras de cada dominio (base del futuro contrato de red) |
+| AC-3 | Transporte-agnóstico | La lógica de dominio sigue sin depender de Next (ya se cumple); se mantiene como invariante verificado |
+| AC-4 | Providers detrás de interfaz | El patrón interfaz+factory se aplica a **todos** los dominios de integración (pagos/email ya; añadir billing y shipping) |
+
+---
+
+### HU-196 — Capa de eventos de dominio + outbox (async) · E2
+
+> Como plataforma, quiero publicar eventos de dominio de forma confiable (patrón outbox), para desacoplar reacciones (emails, reconcile, IA, webhooks salientes) y tener la línea de corte natural hacia servicios.
+
+**Estimación:** L (8 puntos)
+**Módulo:** bus de eventos interno + tabla `outbox`, despacho con reintentos; base para HU-136 (telemetría) y HU-165 (webhooks salientes)
+**Estado:** 🔲 Pendiente (roadmap) — **enabler de extracción**; hoy no hay capa async
+
+| # | Escenario | Resultado esperado |
+|---|-----------|-------------------|
+| AC-1 | Publicación confiable | Los cambios de estado (p. ej. `order.paid`, `shipment.created`) escriben un evento en `outbox` **en la misma transacción** que el cambio |
+| AC-2 | Despacho | Un despachador entrega los eventos a los consumidores con reintentos/backoff e idempotencia (reusa `processed_webhook_events`) |
+| AC-3 | Consumidores desacoplados | Email, reconcile e IA reaccionan a eventos en vez de llamadas in-process directas |
+| AC-4 | Costura de servicio | El transporte de eventos es reemplazable por una cola externa (SQS/PubSub/Kafka) sin cambiar los productores/consumidores |
+| AC-5 | Multi-tenant | Cada evento porta `tenant_id`; los consumidores fijan el contexto (HU-198) |
+
+---
+
+### HU-197 — Propiedad de datos por dominio (un dominio solo escribe sus tablas) · E2
+
+> Como arquitecto, quiero que cada dominio sea dueño de sus tablas y que lo ajeno se consuma vía API/eventos, para evitar el "monolito distribuido" y permitir BD-por-dominio en el futuro.
+
+**Estimación:** M (5 puntos)
+**Módulo:** convención de propiedad de tablas + verificación, refactor de escrituras cross-dominio
+**Estado:** 🔲 Pendiente (roadmap) — **enabler de extracción**
+
+| # | Escenario | Resultado esperado |
+|---|-----------|-------------------|
+| AC-1 | Propiedad declarada | Cada tabla pertenece a un dominio; documentado y verificable |
+| AC-2 | Sin escrituras cruzadas | Un dominio **solo escribe sus tablas**; los datos ajenos se leen por su API o se reciben por evento (HU-196) |
+| AC-3 | Lecturas explícitas | Las lecturas cross-dominio pasan por la API pública del dueño (HU-195), no por acceso directo a sus tablas |
+| AC-4 | Preparado para split | La convención permite mover un dominio a su propio schema/BD sin tocar a sus consumidores |
+
+---
+
+### HU-198 — Propagación del contexto de tenant a través de la red · E17
+
+> Como plataforma multi-tenant, quiero propagar el `tenant_id` de forma confiable y firmada entre procesos/servicios, para no perder el aislamiento al cruzar una frontera de red.
+
+**Estimación:** M (5 puntos)
+**Módulo:** `@merkiai/tenancy` (propagación + re-fijado de GUC), headers/tokens firmados
+**Estado:** 🔲 Pendiente (roadmap) — **enabler de extracción**; depende de HU-156/171
+
+| # | Escenario | Resultado esperado |
+|---|-----------|-------------------|
+| AC-1 | Contexto portable | El `tenant_id` viaja en un token/header **firmado** en toda llamada entre procesos y en cada evento (HU-196) |
+| AC-2 | Re-fijado de RLS | El servicio/consumidor receptor **vuelve a fijar** `app.current_tenant` (GUC) en su propia conexión antes de tocar datos |
+| AC-3 | Fail-closed | Sin contexto de tenant válido, la operación se rechaza (nunca se ejecuta sin tenant) |
+| AC-4 | Trazabilidad | El `tenant_id` se incluye en trazas/logs (HU-199) para correlación |
+
+---
+
+### HU-199 — Observabilidad distribuida (trazas correlacionadas) · E14
+
+> Como responsable, quiero trazas correlacionadas y logs estructurados con contexto (request, tenant, dominio), para operar de forma fiable cuando la lógica se reparta en procesos/servicios.
+
+**Estimación:** M (5 puntos)
+**Módulo:** tracing (OpenTelemetry), correlation id, logs estructurados; extiende HU-170 (APM)
+**Estado:** 🔲 Pendiente (roadmap) — **enabler de extracción**; extiende HU-170
+
+| # | Escenario | Resultado esperado |
+|---|-----------|-------------------|
+| AC-1 | Correlation id | Cada request/evento propaga un id de correlación a través de las fronteras |
+| AC-2 | Trazas | Instrumentación (OpenTelemetry) que sigue una operación entre módulos/servicios y colas |
+| AC-3 | Logs estructurados | Logs con `request_id`, `tenant_id` y dominio; sin PII innecesaria (HU-152) |
+| AC-4 | Base para split | La observabilidad ya funciona antes de extraer un servicio, no después del incidente |
 
 ---
 
@@ -4288,7 +4597,7 @@ Para agregar un nuevo proveedor (ej. FedEx): crear `providers/fedex/index.ts`, a
 | Épica (v2) | Ítems | ✅ | 🟡 | 🔲 |
 |-----------|:----:|:--:|:--:|:--:|
 | E1 · Fundación e infraestructura | 10 | 10 | 0 | 0 |
-| E2 · Arquitectura y CMS unificado | 23 | 16 | 0 | 7 |
+| E2 · Arquitectura y CMS unificado | 26 | 16 | 0 | 10 |
 | E3 · Sitio público (layout, home, navegación) | 22 | 15 | 0 | 7 |
 | E4 · Tienda y catálogo | 20 | 15 | 0 | 5 |
 | E5 · Carrito | 10 | 8 | 0 | 2 |
@@ -4300,33 +4609,33 @@ Para agregar un nuevo proveedor (ej. FedEx): crear `providers/fedex/index.ts`, a
 | E11 · Páginas de contenido y servicios | 6 | 6 | 0 | 0 |
 | E12 · Autenticación y Mi Cuenta | 17 | 11 | 0 | 6 |
 | E13 · Panel de administración | 46 | 38 | 0 | 8 |
-| E14 · Despliegue, seguridad e identidad del panel | 18 | 7 | 0 | 11 |
+| E14 · Despliegue, seguridad e identidad del panel | 24 | 7 | 0 | 17 |
 | E15 · SEO y rendimiento | 12 | 10 | 0 | 2 |
 | E16 · Aplicación inteligente (IA) *(roadmap)* | 17 | 0 | 0 | 17 |
-| E17 · Plataforma multi-tienda (control plane) *(roadmap)* | 8 | 0 | 0 | 8 |
+| E17 · Plataforma multi-tienda + SaaS (control plane, billing, aislamiento, identidad) *(roadmap)* | 14 | 0 | 0 | 14 |
 | E18 · Inventario multi-ubicación y fulfillment *(roadmap)* | 8 | 0 | 0 | 8 |
-| **TOTAL** | **288** | **188** | **0** | **100** |
+| **TOTAL** | **303** | **188** | **0** | **115** |
 
-**Lectura:** del **MVP** (191 ítems) el 98 % tiene código (✅+🟡 = 188) y el 95 % tiene pruebas (✅ = 181). El roadmap **v17** suma **34 HU 🔲** (HU-101…134) para un total de 225. Bloque HU-101…119: catálogo, inventario, pagos, cuentas, SEO e IA. Bloque HU-120…125 (configurabilidad y operación de datos): drag-and-drop de secciones, **sistema de plantillas de diseño** (theme por defecto + variantes de disposición de navbar/home/tienda/PDP/carrito), import/export extensible y versionado, carga masiva de productos por CSV y respaldos de productos/pedidos/clientes. Bloque **HU-126…134 (personalización avanzada y operación de datos):** drag-and-drop generalizado, historial de versiones del CMS, vista previa/publicación y paquetes de plantilla, export CSV de productos, acciones masivas, importadores CSV multi-entidad, restauración + respaldos programados y control de acceso por rol a operaciones de datos. Bloque **E16 v2 — aplicación inteligente (HU-135…145):** cimientos (proveedor de IA intercambiable, captura de eventos, vector store) y features (asistente de compra, búsqueda visual, personalización, clustering, patrones de compra, apariencia por chat, generación de imágenes y detección de fraude). Revisión **v18:** se dividieron 5 HU grandes en incrementos (HU-107→a/b, HU-114→a/b/c, HU-122→a/b/c, HU-138→a/b, y HU-117 quedó solo 2FA), se extrajo el **registro de auditoría** (HU-146) como enabler, se sumaron HU-147…155 (descuentos, gift cards, impuestos multi-región, consulta de pedido como invitado, portabilidad/borrado de datos, consentimiento de cookies, notificaciones multicanal, accesibilidad y Core Web Vitals) y se creó la épica **E17 · Multi-tienda** (HU-156…158). Bloque **v18 (emails):** EmailProvider multi-proveedor, plantillas editables, entregabilidad, email_log y newsletter externo (Beehiiv y similares) — HU-159…163. Bloque **v19 (enablers de plataforma):** pipeline de pricing unificado, webhooks salientes/API pública, facturación electrónica (DIAN), fidelización, bundles, onboarding, monitoreo de errores y spike de auth multi-tenant — HU-164…171. Épica **E18 · Inventario multi-ubicación** (HU-176…183): ubicaciones tipo Shopify (stock por variante+ubicación, fulfillment por lugar, transferencias, click & collect), con migración del stock único actual. Bloque **hardening PCI DSS** (HU-184…187): gestión/rotación de llaves, logging seguro, alcance SAQ A + evidencia e integridad de scripts de pago (la plataforma usa flujo redirect/hosted → no maneja datos de tarjeta → alcance mínimo SAQ A). Revisión **v19 (Tu Compra):** al contrastar contra la doc oficial se detectó que la integración de Tu Compra usa un modelo antiguo (form-POST + MD5) que **no corresponde** a su API REST (token JWT + cifrado de valores); PRV-07 pasa de 🟡 a 🔲 y se agrega la HU-188 correctiva. Además, rate-limit/CSP (HU-062) pasó a ✅ con pruebas. Total roadmap: **100 HU 🔲** (288 ítems); ver el plan de olas más abajo. **Revisión v20:** se cerraron los **5 🟡** con pruebas dedicadas (selector de email → `email-provider.test.ts`, tracking en Mi Cuenta → `getOrdersByCustomerEmail` en `orders.test.ts`, JSON-LD → `json-ld.test.ts`, responsive admin → `AdminSidebar.test.tsx`, fuentes de tema → `theme-css.test.ts`) → **0 🟡**; cobertura ✅ pasa a 188.
+**Lectura:** del **MVP** (191 ítems) el 98 % tiene código (✅+🟡 = 188) y el 95 % tiene pruebas (✅ = 181). El roadmap **v17** suma **34 HU 🔲** (HU-101…134) para un total de 225. Bloque HU-101…119: catálogo, inventario, pagos, cuentas, SEO e IA. Bloque HU-120…125 (configurabilidad y operación de datos): drag-and-drop de secciones, **sistema de plantillas de diseño** (theme por defecto + variantes de disposición de navbar/home/tienda/PDP/carrito), import/export extensible y versionado, carga masiva de productos por CSV y respaldos de productos/pedidos/clientes. Bloque **HU-126…134 (personalización avanzada y operación de datos):** drag-and-drop generalizado, historial de versiones del CMS, vista previa/publicación y paquetes de plantilla, export CSV de productos, acciones masivas, importadores CSV multi-entidad, restauración + respaldos programados y control de acceso por rol a operaciones de datos. Bloque **E16 v2 — aplicación inteligente (HU-135…145):** cimientos (proveedor de IA intercambiable, captura de eventos, vector store) y features (asistente de compra, búsqueda visual, personalización, clustering, patrones de compra, apariencia por chat, generación de imágenes y detección de fraude). Revisión **v18:** se dividieron 5 HU grandes en incrementos (HU-107→a/b, HU-114→a/b/c, HU-122→a/b/c, HU-138→a/b, y HU-117 quedó solo 2FA), se extrajo el **registro de auditoría** (HU-146) como enabler, se sumaron HU-147…155 (descuentos, gift cards, impuestos multi-región, consulta de pedido como invitado, portabilidad/borrado de datos, consentimiento de cookies, notificaciones multicanal, accesibilidad y Core Web Vitals) y se creó la épica **E17 · Multi-tienda** (HU-156…158). Bloque **v18 (emails):** EmailProvider multi-proveedor, plantillas editables, entregabilidad, email_log y newsletter externo (Beehiiv y similares) — HU-159…163. Bloque **v19 (enablers de plataforma):** pipeline de pricing unificado, webhooks salientes/API pública, facturación electrónica (DIAN), fidelización, bundles, onboarding, monitoreo de errores y spike de auth multi-tenant — HU-164…171. Épica **E18 · Inventario multi-ubicación** (HU-176…183): ubicaciones tipo Shopify (stock por variante+ubicación, fulfillment por lugar, transferencias, click & collect), con migración del stock único actual. Bloque **hardening PCI DSS** (HU-184…187): gestión/rotación de llaves, logging seguro, alcance SAQ A + evidencia e integridad de scripts de pago (la plataforma usa flujo redirect/hosted → no maneja datos de tarjeta → alcance mínimo SAQ A). Revisión **v19 (Tu Compra):** al contrastar contra la doc oficial se detectó que la integración de Tu Compra usa un modelo antiguo (form-POST + MD5) que **no corresponde** a su API REST (token JWT + cifrado de valores); PRV-07 pasa de 🟡 a 🔲 y se agrega la HU-188 correctiva. Además, rate-limit/CSP (HU-062) pasó a ✅ con pruebas. Bloque **v21 (SaaS billing E17):** se incorpora facturación por suscripción con `BillingProvider` intercambiable (PayZen, Mercado Pago Suscripciones, Stripe), planes+suscripciones+ciclo de vida y suspensión por impago — HU-192…194; y se fija la arquitectura de tenancy (Stack Auth Teams, RLS como frontera con GUC por request + rol Postgres dedicado, `apps/console` + packages `@merkiai/tenancy` y `@merkiai/billing`). Bloque **v22 (preparación para servicios):** se mantiene el **monolito modular** pero se adoptan desde ya las prácticas que dejan lista la costura hacia microservicios — bounded contexts + contratos (HU-195), eventos de dominio + outbox (HU-196), propiedad de datos por dominio (HU-197), propagación de contexto de tenant por red (HU-198) y observabilidad distribuida (HU-199). Bloque **v23 (aislamiento de datos por plan):** costura de routing de BD (`tenants.db_ref` + connection factory en `@merkiai/tenancy`) con tres niveles ligados al plan — compartido (pooled+RLS) / schema dedicado / BD-proyecto dedicado (Supabase propio o **Neon**) — y promoción sin reescritura (HU-200). Bloque **v24 (identidad):** abstracción `IdentityProvider` (identidad/RBAC/provisioning) para migrar de Stack Auth con solo un adaptador — HU-201. Bloque **v25 (seguridad transversal E14):** CORS + hardening de endpoints internos (HU-202), CSP endurecida con nonce + sanitización XSS de contenido de tenant (HU-203), rate limiting distribuido + anti-abuso/captcha (HU-204), validación zod en bordes + CSRF + fix de inyección de filtros (HU-205), rotación de secretos + escaneo de dependencias/SCA (HU-206). Total roadmap: **115 HU 🔲** (303 ítems); ver el plan de olas más abajo. **Revisión v20:** se cerraron los **5 🟡** con pruebas dedicadas (selector de email → `email-provider.test.ts`, tracking en Mi Cuenta → `getOrdersByCustomerEmail` en `orders.test.ts`, JSON-LD → `json-ld.test.ts`, responsive admin → `AdminSidebar.test.tsx`, fuentes de tema → `theme-css.test.ts`) → **0 🟡**; cobertura ✅ pasa a 188.
 
 ---
 
 ## 11.1 Roadmap por olas de entrega  *(plan de fases · v19)*
 
-> Ordena las **82 HU 🔲** por **valor + dependencias + riesgo**. Regla base: los *enablers* y las decisiones de cimientos van primero, porque posponerlos encarece todo lo demás. El *sizing* es orientativo (S=3 · M=5 · L=8 · XL=13 pts).
+> Ordena las **97 HU 🔲** por **valor + dependencias + riesgo**. Regla base: los *enablers* y las decisiones de cimientos van primero, porque posponerlos encarece todo lo demás. El *sizing* es orientativo (S=3 · M=5 · L=8 · XL=13 pts).
 >
-> **Dos decisiones estratégicas que reordenan el plan:** (1) si el modelo de negocio es **white-label multi-cliente desde ya**, sube **E17** (HU-171→156/157/158) y **i18n** (HU-114a/b/c) a la Ola 0/1 — introducir `tenant_id`/RLS e idiomas después de decenas de features es un refactor mucho más caro. (2) Si el mercado es solo hispanohablante y una sola tienda, **i18n y facturación internacional se posponen o descartan**.
+> **Dos decisiones estratégicas que reordenan el plan:** (1) si el modelo de negocio es **white-label multi-cliente desde ya**, sube los **cimientos de E17** (HU-171 spike auth+RLS → HU-156 `tenant_id`+RLS+rol dedicado) y **i18n** (HU-114a/b/c) a la Ola 0/1 — introducir `tenant_id`/RLS e idiomas después de decenas de features es el refactor más caro del backlog. La **facturación/entitlements** (HU-172/173/192/193/194) y **dominios** (HU-174/175) pueden ir después, en la Ola 7. (2) Si el mercado es solo hispanohablante y una sola tienda, **i18n y facturación internacional se posponen o descartan**.
 
 | Ola | Foco | HU (🔲) | Prioridad | Size aprox. |
 |-----|------|---------|-----------|-------------|
-| **0 · Cimientos y decisiones** | Enablers que desbloquean todo | HU-171 (spike auth) · HU-164 (pipeline pricing) · HU-146 (auditoría) · HU-136 (eventos) + HU-152 (cookies) · HU-159 (EmailProvider) · cerrar los 🟡 | **Alta** | ~55 pts |
+| **0 · Cimientos y decisiones** | Enablers que desbloquean todo (incluye **endurecer el monolito modular**) | HU-171 (spike auth+RLS) · HU-164 (pipeline pricing) · HU-146 (auditoría) · HU-136 (eventos) + HU-152 (cookies) · HU-159 (EmailProvider) · **HU-195 (bounded contexts+contratos) · HU-196 (eventos+outbox) · HU-197 (propiedad de datos por dominio)** · cerrar los 🟡 | **Alta** | ~75 pts |
 | **1 · Conversión y catálogo** | Quick wins de venta | HU-102 · HU-101 · HU-104 · HU-103 · HU-105 · HU-106 · HU-113 · HU-147 · HU-148 · HU-168 | **Alta** | ~55 pts |
 | **2 · Operación y postventa** | Admin operable | HU-120 · HU-126 · HU-124 · HU-130 · HU-131 · HU-132 · HU-116 · HU-107a/b · HU-125 · HU-133 · HU-134 · HU-112 · HU-150 · HU-160 · HU-162 | Alta/Media | ~70 pts |
-| **3 · Confianza, privacidad, seguridad y rendimiento** | Seguridad, PCI y UX | HU-117 (2FA) · HU-146 (auditoría) · **HU-184…187 (hardening PCI)** · HU-151 · HU-154 · HU-155 · HU-170 · HU-111 · HU-153 · HU-161 | Media/Alta | ~75 pts |
+| **3 · Confianza, privacidad, seguridad y rendimiento** | Seguridad, PCI y UX | HU-117 (2FA) · HU-146 (auditoría) · **HU-184…187 (hardening PCI)** · HU-151 · HU-154 · HU-155 · HU-170 · **HU-199 (observabilidad distribuida)** · **HU-202…206 (CORS/XSS/rate-limit/validación/secretos)** · HU-111 · HU-153 · HU-161 | Media/Alta | ~110 pts |
 | **4 · Personalización visual** | Theming white-label (definir modelo único primero) | HU-121 · HU-122a/b/c · HU-128 · HU-129 · HU-123 · HU-127 · HU-115 | Media | ~65 pts |
 | **5 · Internacional y fiscal** | Expansión (según mercado) | HU-114a/b/c · HU-149 · HU-108 · HU-166 (DIAN) · HU-110 · HU-109 · HU-163 · HU-167 | Media / depende de mercado | ~75 pts |
 | **6 · Aplicación inteligente (IA)** | Capa de IA | HU-137 · IA-01 · HU-119 · HU-139 · HU-140 · IA-02 · HU-138a/b · HU-142 · HU-141 · HU-118 · HU-143 · HU-144 · HU-145 · IA-03 (+ HU-135 si no se hizo en Ola 0) | Media / estratégica | ~110 pts |
-| **7 · Multi-tienda + control plane (E17)** | Escala white-label (o adelantar a Ola 0 según decisión) | HU-171 (spike) · HU-156 · HU-157 · HU-158 · HU-172 (consola tenants) · HU-173 (planes/entitlements) · HU-174 (dominios web) · HU-175 (dominios de envío) · HU-165 · HU-169 | Estratégica | ~90 pts |
+| **7 · Multi-tienda + SaaS (E17)** | Escala white-label + facturación (o adelantar cimientos a Ola 0 según decisión) | HU-171 (spike auth+RLS) · HU-156 (tenant_id+RLS+rol dedicado) · HU-157 · HU-158 · HU-172 (consola tenants) · HU-173 (planes/entitlements) · HU-192 (BillingProvider) · HU-193 (suscripciones) · HU-194 (suspensión) · HU-198 (contexto de tenant por red) · HU-200 (aislamiento de datos por plan) · HU-201 (abstracción de identidad) · HU-174 (dominios web) · HU-175 (dominios de envío) · HU-165 · HU-169 | Estratégica | ~150 pts |
 
 **Épica condicional — E18 · Inventario multi-ubicación (HU-176…183, ~50 pts):** solo aplica si el negocio maneja **varias bodegas/tiendas físicas** o click & collect con stock real por punto. Si es una sola ubicación, el modelo actual (stock único) basta. Cuando aplique, va en la **Ola 2** (operación) y su enabler es HU-177 (inventario por ubicación) + HU-178 (migración del stock único, que **debe preceder** a ruteo/transferencias/retiro). Si las ubicaciones son por tenant, alinéala **después de E17** (o diseña `location` con `store_id` desde el inicio).
 

@@ -1,4 +1,4 @@
-import { createServerClient } from '../client'
+import { createServerClient, type Db } from '../client'
 
 export interface ShippingProfile {
   email: string
@@ -14,8 +14,8 @@ export interface ShippingProfile {
 
 export type ShippingProfileInput = Omit<ShippingProfile, 'updated_at'>
 
-export async function getShippingProfile(email: string): Promise<ShippingProfile | null> {
-  const supabase = createServerClient()
+export async function getShippingProfile(email: string, db: Db = createServerClient()): Promise<ShippingProfile | null> {
+  const supabase = db
   const { data, error } = await supabase
     .from('shipping_profiles')
     .select('*')
@@ -26,8 +26,8 @@ export async function getShippingProfile(email: string): Promise<ShippingProfile
   return data as ShippingProfile | null
 }
 
-export async function upsertShippingProfile(input: ShippingProfileInput): Promise<ShippingProfile> {
-  const supabase = createServerClient()
+export async function upsertShippingProfile(input: ShippingProfileInput, db: Db = createServerClient()): Promise<ShippingProfile> {
+  const supabase = db
   const { data, error } = await supabase
     .from('shipping_profiles')
     .upsert(

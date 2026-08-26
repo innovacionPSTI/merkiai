@@ -1,11 +1,11 @@
-import { createServerClient } from '../client'
+import { createServerClient, type Db } from '../client'
 import type { MediaAsset } from '../types'
 
 export type { MediaAsset }
 
 /** Lista todos los assets ordenados por fecha de subida (más reciente primero). */
-export async function getMediaAssets(opts?: { mimeType?: string; limit?: number }): Promise<MediaAsset[]> {
-  const supabase = createServerClient()
+export async function getMediaAssets(opts?: { mimeType?: string; limit?: number }, db: Db = createServerClient()): Promise<MediaAsset[]> {
+  const supabase = db
   let query = supabase
     .from('media_assets')
     .select('*')
@@ -32,8 +32,8 @@ export interface CreateMediaAssetInput {
 }
 
 /** Inserta un nuevo asset en la tabla media_assets. */
-export async function createMediaAsset(input: CreateMediaAssetInput): Promise<MediaAsset> {
-  const supabase = createServerClient()
+export async function createMediaAsset(input: CreateMediaAssetInput, db: Db = createServerClient()): Promise<MediaAsset> {
+  const supabase = db
   const { data, error } = await supabase
     .from('media_assets')
     .insert({
@@ -56,15 +56,15 @@ export async function createMediaAsset(input: CreateMediaAssetInput): Promise<Me
 }
 
 /** Elimina un asset por su key. */
-export async function deleteMediaAsset(key: string): Promise<void> {
-  const supabase = createServerClient()
+export async function deleteMediaAsset(key: string, db: Db = createServerClient()): Promise<void> {
+  const supabase = db
   const { error } = await supabase.from('media_assets').delete().eq('key', key)
   if (error) throw error
 }
 
 /** Actualiza el alt_text de un asset. */
-export async function updateMediaAssetAlt(key: string, altText: string): Promise<MediaAsset> {
-  const supabase = createServerClient()
+export async function updateMediaAssetAlt(key: string, altText: string, db: Db = createServerClient()): Promise<MediaAsset> {
+  const supabase = db
   const { data, error } = await supabase
     .from('media_assets')
     .update({ alt_text: altText, updated_at: new Date().toISOString() })

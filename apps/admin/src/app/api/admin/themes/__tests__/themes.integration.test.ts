@@ -1,4 +1,6 @@
 /**
+ * @jest-environment node
+ *
  * Integration tests — /api/admin/themes & /api/admin/themes/[id]
  *
  * Tests: GET, POST, PATCH (editar + setActive), DELETE — autorización y lógica.

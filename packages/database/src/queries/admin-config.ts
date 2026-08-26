@@ -1,4 +1,4 @@
-import { createServerClient } from '../client'
+import { createServerClient, type Db } from '../client'
 
 export interface AdminConfig {
   id: number
@@ -18,8 +18,8 @@ const DEFAULT_ADMIN_CONFIG: AdminConfig = {
   updated_at: new Date().toISOString(),
 }
 
-export async function getAdminConfig(): Promise<AdminConfig> {
-  const supabase = createServerClient()
+export async function getAdminConfig(db: Db = createServerClient()): Promise<AdminConfig> {
+  const supabase = db
   const { data, error } = await supabase
     .from('admin_config')
     .select('*')
@@ -30,8 +30,8 @@ export async function getAdminConfig(): Promise<AdminConfig> {
   return data as AdminConfig
 }
 
-export async function updateAdminConfig(input: UpdateAdminConfigInput): Promise<AdminConfig> {
-  const supabase = createServerClient()
+export async function updateAdminConfig(input: UpdateAdminConfigInput, db: Db = createServerClient()): Promise<AdminConfig> {
+  const supabase = db
   const { data, error } = await supabase
     .from('admin_config')
     // eslint-disable-next-line @typescript-eslint/no-explicit-any

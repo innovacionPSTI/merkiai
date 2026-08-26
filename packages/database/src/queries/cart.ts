@@ -1,4 +1,4 @@
-import { createServerClient } from '../client'
+import { createServerClient, type Db } from '../client'
 import type { CartItem } from '../types'
 
 export type { CartItem }
@@ -14,8 +14,8 @@ export type UpsertCartItemInput = {
   image_url?: string | null
 }
 
-export async function getCartItems(customerId: string): Promise<CartItem[]> {
-  const supabase = createServerClient()
+export async function getCartItems(customerId: string, db: Db = createServerClient()): Promise<CartItem[]> {
+  const supabase = db
   const { data, error } = await supabase
     .from('cart_items')
     .select('*')
@@ -25,8 +25,8 @@ export async function getCartItems(customerId: string): Promise<CartItem[]> {
   return data as CartItem[]
 }
 
-export async function upsertCartItem(input: UpsertCartItemInput): Promise<CartItem> {
-  const supabase = createServerClient()
+export async function upsertCartItem(input: UpsertCartItemInput, db: Db = createServerClient()): Promise<CartItem> {
+  const supabase = db
   const { data, error } = await supabase
     .from('cart_items')
     .upsert(input, { onConflict: 'customer_id,variant_id' })
@@ -36,8 +36,8 @@ export async function upsertCartItem(input: UpsertCartItemInput): Promise<CartIt
   return data as CartItem
 }
 
-export async function removeCartItem(customerId: string, variantId: number): Promise<void> {
-  const supabase = createServerClient()
+export async function removeCartItem(customerId: string, variantId: number, db: Db = createServerClient()): Promise<void> {
+  const supabase = db
   const { error } = await supabase
     .from('cart_items')
     .delete()
@@ -46,8 +46,8 @@ export async function removeCartItem(customerId: string, variantId: number): Pro
   if (error) throw error
 }
 
-export async function clearCart(customerId: string): Promise<void> {
-  const supabase = createServerClient()
+export async function clearCart(customerId: string, db: Db = createServerClient()): Promise<void> {
+  const supabase = db
   const { error } = await supabase
     .from('cart_items')
     .delete()
@@ -55,8 +55,8 @@ export async function clearCart(customerId: string): Promise<void> {
   if (error) throw error
 }
 
-export async function replaceCart(customerId: string, items: UpsertCartItemInput[]): Promise<void> {
-  const supabase = createServerClient()
+export async function replaceCart(customerId: string, items: UpsertCartItemInput[], db: Db = createServerClient()): Promise<void> {
+  const supabase = db
 
   // Deduplicar por variant_id (sumando cantidades). El payload del cliente puede
   // traer el mismo variant repetido (fusión de carrito invitado + BD, cambios de

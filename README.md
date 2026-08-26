@@ -80,7 +80,7 @@ Además, refuerzos transversales: reseñas y búsqueda de catálogo, motor de de
 ## 3. Arquitectura del monorepo
 
 ```
-vps-coffee/                    ← raíz del monorepo (Turborepo)
+merkiai/                    ← raíz del monorepo (Turborepo)
 ├── apps/
 │   ├── web/                   ← Sitio público  (puerto 3000)
 │   └── admin/                 ← Panel admin    (puerto 3001)
@@ -107,7 +107,7 @@ Los `packages/*` son consumidos directamente como workspace packages (sin compil
 ## 4. Estructura de carpetas
 
 ```
-vps-coffee/
+merkiai/
 ├── apps/
 │   ├── web/
 │   │   └── src/
@@ -207,8 +207,8 @@ vps-coffee/
 ### Paso 1 — Clonar e instalar dependencias
 
 ```bash
-git clone <repo-url> vps-coffee
-cd vps-coffee
+git clone <repo-url> merkiai
+cd merkiai
 pnpm install
 ```
 

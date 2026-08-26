@@ -1,4 +1,6 @@
 /**
+ * @jest-environment node
+ *
  * Integration tests — POST /api/admin/products
  *
  * Prueba crítica: verifica que las imágenes del body se persisten en la BD

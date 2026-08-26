@@ -1,4 +1,6 @@
 /**
+ * @jest-environment node
+ *
  * Integration tests — GET + PATCH /api/admin/config
  *
  * Tests:

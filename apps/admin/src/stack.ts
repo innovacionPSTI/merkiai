@@ -12,9 +12,9 @@ export const stackServerApp = new StackServerApp({
   publishableClientKey: process.env.NEXT_PUBLIC_HEXCLAVE_PUBLISHABLE_CLIENT_KEY,
   secretServerKey: process.env.HEXCLAVE_SECRET_SERVER_KEY,
   urls: {
-    signIn: '/handler/sign-in',
+    signIn: '/login',
     afterSignIn: '/dashboard',
-    afterSignOut: '/handler/sign-in',
-    // Sin signUp: el middleware redirige /handler/sign-up → /handler/sign-in
+    afterSignOut: '/login',
+    // Sin signUp: el middleware redirige /handler/sign-up → /login
   },
 })

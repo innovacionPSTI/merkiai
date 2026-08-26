@@ -7,16 +7,41 @@
  *   - item / * item  (unordered list)
  *   Blank lines separate paragraphs
  *
- * Safe for admin-authored content (not user-generated).
+ * Seguridad (HU-203): el contenido puede ser autoría del tenant. Se **escapa
+ * el HTML** del texto antes de aplicar el formato markdown (neutraliza `<script>`,
+ * `onerror=…`, etc.) y se **valida el href** de los enlaces (rechaza
+ * `javascript:`/`data:`), así el resultado es seguro para `dangerouslySetInnerHTML`.
  */
 
-/** Inline formatting: bold, italic, code, links. */
+/** Escapa caracteres HTML para evitar inyección. */
+function escapeHtml(s: string): string {
+  return s
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;')
+}
+
+/** Sólo permite http(s), mailto, anclas y rutas relativas; el resto → '#'. */
+function safeUrl(url: string): string {
+  const u = url.trim()
+  if (/^javascript:/i.test(u) || /^data:/i.test(u) || /^vbscript:/i.test(u)) return '#'
+  if (/^(https?:\/\/|mailto:|\/|#|\.)/i.test(u)) return u
+  return '#'
+}
+
+/** Inline formatting: bold, italic, code, links. Escapa HTML primero. */
 function inline(text: string): string {
-  return text
+  return escapeHtml(text)
     .replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>')
     .replace(/\*(.+?)\*/g, '<em>$1</em>')
     .replace(/`(.+?)`/g, '<code>$1</code>')
-    .replace(/\[(.+?)\]\((.+?)\)/g, '<a href="$2" target="_blank" rel="noopener noreferrer">$1</a>')
+    .replace(
+      /\[(.+?)\]\((.+?)\)/g,
+      (_m, label: string, url: string) =>
+        `<a href="${safeUrl(url)}" target="_blank" rel="noopener noreferrer">${label}</a>`,
+    )
 }
 
 export function markdownToHtml(md: string): string {

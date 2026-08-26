@@ -26,18 +26,18 @@ importers:
       '@hookform/resolvers':
         specifier: ^3.4.2
         version: 3.10.0(react-hook-form@7.81.0(react@19.2.7))
-      '@stackframe/stack':
-        specifier: ^2.7.4
-        version: 2.8.108(@types/react-dom@18.3.7(@types/react@18.3.31))(@types/react@18.3.31)(next@16.2.10(@babel/core@7.29.7)(@opentelemetry/api@1.9.1)(react-dom@19.2.7(react@19.2.7))(react@19.2.7))(react-dom@19.2.7(react@19.2.7))(react@19.2.7)(tailwindcss@3.4.19(tsx@4.23.0))(zod@3.25.76)
-      '@supabase/supabase-js':
-        specifier: ^2.43.0
-        version: 2.110.2
       '@merkiai/database':
         specifier: workspace:*
         version: link:../../packages/database
       '@merkiai/ui':
         specifier: workspace:*
         version: link:../../packages/ui
+      '@stackframe/stack':
+        specifier: ^2.7.4
+        version: 2.8.108(@types/react-dom@18.3.7(@types/react@18.3.31))(@types/react@18.3.31)(next@16.2.10(@babel/core@7.29.7)(@opentelemetry/api@1.9.1)(react-dom@19.2.7(react@19.2.7))(react@19.2.7))(react-dom@19.2.7(react@19.2.7))(react@19.2.7)(tailwindcss@3.4.19(tsx@4.23.0))(zod@3.25.76)
+      '@supabase/supabase-js':
+        specifier: ^2.43.0
+        version: 2.110.2
       clsx:
         specifier: ^2.1.1
         version: 2.1.1
@@ -109,11 +109,75 @@ importers:
         specifier: ^5.4.0
         version: 5.9.3
 
+  apps/console:
+    dependencies:
+      '@merkiai/tenancy':
+        specifier: workspace:*
+        version: link:../../packages/tenancy
+      '@merkiai/ui':
+        specifier: workspace:*
+        version: link:../../packages/ui
+      '@stackframe/stack':
+        specifier: ^2.7.4
+        version: 2.8.108(@types/react-dom@18.3.7(@types/react@18.3.31))(@types/react@18.3.31)(next@16.2.10(@babel/core@7.29.7)(@opentelemetry/api@1.9.1)(react-dom@19.2.7(react@19.2.7))(react@19.2.7))(react-dom@19.2.7(react@19.2.7))(react@19.2.7)(tailwindcss@3.4.19(tsx@4.23.0))(zod@3.25.76)
+      '@supabase/supabase-js':
+        specifier: ^2.43.0
+        version: 2.110.2
+      next:
+        specifier: 16.2.10
+        version: 16.2.10(@babel/core@7.29.7)(@opentelemetry/api@1.9.1)(react-dom@19.2.7(react@19.2.7))(react@19.2.7)
+      react:
+        specifier: ^19.2.7
+        version: 19.2.7
+      react-dom:
+        specifier: ^19.2.7
+        version: 19.2.7(react@19.2.7)
+    devDependencies:
+      '@types/jest':
+        specifier: ^29.5.12
+        version: 29.5.14
+      '@types/node':
+        specifier: ^20.0.0
+        version: 20.19.43
+      '@types/react':
+        specifier: ^18.3.0
+        version: 18.3.31
+      '@types/react-dom':
+        specifier: ^18.3.0
+        version: 18.3.7(@types/react@18.3.31)
+      eslint:
+        specifier: ^8
+        version: 8.57.1
+      eslint-config-next:
+        specifier: 14.2.3
+        version: 14.2.3(eslint@8.57.1)(typescript@5.9.3)
+      jest:
+        specifier: ^29.7.0
+        version: 29.7.0(@types/node@20.19.43)(ts-node@10.9.2(@types/node@20.19.43)(typescript@5.9.3))
+      jest-environment-node:
+        specifier: ^29.7.0
+        version: 29.7.0
+      ts-jest:
+        specifier: ^29.1.4
+        version: 29.4.11(@babel/core@7.29.7)(@jest/transform@29.7.0)(@jest/types@29.6.3)(babel-jest@29.7.0(@babel/core@7.29.7))(jest-util@29.7.0)(jest@29.7.0(@types/node@20.19.43)(ts-node@10.9.2(@types/node@20.19.43)(typescript@5.9.3)))(typescript@5.9.3)
+      typescript:
+        specifier: ^5.4.0
+        version: 5.9.3
+
   apps/web:
     dependencies:
       '@hookform/resolvers':
         specifier: ^3.4.2
         version: 3.10.0(react-hook-form@7.81.0(react@19.2.7))
+      '@merkiai/database':
+        specifier: workspace:*
+        version: link:../../packages/database
+      '@merkiai/tenancy':
+        specifier: workspace:*
+        version: link:../../packages/tenancy
+      '@merkiai/ui':
+        specifier: workspace:*
+        version: link:../../packages/ui
       '@stackframe/stack':
         specifier: ^2.7.4
         version: 2.8.108(@types/react-dom@18.3.7(@types/react@18.3.31))(@types/react@18.3.31)(next@16.2.10(@babel/core@7.29.7)(@opentelemetry/api@1.9.1)(react-dom@19.2.7(react@19.2.7))(react@19.2.7))(react-dom@19.2.7(react@19.2.7))(react@19.2.7)(tailwindcss@3.4.19(tsx@4.23.0))(zod@3.25.76)
@@ -126,12 +190,6 @@ importers:
       '@vercel/analytics':
         specifier: ^1.3.1
         version: 1.6.1(next@16.2.10(@babel/core@7.29.7)(@opentelemetry/api@1.9.1)(react-dom@19.2.7(react@19.2.7))(react@19.2.7))(react@19.2.7)
-      '@merkiai/database':
-        specifier: workspace:*
-        version: link:../../packages/database
-      '@merkiai/ui':
-        specifier: workspace:*
-        version: link:../../packages/ui
       clsx:
         specifier: ^2.1.1
         version: 2.1.1
@@ -225,6 +283,34 @@ importers:
       '@supabase/supabase-js':
         specifier: ^2.43.0
         version: 2.110.2
+    devDependencies:
+      '@types/jest':
+        specifier: ^29.5.12
+        version: 29.5.14
+      jest:
+        specifier: ^29.7.0
+        version: 29.7.0(@types/node@20.19.43)(ts-node@10.9.2(@types/node@20.19.43)(typescript@5.9.3))
+      jest-environment-node:
+        specifier: ^29.7.0
+        version: 29.7.0
+      ts-jest:
+        specifier: ^29.1.4
+        version: 29.4.11(@babel/core@7.29.7)(@jest/transform@29.7.0)(@jest/types@29.6.3)(babel-jest@29.7.0(@babel/core@7.29.7))(jest-util@29.7.0)(jest@29.7.0(@types/node@20.19.43)(ts-node@10.9.2(@types/node@20.19.43)(typescript@5.9.3)))(typescript@5.9.3)
+      ts-node:
+        specifier: ^10.9.2
+        version: 10.9.2(@types/node@20.19.43)(typescript@5.9.3)
+      typescript:
+        specifier: ^5.4.0
+        version: 5.9.3
+
+  packages/tenancy:
+    dependencies:
+      '@supabase/supabase-js':
+        specifier: ^2.43.0
+        version: 2.110.2
+      jose:
+        specifier: ^5.9.0
+        version: 5.10.0
     devDependencies:
       '@types/jest':
         specifier: ^29.5.12
@@ -3827,6 +3913,9 @@ packages:
   jiti@1.21.7:
     resolution: {integrity: sha512-/imKNG4EbWNrVjoNC/1H5/9GFy+tqjGBHCaSsN+P2RnPqjsLmv6UD3Ej+Kj8nBWaRAwyk7kK5ZUc+OEatnTR3A==}
     hasBin: true
+
+  jose@5.10.0:
+    resolution: {integrity: sha512-s+3Al/p9g32Iq+oqXxkW//7jk2Vig6FF1CFqzVXoTUXt2qz89YWbL+OwS17NFYEvxC35n0FKeGO2LGYSxeM2Gg==}
 
   jose@6.2.3:
     resolution: {integrity: sha512-YYVDInQKFJfR/xa3ojUTl8c2KoTwiL1R5Wg9YCydwH0x0B9grbzlg5HC7mMjCtUJjbQ/YnGEZIhI5tCgfTb4Hw==}
@@ -9335,6 +9424,8 @@ snapshots:
       - ts-node
 
   jiti@1.21.7: {}
+
+  jose@5.10.0: {}
 
   jose@6.2.3: {}
 

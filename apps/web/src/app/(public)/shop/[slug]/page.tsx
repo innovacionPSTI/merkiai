@@ -3,6 +3,7 @@ import { notFound } from 'next/navigation'
 import type { Metadata } from 'next'
 import ProductDetail from '@/components/shop/ProductDetail'
 import { buildProductJsonLd } from '@/lib/json-ld'
+import { getTenantDb } from '@/lib/tenant-db'
 
 interface Props {
   params: Promise<{ slug: string }>
@@ -10,7 +11,7 @@ interface Props {
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { slug } = await params
-  const product = await getProductBySlug(slug).catch(() => null)
+  const product = await getProductBySlug(slug, getTenantDb()).catch(() => null)
   if (!product) return {}
 
   const title       = product.seo_title ?? product.name
@@ -40,13 +41,16 @@ export const dynamic = 'force-dynamic'
 
 export default async function ProductPage({ params }: Props) {
   const { slug } = await params
+  // E17/HU-156: catálogo tenant-scoped por RLS (rol anon). getStoreConfig sigue
+  // en service-role hasta convertir los singletons a fila-por-tenant.
+  const db = getTenantDb()
   const [product, storeConfig] = await Promise.all([
-    getProductBySlug(slug).catch(() => null),
+    getProductBySlug(slug, db).catch(() => null),
     getStoreConfig().catch(() => null),
   ])
   if (!product) notFound()
 
-  const related = await getProducts()
+  const related = await getProducts(undefined, db)
     .then((all) => all.filter((p) => p.id !== product.id && p.category_id === product.category_id).slice(0, 3))
     .catch(() => [])
 

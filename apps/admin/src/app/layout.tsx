@@ -48,7 +48,7 @@ function darkenHex(hex: string, factor = 0.85): string {
 }
 
 /** Rutas que NO requieren verificación de rol de admin */
-const PUBLIC_PATHS = ['/handler', '/no-autorizado']
+const PUBLIC_PATHS = ['/login', '/handler', '/no-autorizado']
 
 function isPublicPath(pathname: string): boolean {
   // pathname vacío = build-time (no hay request headers); tratar como público

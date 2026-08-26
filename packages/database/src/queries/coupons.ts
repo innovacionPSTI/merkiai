@@ -1,4 +1,4 @@
-import { createServerClient } from '../client'
+import { createServerClient, type Db } from '../client'
 import type { Coupon } from '../types'
 
 export type { Coupon }
@@ -17,8 +17,8 @@ export type UpdateCouponInput = Partial<CreateCouponInput>
 
 // ─── Read ─────────────────────────────────────────────────────────────────────
 
-export async function getCoupons(): Promise<Coupon[]> {
-  const supabase = createServerClient()
+export async function getCoupons(db: Db = createServerClient()): Promise<Coupon[]> {
+  const supabase = db
   const { data, error } = await supabase
     .from('coupons')
     .select('*')
@@ -27,8 +27,8 @@ export async function getCoupons(): Promise<Coupon[]> {
   return data as Coupon[]
 }
 
-export async function getCouponByCode(code: string): Promise<Coupon | null> {
-  const supabase = createServerClient()
+export async function getCouponByCode(code: string, db: Db = createServerClient()): Promise<Coupon | null> {
+  const supabase = db
   const { data, error } = await supabase
     .from('coupons')
     .select('*')
@@ -72,8 +72,8 @@ export function validateCoupon(coupon: Coupon, orderSubtotal: number): CouponVal
 
 // ─── Write ────────────────────────────────────────────────────────────────────
 
-export async function createCoupon(input: CreateCouponInput): Promise<Coupon> {
-  const supabase = createServerClient()
+export async function createCoupon(input: CreateCouponInput, db: Db = createServerClient()): Promise<Coupon> {
+  const supabase = db
   const { data, error } = await supabase
     .from('coupons')
     .insert({ ...input, code: input.code.toUpperCase() })
@@ -83,8 +83,8 @@ export async function createCoupon(input: CreateCouponInput): Promise<Coupon> {
   return data as Coupon
 }
 
-export async function updateCoupon(id: number, input: UpdateCouponInput): Promise<Coupon> {
-  const supabase = createServerClient()
+export async function updateCoupon(id: number, input: UpdateCouponInput, db: Db = createServerClient()): Promise<Coupon> {
+  const supabase = db
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const update: any = { ...input }
   if (input.code) update.code = input.code.toUpperCase()
@@ -98,14 +98,14 @@ export async function updateCoupon(id: number, input: UpdateCouponInput): Promis
   return data as Coupon
 }
 
-export async function deleteCoupon(id: number): Promise<void> {
-  const supabase = createServerClient()
+export async function deleteCoupon(id: number, db: Db = createServerClient()): Promise<void> {
+  const supabase = db
   const { error } = await supabase.from('coupons').delete().eq('id', id)
   if (error) throw error
 }
 
 /** Incrementa el contador de usos de un cupón tras un pedido exitoso */
-export async function incrementCouponUsage(code: string): Promise<void> {
-  const supabase = createServerClient()
+export async function incrementCouponUsage(code: string, db: Db = createServerClient()): Promise<void> {
+  const supabase = db
   await supabase.rpc('increment_coupon_usage', { coupon_code: code }).throwOnError()
 }

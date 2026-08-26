@@ -23,6 +23,7 @@
 13. [Checklist pre-deploy](#13-checklist-pre-deploy)
 14. [Rollback y gestión de incidencias](#14-rollback-y-gestión-de-incidencias)
 15. [Variables de entorno — referencia completa](#15-variables-de-entorno--referencia-completa)
+16. [Despliegue multi-tenant + SaaS (roadmap E17)](#16-despliegue-multi-tenant--saas-roadmap-e17)
 
 ---
 
@@ -31,23 +32,25 @@
 Este monorepo se despliega como **dos proyectos independientes en Vercel**, cada uno mapeado a su propia app dentro del repositorio.
 
 ```
-GitHub (monorepo vps-coffee)
+GitHub (monorepo merkiai)
          │
          ├── push a main
          │
-         ├──▶ Vercel Project: vps-coffee-web   (apps/web)
+         ├──▶ Vercel Project: merkiai-web   (apps/web)
          │         └── tienda.example.com
          │
-         └──▶ Vercel Project: vps-coffee-admin  (apps/admin)
+         └──▶ Vercel Project: merkiai-admin  (apps/admin)
                    └── admin.tienda.example.com
 ```
 
 | Proyecto Vercel | App en el repo | Dominio | Puerto local |
 |----------------|----------------|---------|-------------|
-| `vps-coffee-web` | `apps/web` | `tienda.example.com` | 3000 |
-| `vps-coffee-admin` | `apps/admin` | `admin.tienda.example.com` | 3001 |
+| `merkiai-web` | `apps/web` | `tienda.example.com` | 3000 |
+| `merkiai-admin` | `apps/admin` | `admin.tienda.example.com` | 3001 |
 
 Vercel detecta automáticamente que es un monorepo y maneja la caché de Turborepo entre builds.
+
+> **Modelo actual = single-tenant** (una instalación = una tienda). Para el modelo **multi-tenant/SaaS** (E17) —tercer app `apps/console`, **BD de plataforma en proyecto Supabase propio**, subdominios wildcard y dominios personalizados por tenant— ver la **[sección 16](#16-despliegue-multi-tenant--saas-roadmap-e17)**.
 
 ---
 
@@ -75,8 +78,8 @@ git init
 git add .
 git commit -m "chore: initial commit"
 
-# En GitHub: crear repositorio privado "vps-coffee"
-git remote add origin https://github.com/<org>/vps-coffee.git
+# En GitHub: crear repositorio privado "merkiai"
+git remote add origin https://github.com/<org>/merkiai.git
 git branch -M main
 git push -u origin main
 ```
@@ -190,7 +193,7 @@ Y en **Storage** que existen los buckets:
 
 1. Ir a [vercel.com/new](https://vercel.com/new)
 2. Hacer clic en **"Import Git Repository"**
-3. Seleccionar el repo `vps-coffee` de GitHub
+3. Seleccionar el repo `merkiai` de GitHub
 4. Autorizar el acceso si se pide
 
 ### 5.2 Configurar el proyecto
@@ -199,7 +202,7 @@ En la pantalla de configuración del nuevo proyecto:
 
 | Campo | Valor |
 |-------|-------|
-| **Project Name** | `vps-coffee-web` |
+| **Project Name** | `merkiai-web` |
 | **Framework Preset** | `Next.js` (detección automática) |
 | **Root Directory** | `apps/web` |
 | **Build Command** | `cd ../.. && pnpm turbo build --filter=@merkiai/web` |
@@ -260,12 +263,12 @@ Si el build falla, revisar el log en la pestaña **Deployments** → clic en el 
 ### 6.1 Crear segundo proyecto
 
 1. Ir a [vercel.com/new](https://vercel.com/new)
-2. Importar el **mismo repositorio** `vps-coffee`
+2. Importar el **mismo repositorio** `merkiai`
 3. En la pantalla de configuración:
 
 | Campo | Valor |
 |-------|-------|
-| **Project Name** | `vps-coffee-admin` |
+| **Project Name** | `merkiai-admin` |
 | **Framework Preset** | `Next.js` |
 | **Root Directory** | `apps/admin` |
 | **Build Command** | `cd ../.. && pnpm turbo build --filter=@merkiai/admin` |
@@ -328,13 +331,13 @@ NEXT_PUBLIC_ADMIN_URL             = https://admin.tienda.example.com
 
 ### 8.1 Agregar dominio al proyecto web
 
-1. En **vps-coffee-web** → **Settings** → **Domains**
+1. En **merkiai-web** → **Settings** → **Domains**
 2. Agregar `tienda.example.com` y `www.tienda.example.com`
 3. Vercel mostrará los registros DNS que debes configurar
 
 ### 8.2 Agregar dominio al proyecto admin
 
-1. En **vps-coffee-admin** → **Settings** → **Domains**
+1. En **merkiai-admin** → **Settings** → **Domains**
 2. Agregar `admin.tienda.example.com`
 3. Vercel mostrará el registro DNS para el subdominio
 
@@ -363,7 +366,7 @@ Vercel provee certificados SSL automáticos via Let's Encrypt. La verificación 
 
 ### 8.5 Redirección www → sin www
 
-En **vps-coffee-web** → **Settings** → **Domains**, Vercel redirige automáticamente `www.tienda.example.com` → `tienda.example.com` (o viceversa). Seleccionar `tienda.example.com` como dominio primario.
+En **merkiai-web** → **Settings** → **Domains**, Vercel redirige automáticamente `www.tienda.example.com` → `tienda.example.com` (o viceversa). Seleccionar `tienda.example.com` como dominio primario.
 
 ---
 
@@ -430,14 +433,14 @@ Developer                    GitHub                      Vercel
 Cada PR abierto contra `main` genera automáticamente una URL de preview:
 
 ```
-https://vps-coffee-web-git-feat-nueva-feature-<org>.vercel.app
+https://merkiai-web-git-feat-nueva-feature-<org>.vercel.app
 ```
 
 Esta URL es única por branch y se actualiza con cada push al PR. Útil para QA antes de mergear.
 
 ### Configurar notificaciones de deploy
 
-En **vps-coffee-web** → **Settings** → **Git** → **Deploy Hooks** se puede agregar un webhook para notificar a Slack/Teams cuando el deploy termina.
+En **merkiai-web** → **Settings** → **Git** → **Deploy Hooks** se puede agregar un webhook para notificar a Slack/Teams cuando el deploy termina.
 
 ### Evitar deploys innecesarios
 
@@ -603,7 +606,7 @@ Completar antes de hacer el primer deploy a producción:
 - [ ] Políticas de Storage configuradas (público/privado según la tabla)
 - [ ] Service Role Key copiada (necesaria para las API routes del servidor)
 
-### Vercel — vps-coffee-web
+### Vercel — merkiai-web
 
 - [ ] Root Directory: `apps/web`
 - [ ] Build Command: `cd ../.. && pnpm turbo build --filter=@merkiai/web`
@@ -614,7 +617,7 @@ Completar antes de hacer el primer deploy a producción:
 - [ ] Primer build exitoso (sin errores en Build Logs)
 - [ ] Dominio `tienda.example.com` agregado y con SSL válido
 
-### Vercel — vps-coffee-admin
+### Vercel — merkiai-admin
 
 - [ ] Root Directory: `apps/admin`
 - [ ] Build Command: `cd ../.. && pnpm turbo build --filter=@merkiai/admin`
@@ -678,10 +681,10 @@ npm install -g vercel
 vercel login
 
 # Ver logs del proyecto web en producción
-vercel logs vps-coffee-web --follow
+vercel logs merkiai-web --follow
 
 # Ver logs del admin
-vercel logs vps-coffee-admin --follow
+vercel logs merkiai-admin --follow
 ```
 
 ### Alertas de error
@@ -740,15 +743,120 @@ Las credenciales de las pasarelas **no** son variables de entorno: se guardan en
 |----------|-----|-------------|---------|
 | `MAINTENANCE_MODE` | web | Activa la página de mantenimiento | `true` / `false` |
 
-### Autenticación Stack Auth — *(pendiente de integrar)*
+### Autenticación Stack Auth (Hexclave)
+
+**Web y admin usan proyectos de Stack Auth distintos** (identidades separadas). Cada app lleva **sus** tres variables:
 
 | Variable | App | Descripción |
 |----------|-----|-------------|
-| `NEXT_PUBLIC_STACK_PROJECT_ID` | web + admin | ID del proyecto en Stack Auth |
-| `NEXT_PUBLIC_STACK_PUBLISHABLE_CLIENT_KEY` | web + admin | Clave pública |
-| `STACK_SECRET_SERVER_KEY` | web + admin | Clave secreta (**secreta**) |
+| `NEXT_PUBLIC_HEXCLAVE_PROJECT_ID` | web / admin (valores distintos) | ID del proyecto en Stack Auth |
+| `NEXT_PUBLIC_HEXCLAVE_PUBLISHABLE_CLIENT_KEY` | web / admin | Clave pública (`pck_...`) |
+| `HEXCLAVE_SECRET_SERVER_KEY` | web / admin | Clave secreta (`ssk_...`, **secreta**) |
+
+> Ver `STACK_AUTH_SETUP.md` para el detalle. En **multi-tenant (E17)** se suma un **tercer** proyecto Stack Auth para el control plane, y el admin usa **Teams + RBAC** (ver sección 16 y `STACK_AUTH_SETUP.md` → multi-tenant).
+
+### Multi-tenant / SaaS — *(roadmap E17, ver sección 16)*
+
+| Variable | App | Descripción |
+|----------|-----|-------------|
+| `SUPABASE_JWT_SECRET` | web + admin | Secreto para firmar el JWT de Supabase con el claim `tenant_id` (RLS por tenant) |
+| `NEXT_PUBLIC_ROOT_DOMAIN` | web + admin | Dominio raíz para resolver subdominios (`merkiai.com`) |
+| `CONTROL_PLANE_URL` | web + admin | API interna del control plane para resolver `host→tenant_id→db_ref` |
+| `BILLING_PROVIDER` / `BILLING_API_KEY` / `BILLING_WEBHOOK_SECRET` | control-plane | Facturación de suscripción a los tenants |
+
+> En multi-tenant hay **dos proyectos Supabase**: el del **plano de tienda** (web+admin, sin service-role) y el de **plataforma** (solo control-plane, con service-role). No mezclar sus keys.
 
 > **Nota:** Las credenciales de Skydropx y el número de WhatsApp **NO** son variables de entorno. Se gestionan directamente desde el panel admin en `/configuracion` y se guardan en Supabase.
+
+---
+
+## 16. Despliegue multi-tenant + SaaS (roadmap E17)
+
+> **Estado:** 🔲 roadmap (E17). Esta sección describe cómo cambia el despliegue al pasar de una tienda a **muchos tenants desde un mismo despliegue**. **No aplica al modelo single-tenant actual.** Fuente de verdad de la arquitectura: `PRODUCT_BACKLOG.md` → *Detalle · E17 · Arquitectura de referencia*.
+
+### 16.1 Regla base: la infraestructura NO se multiplica por cliente
+
+Se despliegan **tres apps fijas** (no una por tenant); cada tenant se resuelve por el **host** de la petición.
+
+```
+GitHub (monorepo merkiai)
+        │
+        ├──▶ Vercel: merkiai-web          (apps/web)    → *.merkiai.com  (+ dominios propios)
+        ├──▶ Vercel: merkiai-admin         (apps/admin)  → admin.merkiai.com (o {tenant}.merkiai.com/admin)
+        └──▶ Vercel: merkiai-console  (apps/console) → app.merkiai.com  (operador SaaS)
+```
+
+| Proyecto Vercel | App | Plano | Dominio |
+|-----------------|-----|-------|---------|
+| `merkiai-web` | `apps/web` | tienda (storefront) | wildcard `*.merkiai.com` + dominios propios por tenant |
+| `merkiai-admin` | `apps/admin` | tienda (operadores) | `admin.merkiai.com` |
+| `merkiai-console` | `apps/console` | **plataforma (Merkiai)** | `app.merkiai.com` |
+
+Dar de alta un tenant **no** crea proyectos ni infraestructura: es crear el Team (Stack Auth) + fila `tenants` + seed + asignar subdominio, desde el control plane.
+
+### 16.2 Bases de datos: DOS proyectos Supabase
+
+Este es el cambio clave respecto al modelo actual (una sola BD):
+
+| Proyecto Supabase | Contiene | Quién accede | RLS |
+|-------------------|----------|--------------|-----|
+| **BD de plataforma** *(propia de Merkiai, proyecto dedicado desde el día 1)* | `tenants`, `plans`, `subscriptions`, billing, dominios, **`db_ref`** (routing), auditoría de plataforma | **solo** `merkiai-console` con `service-role` | sin RLS de tenant |
+| **BD del plano de tienda** | productos, pedidos, clientes, páginas, config, temas… *tenant-scoped* | `merkiai-web` y `merkiai-admin` (la **comparten**) con rol `authenticated` + JWT `tenant_id` | RLS por tenant, **frontera dura** |
+
+- **`merkiai-web`/`admin` nunca usan `service-role`** (omite RLS); solo el control plane lo usa, y **solo sobre su BD de plataforma**.
+- El plano de tienda resuelve `host → tenant_id → db_ref` contra el registro de plataforma vía **API interna/caché del control plane** (no accede directo a la BD de plataforma).
+- Aislamiento por plan (HU-200): un tenant puede estar en la BD compartida (default), un schema dedicado o **BD/proyecto dedicado** (Supabase propio o **Neon** a escala) — el `connection factory` de `@merkiai/tenancy` enruta por `db_ref`.
+
+### 16.3 Variables de entorno por app (multi-tenant)
+
+**`merkiai-web` y `merkiai-admin`** (plano de tienda):
+```
+NEXT_PUBLIC_SUPABASE_URL            = https://<tenant-plane>.supabase.co
+NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY= <anon key del proyecto plano de tienda>
+SUPABASE_JWT_SECRET                 = <secreto JWT para firmar el claim tenant_id>   # ⟵ nuevo
+# ⚠️ NO usar SUPABASE_SERVICE_ROLE_KEY en el plano de tienda
+NEXT_PUBLIC_ROOT_DOMAIN             = merkiai.com    # para resolver subdominios
+CONTROL_PLANE_URL                   = https://app.merkiai.com   # API interna de routing
+```
+
+**`merkiai-console`** (plataforma — su propio proyecto Supabase):
+```
+NEXT_PUBLIC_SUPABASE_URL            = https://<platform-db>.supabase.co   # ⟵ proyecto distinto
+NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY= <anon key del proyecto de plataforma>
+SUPABASE_SERVICE_ROLE_KEY           = <service-role del proyecto de plataforma>   # solo aquí
+# Stack Auth (proyecto de operadores de plataforma)
+NEXT_PUBLIC_HEXCLAVE_PROJECT_ID     = <proyecto control-plane>
+NEXT_PUBLIC_HEXCLAVE_PUBLISHABLE_CLIENT_KEY = pck_...
+HEXCLAVE_SECRET_SERVER_KEY          = ssk_...
+# Billing (cobro de suscripción a los tenants)
+BILLING_PROVIDER                    = mercadopago | payzen | stripe
+BILLING_API_KEY / BILLING_WEBHOOK_SECRET = ...
+```
+
+> **Tres proyectos de Stack Auth** en multi-tenant: web (compradores), admin/operadores de tienda (con **Teams = tenants** + RBAC) y control-plane (operadores de plataforma, *Project Permission* `platform:operate`). Ver `STACK_AUTH_SETUP.md` → *Configuración para multi-tenant*.
+
+### 16.4 Dominios: subdominio por defecto + dominio propio del tenant
+
+**Por defecto — subdominio de Merkiai (wildcard):**
+
+| Tipo | Nombre | Valor | Notas |
+|------|--------|-------|-------|
+| `CNAME` | `*` | `cname.vercel-dns.com` | wildcard `*.merkiai.com` → `merkiai-web`. El middleware resuelve el tenant por `Host` |
+
+**Opcional — dominio propio del tenant (HU-174), máquina de estados:**
+
+`pendiente → validación DNS → emisión de certificado (TLS) → propagación CDN → activo`
+
+- Se **delega al host/CDN** la emisión del cert y la propagación — **no** implementar ACME propio. Recomendado **Cloudflare for SaaS (custom hostnames)** o **Vercel Domains** (agregar el dominio del tenant al proyecto `merkiai-web` vía su API).
+- Al tenant se le muestran los registros DNS a crear (CNAME + token de verificación); renovación automática; **un dominio → un solo tenant** (anti-takeover).
+- Aplica al **storefront**; el admin del tenant queda en `admin.merkiai.com` o `{tenant}.merkiai.com/admin`.
+
+**Dominio de envío de correo por tenant (HU-175):** `pendiente → validación DNS (SPF/DKIM/DMARC + return-path) → verificado/activo`, verificado vía el proveedor de email (SES/Postmark). Sin cert/CDN. Si no se configura, los correos salen con el **dominio de plataforma de Merkiai** (fallback).
+
+### 16.5 Migraciones en modelo multi-tenant
+
+- La **BD de plataforma** y la **BD del plano de tienda** tienen esquemas y migraciones **separados**.
+- El esquema del plano de tienda se aplica a **todos los destinos** (BD compartida + schemas + BDs dedicadas) de forma consistente (HU-200 · AC-5): el pipeline de migración debe **iterar sobre los `db_ref` registrados**.
 
 ---
 
@@ -789,4 +897,4 @@ Las credenciales de las pasarelas **no** son variables de entorno: se guardan en
 
 ---
 
-*Merkiai · Parquesoft TI · Julio 2026*
+*Merkiai · Parquesoft TI · Agosto 2026 (añadida §16 despliegue multi-tenant/SaaS: control-plane + BD de plataforma en proyecto Supabase propio, dominios y correo por tenant)*

@@ -1,14 +1,24 @@
-import { createServerClient } from '../client'
+import { createServerClient, type Db } from '../client'
 import type { Category, ProductWithVariants } from '../types'
 
-export async function getProducts(filters?: {
-  roast?: string
-  weight?: string
-  brew_method?: string
-  featured?: boolean
-  category_slug?: string
-}) {
-  const supabase = createServerClient()
+/**
+ * Nota (E17/HU-156): las queries reciben el cliente `db` por parámetro. Por
+ * defecto usan el cliente service-role actual (comportamiento idéntico al de
+ * hoy), de modo que este refactor es no disruptivo. En multi-tenant, el llamador
+ * pasará un `createTenantClient` (sujeto a RLS) sin cambiar estas funciones.
+ */
+
+export async function getProducts(
+  filters?: {
+    roast?: string
+    weight?: string
+    brew_method?: string
+    featured?: boolean
+    category_slug?: string
+  },
+  db: Db = createServerClient(),
+) {
+  const supabase = db
   let query = supabase
     .from('products')
     .select(
@@ -31,8 +41,8 @@ export async function getProducts(filters?: {
   return data as unknown as ProductWithVariants[]
 }
 
-export async function getProductBySlug(slug: string) {
-  const supabase = createServerClient()
+export async function getProductBySlug(slug: string, db: Db = createServerClient()) {
+  const supabase = db
   const { data, error } = await supabase
     .from('products')
     .select(
@@ -50,8 +60,8 @@ export async function getProductBySlug(slug: string) {
   return data as unknown as ProductWithVariants
 }
 
-export async function getFeaturedProducts(limit = 3) {
-  return getProducts({ featured: true })
+export async function getFeaturedProducts(limit = 3, db: Db = createServerClient()) {
+  return getProducts({ featured: true }, db)
     .then((products) => products.slice(0, limit))
 }
 
@@ -67,8 +77,11 @@ export interface BestSellingProduct {
  * Devuelve los N productos más vendidos agregando order_items por product_id.
  * Fallback: si no hay ventas, devuelve los productos más recientes activos.
  */
-export async function getBestSellingProducts(limit = 4): Promise<BestSellingProduct[]> {
-  const supabase = createServerClient()
+export async function getBestSellingProducts(
+  limit = 4,
+  db: Db = createServerClient(),
+): Promise<BestSellingProduct[]> {
+  const supabase = db
 
   // Aggregate order_items by product_id
   const { data: items } = await supabase
@@ -137,8 +150,8 @@ export async function getBestSellingProducts(limit = 4): Promise<BestSellingProd
  * Devuelve todas las categorías activas ordenadas por order_index.
  * Usado en la home para los links de la sección "Tienda".
  */
-export async function getCategories(): Promise<Category[]> {
-  const supabase = createServerClient()
+export async function getCategories(db: Db = createServerClient()): Promise<Category[]> {
+  const supabase = db
   const { data, error } = await supabase
     .from('categories')
     .select('*')

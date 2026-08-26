@@ -1,4 +1,6 @@
 /**
+ * @jest-environment node
+ *
  * Integration tests — PATCH /api/admin/orders/[id]/notes
  *
  * Tests:

@@ -1,8 +1,8 @@
-import { createServerClient } from '../client'
+import { createServerClient, type Db } from '../client'
 import type { BlogPost } from '../types'
 
-export async function getBlogPosts(options?: { category?: string; limit?: number }) {
-  const supabase = createServerClient()
+export async function getBlogPosts(options?: { category?: string; limit?: number }, db: Db = createServerClient()) {
+  const supabase = db
   let query = supabase
     .from('blog_posts')
     .select('*')
@@ -17,8 +17,8 @@ export async function getBlogPosts(options?: { category?: string; limit?: number
   return data as BlogPost[]
 }
 
-export async function getBlogPostBySlug(slug: string) {
-  const supabase = createServerClient()
+export async function getBlogPostBySlug(slug: string, db: Db = createServerClient()) {
+  const supabase = db
   const { data, error } = await supabase
     .from('blog_posts')
     .select('*')
@@ -31,8 +31,8 @@ export async function getBlogPostBySlug(slug: string) {
 }
 
 /** Draft mode: fetch post regardless of published status (for preview) */
-export async function getBlogPostBySlugAny(slug: string) {
-  const supabase = createServerClient()
+export async function getBlogPostBySlugAny(slug: string, db: Db = createServerClient()) {
+  const supabase = db
   const { data, error } = await supabase
     .from('blog_posts')
     .select('*')
@@ -43,8 +43,8 @@ export async function getBlogPostBySlugAny(slug: string) {
   return data as BlogPost
 }
 
-export async function getFeaturedPost() {
-  const supabase = createServerClient()
+export async function getFeaturedPost(db: Db = createServerClient()) {
+  const supabase = db
   const { data, error } = await supabase
     .from('blog_posts')
     .select('*')

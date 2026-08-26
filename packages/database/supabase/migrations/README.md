@@ -28,3 +28,12 @@ Ejecuta **solo**:
 - **RLS en todas las tablas** (24/24). Las tablas solo-`service_role` (config singletons, `admin_config`, `processed_webhook_events`) tienen RLS habilitado sin política pública → deniegan a `anon`/`authenticated`; el `service_role` omite RLS.
 - **Sin tablas huérfanas problemáticas.** Las tablas sin FK son intencionales: config singletons (`store_config`, `payment_config`, `shipping_config`, `admin_config`), catálogos/logs (`themes`, `variant_types`, `newsletter_subscribers`, `processed_webhook_events`) y snapshots (`orders.items`/`orders.coupon_code` son copias inmutables, no FKs, para preservar el pedido si cambia el catálogo o el cupón).
 - **Nota de deuda técnica (HU-191):** `shipping_profiles` (perfil de envío por email) se solapa con `customer_addresses` (direcciones por `customer_id`). Ambas están en uso; la consolidación en una fuente única está redactada como **HU-191** en `PRODUCT_BACKLOG.md` (no se toca aquí para no romper el feature vivo `/api/shipping-profile`).
+
+## Multi-tenant (E17 · roadmap)
+
+Artefactos de la migración a multi-tenant (aplicar sobre `upgrade.sql`/`01_schema.sql` ya vigentes). **Aplicar primero en staging.**
+
+- `e17/01_tenant_id.sql` — **paso 1 (no disruptivo):** añade `tenant_id` (NOT NULL, DEFAULT = tenant por defecto `00000000-0000-0000-0000-000000000001`) a las 19 tablas tenant-scoped + índices, y a los 4 config singleton (conservando `CHECK id=1` por ahora); `processed_webhook_events` lo lleva nullable. La app single-tenant sigue funcionando (service-role + default). **No** toca RLS ni convierte singletons — eso viene tras cablear `@merkiai/tenancy`.
+- `../platform/01_platform_schema.sql` — **BD de PLATAFORMA** (proyecto Supabase **distinto**, control plane): tabla `tenants` (`status`, `plan`, `data_isolation`, `db_ref`, `stack_team_id`) con RLS solo-service-role + seed del tenant por defecto (mismo UUID que arriba).
+
+Pasos siguientes (no incluidos aún): convertir singletons a fila-por-tenant, políticas RLS por `auth.jwt()->>'tenant_id'`, y cablear el `tenant client` en los 66 usos TENANT. Ver `docs/HU-156-service-role-mapping.md` y `docs/adr/ADR-001-auth-rls-multitenant.md`.

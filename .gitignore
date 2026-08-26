@@ -40,3 +40,6 @@ next-env.d.ts
 
 # vercel
 .vercel
+
+# docs
+INSTRUCCIONES_PROYECTO.md

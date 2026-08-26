@@ -1,4 +1,4 @@
-import { createServerClient } from '../client'
+import { createServerClient, type Db } from '../client'
 
 /** Un badge de confianza que aparece en la página de producto. */
 export interface TrustBadge {
@@ -79,8 +79,8 @@ const DEFAULT_CONFIG: StoreConfig = {
   updated_at: new Date().toISOString(),
 }
 
-export async function getStoreConfig(): Promise<StoreConfig> {
-  const supabase = createServerClient()
+export async function getStoreConfig(db: Db = createServerClient()): Promise<StoreConfig> {
+  const supabase = db
   const { data, error } = await supabase
     .from('store_config')
     .select('*')
@@ -98,8 +98,8 @@ export async function getStoreConfig(): Promise<StoreConfig> {
   }
 }
 
-export async function updateStoreConfig(input: UpdateStoreConfigInput): Promise<StoreConfig> {
-  const supabase = createServerClient()
+export async function updateStoreConfig(input: UpdateStoreConfigInput, db: Db = createServerClient()): Promise<StoreConfig> {
+  const supabase = db
 
   // No sobreescribir resend_api_key si viene vacío
   const sanitized: Record<string, unknown> = { ...input }

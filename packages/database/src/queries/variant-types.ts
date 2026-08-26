@@ -1,4 +1,4 @@
-import { createServerClient } from '../client'
+import { createServerClient, type Db } from '../client'
 import type { Database, VariantType } from '../types'
 
 function toVariantType(row: Record<string, unknown>): VariantType {
@@ -9,8 +9,8 @@ function toVariantType(row: Record<string, unknown>): VariantType {
 }
 
 /** Lista todos los tipos de variante, ordenados por order_index */
-export async function getVariantTypes(activeOnly = false): Promise<VariantType[]> {
-  const supabase = createServerClient()
+export async function getVariantTypes(activeOnly = false, db: Db = createServerClient()): Promise<VariantType[]> {
+  const supabase = db
   let query = supabase
     .from('variant_types')
     .select('*')
@@ -25,8 +25,8 @@ export async function getVariantTypes(activeOnly = false): Promise<VariantType[]
 }
 
 /** Obtiene un tipo de variante por ID */
-export async function getVariantTypeById(id: number): Promise<VariantType | null> {
-  const supabase = createServerClient()
+export async function getVariantTypeById(id: number, db: Db = createServerClient()): Promise<VariantType | null> {
+  const supabase = db
   const { data, error } = await supabase
     .from('variant_types')
     .select('*')
@@ -44,8 +44,8 @@ export interface CreateVariantTypeInput {
 }
 
 /** Crea un nuevo tipo de variante */
-export async function createVariantType(input: CreateVariantTypeInput): Promise<VariantType> {
-  const supabase = createServerClient()
+export async function createVariantType(input: CreateVariantTypeInput, db: Db = createServerClient()): Promise<VariantType> {
+  const supabase = db
   const { data, error } = await supabase
     .from('variant_types')
     .insert({
@@ -69,8 +69,8 @@ export interface UpdateVariantTypeInput {
 }
 
 /** Actualiza un tipo de variante existente */
-export async function updateVariantType(id: number, input: UpdateVariantTypeInput): Promise<VariantType> {
-  const supabase = createServerClient()
+export async function updateVariantType(id: number, input: UpdateVariantTypeInput, db: Db = createServerClient()): Promise<VariantType> {
+  const supabase = db
 
   // Build a typed update object (only include defined fields)
   type VariantTypeUpdate = Database['public']['Tables']['variant_types']['Update']
@@ -92,8 +92,8 @@ export async function updateVariantType(id: number, input: UpdateVariantTypeInpu
 }
 
 /** Elimina un tipo de variante */
-export async function deleteVariantType(id: number): Promise<void> {
-  const supabase = createServerClient()
+export async function deleteVariantType(id: number, db: Db = createServerClient()): Promise<void> {
+  const supabase = db
   const { error } = await supabase.from('variant_types').delete().eq('id', id)
   if (error) throw new Error(error.message)
 }

@@ -1,4 +1,4 @@
-import { createServerClient } from '../client'
+import { createServerClient, type Db } from '../client'
 
 // ── Tipos ─────────────────────────────────────────────────────────────────────
 
@@ -27,8 +27,8 @@ export type ThemeInput = Omit<Theme, 'id' | 'is_default' | 'created_at' | 'updat
 // ── Queries ───────────────────────────────────────────────────────────────────
 
 /** Lista todos los temas ordenados por fecha de creación */
-export async function getThemes(): Promise<Theme[]> {
-  const supabase = createServerClient()
+export async function getThemes(db: Db = createServerClient()): Promise<Theme[]> {
+  const supabase = db
   const { data, error } = await supabase
     .from('themes')
     .select('*')
@@ -38,8 +38,8 @@ export async function getThemes(): Promise<Theme[]> {
 }
 
 /** Devuelve el tema activo, o null si ninguno está activo */
-export async function getActiveTheme(): Promise<Theme | null> {
-  const supabase = createServerClient()
+export async function getActiveTheme(db: Db = createServerClient()): Promise<Theme | null> {
+  const supabase = db
   const { data } = await supabase
     .from('themes')
     .select('*')
@@ -49,8 +49,8 @@ export async function getActiveTheme(): Promise<Theme | null> {
 }
 
 /** Crea un nuevo tema (inactivo por defecto) */
-export async function createTheme(input: Omit<ThemeInput, 'is_active'>): Promise<Theme> {
-  const supabase = createServerClient()
+export async function createTheme(input: Omit<ThemeInput, 'is_active'>, db: Db = createServerClient()): Promise<Theme> {
+  const supabase = db
   const { data, error } = await supabase
     .from('themes')
     .insert({ ...input, is_active: false })
@@ -63,9 +63,9 @@ export async function createTheme(input: Omit<ThemeInput, 'is_active'>): Promise
 /** Actualiza los campos de un tema existente */
 export async function updateTheme(
   id: number,
-  input: Partial<Omit<Theme, 'id' | 'is_default' | 'created_at' | 'updated_at'>>
+  input: Partial<Omit<Theme, 'id' | 'is_default' | 'created_at' | 'updated_at'>>, db: Db = createServerClient()
 ): Promise<Theme> {
-  const supabase = createServerClient()
+  const supabase = db
   const { data, error } = await supabase
     .from('themes')
     .update(input)
@@ -80,8 +80,8 @@ export async function updateTheme(
  * Establece un tema como activo.
  * Desactiva todos los demás primero para respetar el unique index parcial.
  */
-export async function setActiveTheme(id: number): Promise<void> {
-  const supabase = createServerClient()
+export async function setActiveTheme(id: number, db: Db = createServerClient()): Promise<void> {
+  const supabase = db
 
   // 1. Desactivar cualquier tema activo actual
   await supabase
@@ -99,8 +99,8 @@ export async function setActiveTheme(id: number): Promise<void> {
 }
 
 /** Elimina un tema. No permite borrar el tema activo ni el por defecto. */
-export async function deleteTheme(id: number): Promise<void> {
-  const supabase = createServerClient()
+export async function deleteTheme(id: number, db: Db = createServerClient()): Promise<void> {
+  const supabase = db
 
   const { data: theme } = await supabase
     .from('themes')

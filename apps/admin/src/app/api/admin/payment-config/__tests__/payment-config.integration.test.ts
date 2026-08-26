@@ -1,4 +1,6 @@
 /**
+ * @jest-environment node
+ *
  * Integration tests — GET + PATCH /api/admin/payment-config
  *
  * Escenarios cubiertos:

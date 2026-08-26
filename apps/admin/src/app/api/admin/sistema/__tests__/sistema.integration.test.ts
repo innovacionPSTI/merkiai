@@ -1,4 +1,6 @@
 /**
+ * @jest-environment node
+ *
  * Tests de integración — PATCH /api/admin/sistema
  * Tests unitarios    — getAdminConfig, updateAdminConfig
  */

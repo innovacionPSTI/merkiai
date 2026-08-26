@@ -22,11 +22,11 @@ export async function middleware(request: NextRequest) {
   // ── Bloquear sign-up ─────────────────────────────────────────────────────
   // El admin no permite auto-registro. Los usuarios solo puede crearlos el super_admin.
   if (pathname === '/handler/sign-up' || pathname.startsWith('/handler/sign-up/')) {
-    return NextResponse.redirect(new URL('/handler/sign-in', request.url))
+    return NextResponse.redirect(new URL('/login', request.url))
   }
 
-  // ── Rutas públicas del handler (sign-in, sign-out, password-reset, etc.) ─
-  if (pathname.startsWith('/handler')) {
+  // ── Login branded + rutas del handler (password-reset, etc.): públicas ────
+  if (pathname === '/login' || pathname.startsWith('/handler')) {
     return NextResponse.next({ request: { headers: requestHeaders } })
   }
 
@@ -38,7 +38,7 @@ export async function middleware(request: NextRequest) {
   // ── Verificar sesión Stack Auth ───────────────────────────────────────────
   const user = await stackServerApp.getUser()
   if (!user) {
-    const signInUrl = new URL('/handler/sign-in', request.url)
+    const signInUrl = new URL('/login', request.url)
     signInUrl.searchParams.set('after_auth_return_to', pathname)
     return NextResponse.redirect(signInUrl)
   }

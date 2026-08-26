@@ -7,7 +7,7 @@
  * No contiene ningún dato específico de dominio (café u otro).
  * Los seeds del sitio concreto van en supabase/seeds/coffee_content.sql.
  */
-import { createServerClient } from '../client'
+import { createServerClient, type Db } from '../client'
 import type { Json, Page, PageSection, SectionItem, PageWithSections } from '../types'
 
 export type { Page, PageSection, SectionItem, PageWithSections }
@@ -66,8 +66,8 @@ export type UpdateSectionItemInput = Partial<Omit<CreateSectionItemInput, 'secti
 // ─── Pages ────────────────────────────────────────────────────────────────────
 
 /** Todas las páginas ordenadas por order_index. */
-export async function getPages(): Promise<Page[]> {
-  const supabase = createServerClient()
+export async function getPages(db: Db = createServerClient()): Promise<Page[]> {
+  const supabase = db
   const { data, error } = await supabase
     .from('pages')
     .select('*')
@@ -77,8 +77,8 @@ export async function getPages(): Promise<Page[]> {
 }
 
 /** Páginas habilitadas que aparecen en el footer. */
-export async function getFooterPages(): Promise<Pick<Page, 'key' | 'label' | 'slug'>[]> {
-  const supabase = createServerClient()
+export async function getFooterPages(db: Db = createServerClient()): Promise<Pick<Page, 'key' | 'label' | 'slug'>[]> {
+  const supabase = db
   const { data, error } = await supabase
     .from('pages')
     .select('key, label, slug')
@@ -90,8 +90,8 @@ export async function getFooterPages(): Promise<Pick<Page, 'key' | 'label' | 'sl
 }
 
 /** Una página por su key. */
-export async function getPage(key: string): Promise<Page | null> {
-  const supabase = createServerClient()
+export async function getPage(key: string, db: Db = createServerClient()): Promise<Page | null> {
+  const supabase = db
   const { data, error } = await supabase
     .from('pages')
     .select('*')
@@ -102,8 +102,8 @@ export async function getPage(key: string): Promise<Page | null> {
 }
 
 /** Una página por su slug (para el renderizador de rutas dinámicas). */
-export async function getPageBySlug(slug: string): Promise<Page | null> {
-  const supabase = createServerClient()
+export async function getPageBySlug(slug: string, db: Db = createServerClient()): Promise<Page | null> {
+  const supabase = db
   const { data, error } = await supabase
     .from('pages')
     .select('*')
@@ -120,9 +120,9 @@ export async function getPageBySlug(slug: string): Promise<Page | null> {
  */
 export async function getPageWithSections(
   slug: string,
-  onlyEnabled = true
+  onlyEnabled = true, db: Db = createServerClient()
 ): Promise<PageWithSections | null> {
-  const supabase = createServerClient()
+  const supabase = db
 
   // 1. Fetch page
   const pageQuery = supabase.from('pages').select('*').eq('slug', slug)
@@ -175,8 +175,8 @@ export async function getPageWithSections(
 }
 
 /** Crea una página. */
-export async function createPage(input: CreatePageInput): Promise<Page> {
-  const supabase = createServerClient()
+export async function createPage(input: CreatePageInput, db: Db = createServerClient()): Promise<Page> {
+  const supabase = db
   const { data, error } = await supabase
     .from('pages')
     .insert({ ...input, created_at: new Date().toISOString(), updated_at: new Date().toISOString() })
@@ -187,8 +187,8 @@ export async function createPage(input: CreatePageInput): Promise<Page> {
 }
 
 /** Actualiza campos de una página. */
-export async function updatePage(key: string, input: UpdatePageInput): Promise<Page> {
-  const supabase = createServerClient()
+export async function updatePage(key: string, input: UpdatePageInput, db: Db = createServerClient()): Promise<Page> {
+  const supabase = db
   const { data, error } = await supabase
     .from('pages')
     .update({ ...input, updated_at: new Date().toISOString() })
@@ -200,8 +200,8 @@ export async function updatePage(key: string, input: UpdatePageInput): Promise<P
 }
 
 /** Elimina una página y sus secciones e ítems (CASCADE). */
-export async function deletePage(key: string): Promise<void> {
-  const supabase = createServerClient()
+export async function deletePage(key: string, db: Db = createServerClient()): Promise<void> {
+  const supabase = db
   const { error } = await supabase.from('pages').delete().eq('key', key)
   if (error) throw error
 }
@@ -211,9 +211,9 @@ export async function deletePage(key: string): Promise<void> {
 /** Secciones de una página. */
 export async function getPageSections(
   pageKey: string,
-  onlyEnabled = false
+  onlyEnabled = false, db: Db = createServerClient()
 ): Promise<PageSection[]> {
-  const supabase = createServerClient()
+  const supabase = db
   let query = supabase
     .from('page_sections')
     .select('*')
@@ -226,8 +226,8 @@ export async function getPageSections(
 }
 
 /** Crea una sección dentro de una página. */
-export async function createPageSection(input: CreatePageSectionInput): Promise<PageSection> {
-  const supabase = createServerClient()
+export async function createPageSection(input: CreatePageSectionInput, db: Db = createServerClient()): Promise<PageSection> {
+  const supabase = db
   const { data, error } = await supabase
     .from('page_sections')
     .insert({
@@ -245,9 +245,9 @@ export async function createPageSection(input: CreatePageSectionInput): Promise<
 /** Actualiza una sección. */
 export async function updatePageSection(
   id: number,
-  input: UpdatePageSectionInput
+  input: UpdatePageSectionInput, db: Db = createServerClient()
 ): Promise<PageSection> {
-  const supabase = createServerClient()
+  const supabase = db
   const { settings: rawSettings, ...rest } = input
   const { data, error } = await supabase
     .from('page_sections')
@@ -264,8 +264,8 @@ export async function updatePageSection(
 }
 
 /** Elimina una sección (y sus ítems por CASCADE). */
-export async function deletePageSection(id: number): Promise<void> {
-  const supabase = createServerClient()
+export async function deletePageSection(id: number, db: Db = createServerClient()): Promise<void> {
+  const supabase = db
   const { error } = await supabase.from('page_sections').delete().eq('id', id)
   if (error) throw error
 }
@@ -275,9 +275,9 @@ export async function deletePageSection(id: number): Promise<void> {
 /** Ítems de una sección. */
 export async function getSectionItems(
   sectionId: number,
-  onlyEnabled = false
+  onlyEnabled = false, db: Db = createServerClient()
 ): Promise<SectionItem[]> {
-  const supabase = createServerClient()
+  const supabase = db
   let query = supabase
     .from('section_items')
     .select('*')
@@ -290,8 +290,8 @@ export async function getSectionItems(
 }
 
 /** Crea un ítem dentro de una sección. */
-export async function createSectionItem(input: CreateSectionItemInput): Promise<SectionItem> {
-  const supabase = createServerClient()
+export async function createSectionItem(input: CreateSectionItemInput, db: Db = createServerClient()): Promise<SectionItem> {
+  const supabase = db
   const { metadata, ...rest } = input
   const { data, error } = await supabase
     .from('section_items')
@@ -309,9 +309,9 @@ export async function createSectionItem(input: CreateSectionItemInput): Promise<
 /** Actualiza un ítem de sección. */
 export async function updateSectionItem(
   id: number,
-  input: UpdateSectionItemInput
+  input: UpdateSectionItemInput, db: Db = createServerClient()
 ): Promise<SectionItem> {
-  const supabase = createServerClient()
+  const supabase = db
   const { metadata, ...rest } = input
   const { data, error } = await supabase
     .from('section_items')
@@ -327,8 +327,8 @@ export async function updateSectionItem(
 }
 
 /** Elimina un ítem de sección. */
-export async function deleteSectionItem(id: number): Promise<void> {
-  const supabase = createServerClient()
+export async function deleteSectionItem(id: number, db: Db = createServerClient()): Promise<void> {
+  const supabase = db
   const { error } = await supabase.from('section_items').delete().eq('id', id)
   if (error) throw error
 }
