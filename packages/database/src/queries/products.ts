@@ -83,47 +83,58 @@ export async function getBestSellingProducts(
 ): Promise<BestSellingProduct[]> {
   const supabase = db
 
-  // Aggregate order_items by product_id
-  const { data: items } = await supabase
-    .from('order_items')
-    .select('product_id, product_name, image_url, qty')
+  // Agrega ventas desde `orders.items` (JSONB): NO existe tabla `order_items`,
+  // los ítems viven en el snapshot del pedido. Se cuenta la cantidad por
+  // variante y se resuelve el producto vía `product_variants`.
+  const { data: orders } = await supabase
+    .from('orders')
+    .select('items, status')
+    .neq('status', 'cancelled')
 
-  if (items?.length) {
-    const map = new Map<number, BestSellingProduct>()
-    for (const item of items) {
-      const pid = item.product_id as number
-      const existing = map.get(pid)
-      if (existing) {
-        existing.total_sold += (item.qty as number)
-      } else {
-        map.set(pid, {
-          product_id: pid,
-          product_name: item.product_name as string,
-          image_url: item.image_url as string | null,
-          slug: null,
-          total_sold: item.qty as number,
+  const qtyByVariant = new Map<number, number>()
+  for (const o of orders ?? []) {
+    const list = Array.isArray(o.items) ? (o.items as Array<{ variant_id?: number; qty?: number }>) : []
+    for (const it of list) {
+      if (!it?.variant_id) continue
+      qtyByVariant.set(it.variant_id, (qtyByVariant.get(it.variant_id) ?? 0) + (Number(it.qty) || 0))
+    }
+  }
+
+  if (qtyByVariant.size > 0) {
+    const { data: variants } = await supabase
+      .from('product_variants')
+      .select('id, product_id')
+      .in('id', [...qtyByVariant.keys()])
+
+    const qtyByProduct = new Map<number, number>()
+    for (const v of variants ?? []) {
+      const pid = v.product_id as number
+      qtyByProduct.set(pid, (qtyByProduct.get(pid) ?? 0) + (qtyByVariant.get(v.id as number) ?? 0))
+    }
+
+    if (qtyByProduct.size > 0) {
+      const { data: products } = await supabase
+        .from('products')
+        .select('id, name, slug, images')
+        .in('id', [...qtyByProduct.keys()])
+        .eq('active', true)
+
+      const sorted = (products ?? [])
+        .map((p) => {
+          const imgs = Array.isArray(p.images) ? (p.images as Array<{ url: string }>) : []
+          return {
+            product_id: p.id as number,
+            product_name: p.name as string,
+            image_url: imgs[0]?.url ?? null,
+            slug: p.slug as string,
+            total_sold: qtyByProduct.get(p.id as number) ?? 0,
+          }
         })
-      }
+        .sort((a, b) => b.total_sold - a.total_sold)
+        .slice(0, limit)
+
+      if (sorted.length > 0) return sorted
     }
-
-    // Enrich with slug from products table
-    const productIds = [...map.keys()]
-    const { data: products } = await supabase
-      .from('products')
-      .select('id, slug')
-      .in('id', productIds)
-      .eq('active', true)
-
-    for (const p of products ?? []) {
-      const entry = map.get(p.id as number)
-      if (entry) entry.slug = p.slug as string
-    }
-
-    const sorted = [...map.values()]
-      .sort((a, b) => b.total_sold - a.total_sold)
-      .slice(0, limit)
-
-    if (sorted.length > 0) return sorted
   }
 
   // Fallback: productos más recientes

@@ -3,6 +3,7 @@ import Link from 'next/link'
 import { notFound, redirect } from 'next/navigation'
 import { stackServerApp } from '@/stack'
 import { getOrderById } from '@merkiai/database'
+import { getRequestUserDb } from '@/lib/tenant-db'
 
 export const metadata: Metadata = { title: 'Detalle del pedido' }
 export const dynamic = 'force-dynamic'
@@ -58,7 +59,9 @@ export default async function PedidoDetailPage({ params }: Props) {
   const orderId = parseInt(id, 10)
   if (isNaN(orderId)) notFound()
 
-  const order = await getOrderById(orderId).catch(() => null)
+  // HU-156: bajo RLS (flag activo) la BD acota el pedido al comprador; el chequeo
+  // por email queda como guardia adicional (defensa en profundidad).
+  const order = await getOrderById(orderId, await getRequestUserDb(user.id)).catch(() => null)
 
   // Verificar que el pedido pertenece al usuario autenticado
   if (!order || order.customer_email !== user.primaryEmail) notFound()

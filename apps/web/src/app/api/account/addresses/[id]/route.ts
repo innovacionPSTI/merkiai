@@ -1,27 +1,23 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { stackServerApp } from '@/stack'
-import { createServerClient } from '@merkiai/database'
+import { createServerClient, ensureCustomer } from '@merkiai/database'
+import { getRequestUserDb } from '@/lib/tenant-db'
+import { resolveTenant } from '@/lib/tenant-context'
 
-async function getCustomerId(
-  supabase: ReturnType<typeof createServerClient>,
-  stackUserId: string,
-  email: string,
-) {
-  const { data } = await supabase
-    .from('customers')
-    .select('id')
-    .eq('stack_id', stackUserId)
-    .maybeSingle()
-  if (data?.id) return data.id
-  const { data: byEmail } = await supabase
-    .from('customers')
-    .select('id')
-    .eq('email', email)
-    .maybeSingle()
-  return byEmail?.id ?? null
+/**
+ * PATCH/DELETE /api/account/addresses/[id] — editar/eliminar una dirección.
+ * HU-156: provisioning con `ensureCustomer` + cliente `authenticated` (RLS
+ * `addresses_own`) cuando el flag está activo; ownership por `customer_id`.
+ */
+async function buyer(user: { id: string; primaryEmail: string; displayName: string | null }) {
+  const { tenantId } = await resolveTenant()
+  const customer = await ensureCustomer({
+    stackUserId: user.id, email: user.primaryEmail, name: user.displayName, tenantId,
+  })
+  const db = (await getRequestUserDb(user.id)) ?? createServerClient()
+  return { customerId: customer.id, db }
 }
 
-/** PATCH /api/account/addresses/[id] — editar una dirección guardada */
 export async function PATCH(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> },
@@ -34,52 +30,36 @@ export async function PATCH(
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
     const body = await request.json() as {
-      label?: string
-      full_name?: string
-      phone?: string
-      address?: string
-      city?: string
-      department?: string
-      postal_code?: string
-      is_default?: boolean
+      label?: string; full_name?: string; phone?: string; address?: string
+      city?: string; department?: string; postal_code?: string; is_default?: boolean
     }
 
-    const supabase = createServerClient()
-    const customerId = await getCustomerId(supabase, user.id, user.primaryEmail)
-    if (!customerId)
-      return NextResponse.json({ error: 'Cliente no encontrado' }, { status: 404 })
+    const { customerId, db } = await buyer({ id: user.id, primaryEmail: user.primaryEmail, displayName: user.displayName })
 
-    // Verify address belongs to this customer
-    const { data: existing } = await supabase
-      .from('customer_addresses')
-      .select('id')
-      .eq('id', id)
-      .eq('customer_id', customerId)
-      .maybeSingle()
-
+    // La dirección debe pertenecer al cliente
+    const { data: existing } = await db
+      .from('customer_addresses').select('id')
+      .eq('id', id).eq('customer_id', customerId).maybeSingle()
     if (!existing)
       return NextResponse.json({ error: 'Dirección no encontrada' }, { status: 404 })
 
-    // If setting as default, clear other defaults first
     if (body.is_default) {
-      await supabase
-        .from('customer_addresses')
+      await db.from('customer_addresses')
         .update({ is_default: false })
-        .eq('customer_id', customerId)
-        .eq('is_default', true)
+        .eq('customer_id', customerId).eq('is_default', true)
     }
 
-    const { data: updated, error } = await supabase
+    const { data: updated, error } = await db
       .from('customer_addresses')
       .update({
-        ...(body.label !== undefined     ? { label: body.label || null }             : {}),
-        ...(body.full_name               ? { full_name: body.full_name }              : {}),
-        ...(body.phone !== undefined     ? { phone: body.phone || null }             : {}),
-        ...(body.address                 ? { address: body.address }                 : {}),
-        ...(body.city                    ? { city: body.city }                       : {}),
-        ...(body.department !== undefined ? { department: body.department || null }  : {}),
-        ...(body.postal_code !== undefined ? { postal_code: body.postal_code || null } : {}),
-        ...(body.is_default !== undefined ? { is_default: body.is_default }          : {}),
+        ...(body.label !== undefined       ? { label: body.label || null }           : {}),
+        ...(body.full_name                 ? { full_name: body.full_name }            : {}),
+        ...(body.phone !== undefined       ? { phone: body.phone || null }            : {}),
+        ...(body.address                   ? { address: body.address }                : {}),
+        ...(body.city                      ? { city: body.city }                      : {}),
+        ...(body.department !== undefined  ? { department: body.department || null }  : {}),
+        ...(body.postal_code !== undefined ? { postal_code: body.postal_code || null }: {}),
+        ...(body.is_default !== undefined  ? { is_default: body.is_default }          : {}),
       })
       .eq('id', id)
       .select()
@@ -93,7 +73,6 @@ export async function PATCH(
   }
 }
 
-/** DELETE /api/account/addresses/[id] — eliminar una dirección guardada */
 export async function DELETE(
   _request: NextRequest,
   { params }: { params: Promise<{ id: string }> },
@@ -105,16 +84,11 @@ export async function DELETE(
     if (!user?.primaryEmail)
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
-    const supabase = createServerClient()
-    const customerId = await getCustomerId(supabase, user.id, user.primaryEmail)
-    if (!customerId)
-      return NextResponse.json({ error: 'Cliente no encontrado' }, { status: 404 })
+    const { customerId, db } = await buyer({ id: user.id, primaryEmail: user.primaryEmail, displayName: user.displayName })
 
-    const { error } = await supabase
-      .from('customer_addresses')
-      .delete()
-      .eq('id', id)
-      .eq('customer_id', customerId)
+    const { error } = await db
+      .from('customer_addresses').delete()
+      .eq('id', id).eq('customer_id', customerId)
 
     if (error) throw error
     return NextResponse.json({ ok: true })

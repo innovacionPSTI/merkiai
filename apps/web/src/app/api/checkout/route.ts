@@ -1,7 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { createOrder, getPaymentConfig, createServerClient, getPaymentGateway, getActiveProvider, getStockForVariants, TuCompraGateway } from '@merkiai/database'
+import { createOrder, getPaymentConfig, createServerClient, getPaymentGateway, getActiveProvider, getStockForVariants, TuCompraGateway, ensureCustomer } from '@merkiai/database'
 import { stackServerApp } from '@/stack'
 import { baseUrlFromRequest } from '@/lib/base-url'
+import { resolveTenant } from '@/lib/tenant-context'
 
 // ── Rate limiting (best-effort, per-instance) ──────────────────────────────────
 // Allows MAX_REQUESTS per IP within WINDOW_MS. In Vercel's serverless model
@@ -183,6 +184,32 @@ export async function POST(req: NextRequest) {
     // NEXT_PUBLIC_SITE_URL en single-tenant/dev.
     const siteUrl = baseUrlFromRequest(req)
 
+    // ── HU-156: provisioning del cliente + enlace del pedido. Si hay sesión,
+    // asegura la fila en `customers` (vincula por stack_id / email, reclama
+    // pedidos de invitado previos) y enlaza el pedido con `customer_id`. Para
+    // invitados queda `null` y se reclama cuando el email se registre. Nunca
+    // bloquea el checkout.
+    // Tenant del pedido (resolución por host). Nunca bloquea el checkout: si
+    // falla, la BD usa el tenant por defecto.
+    let tenantId: string | undefined
+    try { tenantId = (await resolveTenant()).tenantId } catch { /* fallback al default */ }
+
+    let customerId: string | undefined
+    try {
+      const sessionUser = await stackServerApp.getUser()
+      if (sessionUser?.id && sessionUser?.primaryEmail) {
+        const customer = await ensureCustomer({
+          stackUserId: sessionUser.id,
+          email: sessionUser.primaryEmail,
+          name,
+          tenantId,
+        })
+        customerId = customer.id
+      }
+    } catch {
+      /* provisioning best-effort: no bloquear el checkout */
+    }
+
     // Guarda la dirección del usuario logueado (silencioso, no bloquea el checkout)
     const autoSaveAddress = async () => {
       try {
@@ -205,6 +232,8 @@ export async function POST(req: NextRequest) {
     // administrador. No se genera ningún pago en línea.
     if (activeProvider === 'none') {
       const order = await createOrder({
+        tenant_id: tenantId,
+        customer_id: customerId,
         customer_name: name,
         customer_email: email,
         customer_phone: phone ?? null,
@@ -248,6 +277,8 @@ export async function POST(req: NextRequest) {
       }
 
       const order = await createOrder({
+        tenant_id: tenantId,
+        customer_id: customerId,
         customer_name: name, customer_email: email, customer_phone: phone ?? null,
         shipping_addr: address, items, subtotal, shipping_cost: shipping_cost ?? 0, total,
         payment_method: 'tucompra', skydropx_rate_id, carrier_name,
@@ -370,6 +401,8 @@ export async function POST(req: NextRequest) {
 
     // Crear la orden en la BD (payment_status: 'pending')
     const order = await createOrder({
+      tenant_id: tenantId,
+      customer_id: customerId,
       customer_name: name,
       customer_email: email,
       customer_phone: phone ?? null,

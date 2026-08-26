@@ -12,14 +12,20 @@ const mockMaybeSingle = jest.fn()
 const mockUpdate      = jest.fn()
 const mockFrom        = jest.fn(() => ({
   select:      jest.fn().mockReturnThis(),
-  or:          jest.fn().mockReturnThis(),
-  update:      jest.fn(() => ({ or: mockUpdate })),
+  eq:          jest.fn().mockReturnThis(),
+  update:      jest.fn(() => ({ eq: mockUpdate })),
   maybeSingle: mockMaybeSingle,
 }))
 
 jest.mock('@merkiai/database', () => ({
   createServerClient: jest.fn(() => ({ from: mockFrom })),
+  // HU-156: provisioning idempotente (service-role). Devuelve el customer.
+  ensureCustomer: jest.fn(async () => ({ id: 'cust-1' })),
 }))
+
+// HU-156: el flag de RLS de sesión está apagado en test → cliente por defecto.
+jest.mock('@/lib/tenant-db', () => ({ getRequestUserDb: jest.fn(async () => undefined) }))
+jest.mock('@/lib/tenant-context', () => ({ resolveTenant: jest.fn(async () => ({ tenantId: 'tenant-test' })) }))
 
 const mockUserUpdate = jest.fn()
 jest.mock('@/stack', () => ({

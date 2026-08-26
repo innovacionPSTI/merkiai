@@ -5,6 +5,8 @@ export type { CartItem }
 
 export type UpsertCartItemInput = {
   customer_id: string
+  /** Tenant del carrito (E17). Si se omite, la BD usa el tenant por defecto. */
+  tenant_id?: string
   variant_id: number
   product_id: number
   product_name: string

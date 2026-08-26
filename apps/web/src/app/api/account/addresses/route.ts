@@ -1,66 +1,37 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { stackServerApp } from '@/stack'
-import { createServerClient } from '@merkiai/database'
+import { createServerClient, ensureCustomer } from '@merkiai/database'
+import { getRequestUserDb } from '@/lib/tenant-db'
+import { resolveTenant } from '@/lib/tenant-context'
 
 /**
- * GET /api/account/addresses
- * Devuelve las direcciones guardadas del cliente logueado.
- * Usada por el checkout para pre-llenar el formulario de envío.
+ * GET  /api/account/addresses — direcciones del cliente logueado (pre-llena checkout).
+ * POST /api/account/addresses — guarda una nueva dirección.
  *
- * POST /api/account/addresses
- * Guarda una nueva dirección para el cliente logueado.
- * Body: { label?, full_name, phone?, address, city, department?, postal_code?, is_default? }
+ * HU-156: provisioning del cliente + cliente `authenticated` (RLS `addresses_own`)
+ * cuando `SESSION_RLS_ENABLED` está activo; si no, service-role. El insert lleva
+ * `tenant_id` explícito para que la política `with check` y la FK compuesta
+ * (customer_id, tenant_id) calcen en cualquier tenant.
  */
-
-async function getCustomerId(supabase: ReturnType<typeof createServerClient>, stackUserId: string, email: string) {
-  // Buscar por stack_id primero; si no existe, buscar por email (guest que creó cuenta)
-  const { data } = await supabase
-    .from('customers')
-    .select('id')
-    .eq('stack_id', stackUserId)
-    .maybeSingle()
-
-  if (data?.id) return data.id
-
-  // Fallback: buscar por email (por si el upsert en /welcome no se ejecutó aún)
-  const { data: byEmail } = await supabase
-    .from('customers')
-    .select('id')
-    .eq('email', email)
-    .maybeSingle()
-
-  return byEmail?.id ?? null
-}
-
 export async function GET() {
   try {
-    // getUser() puede throw en Route Handlers si la sesión no está disponible
-    // (mismo patrón defensivo que /api/auth/welcome)
     let user = null
-    try {
-      user = await stackServerApp.getUser()
-    } catch {
-      // Stack Auth lanza cuando no hay sesión activa
-    }
-    if (!user?.primaryEmail) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-    }
+    try { user = await stackServerApp.getUser() } catch { /* no session */ }
+    if (!user?.primaryEmail) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
-    const supabase = createServerClient()
-    const customerId = await getCustomerId(supabase, user.id, user.primaryEmail)
-    if (!customerId) {
-      return NextResponse.json({ addresses: [] })
-    }
+    const { tenantId } = await resolveTenant()
+    const customer = await ensureCustomer({
+      stackUserId: user.id, email: user.primaryEmail, name: user.displayName, tenantId,
+    })
 
-    const { data: addresses, error } = await supabase
-      .from('customer_addresses')
-      .select('*')
-      .eq('customer_id', customerId)
+    const db = (await getRequestUserDb(user.id)) ?? createServerClient()
+    const { data: addresses, error } = await db
+      .from('customer_addresses').select('*')
+      .eq('customer_id', customer.id)
       .order('is_default', { ascending: false })
       .order('created_at', { ascending: false })
 
     if (error) throw error
-
     return NextResponse.json({ addresses: addresses ?? [] })
   } catch (err) {
     console.error('[account/addresses GET]', err)
@@ -71,55 +42,38 @@ export async function GET() {
 export async function POST(request: NextRequest) {
   try {
     let user = null
-    try {
-      user = await stackServerApp.getUser()
-    } catch {
-      // Stack Auth lanza cuando no hay sesión activa
-    }
-    if (!user?.primaryEmail) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-    }
+    try { user = await stackServerApp.getUser() } catch { /* no session */ }
+    if (!user?.primaryEmail) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
     const body = await request.json() as {
-      label?: string
-      full_name: string
-      phone?: string
-      address: string
-      city: string
-      department?: string
-      postal_code?: string
-      is_default?: boolean
+      label?: string; full_name: string; phone?: string; address: string
+      city: string; department?: string; postal_code?: string; is_default?: boolean
     }
 
     if (!body.full_name || !body.address || !body.city) {
-      return NextResponse.json(
-        { error: 'full_name, address y city son requeridos' },
-        { status: 400 },
-      )
+      return NextResponse.json({ error: 'full_name, address y city son requeridos' }, { status: 400 })
     }
 
-    const supabase = createServerClient()
-    const customerId = await getCustomerId(supabase, user.id, user.primaryEmail)
-    if (!customerId) {
-      return NextResponse.json(
-        { error: 'Cliente no encontrado. Intenta recargar la página.' },
-        { status: 404 },
-      )
-    }
+    const { tenantId } = await resolveTenant()
+    const customer = await ensureCustomer({
+      stackUserId: user.id, email: user.primaryEmail, name: user.displayName, tenantId,
+    })
 
-    // Si la nueva dirección es default, quitar el default anterior
+    const db = (await getRequestUserDb(user.id)) ?? createServerClient()
+
+    // Si la nueva es default, quitar el default anterior
     if (body.is_default) {
-      await supabase
-        .from('customer_addresses')
+      await db.from('customer_addresses')
         .update({ is_default: false })
-        .eq('customer_id', customerId)
+        .eq('customer_id', customer.id)
         .eq('is_default', true)
     }
 
-    const { data: address, error } = await supabase
+    // Insert con tenant_id explícito (calza `with check` + FK compuesta).
+    const { data: address, error } = await db
       .from('customer_addresses')
       .insert({
-        customer_id: customerId,
+        customer_id: customer.id,
         label: body.label ?? null,
         full_name: body.full_name,
         phone: body.phone ?? null,
@@ -128,12 +82,12 @@ export async function POST(request: NextRequest) {
         department: body.department ?? null,
         postal_code: body.postal_code ?? null,
         is_default: body.is_default ?? false,
+        tenant_id: tenantId,
       })
       .select()
       .single()
 
     if (error) throw error
-
     return NextResponse.json({ address })
   } catch (err) {
     console.error('[account/addresses POST]', err)

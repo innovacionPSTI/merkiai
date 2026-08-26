@@ -2,6 +2,8 @@ import { createServerClient, type Db } from '../client'
 import type { Order, OrderItem, ShippingAddress } from '../types'
 
 export interface CreateOrderInput {
+  /** Tenant del pedido (E17). Si se omite, la BD usa el tenant por defecto. */
+  tenant_id?: string
   customer_id?: string
   customer_name: string
   customer_email: string

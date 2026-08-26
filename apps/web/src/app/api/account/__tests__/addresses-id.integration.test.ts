@@ -20,7 +20,12 @@ jest.mock('@/stack', () => ({ stackServerApp: { getUser: () => mockGetUser() } }
 const mockFrom = jest.fn()
 jest.mock('@merkiai/database', () => ({
   createServerClient: () => ({ from: mockFrom }),
+  // HU-156: provisioning idempotente → siempre devuelve el customer.
+  ensureCustomer: jest.fn(async () => ({ id: 'cust-1' })),
 }))
+// Flag de RLS de sesión apagado en test → cliente por defecto (mockFrom).
+jest.mock('@/lib/tenant-db', () => ({ getRequestUserDb: jest.fn(async () => undefined) }))
+jest.mock('@/lib/tenant-context', () => ({ resolveTenant: jest.fn(async () => ({ tenantId: 'tenant-test' })) }))
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
@@ -86,15 +91,6 @@ describe('PATCH /api/account/addresses/[id]', () => {
     mockGetUser.mockResolvedValue(null)
     const res = await PATCH(makeRequest({}), makeParams('addr-1'))
     expect(res.status).toBe(401)
-  })
-
-  it('returns 404 when customer not found', async () => {
-    authUser()
-    setupChain({ customerId: null })
-    const res = await PATCH(makeRequest({ city: 'Bogotá' }), makeParams('addr-1'))
-    expect(res.status).toBe(404)
-    const body = await res.json()
-    expect(body.error).toBe('Cliente no encontrado')
   })
 
   it('returns 404 when address does not belong to customer', async () => {
@@ -163,13 +159,6 @@ describe('DELETE /api/account/addresses/[id]', () => {
     mockGetUser.mockResolvedValue(null)
     const res = await DELETE(makeDeleteRequest(), makeParams('addr-1'))
     expect(res.status).toBe(401)
-  })
-
-  it('returns 404 when customer not found', async () => {
-    authUser()
-    setupChain({ customerId: null })
-    const res = await DELETE(makeDeleteRequest(), makeParams('addr-1'))
-    expect(res.status).toBe(404)
   })
 
   it('deletes address and returns ok:true', async () => {

@@ -15,20 +15,28 @@
 -- Aplicar en el proyecto Supabase del PLANO DE TIENDA.
 -- =============================================================================
 
+-- Asegura RLS habilitado (no-op si ya lo estaba).
+alter table public.categories       enable row level security;
+alter table public.products         enable row level security;
+alter table public.product_variants enable row level security;
+
 -- categories
 drop policy if exists categories_public_read on public.categories;
+drop policy if exists categories_tenant_read on public.categories;
 create policy categories_tenant_read on public.categories
   for select to anon, authenticated
   using (tenant_id = (auth.jwt() ->> 'tenant_id')::uuid);
 
 -- products (solo activos)
 drop policy if exists products_public_read on public.products;
+drop policy if exists products_tenant_read on public.products;
 create policy products_tenant_read on public.products
   for select to anon, authenticated
   using (active = true and tenant_id = (auth.jwt() ->> 'tenant_id')::uuid);
 
 -- product_variants (solo activos)
 drop policy if exists product_variants_public_read on public.product_variants;
+drop policy if exists product_variants_tenant_read on public.product_variants;
 create policy product_variants_tenant_read on public.product_variants
   for select to anon, authenticated
   using (active = true and tenant_id = (auth.jwt() ->> 'tenant_id')::uuid);

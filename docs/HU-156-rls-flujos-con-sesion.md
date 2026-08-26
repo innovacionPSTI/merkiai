@@ -56,8 +56,23 @@ create policy orders_own_read on public.orders for select to authenticated
 3. Intentar leer/actualizar la ficha/cart/dirección de B → **0 filas / rechazo**.
 4. `getUserTenantDb` **nunca** usa service-role → verificado.
 
-## Orden de cableado (tras validar RLS)
-1. Aplicar las políticas en staging + prueba de aislamiento entre compradores.
-2. Cablear las páginas/rutas de **cuenta** (`/account/*`, `api/account/*`) a `getRequestUserTenantDb(user.id)` (pasar el cliente a las queries `getOrdersByCustomer*`, addresses, profile).
-3. Checkout: las **lecturas** del comprador con el cliente authenticated; la **creación de la orden + stock + webhooks** se quedan privilegiadas (order_number, pago, reconcile).
+## Migración y gate (implementado)
+- **SQL:** `packages/database/supabase/migrations/e17/05_rls_session_flows.sql` (idempotente): habilita RLS + políticas `customers_own`, `addresses_own`, `cart_own`, `orders_own_read`.
+- **Gate de cableado:** `apps/web/src/lib/tenant-db.ts` → `getRequestUserDb(userId)` devuelve el cliente `authenticated` **solo** si `SESSION_RLS_ENABLED === 'true'` **y** `SUPABASE_JWT_SECRET` está definido; en otro caso `undefined` → la query usa server-role (comportamiento actual). El cableado se despliega **inerte** y se activa por config tras validar. Prueba: `apps/web/src/lib/__tests__/tenant-db.test.ts`.
+
+## Orden de cableado
+1. ✅ Aplicar `e17/05` en **staging** + prueba de aislamiento entre compradores (obligatoria, ver arriba).
+2. ✅ **Cuenta + carrito cableados** (gated): lecturas `/account`, `/account/orders` (por `customer_id`), `/account/orders/[id]` (+guardia por email); mutaciones `api/account/profile` (GET/PATCH), `api/account/addresses` (GET/POST), **`api/account/addresses/[id]` (PATCH/DELETE)** y **`api/account/cart` (GET/POST/DELETE)** → todas con `ensureCustomer` (garantiza fila, evita 404) + cliente `authenticated` cuando el flag está activo + `tenant_id` explícito en escrituras (dirección y carrito). Tipos: `tenant_id` tipado en `customers`/`customer_addresses`/`orders`/`cart_items`.
+3. Lecturas del comprador en checkout: cubiertas por `api/account/addresses` (direcciones guardadas) y `api/account/cart` (sync de carrito), ya cableadas.
+3. 🔲 Checkout: **lecturas** del comprador con el cliente authenticated; la **creación de orden + stock + webhooks** se quedan privilegiadas (order_number, pago, reconcile).
 4. `customers` sin `stack_id` (guest checkout) se crean/gestionan por la vía privilegiada.
+
+## Enlace comprador↔customer↔order (bug de fondo corregido)
+Antes: **nadie creaba filas en `customers`** (el registro solo tocaba Stack Auth) y el checkout **nunca** seteaba `orders.customer_id` (siempre `null`) → con RLS activo el comprador no vería ningún pedido. Corregido (decisión: provisioning on-demand + reclamo por email):
+- `ensureCustomer({stackUserId,email,name,tenantId})` en `@merkiai/database` (service-role, idempotente): resuelve por `stack_id` → por `email` (adjunta `stack_id` a un cliente-invitado) → o inserta; y **reclama** los pedidos de invitado del mismo email (`orders.customer_id` = customer). Pruebas: `packages/database/src/queries/__tests__/customers.test.ts` (3).
+- **Checkout** (`api/checkout/route.ts`): con sesión, `ensureCustomer` + `customer_id` en las 3 rutas de `createOrder` (manual/tucompra/pasarela). Invitado → `customer_id` null, reclamado al registrarse.
+- **Cuenta**: provisioning al entrar a `/account` y `/account/orders`; la lista lee por `customer_id` (`getOrdersByCustomer`), consistente con `orders_own_read`.
+> Nota: los tipos generados (`types.ts`) aún no incluyen `tenant_id`; `ensureCustomer` usa una vista sin tipar acotada para esa columna (regenerar tipos es trabajo aparte).
+
+## Activación (tras validar en staging)
+Definir en el entorno de web: `SESSION_RLS_ENABLED=true` (+ `SUPABASE_JWT_SECRET` ya presente). Antes de esto, todo el cableado corre con server-role (sin cambios).

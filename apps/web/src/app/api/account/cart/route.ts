@@ -1,56 +1,54 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { stackServerApp } from '@/stack'
-import { getCartItems, replaceCart, clearCart } from '@merkiai/database'
-import { createClient } from '@supabase/supabase-js'
-import type { Database } from '@merkiai/database'
+import { getCartItems, replaceCart, clearCart, ensureCustomer, createServerClient } from '@merkiai/database'
+import { getRequestUserDb } from '@/lib/tenant-db'
+import { resolveTenant } from '@/lib/tenant-context'
 
-const supabase = createClient<Database>(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.SUPABASE_SERVICE_ROLE_KEY!
-)
-
-async function getCustomerId(userId: string): Promise<string | null> {
-  const { data } = await supabase
-    .from('customers')
-    .select('id')
-    .eq('stack_id', userId)
-    .single()
-  return data?.id ?? null
+/**
+ * Sincroniza el carrito del usuario logueado con la BD (HU-156).
+ * Provisioning con `ensureCustomer` (evita 404) y operación con el cliente
+ * `authenticated` (RLS `cart_own`) cuando `SESSION_RLS_ENABLED` está activo; si
+ * no, service-role. Las escrituras llevan `tenant_id` explícito.
+ */
+async function resolveBuyer(user: { id: string; primaryEmail: string; displayName: string | null }) {
+  const { tenantId } = await resolveTenant()
+  const customer = await ensureCustomer({
+    stackUserId: user.id, email: user.primaryEmail, name: user.displayName, tenantId,
+  })
+  const db = (await getRequestUserDb(user.id)) ?? createServerClient()
+  return { tenantId, customerId: customer.id, db }
 }
 
-/** GET /api/account/cart — returns DB cart for logged-in user */
+/** GET /api/account/cart — carrito en BD del usuario logueado */
 export async function GET() {
   const user = await stackServerApp.getUser()
-  if (!user) return NextResponse.json({ error: 'No autorizado' }, { status: 401 })
+  if (!user?.primaryEmail) return NextResponse.json({ error: 'No autorizado' }, { status: 401 })
 
-  const customerId = await getCustomerId(user.id)
-  if (!customerId) return NextResponse.json({ items: [] })
-
-  const items = await getCartItems(customerId)
+  const { customerId, db } = await resolveBuyer({ id: user.id, primaryEmail: user.primaryEmail, displayName: user.displayName })
+  const items = await getCartItems(customerId, db)
   return NextResponse.json({ items })
 }
 
-/** POST /api/account/cart — replace entire cart in DB */
+/** POST /api/account/cart — reemplaza el carrito completo en BD */
 export async function POST(req: NextRequest) {
   const user = await stackServerApp.getUser()
-  if (!user) return NextResponse.json({ error: 'No autorizado' }, { status: 401 })
-
-  const customerId = await getCustomerId(user.id)
-  if (!customerId) return NextResponse.json({ error: 'Cliente no encontrado' }, { status: 404 })
+  if (!user?.primaryEmail) return NextResponse.json({ error: 'No autorizado' }, { status: 401 })
 
   const { items } = await req.json()
   if (!Array.isArray(items)) return NextResponse.json({ error: 'items requerido' }, { status: 400 })
 
-  // Skip items missing valid IDs — they can't satisfy the FK constraints
-  // (productId is optional on CartItem for legacy reasons; variantId=0 is also invalid)
+  const { tenantId, customerId, db } = await resolveBuyer({ id: user.id, primaryEmail: user.primaryEmail, displayName: user.displayName })
+
+  // Descarta ítems sin IDs válidos (no satisfacen las FKs).
   const validItems = items.filter(
-    (i) => i.productId && i.productId > 0 && i.variantId && i.variantId > 0
+    (i) => i.productId && i.productId > 0 && i.variantId && i.variantId > 0,
   )
 
   await replaceCart(
     customerId,
     validItems.map((i) => ({
       customer_id: customerId,
+      tenant_id: tenantId,
       variant_id: i.variantId,
       product_id: i.productId,
       product_name: i.productName,
@@ -58,20 +56,19 @@ export async function POST(req: NextRequest) {
       qty: i.qty,
       price: i.price,
       image_url: i.imageUrl ?? null,
-    }))
+    })),
+    db,
   )
 
   return NextResponse.json({ ok: true })
 }
 
-/** DELETE /api/account/cart — clear entire cart in DB */
+/** DELETE /api/account/cart — vacía el carrito en BD */
 export async function DELETE() {
   const user = await stackServerApp.getUser()
-  if (!user) return NextResponse.json({ error: 'No autorizado' }, { status: 401 })
+  if (!user?.primaryEmail) return NextResponse.json({ error: 'No autorizado' }, { status: 401 })
 
-  const customerId = await getCustomerId(user.id)
-  if (!customerId) return NextResponse.json({ ok: true })
-
-  await clearCart(customerId)
+  const { customerId, db } = await resolveBuyer({ id: user.id, primaryEmail: user.primaryEmail, displayName: user.displayName })
+  await clearCart(customerId, db)
   return NextResponse.json({ ok: true })
 }

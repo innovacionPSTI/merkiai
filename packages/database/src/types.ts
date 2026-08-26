@@ -188,6 +188,7 @@ export type Database = {
       orders: {
         Row: {
           id: number
+          tenant_id: string
           order_number: string
           customer_id: string | null
           customer_name: string
@@ -223,6 +224,7 @@ export type Database = {
         }
         Insert: {
           id?: number
+          tenant_id?: string
           order_number: string
           customer_id?: string | null
           customer_name: string
@@ -258,6 +260,7 @@ export type Database = {
         }
         Update: {
           id?: number
+          tenant_id?: string
           order_number?: string
           customer_id?: string | null
           customer_name?: string
@@ -781,6 +784,7 @@ export type Database = {
       cart_items: {
         Row: {
           id: number
+          tenant_id: string
           customer_id: string
           variant_id: number
           product_id: number
@@ -793,6 +797,7 @@ export type Database = {
         }
         Insert: {
           id?: number
+          tenant_id?: string
           customer_id: string
           variant_id: number
           product_id: number
@@ -805,6 +810,7 @@ export type Database = {
         }
         Update: {
           id?: number
+          tenant_id?: string
           customer_id?: string
           variant_id?: number
           product_id?: number
@@ -963,6 +969,7 @@ export type Database = {
       customers: {
         Row: {
           id: string
+          tenant_id: string
           stack_id: string | null
           email: string
           name: string | null
@@ -972,6 +979,7 @@ export type Database = {
         }
         Insert: {
           id?: string
+          tenant_id?: string
           stack_id?: string | null
           email: string
           name?: string | null
@@ -981,6 +989,7 @@ export type Database = {
         }
         Update: {
           id?: string
+          tenant_id?: string
           stack_id?: string | null
           email?: string
           name?: string | null
@@ -993,6 +1002,7 @@ export type Database = {
       customer_addresses: {
         Row: {
           id: string
+          tenant_id: string
           customer_id: string
           label: string | null
           full_name: string
@@ -1006,6 +1016,7 @@ export type Database = {
         }
         Insert: {
           id?: string
+          tenant_id?: string
           customer_id: string
           label?: string | null
           full_name: string
@@ -1019,6 +1030,7 @@ export type Database = {
         }
         Update: {
           id?: string
+          tenant_id?: string
           customer_id?: string
           label?: string | null
           full_name?: string

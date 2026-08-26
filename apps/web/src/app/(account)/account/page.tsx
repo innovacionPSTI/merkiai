@@ -1,7 +1,9 @@
 import Link from 'next/link'
 import type { Metadata } from 'next'
 import { stackServerApp } from '@/stack'
-import { createServerClient } from '@merkiai/database'
+import { createServerClient, ensureCustomer } from '@merkiai/database'
+import { getRequestUserDb } from '@/lib/tenant-db'
+import { resolveTenant } from '@/lib/tenant-context'
 
 export const metadata: Metadata = { title: 'Mi perfil' }
 
@@ -14,9 +16,15 @@ interface DefaultAddress {
   postal_code: string | null
 }
 
-async function getDefaultAddress(stackUserId: string, email: string): Promise<DefaultAddress | null> {
+async function getDefaultAddress(
+  stackUserId: string,
+  email: string,
+  db?: ReturnType<typeof createServerClient>,
+): Promise<DefaultAddress | null> {
   try {
-    const supabase = createServerClient()
+    // HU-156: bajo RLS (flag activo) el cliente authenticated acota a lo propio;
+    // si no, server-role (comportamiento actual).
+    const supabase = db ?? createServerClient()
 
     let { data: customer } = await supabase
       .from('customers')
@@ -55,8 +63,16 @@ export default async function MiCuentaPage() {
   const displayName = user?.displayName ?? ''
   const email = user?.primaryEmail ?? ''
   const firstName = displayName.split(' ')[0] || 'Bienvenido'
+
+  // HU-156: provisioning del cliente al entrar a la cuenta (vincula por
+  // stack_id/email y reclama pedidos de invitado). Best-effort, service-role.
+  if (user?.id && email) {
+    const { tenantId } = await resolveTenant()
+    await ensureCustomer({ stackUserId: user.id, email, name: displayName, tenantId }).catch(() => null)
+  }
+
   const defaultAddress = user
-    ? await getDefaultAddress(user.id, email).catch(() => null)
+    ? await getDefaultAddress(user.id, email, await getRequestUserDb(user.id)).catch(() => null)
     : null
 
   return (

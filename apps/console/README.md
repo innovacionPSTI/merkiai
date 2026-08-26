@@ -26,7 +26,11 @@ HEXCLAVE_SECRET_SERVER_KEY=ssk_...
 ## Setup en Stack Auth (proyecto control-plane)
 1. Crear un **tercer proyecto** de Stack Auth (`Merkiai Console`).
 2. En **RBAC → Project Permissions**, crear el permiso **`platform:operate`**.
-3. Otorgarlo a tu usuario operador (server-side `grantPermission`, o desde el dashboard).
+3. Otorgarlo a tu usuario operador — dashboard (Users → usuario → Permissions) **o** vía script:
+   ```bash
+   # desde apps/console (el usuario debe haberse registrado antes en /login)
+   node --env-file=.env.local scripts/grant-operator.mjs operador@tu.com   # --revoke para quitar · --list para ver usuarios
+   ```
 4. (Opcional) Deshabilitar sign-up: la consola no permite auto-registro.
 
 ## Despliegue (Vercel)

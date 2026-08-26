@@ -1,33 +1,36 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { stackServerApp } from '@/stack'
-import { createServerClient } from '@merkiai/database'
+import { createServerClient, ensureCustomer } from '@merkiai/database'
+import { getRequestUserDb } from '@/lib/tenant-db'
+import { resolveTenant } from '@/lib/tenant-context'
 
 /**
- * GET /api/account/profile
- * Devuelve nombre y teléfono del customer logueado.
+ * GET /api/account/profile — nombre/teléfono/email del customer logueado.
+ * PATCH /api/account/profile — actualiza nombre y teléfono.  Body: { name?, phone? }
  *
- * PATCH /api/account/profile
- * Actualiza nombre y teléfono del customer.
- * Body: { name?: string; phone?: string }
+ * HU-156: se asegura la fila en `customers` (provisioning) y se opera con el
+ * cliente `authenticated` (RLS `customers_own`) cuando `SESSION_RLS_ENABLED`
+ * está activo; si no, service-role (comportamiento actual). Ownership por id.
  */
-
 export async function GET() {
   try {
     let user = null
     try { user = await stackServerApp.getUser() } catch { /* no session */ }
     if (!user?.primaryEmail) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
-    const supabase = createServerClient()
-    const { data: customer } = await supabase
-      .from('customers')
-      .select('name, phone, email')
-      .or(`stack_id.eq.${user.id},email.eq.${user.primaryEmail}`)
-      .maybeSingle()
+    const { tenantId } = await resolveTenant()
+    const customer = await ensureCustomer({
+      stackUserId: user.id, email: user.primaryEmail, name: user.displayName, tenantId,
+    })
+
+    const db = (await getRequestUserDb(user.id)) ?? createServerClient()
+    const { data } = await db
+      .from('customers').select('name, phone, email').eq('id', customer.id).maybeSingle()
 
     return NextResponse.json({
-      name:  customer?.name  ?? user.displayName ?? '',
-      phone: customer?.phone ?? '',
-      email: customer?.email ?? user.primaryEmail,
+      name:  data?.name  ?? user.displayName ?? '',
+      phone: data?.phone ?? '',
+      email: data?.email ?? user.primaryEmail,
     })
   } catch (err) {
     console.error('[account/profile GET]', err)
@@ -43,27 +46,26 @@ export async function PATCH(req: NextRequest) {
 
     const body = await req.json() as { name?: string; phone?: string }
 
-    const supabase = createServerClient()
+    const { tenantId } = await resolveTenant()
+    const customer = await ensureCustomer({
+      stackUserId: user.id, email: user.primaryEmail, name: user.displayName, tenantId,
+    })
 
-    // Update customer row
-    const { error } = await supabase
+    const db = (await getRequestUserDb(user.id)) ?? createServerClient()
+    const { error } = await db
       .from('customers')
       .update({
         name:       body.name  ?? undefined,
         phone:      body.phone ?? undefined,
         updated_at: new Date().toISOString(),
       })
-      .or(`stack_id.eq.${user.id},email.eq.${user.primaryEmail}`)
+      .eq('id', customer.id)
 
     if (error) throw error
 
-    // Also update Stack Auth displayName if name changed
+    // Sincroniza displayName en Stack Auth si cambió el nombre (no crítico).
     if (body.name) {
-      try {
-        await user.update({ displayName: body.name })
-      } catch {
-        // non-critical
-      }
+      try { await user.update({ displayName: body.name }) } catch { /* non-critical */ }
     }
 
     return NextResponse.json({ ok: true })

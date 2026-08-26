@@ -27,18 +27,25 @@ Regla de seguridad: para el **webhook/return de pagos** conviene la **canónica 
 `platform/02_tenant_domains.sql`: `tenants.subdomain` + `tenants.primary_domain` (únicos por plataforma) + seed del tenant por defecto.
 
 ## Seam de resolución (implementado)
-`apps/web/src/lib/tenant-context.ts`: `resolveTenant(resolver?)` lee el Host de la petición y devuelve `{ tenantId, subdomain, primaryDomain }`; `TenantResolver` es el contrato del origen de datos; `singleTenantResolver` (interim) devuelve el tenant por defecto. `apps/web/src/lib/tenant-db.ts` gana `getRequestTenantDb()` (resuelve + construye el cliente). **Comportamiento actual sin cambios** (resuelve al tenant por defecto); las páginas aún NO usan `getRequestTenantDb` para no romper ISR.
+`apps/web/src/lib/tenant-context.ts`: `resolveTenant(resolver?)` lee el Host y devuelve `{ tenantId, subdomain, primaryDomain, status, plan, entitlements }`; `TenantResolver` es el contrato del origen de datos. `defaultResolver()` elige **`controlPlaneResolver`** si hay `CONTROL_PLANE_URL` + `INTERNAL_API_SECRET`, si no `singleTenantResolver` (fallback al tenant por defecto). Caché por host con **TTL 60 s**; el fallback NO se cachea (reintenta si el control plane falla).
 
-## Decisiones abiertas (a resolver al activar multi-host real)
-1. **Origen del lookup host→tenant** (el registro `tenants` vive en la BD de plataforma, solo control plane):
-   - (a) **API interna de resolución del control plane** — recomendado; requiere el `apps/console` (o un endpoint mínimo de resolución).
-   - (b) **Path de lectura acotado** a `tenants` desde el plano de tienda (rompe el límite service-role; requiere policy/rol de solo-lectura).
-2. **Renderizado**: leer el Host vuelve la página **dinámica** (rompe ISR/`revalidate`). Decidir por página (dinámico puro vs caché por host) al activar la resolución.
+## Núcleo cableado (HU-157 · núcleo)  ✅
+`apps/web/src/lib/tenant-db.ts` → **`getRequestCatalogDb()`**: con `SUPABASE_JWT_SECRET` presente devuelve el cliente **tenant-scoped** (rol `anon` + RLS, tenant resuelto por Host); sin el secreto devuelve `undefined` → la query usa su cliente server-role (comportamiento single-tenant). **Degradación segura**: se puede desplegar y activar por configuración.
+
+Páginas de tienda convertidas a **render dinámico por request** (decisión: dinámico por request) y con `getRequestCatalogDb()`:
+- `(public)/page.tsx` (home) · `(public)/shop/page.tsx` (catálogo) · `(public)/shop/[slug]/page.tsx` (PDP).
+
+Aislamiento real garantizado por RLS en las tablas de catálogo (`categories`, `products`, `product_variants` — `e17/02_rls_catalog.sql`). Las tablas no-catálogo (`store_config`, `home_sections`, `pages`, `blog`) aún leen sin scope por tenant → se cierran en la cola de HU-156.
+
+**Activación en el entorno:** definir `SUPABASE_JWT_SECRET` (Legacy JWT secret), aplicar `e17/02_rls_catalog.sql`, definir `CONTROL_PLANE_URL` (=`https://merkiai.com`) + `INTERNAL_API_SECRET`, y **DNS wildcard `*.merkiai.com`** → deploy de web.
+
+## Decisiones (resueltas)
+1. **Origen del lookup host→tenant**: (a) **API interna del control plane** (`/api/internal/resolve-tenant`) — implementado en `apps/console`. ✅
+2. **Renderizado**: **dinámico por request** en las páginas dependientes de tenant. ✅
 
 ## Pendiente (resto de HU-157)
-1. Elegir origen del lookup (decisión #1) e implementar el `TenantResolver` real.
-2. Cambiar las páginas a `getRequestTenantDb()` (decisión #2 de renderizado).
-3. Cablear los usos ⏳ de URLs a `tenantBaseUrl(tenant)` / `resolveBaseUrl(req, tenant)` (SEO, emails, PaymentConfigForm, usuarios/ADMIN_URL).
+1. Cablear los usos ⏳ de URLs a `tenantBaseUrl(tenant)` / `resolveBaseUrl(req, tenant)` (SEO, emails, PaymentConfigForm, usuarios/ADMIN_URL).
+2. Tenant-scope de los singletons no-catálogo (`store_config`, `home_sections`, `pages`, `blog`) vía RLS (cola de HU-156).
 
 ## Nota sobre webhooks de pago
 Las credenciales de pasarela son **por tenant** (`payment_config` tenant-scoped) y la URL de webhook se registra por comercio. Con resolución por host, `https://<tenant-host>/api/webhooks/<provider>` resuelve el tenant correcto; el handler ya re-consulta la pasarela y verifica firma + idempotencia + monto.

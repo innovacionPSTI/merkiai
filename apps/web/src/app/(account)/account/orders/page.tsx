@@ -1,7 +1,9 @@
 import type { Metadata } from 'next'
 import Link from 'next/link'
 import { stackServerApp } from '@/stack'
-import { getOrdersByCustomerEmail } from '@merkiai/database'
+import { getOrdersByCustomer, ensureCustomer } from '@merkiai/database'
+import { getRequestUserDb } from '@/lib/tenant-db'
+import { resolveTenant } from '@/lib/tenant-context'
 
 export const metadata: Metadata = { title: 'Mis pedidos' }
 
@@ -21,8 +23,25 @@ const COP = new Intl.NumberFormat('es-CO', {
 
 export default async function PedidosPage() {
   const user = await stackServerApp.getUser()
-  const email = user?.primaryEmail ?? ''
-  const orders = email ? await getOrdersByCustomerEmail(email).catch(() => []) : []
+
+  // HU-156: provisioning del cliente (vincula por stack_id/email + reclama
+  // pedidos de invitado) y lectura por customer_id — consistente con la política
+  // RLS `orders_own_read`. El provisioning usa service-role; la lectura usa el
+  // cliente authenticated cuando el flag está activo.
+  let orders: Awaited<ReturnType<typeof getOrdersByCustomer>> = []
+  if (user?.id && user?.primaryEmail) {
+    const { tenantId } = await resolveTenant()
+    const customer = await ensureCustomer({
+      stackUserId: user.id,
+      email: user.primaryEmail,
+      name: user.displayName,
+      tenantId,
+    }).catch(() => null)
+    if (customer) {
+      const db = await getRequestUserDb(user.id)
+      orders = await getOrdersByCustomer(customer.id, db).catch(() => [])
+    }
+  }
 
   return (
     <div className="space-y-6">

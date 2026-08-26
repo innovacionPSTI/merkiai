@@ -3,14 +3,16 @@ import HeroCarousel from '@/components/home/HeroCarousel'
 import FeaturedProducts from '@/components/home/FeaturedProducts'
 import ServicesSection from '@/components/home/ServicesSection'
 import NewsletterSection from '@/components/home/NewsletterSection'
+import { getRequestCatalogDb } from '@/lib/tenant-db'
 import Link from 'next/link'
 import Image from 'next/image'
 
-export const revalidate = 60 // ISR cada 60 segundos
+// E17/HU-157: la home lee datos del tenant resuelto por Host → render dinámico.
+export const dynamic = 'force-dynamic'
 
 export default async function HomePage() {
   const { homeSections, featuredProducts: products, blogPosts: posts, bestSellers, categories } =
-    await getWebHomeData()
+    await getWebHomeData(await getRequestCatalogDb())
 
   // Helpers para encontrar secciones por tipo
   const getSection = (type: string) => homeSections.find((s) => s.section_type === type)

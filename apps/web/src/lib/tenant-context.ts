@@ -89,23 +89,29 @@ function defaultResolver(): TenantResolver {
     : singleTenantResolver
 }
 
-// Caché por host (por instancia). Se reemplazará por la caché real cuando se
-// conecte el resolver del control plane.
-const cache = new Map<string, ResolvedTenant>()
+// Caché por host (por instancia) con TTL corto: evita golpear el control plane
+// en cada request pero permite que cambios de estado/plan del tenant se
+// propaguen pronto. Solo se cachean resoluciones EXITOSAS (el fallback al
+// tenant por defecto no se cachea, para reintentar si el control plane falló).
+const RESOLVE_TTL_MS = 60_000
+const cache = new Map<string, { value: ResolvedTenant; expires: number }>()
 
 /**
- * Resuelve el tenant de la petición actual. Fail-open al tenant por defecto
- * mientras la resolución real (control plane) no esté conectada.
+ * Resuelve el tenant de la petición actual a partir del Host.
+ * Fail-open al tenant por defecto si no hay host o el resolver no encuentra
+ * (interim single-tenant / error transitorio del control plane).
  */
 export async function resolveTenant(resolver: TenantResolver = defaultResolver()): Promise<ResolvedTenant> {
   const h = await headers()
   const host = (h.get('x-forwarded-host') ?? h.get('host') ?? '').toLowerCase().replace(/:\d+$/, '')
   if (!host) return DEFAULT_TENANT
 
-  const cached = cache.get(host)
-  if (cached) return cached
+  const hit = cache.get(host)
+  if (hit && hit.expires > Date.now()) return hit.value
 
-  const resolved = (await resolver.resolveByHost(host)) ?? DEFAULT_TENANT
-  cache.set(host, resolved)
+  const resolved = await resolver.resolveByHost(host)
+  if (!resolved) return DEFAULT_TENANT // no cachear el fallback
+
+  cache.set(host, { value: resolved, expires: Date.now() + RESOLVE_TTL_MS })
   return resolved
 }
