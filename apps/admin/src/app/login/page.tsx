@@ -35,12 +35,20 @@ function AdminLogin() {
     }
   }
 
-  // Sin Google: los operadores de tienda entran con credencial (sign-up deshabilitado).
+  async function handleGoogle() {
+    try {
+      await app.signInWithOAuth('google')
+    } catch {
+      setError('No se pudo iniciar con Google.')
+    }
+  }
+
   return (
     <LoginScreen
       content={ADMIN_LOGIN_CONTENT}
       brand={ADMIN_BRAND}
       onSubmit={handleSubmit}
+      onGoogle={handleGoogle}
       loading={loading}
       error={error}
     />

@@ -5,23 +5,27 @@ import { requirePlatformOperator } from '@/lib/platform-auth'
 import { platformDb } from '@/lib/platform-db'
 import { parsePlanForm } from '@/lib/plan-validation'
 import { getPlans } from '@/lib/plans'
+import { provisionTenant } from '@/lib/provisioning'
+import { adminIdentity } from '@/lib/admin-identity'
 
 const SUBDOMAIN_RE = /^[a-z0-9-]{2,40}$/
 
-/** Provisiona un tenant nuevo (consola). Gated por `platform:operate`. */
+/** Aprovisiona un tenant nuevo (HU-209). Gated por `platform:operate`. */
 export async function createTenant(formData: FormData) {
   await requirePlatformOperator()
   const name = String(formData.get('name') ?? '').trim()
   const subdomain = String(formData.get('subdomain') ?? '').trim().toLowerCase()
+  const ownerEmail = String(formData.get('ownerEmail') ?? '').trim()
   if (!name || !SUBDOMAIN_RE.test(subdomain)) return
-  await platformDb().from('tenants').insert({
-    name,
-    subdomain,
-    plan: 'free',
-    status: 'active',
-    data_isolation: 'shared',
-    db_ref: null,
-  })
+  try {
+    await provisionTenant(
+      { name, subdomain, ownerEmail: ownerEmail || undefined },
+      { db: platformDb(), adminIdentity: adminIdentity() },
+    )
+  } catch {
+    // Falla de aprovisionamiento (subdominio en uso, Team, etc.): no crear a medias.
+    // (La UI de estado/errores se pule en HU-211/observabilidad.)
+  }
   revalidatePath('/')
 }
 

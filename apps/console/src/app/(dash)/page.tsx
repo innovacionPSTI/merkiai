@@ -46,8 +46,12 @@ export default async function TenantsPage() {
         <form action={createTenant} style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
           <input style={input} name="name" placeholder="Nombre del negocio" required />
           <input style={input} name="subdomain" placeholder="subdominio (a-z, 0-9, -)" required />
+          <input style={input} name="ownerEmail" type="email" placeholder="email del dueño (opcional)" />
           <button type="submit" style={btn}>Crear</button>
         </form>
+        <p style={{ margin: '8px 0 0', color: '#888', fontSize: 12 }}>
+          Crea el Team en Stack Auth + invita al dueño (si hay email). Requiere las vars del proyecto admin en la consola; si faltan, se crea el tenant y el Team se adjunta luego.
+        </p>
       </PanelCard>
 
       <PanelCard title={`Tenants (${tenants.length})`}>
