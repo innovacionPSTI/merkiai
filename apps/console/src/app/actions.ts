@@ -111,21 +111,26 @@ export async function inviteTenantOwner(
   if (!identity?.inviteMember) {
     return { ok: false, error: 'Stack Auth (proyecto admin) no está configurado en la consola.' }
   }
+  // Invitación al Team: best-effort e idempotente. Si el dueño YA es miembro
+  // (caso reintento), no debe bloquear la asignación del rol.
+  let inviteNote = ''
   try {
     await identity.inviteMember(teamId, email)
   } catch (e) {
-    const msg = e instanceof Error ? e.message : String(e)
-    return { ok: false, error: `No se pudo invitar: ${msg}` }
+    inviteNote = ` (aviso: no se reenvió la invitación al Team: ${e instanceof Error ? e.message : String(e)})`
   }
 
-  // Asigna el rol de super admin del dueño (profiles en la BD del admin). Sin esto,
-  // el dueño se une al Team pero el admin le muestra "Sin acceso".
+  // Rol de super admin del dueño (profiles en la BD del admin). ESTO es lo que
+  // habilita el acceso; sin esto el dueño se une al Team pero ve "Sin acceso".
   const prof = await provisionOwnerProfile({ email, tenantId: id, role: 'super_admin' })
   revalidatePath('/')
   if (!prof.ok) {
-    return { ok: false, error: `Invitación enviada, pero no se pudo asignar el rol de super admin: ${prof.error}` }
+    return { ok: false, error: `No se pudo asignar el rol de super admin: ${prof.error}` }
   }
-  return { ok: true, message: `Invitación enviada a ${email} y rol de super admin asignado. Al aceptar, entra al admin de la tienda.` }
+  return {
+    ok: true,
+    message: `Dueño ${email} con rol de super admin asignado.${inviteNote} Si ya había iniciado sesión, debe recargar o cerrar sesión y volver a entrar.`,
+  }
 }
 
 /**
