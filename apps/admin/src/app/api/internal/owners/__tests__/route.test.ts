@@ -8,8 +8,10 @@ import { NextRequest } from 'next/server'
 jest.mock('@merkiai/database', () => ({ createServerClient: jest.fn() }))
 import { createServerClient } from '@merkiai/database'
 import { POST } from '../route'
+import { __resetRateLimit } from '@/lib/rate-limit'
 
-const SECRET = 'secreto-interno'
+// Secreto de test ≥ MIN_SECRET_LEN (24) para pasar el fail-closed.
+const SECRET = 'test-secret-0123456789abcdef'
 
 /** Builder encadenable de Supabase que registra la operación. */
 function mockDb(existing: { id: string; role: string } | null) {
@@ -35,9 +37,28 @@ function req(body: object, opts: { secret?: string; origin?: boolean } = {}) {
 }
 
 beforeAll(() => { process.env.INTERNAL_API_SECRET = SECRET })
-beforeEach(() => jest.clearAllMocks())
+beforeEach(() => { jest.clearAllMocks(); __resetRateLimit() })
 
 describe('POST /api/internal/owners', () => {
+  it('500 si el secreto no está configurado (fail-closed)', async () => {
+    const prev = process.env.INTERNAL_API_SECRET
+    process.env.INTERNAL_API_SECRET = 'corto' // < 24
+    mockDb(null)
+    const res = await POST(req({ email: 'd@x.com', tenantId: 't1' }))
+    expect(res.status).toBe(500)
+    process.env.INTERNAL_API_SECRET = prev
+  })
+
+  it('429 al exceder el rate-limit por IP', async () => {
+    mockDb(null)
+    let last = 200
+    for (let i = 0; i < 12; i++) {
+      const res = await POST(req({ email: `d${i}@x.com`, tenantId: 't1' }))
+      last = res.status
+    }
+    expect(last).toBe(429)
+  })
+
   it('401 sin secreto válido', async () => {
     mockDb(null)
     const res = await POST(req({ email: 'd@x.com', tenantId: 't1' }, { secret: 'malo' }))
@@ -56,9 +77,9 @@ describe('POST /api/internal/owners', () => {
     expect((await POST(req({ tenantId: 't1' }))).status).toBe(400)
   })
 
-  it('400 rol no asignable (super_admin bloqueado)', async () => {
+  it('400 rol no asignable (p. ej. customer)', async () => {
     mockDb(null)
-    const res = await POST(req({ email: 'd@x.com', tenantId: 't1', role: 'super_admin' }))
+    const res = await POST(req({ email: 'd@x.com', tenantId: 't1', role: 'customer' }))
     expect(res.status).toBe(400)
   })
 
@@ -67,6 +88,13 @@ describe('POST /api/internal/owners', () => {
     const res = await POST(req({ email: 'D@X.com', tenantId: 't1', role: 'admin' }))
     expect(res.status).toBe(201)
     expect(calls.inserted).toMatchObject({ email: 'd@x.com', role: 'admin', tenant_id: 't1' })
+  })
+
+  it('permite super_admin (solo vía control plane) al crear el dueño', async () => {
+    const calls = mockDb(null)
+    const res = await POST(req({ email: 'dueno@x.com', tenantId: 't1', role: 'super_admin' }))
+    expect(res.status).toBe(201)
+    expect(calls.inserted).toMatchObject({ role: 'super_admin', tenant_id: 't1' })
   })
 
   it('actualiza el rol si el profiles ya existe', async () => {

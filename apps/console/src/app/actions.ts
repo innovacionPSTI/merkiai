@@ -55,9 +55,9 @@ export async function createTenant(
     // Rol de admin del dueño: crea su `profiles` (rol admin + tenant_id) vía el
     // admin. Solo si hay Team (identidad lista) y email. Falla aparte (no tumba).
     if (res.teamId && ownerEmail) {
-      const prof = await provisionOwnerProfile({ email: ownerEmail, tenantId: res.tenantId, role: 'admin' })
+      const prof = await provisionOwnerProfile({ email: ownerEmail, tenantId: res.tenantId, role: 'super_admin' })
       if (!prof.ok) {
-        warnings.push(`Dueño invitado al Team pero no se pudo asignar el rol de admin (${prof.error}). Reintenta "Invitar dueño".`)
+        warnings.push(`Dueño invitado al Team pero no se pudo asignar el rol de super admin (${prof.error}). Reintenta "Invitar dueño".`)
       }
     }
 
@@ -118,14 +118,14 @@ export async function inviteTenantOwner(
     return { ok: false, error: `No se pudo invitar: ${msg}` }
   }
 
-  // Asigna el rol de admin del dueño (profiles en la BD del admin). Sin esto, el
-  // dueño se une al Team pero el admin le muestra "Sin acceso".
-  const prof = await provisionOwnerProfile({ email, tenantId: id, role: 'admin' })
+  // Asigna el rol de super admin del dueño (profiles en la BD del admin). Sin esto,
+  // el dueño se une al Team pero el admin le muestra "Sin acceso".
+  const prof = await provisionOwnerProfile({ email, tenantId: id, role: 'super_admin' })
   revalidatePath('/')
   if (!prof.ok) {
-    return { ok: false, error: `Invitación enviada, pero no se pudo asignar el rol de admin: ${prof.error}` }
+    return { ok: false, error: `Invitación enviada, pero no se pudo asignar el rol de super admin: ${prof.error}` }
   }
-  return { ok: true, message: `Invitación enviada a ${email} y rol de admin asignado. Al aceptar, entra al admin de la tienda.` }
+  return { ok: true, message: `Invitación enviada a ${email} y rol de super admin asignado. Al aceptar, entra al admin de la tienda.` }
 }
 
 /**

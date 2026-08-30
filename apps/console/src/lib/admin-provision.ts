@@ -8,7 +8,7 @@
 export interface ProvisionOwnerInput {
   email: string
   tenantId: string
-  role?: 'admin' | 'gestor_tienda' | 'vendedor' | 'miembro'
+  role?: 'super_admin' | 'admin' | 'gestor_tienda' | 'vendedor' | 'miembro'
   fullName?: string
 }
 

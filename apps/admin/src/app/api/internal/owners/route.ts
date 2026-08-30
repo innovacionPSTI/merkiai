@@ -5,18 +5,45 @@
  * consola tiene su propia BD (no ve `profiles`), delega en el admin la creación
  * de la fila `profiles` con rol de acceso al panel, ligada al `tenant_id`.
  *
- * Auth: `x-internal-secret` (server-to-server). Nunca expone super_admin.
+ * Auth: `x-internal-secret` (server-to-server) + rate-limit + fail-closed si el
+ * secreto no está bien configurado. Este endpoint ES el único autorizado a asignar
+ * `super_admin` (el admin no puede); nunca degrada un super_admin ya existente.
  */
 import { randomUUID } from 'crypto'
 import { NextRequest, NextResponse } from 'next/server'
 import { createServerClient } from '@merkiai/database'
-import { hasInternalSecret } from '@/lib/internal-auth'
+import { hasInternalSecret, internalSecretConfigured } from '@/lib/internal-auth'
+import { rateLimit } from '@/lib/rate-limit'
 
-/** Roles que la consola puede asignar a un dueño (nunca super_admin). */
-const OWNER_ASSIGNABLE = ['admin', 'gestor_tienda', 'vendedor', 'miembro'] as const
+/**
+ * Roles que el CONTROL PLANE puede asignar a un dueño. Incluye `super_admin`
+ * a propósito: el admin tiene prohibido crearlo (anti-escalada en /usuarios),
+ * así que el único origen válido del super_admin de una tienda es este endpoint.
+ */
+const OWNER_ASSIGNABLE = ['super_admin', 'admin', 'gestor_tienda', 'vendedor', 'miembro'] as const
 type OwnerRole = (typeof OWNER_ASSIGNABLE)[number]
 
+function clientIp(req: NextRequest): string {
+  return (
+    req.headers.get('x-forwarded-for')?.split(',')[0]?.trim() ||
+    req.headers.get('x-real-ip') ||
+    'unknown'
+  )
+}
+
 export async function POST(req: NextRequest) {
+  // Fail-closed: nunca operar con secreto ausente/débil.
+  if (!internalSecretConfigured()) {
+    return NextResponse.json({ error: 'Server misconfigured' }, { status: 500 })
+  }
+  // Throttle de fuerza bruta del secreto (best-effort, por instancia).
+  const rl = rateLimit(`owners:${clientIp(req)}`, { limit: 10, windowMs: 60_000 })
+  if (!rl.ok) {
+    return NextResponse.json({ error: 'Too Many Requests' }, {
+      status: 429,
+      headers: { 'Retry-After': String(rl.retryAfterSec) },
+    })
+  }
   if (!hasInternalSecret(req)) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
   }
