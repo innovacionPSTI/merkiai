@@ -1,4 +1,4 @@
-import { provisionTenant } from '../provisioning'
+import { provisionTenant, ensureTenantTeam } from '../provisioning'
 
 /** Mock encadenable de la BD de plataforma. Registra insert/update/delete. */
 function makeDb(opts: { existingId?: string | null; insertedId?: string | null }) {
@@ -89,5 +89,47 @@ describe('provisionTenant (HU-209)', () => {
     expect((identity.createOrg as jest.Mock)).toHaveBeenCalledWith(
       expect.objectContaining({ metadata: expect.objectContaining({ plan: 'pro' }) }),
     )
+  })
+})
+
+/** Mock de la BD para ensureTenantTeam: controla el stack_team_id existente. */
+function ensureDb(existingTeamId: string | null) {
+  const calls = { updated: null as unknown }
+  const from = jest.fn(() => {
+    const b: Record<string, unknown> = {}
+    b.select = jest.fn(() => b)
+    b.eq = jest.fn(() => b)
+    b.update = jest.fn((v: unknown) => { calls.updated = v; return b })
+    b.maybeSingle = jest.fn(async () => ({ data: { stack_team_id: existingTeamId } }))
+    b.then = (r: (v: unknown) => void) => r({ error: null })
+    return b
+  })
+  return { db: { from } as never, calls }
+}
+
+describe('ensureTenantTeam (HU-215 · idempotencia del Team)', () => {
+  it('reusa el Team si el tenant ya tiene stack_team_id (no crea)', async () => {
+    const { db, calls } = ensureDb('team-existente')
+    const identity = idOK()!
+    const res = await ensureTenantTeam({ tenantId: 't-1', name: 'T' }, { db, adminIdentity: identity })
+    expect(res).toEqual({ teamId: 'team-existente', created: false })
+    expect((identity.createOrg as jest.Mock)).not.toHaveBeenCalled()
+    expect(calls.updated).toBeNull()
+  })
+
+  it('crea y persiste el Team si no existe', async () => {
+    const { db, calls } = ensureDb(null)
+    const identity = idOK()!
+    const res = await ensureTenantTeam({ tenantId: 't-2', name: 'T' }, { db, adminIdentity: identity })
+    expect(res).toEqual({ teamId: 'team-1', created: true })
+    expect((identity.createOrg as jest.Mock)).toHaveBeenCalled()
+    expect(calls.updated).toMatchObject({ stack_team_id: 'team-1' })
+  })
+
+  it('sin adminIdentity → teamId null (parcial), no crea', async () => {
+    const { db, calls } = ensureDb(null)
+    const res = await ensureTenantTeam({ tenantId: 't-3', name: 'T' }, { db, adminIdentity: null })
+    expect(res).toEqual({ teamId: null, created: false })
+    expect(calls.updated).toBeNull()
   })
 })

@@ -5,7 +5,7 @@ import { requirePlatformOperator } from '@/lib/platform-auth'
 import { platformDb } from '@/lib/platform-db'
 import { parsePlanForm } from '@/lib/plan-validation'
 import { getPlans } from '@/lib/plans'
-import { provisionTenant } from '@/lib/provisioning'
+import { provisionTenant, ensureTenantTeam } from '@/lib/provisioning'
 import { adminIdentity } from '@/lib/admin-identity'
 import { provisionOwnerProfile } from '@/lib/admin-provision'
 
@@ -101,15 +101,30 @@ export async function inviteTenantOwner(
   if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email)) return { ok: false, error: 'Email inválido.' }
 
   const db = platformDb()
-  const { data } = await db.from('tenants').select('stack_team_id').eq('id', id).maybeSingle()
-  const teamId = (data as { stack_team_id?: string | null } | null)?.stack_team_id
-  if (!teamId) {
-    return { ok: false, error: 'Este tenant aún no tiene Team en Stack Auth (provisioning parcial). Créalo primero.' }
-  }
+  const { data } = await db.from('tenants').select('stack_team_id, name').eq('id', id).maybeSingle()
+  const row = data as { stack_team_id?: string | null; name?: string } | null
+  let teamId = row?.stack_team_id ?? null
 
   const identity = adminIdentity()
-  if (!identity?.inviteMember) {
+  if (!identity) {
     return { ok: false, error: 'Stack Auth (proyecto admin) no está configurado en la consola.' }
+  }
+
+  // Repara tenants parciales (sin Team) — idempotente (HU-215): crea el Team la
+  // primera vez y lo reusa después, sin duplicar.
+  if (!teamId) {
+    try {
+      const r = await ensureTenantTeam({ tenantId: id, name: row?.name ?? 'Tienda' }, { db, adminIdentity: identity })
+      teamId = r.teamId
+    } catch (e) {
+      return { ok: false, error: `No se pudo crear el Team en Stack Auth: ${e instanceof Error ? e.message : String(e)}` }
+    }
+    if (!teamId) {
+      return { ok: false, error: 'No se pudo crear el Team (Stack Auth no configurado).' }
+    }
+  }
+  if (!identity.inviteMember) {
+    return { ok: false, error: 'El proveedor de identidad no soporta invitaciones.' }
   }
   // Invitación al Team: best-effort e idempotente. Si el dueño YA es miembro
   // (caso reintento), no debe bloquear la asignación del rol.
