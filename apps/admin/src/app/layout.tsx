@@ -8,6 +8,8 @@ import { stackServerApp } from '../stack'
 import AdminSidebar from '@/components/layout/AdminSidebar'
 import { getAdminUser } from '@/lib/auth'
 import { getAdminConfig } from '@merkiai/database'
+import { getActiveTenantId } from '@/lib/active-tenant'
+import { listWorkspaces } from '@/lib/workspaces'
 
 const cormorant = Cormorant_Garamond({
   subsets: ['latin'],
@@ -61,8 +63,11 @@ export default async function AdminRootLayout({ children }: { children: React.Re
   const headersList = await headers()
   const pathname = headersList.get('x-pathname') ?? ''
 
-  // ── Configuración visual del panel ─────────────────────────────────────────
-  const adminConfig = await getAdminConfig().catch(() => null)
+  // ── Tenant activo (HU-158) ─────────────────────────────────────────────────
+  const activeTenantId = await getActiveTenantId()
+
+  // ── Configuración visual del panel (por tenant activo) ─────────────────────
+  const adminConfig = await getAdminConfig(undefined, activeTenantId).catch(() => null)
   const adminCSS = adminConfig
     ? `:root {
   --brand-primary: ${hexToRgb(adminConfig.accent_color)};
@@ -91,6 +96,10 @@ export default async function AdminRootLayout({ children }: { children: React.Re
 
   const isProtectedRoute = !isPublicPath(pathname)
 
+  // Workspaces del operador (HU-158): el switcher aparece solo si tiene >1 tienda.
+  const workspaces = adminUser ? await listWorkspaces() : []
+  const activeWorkspace = workspaces.find((w) => w.tenantId === activeTenantId)
+
   return (
     <html lang="es" className={`${cormorant.variable} ${dmSans.variable}`}>
       <head>
@@ -112,6 +121,21 @@ export default async function AdminRootLayout({ children }: { children: React.Re
                         placeholder="Buscar..."
                         className="font-brand text-sm border border-gray-200 rounded-full px-4 py-2 w-64 focus:outline-none focus:border-brand-primary"
                       />
+                      {workspaces.length > 1 && (
+                        <a
+                          href="/seleccionar-tienda"
+                          title="Cambiar de tienda"
+                          className="flex items-center gap-2 font-brand text-sm border border-gray-200 rounded-full px-3 py-2 hover:border-brand-primary transition-colors"
+                        >
+                          <span className="w-6 h-6 rounded-md bg-brand-cream text-brand-primary text-xs font-semibold flex items-center justify-center">
+                            {(activeWorkspace?.name ?? 'T').slice(0, 1).toUpperCase()}
+                          </span>
+                          <span className="hidden sm:block max-w-[140px] truncate text-brand-primary">
+                            {activeWorkspace?.name ?? 'Elegir tienda'}
+                          </span>
+                          <span className="text-brand-primary/40">▾</span>
+                        </a>
+                      )}
                     </div>
                     <div className="flex items-center gap-3">
                       <div className="flex items-center gap-2 font-brand text-sm text-brand-primary">
