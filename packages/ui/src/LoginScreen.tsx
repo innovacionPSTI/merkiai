@@ -51,6 +51,7 @@ export interface LoginContent {
   submitLabel?: string
   loadingLabel?: string
   googleLabel?: string
+  magicLinkLabel?: string
   forgotLabel?: string
   forgotHref?: string
   keepSignedLabel?: string
@@ -61,6 +62,8 @@ export interface LoginScreenProps {
   brand?: LoginBrand
   onSubmit: (email: string, password: string) => void | Promise<void>
   onGoogle?: () => void | Promise<void>
+  /** Envía un enlace/código de acceso al email (magic link / Email OTP). */
+  onMagicLink?: (email: string) => void | Promise<void>
   loading?: boolean
   error?: string | null
 }
@@ -73,10 +76,11 @@ const DEFAULT_BRAND: Required<LoginBrand> = {
   radius: '14px',
 }
 
-export function LoginScreen({ content, brand, onSubmit, onGoogle, loading, error }: LoginScreenProps) {
+export function LoginScreen({ content, brand, onSubmit, onGoogle, onMagicLink, loading, error }: LoginScreenProps) {
   const b = { ...DEFAULT_BRAND, ...brand }
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
+  const [magicSent, setMagicSent] = useState(false)
 
   const vars = {
     '--brand': b.primary,
@@ -195,23 +199,47 @@ export function LoginScreen({ content, brand, onSubmit, onGoogle, loading, error
             </button>
           </form>
 
-          {onGoogle && (
+          {(onGoogle || onMagicLink) && (
             <>
               <div style={{ display: 'flex', alignItems: 'center', gap: 12, margin: '18px 0' }}>
                 <div style={{ flex: 1, height: 1, background: '#eee' }} />
                 <span style={{ fontSize: 12, color: '#999' }}>o</span>
                 <div style={{ flex: 1, height: 1, background: '#eee' }} />
               </div>
-              <button
-                type="button" onClick={() => void onGoogle()} disabled={loading}
-                style={{
-                  width: '100%', padding: '12px', fontSize: 14, fontWeight: 600, color: '#333',
-                  background: '#fff', border: '1px solid #ddd', borderRadius: 'var(--radius)', cursor: 'pointer',
-                  display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8,
-                }}
-              >
-                <GoogleIcon /> {content.googleLabel ?? 'Continuar con Google'}
-              </button>
+
+              {onGoogle && (
+                <button
+                  type="button" onClick={() => void onGoogle()} disabled={loading}
+                  style={{
+                    width: '100%', padding: '12px', fontSize: 14, fontWeight: 600, color: '#333',
+                    background: '#fff', border: '1px solid #ddd', borderRadius: 'var(--radius)', cursor: 'pointer',
+                    display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, marginBottom: onMagicLink ? 8 : 0,
+                  }}
+                >
+                  <GoogleIcon /> {content.googleLabel ?? 'Continuar con Google'}
+                </button>
+              )}
+
+              {onMagicLink && (
+                magicSent ? (
+                  <p style={{ fontSize: 13, color: '#2E5A3B', textAlign: 'center', margin: 0 }}>
+                    Te enviamos un enlace de acceso a <strong>{email}</strong>. Revisa tu correo.
+                  </p>
+                ) : (
+                  <button
+                    type="button"
+                    disabled={loading || !email}
+                    onClick={async () => { await onMagicLink(email); setMagicSent(true) }}
+                    style={{
+                      width: '100%', padding: '12px', fontSize: 14, fontWeight: 600, color: '#333',
+                      background: '#fff', border: '1px solid #ddd', borderRadius: 'var(--radius)',
+                      cursor: (loading || !email) ? 'default' : 'pointer', opacity: (loading || !email) ? 0.6 : 1,
+                    }}
+                  >
+                    {content.magicLinkLabel ?? 'Enviar enlace de acceso al correo'}
+                  </button>
+                )
+              )}
             </>
           )}
         </div>

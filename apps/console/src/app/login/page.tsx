@@ -33,11 +33,12 @@ function ConsoleLogin() {
     }
   }
 
-  async function handleGoogle() {
+  async function handleMagicLink(mail: string) {
+    setError(null)
     try {
-      await app.signInWithOAuth('google')
+      await app.sendMagicLinkEmail(mail)
     } catch {
-      setError('No se pudo iniciar con Google.')
+      setError('No se pudo enviar el enlace. Verifica el correo.')
     }
   }
 
@@ -46,7 +47,7 @@ function ConsoleLogin() {
       content={CONSOLE_LOGIN_CONTENT}
       brand={CONSOLE_BRAND}
       onSubmit={handleSubmit}
-      onGoogle={handleGoogle}
+      onMagicLink={handleMagicLink}
       loading={loading}
       error={error}
     />
