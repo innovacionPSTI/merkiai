@@ -1,15 +1,22 @@
 import Navbar from '@/components/layout/Navbar'
 import Footer from '@/components/layout/Footer'
 import { getStoreConfig, getFooterPages, getNavTree } from '@merkiai/database'
+import { getRequestCatalogDb } from '@/lib/tenant-db'
+import { resolveTenant } from '@/lib/tenant-context'
 
 // El nav y el footer usan datos configurables — siempre refrescar desde BD.
 export const dynamic = 'force-dynamic'
 
 export default async function PublicLayout({ children }: { children: React.ReactNode }) {
+  // HU-207: config/nav/footer del TENANT resuelto por host (cliente RLS anon),
+  // no del tenant por defecto. `getStoreConfig` recibe el tenantId explícito; nav
+  // y footer se acotan por la RLS del cliente.
+  const { tenantId } = await resolveTenant()
+  const db = await getRequestCatalogDb()
   const [config, footerPages, navItems] = await Promise.all([
-    getStoreConfig().catch(() => null),
-    getFooterPages().catch(() => []),
-    getNavTree().catch(() => []),
+    getStoreConfig(db, tenantId).catch(() => null),
+    getFooterPages(db).catch(() => []),
+    getNavTree(db).catch(() => []),
   ])
 
   return (

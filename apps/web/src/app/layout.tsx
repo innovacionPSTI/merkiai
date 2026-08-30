@@ -7,6 +7,8 @@ import { stackServerApp } from '../stack'
 import { getStoreConfig, getActiveTheme } from '@merkiai/database'
 import CartSyncOnLogin from '@/components/auth/CartSyncOnLogin'
 import { buildThemeCSS } from '@/lib/theme-css'
+import { getRequestCatalogDb } from '@/lib/tenant-db'
+import { resolveTenant } from '@/lib/tenant-context'
 import './globals.css'
 
 // ── Fuentes (next/font: build-time, self-hosted) ──────────────────────────────
@@ -85,7 +87,9 @@ const BASE_URL = (process.env.NEXT_PUBLIC_SITE_URL ?? '').replace(/\/$/, '')
 
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 export async function generateMetadata(_props: object, _parent: ResolvingMetadata): Promise<Metadata> {
-  const config = await getStoreConfig().catch(() => null)
+  // HU-207: metadata (título/favicon/SEO) del tenant resuelto por host.
+  const { tenantId } = await resolveTenant()
+  const config = await getStoreConfig(await getRequestCatalogDb(), tenantId).catch(() => null)
 
   const storeName   = config?.store_name   ?? 'Tienda en línea'
   const description = config?.store_description ?? 'Bienvenido a nuestra tienda en línea. Explora nuestros productos y realiza tu pedido de forma segura.'
@@ -122,9 +126,12 @@ export async function generateMetadata(_props: object, _parent: ResolvingMetadat
 // ── Root Layout ───────────────────────────────────────────────────────────────
 
 export default async function RootLayout({ children }: { children: React.ReactNode }) {
+  // HU-207: store_config y tema del TENANT resuelto por host (cliente RLS anon).
+  const { tenantId } = await resolveTenant()
+  const db = await getRequestCatalogDb()
   const [config, theme] = await Promise.all([
-    getStoreConfig().catch(() => null),
-    getActiveTheme().catch(() => null),
+    getStoreConfig(db, tenantId).catch(() => null),
+    getActiveTheme(db).catch(() => null),
   ])
 
   const analyticsEnabled = config?.analytics_enabled ?? false
