@@ -12,8 +12,7 @@
 import { randomUUID } from 'crypto'
 import { NextRequest, NextResponse } from 'next/server'
 import { createServerClient } from '@merkiai/database'
-import { hasInternalSecret, internalSecretConfigured } from '@/lib/internal-auth'
-import { rateLimit } from '@/lib/rate-limit'
+import { withInternalAuth } from '@/lib/internal-route'
 
 /**
  * Roles que el CONTROL PLANE puede asignar a un dueño. Incluye `super_admin`
@@ -23,31 +22,7 @@ import { rateLimit } from '@/lib/rate-limit'
 const OWNER_ASSIGNABLE = ['super_admin', 'admin', 'gestor_tienda', 'vendedor', 'miembro'] as const
 type OwnerRole = (typeof OWNER_ASSIGNABLE)[number]
 
-function clientIp(req: NextRequest): string {
-  return (
-    req.headers.get('x-forwarded-for')?.split(',')[0]?.trim() ||
-    req.headers.get('x-real-ip') ||
-    'unknown'
-  )
-}
-
-export async function POST(req: NextRequest) {
-  // Fail-closed: nunca operar con secreto ausente/débil.
-  if (!internalSecretConfigured()) {
-    return NextResponse.json({ error: 'Server misconfigured' }, { status: 500 })
-  }
-  // Throttle de fuerza bruta del secreto (best-effort, por instancia).
-  const rl = rateLimit(`owners:${clientIp(req)}`, { limit: 10, windowMs: 60_000 })
-  if (!rl.ok) {
-    return NextResponse.json({ error: 'Too Many Requests' }, {
-      status: 429,
-      headers: { 'Retry-After': String(rl.retryAfterSec) },
-    })
-  }
-  if (!hasInternalSecret(req)) {
-    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-  }
-
+export const POST = withInternalAuth(async (req: NextRequest) => {
   const body = (await req.json().catch(() => ({}))) as {
     email?: string
     tenantId?: string
@@ -100,4 +75,4 @@ export async function POST(req: NextRequest) {
   })
   if (error) return NextResponse.json({ error: error.message }, { status: 500 })
   return NextResponse.json({ ok: true, created: true }, { status: 201 })
-}
+})
