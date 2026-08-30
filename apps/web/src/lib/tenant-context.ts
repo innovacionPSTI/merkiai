@@ -58,15 +58,23 @@ export const controlPlaneResolver: TenantResolver = {
   async resolveByHost(host: string) {
     const base = process.env.CONTROL_PLANE_URL
     const secret = process.env.INTERNAL_API_SECRET
-    if (!base || !secret) return null
+    if (!base || !secret) {
+      console.warn(`[tenant-resolve] falta config: CONTROL_PLANE_URL=${!!base} INTERNAL_API_SECRET=${!!secret} → fallback default`)
+      return null
+    }
     try {
-      const res = await fetch(
-        `${base.replace(/\/$/, '')}/api/internal/resolve-tenant?host=${encodeURIComponent(host)}`,
-        { headers: { 'x-internal-secret': secret }, cache: 'no-store' },
-      )
-      if (!res.ok) return null
+      const url = `${base.replace(/\/$/, '')}/api/internal/resolve-tenant?host=${encodeURIComponent(host)}`
+      const res = await fetch(url, { headers: { 'x-internal-secret': secret }, cache: 'no-store' })
+      if (!res.ok) {
+        const body = await res.text().catch(() => '')
+        console.warn(`[tenant-resolve] host="${host}" → control plane ${res.status} ${body.slice(0, 120)} (${url}) → fallback default`)
+        return null
+      }
       const d = await res.json()
-      if (!d?.tenantId) return null
+      if (!d?.tenantId) {
+        console.warn(`[tenant-resolve] host="${host}" → respuesta sin tenantId → fallback default`)
+        return null
+      }
       return {
         tenantId: d.tenantId,
         subdomain: d.subdomain ?? null,
@@ -76,7 +84,8 @@ export const controlPlaneResolver: TenantResolver = {
         plan: d.plan ?? null,
         entitlements: d.entitlements ?? null,
       }
-    } catch {
+    } catch (e) {
+      console.warn(`[tenant-resolve] host="${host}" → error de red: ${e instanceof Error ? e.message : String(e)} → fallback default`)
       return null
     }
   },
