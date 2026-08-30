@@ -1,18 +1,24 @@
 'use client'
 
-import { Suspense, useState } from 'react'
+import { Suspense, useEffect, useState } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
-import { useStackApp } from '@stackframe/stack'
+import { useStackApp, useUser } from '@stackframe/stack'
 import { LoginScreen } from '@merkiai/ui'
 import { ADMIN_LOGIN_CONTENT, ADMIN_BRAND } from '@/lib/login-content'
 
 function AdminLogin() {
   const app = useStackApp()
+  const user = useUser()
   const router = useRouter()
   const searchParams = useSearchParams()
   const returnTo = searchParams.get('after_auth_return_to') ?? '/dashboard'
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
+
+  // HU-158/214: si ya hay sesión (p.ej. tras volver de Google OAuth), reenviar.
+  useEffect(() => {
+    if (user) router.replace(returnTo)
+  }, [user, returnTo, router])
 
   async function handleSubmit(email: string, password: string) {
     if (!email || !password) {

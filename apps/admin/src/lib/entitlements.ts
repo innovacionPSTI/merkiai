@@ -24,15 +24,18 @@ export function withinLimit(ent: PlanEntitlements | null | undefined, key: strin
   return current < max
 }
 
-const DEFAULT_TENANT_ID = '00000000-0000-0000-0000-000000000001'
-
-export function getAdminTenantId(): string {
-  return process.env.ADMIN_TENANT_ID ?? DEFAULT_TENANT_ID
-}
+import { getActiveTenantId } from './active-tenant'
 
 export async function getTenantEntitlements(
-  tenantId: string = getAdminTenantId(),
+  tenantId?: string,
 ): Promise<{ tenantId: string; entitlements: PlanEntitlements | null }> {
+  // HU-158: el tenant sale del **tenant activo** (cookie del workspace elegido);
+  // fallback al por defecto (single-tenant interino).
+  const tid = tenantId ?? (await getActiveTenantId())
+  return fetchEntitlements(tid)
+}
+
+async function fetchEntitlements(tenantId: string): Promise<{ tenantId: string; entitlements: PlanEntitlements | null }> {
   const base = process.env.CONTROL_PLANE_URL
   const secret = process.env.INTERNAL_API_SECRET
   if (!base || !secret) return { tenantId, entitlements: null }
