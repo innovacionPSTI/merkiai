@@ -14,6 +14,7 @@ export type Database = {
           full_name: string | null
           phone: string | null
           role: 'super_admin' | 'admin' | 'vendedor' | 'gestor_tienda' | 'miembro' | 'customer'
+          tenant_id: string
           created_at: string
         }
         Insert: {
@@ -22,6 +23,7 @@ export type Database = {
           full_name?: string | null
           phone?: string | null
           role?: 'super_admin' | 'admin' | 'vendedor' | 'gestor_tienda' | 'miembro' | 'customer'
+          tenant_id?: string
           created_at?: string
         }
         Update: {
@@ -30,6 +32,7 @@ export type Database = {
           full_name?: string | null
           phone?: string | null
           role?: 'super_admin' | 'admin' | 'vendedor' | 'gestor_tienda' | 'miembro' | 'customer'
+          tenant_id?: string
           created_at?: string
         }
         Relationships: []

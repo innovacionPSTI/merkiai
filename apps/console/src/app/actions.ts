@@ -7,6 +7,7 @@ import { parsePlanForm } from '@/lib/plan-validation'
 import { getPlans } from '@/lib/plans'
 import { provisionTenant } from '@/lib/provisioning'
 import { adminIdentity } from '@/lib/admin-identity'
+import { provisionOwnerProfile } from '@/lib/admin-provision'
 
 const SUBDOMAIN_RE = /^[a-z0-9-]{2,40}$/
 
@@ -48,15 +49,25 @@ export async function createTenant(
       { name, subdomain, plan, ownerEmail: ownerEmail || undefined },
       { db: platformDb(), adminIdentity: adminIdentity() },
     )
-    revalidatePath('/')
     // Warnings "esperados" (config pendiente HU-207) no se muestran como problema.
-    const relevant = (res.warnings ?? []).filter((w) => !/HU-207/.test(w))
+    const warnings = (res.warnings ?? []).filter((w) => !/HU-207/.test(w))
+
+    // Rol de admin del dueño: crea su `profiles` (rol admin + tenant_id) vía el
+    // admin. Solo si hay Team (identidad lista) y email. Falla aparte (no tumba).
+    if (res.teamId && ownerEmail) {
+      const prof = await provisionOwnerProfile({ email: ownerEmail, tenantId: res.tenantId, role: 'admin' })
+      if (!prof.ok) {
+        warnings.push(`Dueño invitado al Team pero no se pudo asignar el rol de admin (${prof.error}). Reintenta "Invitar dueño".`)
+      }
+    }
+
+    revalidatePath('/')
     return {
       ok: true,
       message: res.teamId
         ? `Tenant "${name}" creado (${subdomain}.merkiai.com), plan ${plan}.`
         : `Tenant "${name}" creado en modo parcial (sin Team). Revisa los avisos.`,
-      warnings: relevant.length ? relevant : undefined,
+      warnings: warnings.length ? warnings : undefined,
     }
   } catch (e) {
     // Falla dura previa al insert (subdominio en uso / inválido).
@@ -102,12 +113,19 @@ export async function inviteTenantOwner(
   }
   try {
     await identity.inviteMember(teamId, email)
-    revalidatePath('/')
-    return { ok: true, message: `Invitación enviada a ${email}. Al aceptarla, entra al admin de la tienda.` }
   } catch (e) {
     const msg = e instanceof Error ? e.message : String(e)
     return { ok: false, error: `No se pudo invitar: ${msg}` }
   }
+
+  // Asigna el rol de admin del dueño (profiles en la BD del admin). Sin esto, el
+  // dueño se une al Team pero el admin le muestra "Sin acceso".
+  const prof = await provisionOwnerProfile({ email, tenantId: id, role: 'admin' })
+  revalidatePath('/')
+  if (!prof.ok) {
+    return { ok: false, error: `Invitación enviada, pero no se pudo asignar el rol de admin: ${prof.error}` }
+  }
+  return { ok: true, message: `Invitación enviada a ${email} y rol de admin asignado. Al aceptar, entra al admin de la tienda.` }
 }
 
 /**

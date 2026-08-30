@@ -25,7 +25,7 @@ export default function NoAutorizadoPage() {
             Cerrar sesión
           </Link>
           <Link
-            href="/handler/sign-in"
+            href="/handler/sign-out"
             className="w-full border border-brand-primary/20 text-brand-primary rounded-full py-2.5 font-brand text-sm hover:bg-brand-primary/5 transition-colors"
           >
             Iniciar sesión con otra cuenta
