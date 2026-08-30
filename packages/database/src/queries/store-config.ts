@@ -47,6 +47,9 @@ export type StoreConfig = {
 
 export type UpdateStoreConfigInput = Partial<Omit<StoreConfig, 'id' | 'updated_at'>>
 
+/** Tenant por defecto (coincide con e17/01). Config por-tenant (HU-207). */
+const DEFAULT_TENANT_ID = '00000000-0000-0000-0000-000000000001'
+
 const DEFAULT_CONFIG: StoreConfig = {
   id: 1,
   whatsapp_number: null,
@@ -79,13 +82,13 @@ const DEFAULT_CONFIG: StoreConfig = {
   updated_at: new Date().toISOString(),
 }
 
-export async function getStoreConfig(db: Db = createServerClient()): Promise<StoreConfig> {
+export async function getStoreConfig(db: Db = createServerClient(), tenantId: string = DEFAULT_TENANT_ID): Promise<StoreConfig> {
   const supabase = db
   const { data, error } = await supabase
     .from('store_config')
     .select('*')
-    .limit(1)
-    .single()
+    .eq('tenant_id', tenantId)
+    .maybeSingle()
 
   if (error || !data) return DEFAULT_CONFIG
   // Cast through unknown because Supabase types trust_badges as Json (no index sig)
@@ -98,7 +101,7 @@ export async function getStoreConfig(db: Db = createServerClient()): Promise<Sto
   }
 }
 
-export async function updateStoreConfig(input: UpdateStoreConfigInput, db: Db = createServerClient()): Promise<StoreConfig> {
+export async function updateStoreConfig(input: UpdateStoreConfigInput, db: Db = createServerClient(), tenantId: string = DEFAULT_TENANT_ID): Promise<StoreConfig> {
   const supabase = db
 
   // No sobreescribir resend_api_key si viene vacío
@@ -108,7 +111,7 @@ export async function updateStoreConfig(input: UpdateStoreConfigInput, db: Db = 
   const { data, error } = await supabase
     .from('store_config')
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    .upsert({ id: 1, ...sanitized, updated_at: new Date().toISOString() } as any)
+    .upsert({ tenant_id: tenantId, ...sanitized, updated_at: new Date().toISOString() } as any, { onConflict: 'tenant_id' })
     .select()
     .single()
 

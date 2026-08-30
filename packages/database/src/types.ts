@@ -448,6 +448,7 @@ export type Database = {
       store_config: {
         Row: {
           id: number
+          tenant_id: string
           whatsapp_number: string | null
           store_name: string
           store_email: string | null
@@ -476,6 +477,7 @@ export type Database = {
         }
         Insert: {
           id?: number
+          tenant_id?: string
           whatsapp_number?: string | null
           store_name?: string
           store_email?: string | null

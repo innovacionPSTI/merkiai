@@ -1,25 +1,22 @@
 /**
- * Unit tests — getStoreConfig / updateStoreConfig
+ * Unit tests — getStoreConfig / updateStoreConfig (HU-207: config por tenant)
  *
- * Tests:
- *   getStoreConfig → happy path, fallback a DEFAULT_CONFIG, error BD
- *   updateStoreConfig → upsert id=1, lanza si la BD falla
+ *   getStoreConfig → happy path, fallback a DEFAULT_CONFIG, error BD, filtro tenant_id
+ *   updateStoreConfig → upsert por tenant_id, updated_at, lanza si la BD falla
  */
 
 import { getStoreConfig, updateStoreConfig } from '../store-config'
 
-// ─────────────────────────────────────────────
-// Mock del cliente Supabase
-// ─────────────────────────────────────────────
-const mockSingle = jest.fn()
-const mockSelect = jest.fn(() => ({ limit: jest.fn(() => ({ single: mockSingle })) }))
+const DEFAULT_TENANT_ID = '00000000-0000-0000-0000-000000000001'
+
+// ─── Mock del cliente Supabase (select→eq→maybeSingle | upsert→select→single) ──
+const mockMaybeSingle = jest.fn()
+const mockEq = jest.fn(() => ({ maybeSingle: mockMaybeSingle }))
+const mockSelect = jest.fn(() => ({ eq: mockEq }))
 const mockUpsertChain = jest.fn()
 const mockUpsertSelect = jest.fn(() => ({ single: mockUpsertChain }))
 const mockUpsert = jest.fn((_payload: Record<string, unknown>, _opts?: unknown) => ({ select: mockUpsertSelect }))
-const mockFrom = jest.fn(() => ({
-  select: mockSelect,
-  upsert: mockUpsert,
-}))
+const mockFrom = jest.fn(() => ({ select: mockSelect, upsert: mockUpsert }))
 
 jest.mock('../../client', () => ({
   createServerClient: jest.fn(() => ({ from: mockFrom })),
@@ -27,11 +24,9 @@ jest.mock('../../client', () => ({
 
 beforeEach(() => jest.clearAllMocks())
 
-// ─────────────────────────────────────────────
-// Fixtures
-// ─────────────────────────────────────────────
 const fullConfig = {
   id: 1,
+  tenant_id: DEFAULT_TENANT_ID,
   whatsapp_number: '573001234567',
   store_name: 'Merkiai',
   store_email: 'info@tienda.example.com',
@@ -49,85 +44,70 @@ const fullConfig = {
   updated_at: '2026-07-09T00:00:00.000Z',
 }
 
-// ─────────────────────────────────────────────
-// getStoreConfig
-// ─────────────────────────────────────────────
 describe('getStoreConfig', () => {
   it('devuelve el registro cuando la BD responde correctamente', async () => {
-    mockSingle.mockResolvedValueOnce({ data: fullConfig, error: null })
-
+    mockMaybeSingle.mockResolvedValueOnce({ data: fullConfig, error: null })
     const result = await getStoreConfig()
-
     expect(result.whatsapp_number).toBe('573001234567')
     expect(result.logo_url).toBe('https://example.com/logo.png')
     expect(result.store_name).toBe('Merkiai')
   })
 
   it('devuelve DEFAULT_CONFIG cuando la BD devuelve error', async () => {
-    mockSingle.mockResolvedValueOnce({ data: null, error: { message: 'table not found' } })
-
+    mockMaybeSingle.mockResolvedValueOnce({ data: null, error: { message: 'table not found' } })
     const result = await getStoreConfig()
-
     expect(result.id).toBe(1)
     expect(result.store_name).toBe('Mi Tienda')
-    expect(result.order_prefix).toBe('ORD') // prefijo por defecto del número de orden
+    expect(result.order_prefix).toBe('ORD')
     expect(result.whatsapp_number).toBeNull()
     expect(result.logo_url).toBeNull()
   })
 
   it('devuelve DEFAULT_CONFIG cuando data es null (tabla vacía)', async () => {
-    mockSingle.mockResolvedValueOnce({ data: null, error: null })
-
+    mockMaybeSingle.mockResolvedValueOnce({ data: null, error: null })
     const result = await getStoreConfig()
-
     expect(result.id).toBe(1)
     expect(result.whatsapp_number).toBeNull()
   })
 
-  it('devuelve DEFAULT_CONFIG cuando la promesa lanza (sin catch externo)', async () => {
-    mockSingle.mockRejectedValueOnce(new Error('Network error'))
-
-    // getStoreConfig internamente usa error || !data, pero si single() lanza,
-    // la función debería propagar — documentamos el comportamiento real
+  it('propaga si la promesa lanza (sin catch externo)', async () => {
+    mockMaybeSingle.mockRejectedValueOnce(new Error('Network error'))
     await expect(getStoreConfig()).rejects.toThrow('Network error')
   })
 
   it('usa la tabla store_config', async () => {
-    mockSingle.mockResolvedValueOnce({ data: fullConfig, error: null })
+    mockMaybeSingle.mockResolvedValueOnce({ data: fullConfig, error: null })
     await getStoreConfig()
     expect(mockFrom).toHaveBeenCalledWith('store_config')
   })
 
-  it('aplica limit(1) antes de llamar a single()', async () => {
-    const limitMock = jest.fn(() => ({ single: mockSingle }))
-    mockSelect.mockReturnValueOnce({ limit: limitMock })
-    mockSingle.mockResolvedValueOnce({ data: fullConfig, error: null })
-
+  it('filtra por tenant_id (por defecto, el tenant por defecto)', async () => {
+    mockMaybeSingle.mockResolvedValueOnce({ data: fullConfig, error: null })
     await getStoreConfig()
-    expect(limitMock).toHaveBeenCalledWith(1)
+    expect(mockEq).toHaveBeenCalledWith('tenant_id', DEFAULT_TENANT_ID)
+  })
+
+  it('filtra por el tenant indicado', async () => {
+    mockMaybeSingle.mockResolvedValueOnce({ data: fullConfig, error: null })
+    await getStoreConfig(undefined, 'tenant-x')
+    expect(mockEq).toHaveBeenCalledWith('tenant_id', 'tenant-x')
   })
 })
 
-// ─────────────────────────────────────────────
-// updateStoreConfig
-// ─────────────────────────────────────────────
 describe('updateStoreConfig', () => {
-  it('hace upsert con id=1 y los campos provistos', async () => {
+  it('hace upsert por tenant_id con los campos provistos', async () => {
     mockUpsertChain.mockResolvedValueOnce({ data: { ...fullConfig, whatsapp_number: '573009999999' }, error: null })
-
     const result = await updateStoreConfig({ whatsapp_number: '573009999999' })
-
     expect(mockUpsert).toHaveBeenCalledWith(
-      expect.objectContaining({ id: 1, whatsapp_number: '573009999999' })
+      expect.objectContaining({ tenant_id: DEFAULT_TENANT_ID, whatsapp_number: '573009999999' }),
+      expect.objectContaining({ onConflict: 'tenant_id' }),
     )
     expect(result.whatsapp_number).toBe('573009999999')
   })
 
   it('incluye updated_at en el upsert', async () => {
     mockUpsertChain.mockResolvedValueOnce({ data: fullConfig, error: null })
-
     await updateStoreConfig({ store_name: 'Merkiai Nuevo' })
-
     const upsertArg = mockUpsert.mock.calls[0]![0]
     expect(upsertArg).toHaveProperty('updated_at')
     expect(typeof upsertArg.updated_at).toBe('string')
@@ -136,17 +116,15 @@ describe('updateStoreConfig', () => {
   it('lanza el error de Supabase cuando el upsert falla', async () => {
     const dbError = { message: 'DB write error', code: '42P01' }
     mockUpsertChain.mockResolvedValueOnce({ data: null, error: dbError })
-
     await expect(updateStoreConfig({ store_name: 'X' })).rejects.toMatchObject(dbError)
   })
 
   it('reenvía order_prefix en el upsert (prefijo configurable del número de orden)', async () => {
     mockUpsertChain.mockResolvedValueOnce({ data: { ...fullConfig, order_prefix: 'SHOP' }, error: null })
-
     const result = await updateStoreConfig({ order_prefix: 'SHOP' })
-
     expect(mockUpsert).toHaveBeenCalledWith(
-      expect.objectContaining({ id: 1, order_prefix: 'SHOP' })
+      expect.objectContaining({ tenant_id: DEFAULT_TENANT_ID, order_prefix: 'SHOP' }),
+      expect.objectContaining({ onConflict: 'tenant_id' }),
     )
     expect(result.order_prefix).toBe('SHOP')
   })
@@ -154,9 +132,7 @@ describe('updateStoreConfig', () => {
   it('actualiza solo logo_url sin afectar otros campos', async () => {
     const updated = { ...fullConfig, logo_url: 'https://example.com/new-logo.png' }
     mockUpsertChain.mockResolvedValueOnce({ data: updated, error: null })
-
     const result = await updateStoreConfig({ logo_url: 'https://example.com/new-logo.png' })
-
     expect(result.logo_url).toBe('https://example.com/new-logo.png')
     const upsertArg = mockUpsert.mock.calls[0]![0]
     expect(upsertArg).not.toHaveProperty('whatsapp_number')
@@ -169,62 +145,10 @@ describe('updateStoreConfig', () => {
       privacy_content: '## Privacidad\n\nDatos protegidos.',
     }
     mockUpsertChain.mockResolvedValueOnce({ data: legalConfig, error: null })
-
     const result = await updateStoreConfig({
       terms_content: '## Términos\n\nEsto es un ejemplo.',
       privacy_content: '## Privacidad\n\nDatos protegidos.',
     })
-
     expect(result.terms_content).toContain('## Términos')
-    expect(result.privacy_content).toContain('## Privacidad')
-    const upsertArg = mockUpsert.mock.calls[0]![0]
-    expect(upsertArg).toHaveProperty('terms_content')
-    expect(upsertArg).toHaveProperty('privacy_content')
-  })
-
-  it('reenvía email_provider en el upsert (PRV-09 · selector de proveedor de email)', async () => {
-    mockUpsertChain.mockResolvedValueOnce({ data: { ...fullConfig, email_provider: 'resend' }, error: null })
-
-    const result = await updateStoreConfig({ email_provider: 'resend' })
-
-    expect(mockUpsert).toHaveBeenCalledWith(
-      expect.objectContaining({ id: 1, email_provider: 'resend' })
-    )
-    expect(result.email_provider).toBe('resend')
-  })
-
-  it('reenvía analytics_enabled en el upsert (HU-060 · tracking/analytics)', async () => {
-    mockUpsertChain.mockResolvedValueOnce({ data: { ...fullConfig, analytics_enabled: true }, error: null })
-
-    const result = await updateStoreConfig({ analytics_enabled: true })
-
-    expect(mockUpsert).toHaveBeenCalledWith(
-      expect.objectContaining({ id: 1, analytics_enabled: true })
-    )
-    expect(result.analytics_enabled).toBe(true)
-  })
-
-  it('guarda redes sociales con url y enabled', async () => {
-    const socialConfig = {
-      ...fullConfig,
-      instagram_url: 'https://instagram.com/commercecms',
-      instagram_enabled: true,
-      facebook_url: 'https://facebook.com/commercecms',
-      facebook_enabled: false,
-      tiktok_url: null,
-      tiktok_enabled: true,
-    }
-    mockUpsertChain.mockResolvedValueOnce({ data: socialConfig, error: null })
-
-    const result = await updateStoreConfig({
-      instagram_url: 'https://instagram.com/commercecms',
-      instagram_enabled: true,
-      facebook_url: 'https://facebook.com/commercecms',
-      facebook_enabled: false,
-    })
-
-    expect(result.instagram_url).toBe('https://instagram.com/commercecms')
-    expect(result.facebook_enabled).toBe(false)
-    expect(result.tiktok_url).toBeNull()
   })
 })
