@@ -1,16 +1,22 @@
 'use client'
 
-import { Suspense, useState } from 'react'
+import { Suspense, useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
-import { useStackApp } from '@stackframe/stack'
+import { useStackApp, useUser } from '@stackframe/stack'
 import { LoginScreen } from '@merkiai/ui'
 import { CONSOLE_LOGIN_CONTENT, CONSOLE_BRAND } from '@/lib/login-content'
 
 function ConsoleLogin() {
   const app = useStackApp()
+  const user = useUser()
   const router = useRouter()
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
+
+  // HU-214: si ya hay sesión (p.ej. tras magic link/OAuth), reenviar a la consola.
+  useEffect(() => {
+    if (user) router.replace('/')
+  }, [user, router])
 
   async function handleSubmit(email: string, password: string) {
     if (!email || !password) {

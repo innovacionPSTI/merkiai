@@ -1,15 +1,21 @@
 'use client'
 
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import Link from 'next/link'
 import { useRouter, useSearchParams } from 'next/navigation'
-import { useStackApp } from '@stackframe/stack'
+import { useStackApp, useUser } from '@stackframe/stack'
 
 export default function LoginForm() {
   const app = useStackApp()
+  const user = useUser()
   const router = useRouter()
   const searchParams = useSearchParams()
   const returnTo = searchParams.get('returnTo') ?? '/account'
+
+  // HU-214: si ya hay sesión (p.ej. tras volver de Google), reenviar.
+  useEffect(() => {
+    if (user) router.replace(returnTo)
+  }, [user, returnTo, router])
 
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
