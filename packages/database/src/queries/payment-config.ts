@@ -1,27 +1,27 @@
 import { createServerClient, type Db } from '../client'
 import type { PaymentConfig } from '../types'
 
-/** Lee la configuración de pasarelas de pago (singleton id=1) */
-export async function getPaymentConfig(db: Db = createServerClient()): Promise<PaymentConfig | null> {
+/** Tenant por defecto (config por-tenant, HU-207). */
+const DEFAULT_TENANT_ID = '00000000-0000-0000-0000-000000000001'
+
+/** Lee la configuración de pasarelas de pago del tenant. */
+export async function getPaymentConfig(db: Db = createServerClient(), tenantId: string = DEFAULT_TENANT_ID): Promise<PaymentConfig | null> {
   const supabase = db
   const { data, error } = await supabase
     .from('payment_config')
     .select('*')
-    .eq('id', 1)
-    .single()
+    .eq('tenant_id', tenantId)
+    .maybeSingle()
 
-  if (error) {
-    if (error.code === 'PGRST116') return null // sin filas
-    throw error
-  }
-  return data as PaymentConfig
+  if (error) throw error
+  return (data as PaymentConfig | null) ?? null
 }
 
 /** Actualiza la configuración de pasarelas de pago.
  *  Los campos de secret que vengan como string vacío se omiten para
  *  evitar sobreescribir credenciales existentes accidentalmente. */
 export async function updatePaymentConfig(
-  input: Partial<Omit<PaymentConfig, 'id' | 'updated_at'>>, db: Db = createServerClient()
+  input: Partial<Omit<PaymentConfig, 'id' | 'updated_at'>>, db: Db = createServerClient(), tenantId: string = DEFAULT_TENANT_ID
 ): Promise<PaymentConfig> {
   const supabase = db
 
@@ -48,8 +48,8 @@ export async function updatePaymentConfig(
 
   const { data, error } = await supabase
     .from('payment_config')
-    .update({ ...sanitized, updated_at: new Date().toISOString() })
-    .eq('id', 1)
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    .upsert({ tenant_id: tenantId, ...sanitized, updated_at: new Date().toISOString() } as any, { onConflict: 'tenant_id' })
     .select()
     .single()
 

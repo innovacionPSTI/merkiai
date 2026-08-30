@@ -11,6 +11,9 @@ export interface AdminConfig {
 
 export type UpdateAdminConfigInput = Partial<Pick<AdminConfig, 'accent_color' | 'sidebar_color'>>
 
+/** Tenant por defecto (config por-tenant, HU-207). */
+const DEFAULT_TENANT_ID = '00000000-0000-0000-0000-000000000001'
+
 const DEFAULT_ADMIN_CONFIG: AdminConfig = {
   id: 1,
   accent_color: '#4F46E5',
@@ -18,24 +21,24 @@ const DEFAULT_ADMIN_CONFIG: AdminConfig = {
   updated_at: new Date().toISOString(),
 }
 
-export async function getAdminConfig(db: Db = createServerClient()): Promise<AdminConfig> {
+export async function getAdminConfig(db: Db = createServerClient(), tenantId: string = DEFAULT_TENANT_ID): Promise<AdminConfig> {
   const supabase = db
   const { data, error } = await supabase
     .from('admin_config')
     .select('*')
-    .limit(1)
-    .single()
+    .eq('tenant_id', tenantId)
+    .maybeSingle()
 
   if (error || !data) return DEFAULT_ADMIN_CONFIG
   return data as AdminConfig
 }
 
-export async function updateAdminConfig(input: UpdateAdminConfigInput, db: Db = createServerClient()): Promise<AdminConfig> {
+export async function updateAdminConfig(input: UpdateAdminConfigInput, db: Db = createServerClient(), tenantId: string = DEFAULT_TENANT_ID): Promise<AdminConfig> {
   const supabase = db
   const { data, error } = await supabase
     .from('admin_config')
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    .upsert({ id: 1, ...input, updated_at: new Date().toISOString() } as any)
+    .upsert({ tenant_id: tenantId, ...input, updated_at: new Date().toISOString() } as any, { onConflict: 'tenant_id' })
     .select()
     .single()
 

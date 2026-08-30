@@ -385,6 +385,7 @@ export type Database = {
       shipping_config: {
         Row: {
           id: number
+          tenant_id: string
           provider: 'fixed' | 'skydropx'
           fixed_rate: number
           free_shipping_enabled: boolean
@@ -405,6 +406,7 @@ export type Database = {
         }
         Insert: {
           id?: number
+          tenant_id?: string
           provider?: 'fixed' | 'skydropx'
           fixed_rate?: number
           free_shipping_enabled?: boolean
@@ -838,6 +840,7 @@ export type Database = {
       payment_config: {
         Row: {
           id: number
+          tenant_id: string
           active_provider: 'none' | 'wompi' | 'mercadopago' | 'tucompra' | 'bold'
           wompi_public_key: string | null
           wompi_private_key: string | null
@@ -863,6 +866,7 @@ export type Database = {
         }
         Insert: {
           id?: number
+          tenant_id?: string
           active_provider?: 'none' | 'wompi' | 'mercadopago' | 'tucompra' | 'bold'
           wompi_public_key?: string | null
           wompi_private_key?: string | null
@@ -1176,12 +1180,14 @@ export type Database = {
       admin_config: {
         Row: {
           id: number
+          tenant_id: string
           accent_color: string
           sidebar_color: string
           updated_at: string
         }
         Insert: {
           id?: number
+          tenant_id?: string
           accent_color?: string
           sidebar_color?: string
           updated_at?: string

@@ -28,13 +28,15 @@ export type UpdateShippingConfigInput = Partial<Omit<ShippingConfig, 'id' | 'upd
  * Reads the singleton shipping_config row.
  * Falls back to a safe default if the table is empty (e.g. before migration runs).
  */
-export async function getShippingConfig(db: Db = createServerClient()): Promise<ShippingConfig> {
+const DEFAULT_TENANT_ID = '00000000-0000-0000-0000-000000000001'
+
+export async function getShippingConfig(db: Db = createServerClient(), tenantId: string = DEFAULT_TENANT_ID): Promise<ShippingConfig> {
   const supabase = db
   const { data, error } = await supabase
     .from('shipping_config')
     .select('*')
-    .limit(1)
-    .single()
+    .eq('tenant_id', tenantId)
+    .maybeSingle()
 
   if (error || !data) {
     // Safe fallback — fixed rate, no external provider
@@ -68,13 +70,13 @@ export async function getShippingConfig(db: Db = createServerClient()): Promise<
  * Requires service_role key (admin context).
  */
 export async function updateShippingConfig(
-  input: UpdateShippingConfigInput, db: Db = createServerClient()
+  input: UpdateShippingConfigInput, db: Db = createServerClient(), tenantId: string = DEFAULT_TENANT_ID
 ): Promise<ShippingConfig> {
   const supabase = db
   const { data, error } = await supabase
     .from('shipping_config')
-    .update({ ...input, updated_at: new Date().toISOString() })
-    .eq('id', 1)
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    .upsert({ tenant_id: tenantId, ...input, updated_at: new Date().toISOString() } as any, { onConflict: 'tenant_id' })
     .select()
     .single()
 
