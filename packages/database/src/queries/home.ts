@@ -60,12 +60,15 @@ export async function getWebHomeData(db: Db = createServerClient()): Promise<Web
     return sections.map((s) => ({ ...s, items: bySection[s.id] ?? [] } as HomeSection))
   }
 
+  // HU-207: propagar el cliente tenant-scoped a TODAS las sub-queries (antes
+  // usaban service-role → tenant por defecto, filtrando contenido del default
+  // en la home de cualquier tenant).
   const [homeSections, featuredProducts, blogPosts, bestSellers, categories] = await Promise.all([
     fetchHomeSections().catch(() => [] as HomeSection[]),
-    getFeaturedProducts(3).catch(() => []),
-    getBlogPosts({ limit: 2 }).catch(() => []),
-    getBestSellingProducts(4).catch(() => [] as BestSellingProduct[]),
-    getCategories().catch(() => []),
+    getFeaturedProducts(3, db).catch(() => []),
+    getBlogPosts({ limit: 2 }, db).catch(() => []),
+    getBestSellingProducts(4, db).catch(() => [] as BestSellingProduct[]),
+    getCategories(db).catch(() => []),
   ])
 
   return { homeSections, featuredProducts, blogPosts, bestSellers, categories }
