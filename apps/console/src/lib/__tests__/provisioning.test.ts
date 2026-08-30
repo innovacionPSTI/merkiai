@@ -132,4 +132,24 @@ describe('ensureTenantTeam (HU-215 · idempotencia del Team)', () => {
     expect(res).toEqual({ teamId: null, created: false })
     expect(calls.updated).toBeNull()
   })
+
+  it('recrea si el stack_team_id guardado quedó muerto (orgExists=false)', async () => {
+    const { db, calls } = ensureDb('team-muerto')
+    const identity = idOK()!
+    ;(identity as unknown as { orgExists: jest.Mock }).orgExists = jest.fn(async () => false)
+    const res = await ensureTenantTeam({ tenantId: 't-4', name: 'T' }, { db, adminIdentity: identity })
+    expect(res).toEqual({ teamId: 'team-1', created: true })
+    expect((identity.createOrg as jest.Mock)).toHaveBeenCalled()
+    expect(calls.updated).toMatchObject({ stack_team_id: 'team-1' })
+  })
+
+  it('reusa sin recrear si orgExists=true', async () => {
+    const { db, calls } = ensureDb('team-vivo')
+    const identity = idOK()!
+    ;(identity as unknown as { orgExists: jest.Mock }).orgExists = jest.fn(async () => true)
+    const res = await ensureTenantTeam({ tenantId: 't-5', name: 'T' }, { db, adminIdentity: identity })
+    expect(res).toEqual({ teamId: 'team-vivo', created: false })
+    expect((identity.createOrg as jest.Mock)).not.toHaveBeenCalled()
+    expect(calls.updated).toBeNull()
+  })
 })

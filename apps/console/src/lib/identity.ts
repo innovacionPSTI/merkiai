@@ -86,5 +86,9 @@ export function stackIdentity(app: StackApp = stackServerApp, opts: StackIdentit
       if (!team) return // idempotente: si ya no existe, nada que borrar
       await team.delete()
     },
+
+    async orgExists(orgId) {
+      return !!(await app.getTeam(orgId))
+    },
   }
 }

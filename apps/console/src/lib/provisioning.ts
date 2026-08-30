@@ -30,10 +30,15 @@ export async function ensureTenantTeam(
   const { db, adminIdentity } = deps
   const plan = (input.plan ?? 'free').trim()
 
-  // 1. ¿Ya tiene Team? → reusar (idempotencia).
+  // 1. ¿Ya tiene Team? → reusar (idempotencia), pero verificando que SIGA
+  //    existiendo (pudo borrarse manualmente en Stack Auth → referencia muerta).
   const current = await db.from('tenants').select('stack_team_id').eq('id', input.tenantId).maybeSingle()
   const existingTeamId = (current.data as { stack_team_id?: string | null } | null)?.stack_team_id
-  if (existingTeamId) return { teamId: existingTeamId, created: false }
+  if (existingTeamId) {
+    const stillExists = adminIdentity?.orgExists ? await adminIdentity.orgExists(existingTeamId) : true
+    if (stillExists) return { teamId: existingTeamId, created: false }
+    // Referencia muerta → cae a recrear (abajo) y re-persistir el nuevo id.
+  }
 
   // 2. Sin proveedor → no se puede crear (provisioning parcial).
   if (!adminIdentity) return { teamId: null, created: false }

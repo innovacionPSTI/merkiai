@@ -38,4 +38,6 @@ export interface IdentityProvider {
   setOrgMetadata?(orgId: string, metadata: Record<string, unknown>): Promise<void>
   /** Elimina la org/tenant en el proveedor (opcional). Best-effort al desaprovisionar. */
   deleteOrg?(orgId: string): Promise<void>
+  /** ¿La org sigue existiendo? (opcional) Para detectar referencias muertas. */
+  orgExists?(orgId: string): Promise<boolean>
 }

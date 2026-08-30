@@ -103,25 +103,23 @@ export async function inviteTenantOwner(
   const db = platformDb()
   const { data } = await db.from('tenants').select('stack_team_id, name').eq('id', id).maybeSingle()
   const row = data as { stack_team_id?: string | null; name?: string } | null
-  let teamId = row?.stack_team_id ?? null
 
   const identity = adminIdentity()
   if (!identity) {
     return { ok: false, error: 'Stack Auth (proyecto admin) no está configurado en la consola.' }
   }
 
-  // Repara tenants parciales (sin Team) — idempotente (HU-215): crea el Team la
-  // primera vez y lo reusa después, sin duplicar.
+  // ensureTenantTeam es idempotente y AUTO-REPARA (HU-215): reusa el Team si sigue
+  // vivo, crea uno nuevo si falta o si el id guardado quedó muerto (borrado en Stack).
+  let teamId: string | null
+  try {
+    const r = await ensureTenantTeam({ tenantId: id, name: row?.name ?? 'Tienda' }, { db, adminIdentity: identity })
+    teamId = r.teamId
+  } catch (e) {
+    return { ok: false, error: `No se pudo crear el Team en Stack Auth: ${e instanceof Error ? e.message : String(e)}` }
+  }
   if (!teamId) {
-    try {
-      const r = await ensureTenantTeam({ tenantId: id, name: row?.name ?? 'Tienda' }, { db, adminIdentity: identity })
-      teamId = r.teamId
-    } catch (e) {
-      return { ok: false, error: `No se pudo crear el Team en Stack Auth: ${e instanceof Error ? e.message : String(e)}` }
-    }
-    if (!teamId) {
-      return { ok: false, error: 'No se pudo crear el Team (Stack Auth no configurado).' }
-    }
+    return { ok: false, error: 'No se pudo crear el Team (Stack Auth no configurado).' }
   }
   if (!identity.inviteMember) {
     return { ok: false, error: 'El proveedor de identidad no soporta invitaciones.' }
