@@ -59,11 +59,35 @@ describe('provisionTenant (HU-209)', () => {
     await expect(provisionTenant({ name: 'T', subdomain: 'X' }, { db, adminIdentity: null })).rejects.toThrow(/inválido/)
   })
 
-  it('rollback: si createOrg falla, borra el tenant y lanza', async () => {
+  it('parcial: si createOrg falla, conserva el tenant y reporta warning (no borra)', async () => {
     const { db, calls } = makeDb({ existingId: null, insertedId: 't-3' })
     const identity = idOK()!
     ;(identity.createOrg as jest.Mock).mockImplementation(async () => { throw new Error('stack down') })
-    await expect(provisionTenant({ name: 'T', subdomain: 'demo3' }, { db, adminIdentity: identity })).rejects.toThrow(/stack down/)
-    expect(calls.deleted).toBe(true)
+    const res = await provisionTenant({ name: 'T', subdomain: 'demo3', ownerEmail: 'd@x.com' }, { db, adminIdentity: identity })
+    expect(res.tenantId).toBe('t-3')
+    expect(res.teamId).toBeNull()
+    expect(calls.deleted).toBe(false)
+    expect(res.warnings.some((w) => /Team.*Stack Auth.*stack down/i.test(w))).toBe(true)
+    // Sin Team no se intenta invitar al dueño.
+    expect((identity.inviteMember as jest.Mock)).not.toHaveBeenCalled()
+  })
+
+  it('parcial: Team creado pero invitación falla → conserva Team y avisa', async () => {
+    const { db, calls } = makeDb({ existingId: null, insertedId: 't-5' })
+    const identity = idOK()!
+    ;(identity.inviteMember as jest.Mock).mockImplementation(async () => { throw new Error('smtp down') })
+    const res = await provisionTenant({ name: 'T', subdomain: 'demo5', ownerEmail: 'd@x.com' }, { db, adminIdentity: identity })
+    expect(res.teamId).toBe('team-1')
+    expect(calls.deleted).toBe(false)
+    expect(res.warnings.some((w) => /invitar al dueño.*smtp down/i.test(w))).toBe(true)
+  })
+
+  it('propaga el plan elegido al metadata del Team', async () => {
+    const { db } = makeDb({ existingId: null, insertedId: 't-6' })
+    const identity = idOK()!
+    await provisionTenant({ name: 'T', subdomain: 'demo6', plan: 'pro' }, { db, adminIdentity: identity })
+    expect((identity.createOrg as jest.Mock)).toHaveBeenCalledWith(
+      expect.objectContaining({ metadata: expect.objectContaining({ plan: 'pro' }) }),
+    )
   })
 })

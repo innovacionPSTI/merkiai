@@ -42,20 +42,28 @@ export async function provisionTenant(input: ProvisionInput, deps: ProvisionDeps
   if (created.error || !created.data?.id) throw created.error ?? new Error('[provision] no se pudo crear el tenant')
   const tenantId = created.data.id as string
 
-  // 3) Team en Stack Auth (proyecto admin) + dueño. Rollback si falla.
+  // 3) Team en Stack Auth (proyecto admin) + dueño.
+  //    El tenant YA existe (paso 2): si el Team falla, NO se borra — se degrada a
+  //    "provisioning parcial" (coherente con la UI: el Team se adjunta luego) y se
+  //    reporta el error como warning para que el operador pueda reintentar/corregir.
   let teamId: string | null = null
   if (adminIdentity) {
     try {
       const { orgId } = await adminIdentity.createOrg({ name, metadata: { tenant_id: tenantId, plan, status: 'active' } })
       teamId = orgId
       await db.from('tenants').update({ stack_team_id: teamId }).eq('id', tenantId)
-      if (ownerEmail && adminIdentity.inviteMember) {
-        await adminIdentity.inviteMember(teamId, ownerEmail)
-      }
     } catch (e) {
-      // Rollback: elimina el tenant para no dejar huérfanos sin Team.
-      await db.from('tenants').delete().eq('id', tenantId)
-      throw e instanceof Error ? e : new Error('[provision] fallo al crear el Team')
+      const msg = e instanceof Error ? e.message : String(e)
+      warnings.push(`No se pudo crear el Team en Stack Auth (${msg}). Tenant creado en modo parcial — el Team se puede adjuntar luego.`)
+    }
+    // Invitación del dueño: sólo si hay Team y email. Falla aparte (no tumba el tenant).
+    if (teamId && ownerEmail && adminIdentity.inviteMember) {
+      try {
+        await adminIdentity.inviteMember(teamId, ownerEmail)
+      } catch (e) {
+        const msg = e instanceof Error ? e.message : String(e)
+        warnings.push(`Team creado pero no se pudo invitar al dueño (${msg}). Reintenta la invitación desde el admin.`)
+      }
     }
   } else {
     warnings.push('Stack Auth (proyecto admin) no configurado: Team no creado — provisioning parcial.')

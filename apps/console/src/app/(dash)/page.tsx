@@ -2,7 +2,8 @@ import { PageHeader, PanelCard, StatCard, StatGrid, StatusBadge, EmptyState, typ
 import { platformDb } from '@/lib/platform-db'
 import { getPlans } from '@/lib/plans'
 import { input, btn, th, td, scroll } from '@/lib/styles'
-import { createTenant, setTenantStatus, setTenantPlan } from '../actions'
+import { setTenantStatus, setTenantPlan } from '../actions'
+import NewTenantForm from './new-tenant-form'
 
 export const dynamic = 'force-dynamic'
 
@@ -43,15 +44,7 @@ export default async function TenantsPage() {
       </StatGrid>
 
       <PanelCard title="Nuevo tenant">
-        <form action={createTenant} style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
-          <input style={input} name="name" placeholder="Nombre del negocio" required />
-          <input style={input} name="subdomain" placeholder="subdominio (a-z, 0-9, -)" required />
-          <input style={input} name="ownerEmail" type="email" placeholder="email del dueño (opcional)" />
-          <button type="submit" style={btn}>Crear</button>
-        </form>
-        <p style={{ margin: '8px 0 0', color: '#888', fontSize: 12 }}>
-          Crea el Team en Stack Auth + invita al dueño (si hay email). Requiere las vars del proyecto admin en la consola; si faltan, se crea el tenant y el Team se adjunta luego.
-        </p>
+        <NewTenantForm plans={plans.map((p) => ({ key: p.key, name: p.name }))} />
       </PanelCard>
 
       <PanelCard title={`Tenants (${tenants.length})`}>
