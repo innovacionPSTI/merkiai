@@ -65,6 +65,87 @@ export async function createTenant(
   }
 }
 
+const DEFAULT_TENANT_ID = '00000000-0000-0000-0000-000000000001'
+
+/** Estado de las acciones por-tenant (invitar dueño / eliminar). */
+export interface TenantActionState {
+  ok: boolean
+  error?: string
+  message?: string
+}
+
+/**
+ * Invita (o cambia) al dueño/super-admin de un tenant existente (HU-209).
+ * Envía una invitación de Team al email indicado. Requiere que el tenant tenga
+ * `stack_team_id` (Team ya creado). Gated por `platform:operate`.
+ */
+export async function inviteTenantOwner(
+  _prev: TenantActionState,
+  formData: FormData,
+): Promise<TenantActionState> {
+  await requirePlatformOperator()
+  const id = String(formData.get('id') ?? '')
+  const email = String(formData.get('ownerEmail') ?? '').trim()
+  if (!id || !email) return { ok: false, error: 'Falta el tenant o el email.' }
+  if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email)) return { ok: false, error: 'Email inválido.' }
+
+  const db = platformDb()
+  const { data } = await db.from('tenants').select('stack_team_id').eq('id', id).maybeSingle()
+  const teamId = (data as { stack_team_id?: string | null } | null)?.stack_team_id
+  if (!teamId) {
+    return { ok: false, error: 'Este tenant aún no tiene Team en Stack Auth (provisioning parcial). Créalo primero.' }
+  }
+
+  const identity = adminIdentity()
+  if (!identity?.inviteMember) {
+    return { ok: false, error: 'Stack Auth (proyecto admin) no está configurado en la consola.' }
+  }
+  try {
+    await identity.inviteMember(teamId, email)
+    revalidatePath('/')
+    return { ok: true, message: `Invitación enviada a ${email}. Al aceptarla, entra al admin de la tienda.` }
+  } catch (e) {
+    const msg = e instanceof Error ? e.message : String(e)
+    return { ok: false, error: `No se pudo invitar: ${msg}` }
+  }
+}
+
+/**
+ * Elimina un tenant (HU-209 · zona de peligro). Irreversible: borra el registro
+ * de plataforma y (best-effort) el Team en Stack Auth. NO toca los datos del
+ * plano de tienda (productos/pedidos con ese `tenant_id`) — pensado para tiendas
+ * de prueba / no aprovisionadas. Confirmación por coincidencia de subdominio.
+ * Gated por `platform:operate`.
+ */
+export async function deleteTenant(
+  _prev: TenantActionState,
+  formData: FormData,
+): Promise<TenantActionState> {
+  await requirePlatformOperator()
+  const id = String(formData.get('id') ?? '')
+  const confirm = String(formData.get('confirm') ?? '').trim().toLowerCase()
+  const subdomain = String(formData.get('subdomain') ?? '').trim().toLowerCase()
+  if (!id) return { ok: false, error: 'Falta el tenant.' }
+  if (id === DEFAULT_TENANT_ID) return { ok: false, error: 'No se puede eliminar el tenant por defecto (migración).' }
+  if (!subdomain || confirm !== subdomain) {
+    return { ok: false, error: `La confirmación no coincide. Escribe "${subdomain}" para eliminar.` }
+  }
+
+  const db = platformDb()
+  // Best-effort: borrar el Team en Stack Auth para no dejar huérfanos.
+  const { data } = await db.from('tenants').select('stack_team_id').eq('id', id).maybeSingle()
+  const teamId = (data as { stack_team_id?: string | null } | null)?.stack_team_id
+  const identity = adminIdentity()
+  if (teamId && identity?.deleteOrg) {
+    try { await identity.deleteOrg(teamId) } catch { /* el Team puede reciclarse aparte */ }
+  }
+
+  const { error } = await db.from('tenants').delete().eq('id', id)
+  if (error) return { ok: false, error: `No se pudo eliminar: ${error.message}` }
+  revalidatePath('/')
+  return { ok: true, message: 'Tenant eliminado.' }
+}
+
 /** Suspende / reactiva un tenant (consola). */
 export async function setTenantStatus(formData: FormData) {
   await requirePlatformOperator()

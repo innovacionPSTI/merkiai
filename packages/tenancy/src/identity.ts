@@ -36,4 +36,6 @@ export interface IdentityProvider {
   inviteMember?(orgId: string, email: string): Promise<void>
   /** Actualiza metadata de servidor de la org (opcional). */
   setOrgMetadata?(orgId: string, metadata: Record<string, unknown>): Promise<void>
+  /** Elimina la org/tenant en el proveedor (opcional). Best-effort al desaprovisionar. */
+  deleteOrg?(orgId: string): Promise<void>
 }

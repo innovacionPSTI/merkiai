@@ -4,6 +4,7 @@ import { getPlans } from '@/lib/plans'
 import { input, btn, th, td, scroll } from '@/lib/styles'
 import { setTenantStatus, setTenantPlan } from '../actions'
 import NewTenantForm from './new-tenant-form'
+import TenantManage from './tenant-manage'
 
 export const dynamic = 'force-dynamic'
 
@@ -61,6 +62,7 @@ export default async function TenantsPage() {
                   <th style={th}>Aislamiento</th>
                   <th style={th}>Estado</th>
                   <th style={th}>Acción</th>
+                  <th style={th}>Gestión</th>
                 </tr>
               </thead>
               <tbody>
@@ -89,6 +91,9 @@ export default async function TenantsPage() {
                           {t.status === 'active' ? 'Suspender' : 'Reactivar'}
                         </button>
                       </form>
+                    </td>
+                    <td style={td}>
+                      <TenantManage tenant={{ id: t.id, name: t.name, subdomain: t.subdomain }} />
                     </td>
                   </tr>
                 ))}

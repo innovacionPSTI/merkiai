@@ -80,5 +80,11 @@ export function stackIdentity(app: StackApp = stackServerApp, opts: StackIdentit
       if (!team) throw new Error('[identity] org no encontrada')
       await team.update({ serverMetadata: metadata } as Parameters<typeof team.update>[0])
     },
+
+    async deleteOrg(orgId) {
+      const team = await app.getTeam(orgId)
+      if (!team) return // idempotente: si ya no existe, nada que borrar
+      await team.delete()
+    },
   }
 }
