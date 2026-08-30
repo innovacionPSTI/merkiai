@@ -35,6 +35,15 @@ export async function middleware(request: NextRequest) {
     return NextResponse.next({ request: { headers: requestHeaders } })
   }
 
+  // ── API interna (server-to-server): NO exigir sesión aquí ──────────────────
+  // Estos endpoints (p.ej. /api/internal/owners, HU-209) autentican con
+  // `x-internal-secret` en la propia ruta. Si el middleware exigiera sesión,
+  // redirigiría el POST del control plane a /login (307) y el perfil nunca se
+  // crearía — sin error visible. Dejar pasar y que la ruta valide el secreto.
+  if (pathname.startsWith('/api/internal')) {
+    return NextResponse.next({ request: { headers: requestHeaders } })
+  }
+
   // ── Verificar sesión Stack Auth ───────────────────────────────────────────
   const user = await stackServerApp.getUser()
   if (!user) {

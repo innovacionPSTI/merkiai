@@ -24,6 +24,9 @@ export async function provisionOwnerProfile(
       method: 'POST',
       headers: { 'Content-Type': 'application/json', 'x-internal-secret': secret },
       cache: 'no-store',
+      // 'manual' evita que un redirect (p.ej. middleware del admin → /login) se
+      // cuele como falso éxito: con manual, un 3xx queda como respuesta no-ok.
+      redirect: 'manual',
       body: JSON.stringify({
         email: input.email,
         tenantId: input.tenantId,
@@ -31,6 +34,9 @@ export async function provisionOwnerProfile(
         fullName: input.fullName,
       }),
     })
+    if (res.type === 'opaqueredirect' || (res.status >= 300 && res.status < 400)) {
+      return { ok: false, error: `admin redirigió la petición (¿middleware pidiendo sesión?). Revisa que /api/internal quede fuera del guard.` }
+    }
     if (!res.ok) {
       const t = await res.text().catch(() => '')
       return { ok: false, error: `admin respondió ${res.status}${t ? `: ${t.slice(0, 140)}` : ''}` }
