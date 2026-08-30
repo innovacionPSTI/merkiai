@@ -8,6 +8,9 @@
  *   NEXT_PUBLIC_ADMIN_HEXCLAVE_PROJECT_ID
  *   NEXT_PUBLIC_ADMIN_HEXCLAVE_PUBLISHABLE_CLIENT_KEY
  *   ADMIN_HEXCLAVE_SECRET_SERVER_KEY
+ * Opcional:
+ *   ADMIN_APP_URL  (base del admin; default https://admin.merkiai.com) — se usa
+ *                  para el callbackUrl de la invitación de Team (obligatorio en servidor).
  */
 import { StackServerApp } from '@stackframe/stack'
 import type { IdentityProvider } from '@merkiai/tenancy'
@@ -20,5 +23,6 @@ export function adminIdentity(): IdentityProvider | null {
   if (!projectId || !publishableClientKey || !secretServerKey) return null
 
   const app = new StackServerApp({ tokenStore: 'memory', projectId, publishableClientKey, secretServerKey })
-  return stackIdentity(app)
+  const adminBase = (process.env.ADMIN_APP_URL ?? 'https://admin.merkiai.com').replace(/\/$/, '')
+  return stackIdentity(app, { inviteCallbackUrl: `${adminBase}/handler/team-invitation` })
 }

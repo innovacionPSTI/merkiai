@@ -15,7 +15,17 @@ import { stackServerApp } from '@/stack'
  */
 type StackApp = typeof stackServerApp
 
-export function stackIdentity(app: StackApp = stackServerApp): IdentityProvider {
+export interface StackIdentityOptions {
+  /**
+   * URL de retorno para la invitación de Team (`team.inviteUser`). Stack Auth la
+   * EXIGE en entorno servidor (sin ella lanza "callbackUrl option is required in
+   * a non-browser environment"). Debe apuntar al handler del proyecto dueño del
+   * Team (el admin): `https://admin.merkiai.com/handler/team-invitation`.
+   */
+  inviteCallbackUrl?: string
+}
+
+export function stackIdentity(app: StackApp = stackServerApp, opts: StackIdentityOptions = {}): IdentityProvider {
   return {
     async getCurrentUser() {
       const u = await app.getUser()
@@ -58,7 +68,11 @@ export function stackIdentity(app: StackApp = stackServerApp): IdentityProvider 
     async inviteMember(orgId, email) {
       const team = await app.getTeam(orgId)
       if (!team) throw new Error('[identity] org no encontrada')
-      await team.inviteUser({ email })
+      // callbackUrl es obligatorio en servidor (Stack Auth). Ver StackIdentityOptions.
+      if (!opts.inviteCallbackUrl) {
+        throw new Error('[identity] inviteCallbackUrl requerido para invitar en servidor')
+      }
+      await team.inviteUser({ email, callbackUrl: opts.inviteCallbackUrl })
     },
 
     async setOrgMetadata(orgId, metadata) {
