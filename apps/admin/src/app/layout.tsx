@@ -84,6 +84,10 @@ export default async function AdminRootLayout({ children }: { children: React.Re
     if (!adminUser) {
       redirect('/no-autorizado')
     }
+    // HU-158: correo con perfil admin en >1 tienda y ninguna activa → elegir.
+    if (adminUser.needsWorkspaceSelection && pathname !== '/seleccionar-tienda') {
+      redirect('/seleccionar-tienda')
+    }
   }
 
   // Datos del topbar
