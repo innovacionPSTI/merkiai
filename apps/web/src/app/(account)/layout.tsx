@@ -1,41 +1,24 @@
 import { redirect } from 'next/navigation'
-import Navbar from '@/components/layout/Navbar'
-import Footer from '@/components/layout/Footer'
+import StoreShell from '@/components/layout/StoreShell'
 import AccountSidebar from '@/components/account/AccountSidebar'
-import { getStoreConfig, getFooterPages, getNavTree } from '@merkiai/database'
 import { stackServerApp } from '@/stack'
 
 export const dynamic = 'force-dynamic'
 
 /**
- * Layout compartido para todas las rutas bajo /account/*.
- * — Verifica autenticación una sola vez (no es necesario hacerlo en cada página)
- * — Monta Navbar + sidebar + Footer con props completos
- * — El sidebar recibe nombre y email del usuario como props (evita useUser en cliente)
+ * Layout compartido para /account/*. El chrome (Navbar/Footer + tenant) lo
+ * resuelve `<StoreShell>` (una vez, por tenant). Aquí solo: verificar sesión y
+ * componer el sidebar + contenido.
  */
 export default async function AccountLayout({ children }: { children: React.ReactNode }) {
-  const [config, footerPages, navItems, user] = await Promise.all([
-    getStoreConfig().catch(() => null),
-    getFooterPages().catch(() => []),
-    getNavTree().catch(() => []),
-    stackServerApp.getUser(),
-  ])
-
+  const user = await stackServerApp.getUser()
   if (!user) redirect('/login')
 
   const displayName = user.displayName ?? ''
   const email       = user.primaryEmail ?? ''
 
   return (
-    <>
-      <Navbar
-        logoUrl={config?.logo_url}
-        storeName={config?.store_name}
-        navItems={navItems}
-        showCart={config?.nav_show_cart ?? true}
-        showAuth={config?.nav_show_auth ?? true}
-      />
-
+    <StoreShell>
       <div className="bg-brand-cream min-h-screen pt-20">
         <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-10">
           <div className="md:grid md:grid-cols-4 md:gap-8">
@@ -46,26 +29,6 @@ export default async function AccountLayout({ children }: { children: React.Reac
           </div>
         </div>
       </div>
-
-      <Footer
-        logoUrl={config?.logo_url}
-        storeName={config?.store_name}
-        whatsapp={config?.whatsapp_number}
-        social={{
-          instagramUrl:     config?.instagram_url,
-          instagramEnabled: config?.instagram_enabled,
-          facebookUrl:      config?.facebook_url,
-          facebookEnabled:  config?.facebook_enabled,
-          tiktokUrl:        config?.tiktok_url,
-          tiktokEnabled:    config?.tiktok_enabled,
-        }}
-        pages={footerPages}
-        footerFlags={{
-          showStore: config?.footer_show_store ?? true,
-          showBlog:  config?.footer_show_blog  ?? true,
-          showLegal: config?.footer_show_legal ?? true,
-        }}
-      />
-    </>
+    </StoreShell>
   )
 }
