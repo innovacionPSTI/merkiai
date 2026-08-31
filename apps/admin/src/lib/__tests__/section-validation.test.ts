@@ -1,4 +1,4 @@
-import { validateSectionPayload } from '../section-validation'
+import { validateSectionPayload, validateItemByItemType } from '../section-validation'
 
 describe('validateSectionPayload', () => {
   it('acepta campos de columna válidos (cta)', () => {
@@ -37,5 +37,22 @@ describe('validateSectionPayload', () => {
 
   it('tipo desconocido → válido (el CHECK de la BD es backstop)', () => {
     expect(validateSectionPayload('inexistente', { x: 1 }).ok).toBe(true)
+  })
+})
+
+describe('validateItemByItemType', () => {
+  it('valida un slide (hero) por su item_type', () => {
+    expect(validateItemByItemType('slide', { title: 'Hola', image_url: '/x.webp' }).ok).toBe(true)
+    // link_url inválido (no absoluta ni ruta)
+    expect(validateItemByItemType('slide', { link_url: 'ftp:no' }).ok).toBe(false)
+  })
+
+  it('valida rating (metadata, number) de un testimonio', () => {
+    expect(validateItemByItemType('testimonial', { metadata: { rating: 5 } }).ok).toBe(true)
+    expect(validateItemByItemType('testimonial', { metadata: { rating: 'x' } }).ok).toBe(false)
+  })
+
+  it('item_type desconocido → válido', () => {
+    expect(validateItemByItemType('inexistente', { a: 1 }).ok).toBe(true)
   })
 })

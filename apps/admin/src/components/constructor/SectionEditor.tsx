@@ -7,8 +7,10 @@
  * (`PATCH /api/admin/cms/sections`). Ningún formulario hardcodeado por tipo.
  */
 import { useState } from 'react'
-import { getBlockSchema, resolveBlockFields, type BlockField } from '@merkiai/database'
+import { getBlockSchema, resolveBlockFields } from '@merkiai/database'
 import { splitSectionFields } from '@/lib/section-fields'
+import FieldInput from './FieldInput'
+import ItemsEditor from './ItemsEditor'
 
 interface SectionRow {
   id: number
@@ -20,37 +22,6 @@ interface SectionRow {
 interface SectionEditorProps {
   section: SectionRow
   onSaved?: (updated: Record<string, unknown>) => void
-}
-
-function FieldInput({
-  name, field, value, onChange,
-}: {
-  name: string
-  field: BlockField
-  value: unknown
-  onChange: (v: unknown) => void
-}) {
-  const base = 'w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-400'
-  const v = value ?? ''
-
-  switch (field.type) {
-    case 'textarea':
-    case 'richtext':
-      return <textarea id={name} className={base} rows={3} value={String(v)} onChange={(e) => onChange(e.target.value)} placeholder={field.placeholder} />
-    case 'boolean':
-      return <input id={name} type="checkbox" className="h-5 w-5 rounded border-slate-300" checked={Boolean(value)} onChange={(e) => onChange(e.target.checked)} />
-    case 'number':
-      return <input id={name} type="number" className={base} value={v === '' ? '' : Number(v)} onChange={(e) => onChange(e.target.value === '' ? '' : Number(e.target.value))} />
-    case 'select':
-      return (
-        <select id={name} className={base} value={String(v)} onChange={(e) => onChange(e.target.value)}>
-          <option value="">—</option>
-          {field.options?.map((o) => <option key={o.value} value={o.value}>{o.label}</option>)}
-        </select>
-      )
-    default: // text | url | image | icon | color
-      return <input id={name} type="text" className={base} value={String(v)} onChange={(e) => onChange(e.target.value)} placeholder={field.placeholder} />
-  }
 }
 
 export default function SectionEditor({ section, onSaved }: SectionEditorProps) {
@@ -66,9 +37,7 @@ export default function SectionEditor({ section, onSaved }: SectionEditorProps) 
   }
 
   const fields = Object.entries(schema.fields)
-  if (fields.length === 0) {
-    return <p className="text-sm text-slate-500">Este bloque se edita por sus ítems (próximo paso). Sin campos de sección.</p>
-  }
+  const hasItems = Boolean(schema.items)
 
   async function save() {
     setStatus('saving'); setErrorMsg('')
@@ -91,26 +60,36 @@ export default function SectionEditor({ section, onSaved }: SectionEditorProps) 
   }
 
   return (
-    <div className="space-y-4">
-      {fields.map(([key, field]) => (
-        <div key={key} className={field.type === 'boolean' ? 'flex items-center gap-2' : ''}>
-          <label htmlFor={key} className="block text-xs font-medium text-slate-600 mb-1">{field.label}</label>
-          <FieldInput name={key} field={field} value={values[key]} onChange={(v) => setValues((s) => ({ ...s, [key]: v }))} />
-          {field.help && <p className="text-[11px] text-slate-400 mt-1">{field.help}</p>}
-        </div>
-      ))}
+    <div className="space-y-6">
+      {fields.length > 0 && (
+        <div className="space-y-4">
+          {fields.map(([key, field]) => (
+            <div key={key} className={field.type === 'boolean' ? 'flex items-center gap-2' : ''}>
+              <label htmlFor={key} className="block text-xs font-medium text-slate-600 mb-1">{field.label}</label>
+              <FieldInput name={key} field={field} value={values[key]} onChange={(v) => setValues((s) => ({ ...s, [key]: v }))} />
+              {field.help && <p className="text-[11px] text-slate-400 mt-1">{field.help}</p>}
+            </div>
+          ))}
 
-      <div className="flex items-center gap-3 pt-1">
-        <button
-          onClick={save}
-          disabled={status === 'saving'}
-          className="rounded-lg bg-indigo-600 px-4 py-2 text-sm font-medium text-white hover:bg-indigo-700 disabled:opacity-60"
-        >
-          {status === 'saving' ? 'Guardando…' : 'Guardar'}
-        </button>
-        {status === 'saved' && <span className="text-sm text-green-600">Guardado ✓</span>}
-        {status === 'error' && <span className="text-sm text-red-600">{errorMsg}</span>}
-      </div>
+          <div className="flex items-center gap-3 pt-1">
+            <button
+              onClick={save}
+              disabled={status === 'saving'}
+              className="rounded-lg bg-indigo-600 px-4 py-2 text-sm font-medium text-white hover:bg-indigo-700 disabled:opacity-60"
+            >
+              {status === 'saving' ? 'Guardando…' : 'Guardar'}
+            </button>
+            {status === 'saved' && <span className="text-sm text-green-600">Guardado ✓</span>}
+            {status === 'error' && <span className="text-sm text-red-600">{errorMsg}</span>}
+          </div>
+        </div>
+      )}
+
+      {hasItems && <ItemsEditor sectionId={section.id} sectionType={section.section_type} />}
+
+      {fields.length === 0 && !hasItems && (
+        <p className="text-sm text-slate-500">Este bloque no tiene campos configurables.</p>
+      )}
     </div>
   )
 }

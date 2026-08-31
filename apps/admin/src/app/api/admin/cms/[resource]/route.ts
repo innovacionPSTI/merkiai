@@ -12,7 +12,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { getAdminUser } from '@/lib/auth'
 import { getAdminDb } from '@/lib/admin-db'
-import { validateSectionPayload } from '@/lib/section-validation'
+import { validateSectionPayload, validateItemByItemType } from '@/lib/section-validation'
 
 // ── Tipo de tabla CMS reconocida ─────────────────────────────────────────────
 // Note: section_settings and banners were dropped in migration 19 (unified CMS)
@@ -125,6 +125,11 @@ export async function POST(req: NextRequest, { params }: RouteParams) {
     const v = validateSectionPayload(body.section_type, body)
     if (!v.ok) return NextResponse.json({ error: 'Datos inválidos', details: v.errors }, { status: 422 })
   }
+  // HU-218.3b: valida los campos del ítem contra el contrato (por item_type).
+  if (resource === 'items' && typeof body.item_type === 'string') {
+    const v = validateItemByItemType(body.item_type, body)
+    if (!v.ok) return NextResponse.json({ error: 'Datos inválidos', details: v.errors }, { status: 422 })
+  }
 
   const now = new Date().toISOString()
   const supabase = getAdminDb(adminUser!.tenantId)
@@ -176,6 +181,17 @@ export async function PATCH(req: NextRequest, { params }: RouteParams) {
           .select('section_type').eq('id', resolvedPk).maybeSingle()).data?.section_type
     if (typeof type === 'string') {
       const v = validateSectionPayload(type, fields)
+      if (!v.ok) return NextResponse.json({ error: 'Datos inválidos', details: v.errors }, { status: 422 })
+    }
+  }
+  // HU-218.3b: ídem para ítems — item_type se resuelve por id si no viene.
+  if (resource === 'items') {
+    const itemType = typeof fields.item_type === 'string'
+      ? (fields.item_type as string)
+      : (await (supabase.from('section_items') as any) // eslint-disable-line @typescript-eslint/no-explicit-any
+          .select('item_type').eq('id', resolvedPk).maybeSingle()).data?.item_type
+    if (typeof itemType === 'string') {
+      const v = validateItemByItemType(itemType, fields)
       if (!v.ok) return NextResponse.json({ error: 'Datos inválidos', details: v.errors }, { status: 422 })
     }
   }

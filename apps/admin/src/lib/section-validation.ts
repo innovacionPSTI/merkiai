@@ -8,7 +8,7 @@
  * HU-222 para acotar la salida del generador de diseño por IA.
  */
 import { z } from 'zod'
-import { getBlockSchema, type BlockField } from '@merkiai/database'
+import { getBlockSchema, listBlockTypes, type BlockField } from '@merkiai/database'
 
 function fieldToZod(f: BlockField): z.ZodTypeAny {
   switch (f.type) {
@@ -68,4 +68,39 @@ export function validateSectionPayload(
     }
   }
   return { ok: errors.length === 0, errors }
+}
+
+/**
+ * Valida los campos de un ÍTEM (section_items) contra `schema.items.fields`.
+ * Forma de fila: columnas + `metadata`. Mismos criterios que la sección.
+ */
+export function validateItemPayload(
+  type: string,
+  payload: Record<string, unknown>,
+): SectionValidationResult {
+  const schema = getBlockSchema(type)
+  if (!schema?.items) return { ok: true, errors: [] }
+
+  const metadata = (payload.metadata ?? {}) as Record<string, unknown>
+  const errors: string[] = []
+
+  for (const [key, f] of Object.entries(schema.items.fields)) {
+    const val = f.storage === 'metadata' ? metadata[key] : payload[key]
+    if (val === undefined || val === null || val === '') continue // opcional
+    const res = fieldToZod(f).safeParse(val)
+    if (!res.success) {
+      errors.push(`${f.label}: ${res.error.issues[0]?.message ?? 'valor inválido'}`)
+    }
+  }
+  return { ok: errors.length === 0, errors }
+}
+
+/** Valida un ítem resolviendo el bloque por su `item_type` (reverse lookup). */
+export function validateItemByItemType(
+  itemType: string,
+  payload: Record<string, unknown>,
+): SectionValidationResult {
+  const schema = listBlockTypes().find((s) => s.items?.itemType === itemType)
+  if (!schema) return { ok: true, errors: [] }
+  return validateItemPayload(schema.type, payload)
 }
