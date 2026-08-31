@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createServerClient, getPaymentConfig, getStoreConfig, BoldGateway, applyStockForOrder, markWebhookEventProcessed } from '@merkiai/database'
+import { resolveTenant } from '@/lib/tenant-context'
 import { amountCoversOrder } from '@/lib/payment-guards'
 import { sendOrderConfirmation, buildEmailConfig } from '@/lib/email'
 import { createShipmentForOrder } from '@/lib/shipping/shipments'
@@ -26,7 +27,12 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: 'Invalid body' }, { status: 400 })
   }
 
-  const paymentConfig = await getPaymentConfig().catch(() => null)
+  // HU-216: el webhook resuelve el TENANT por su host (el checkout configura las
+  // URLs de callback con el subdominio del tenant) → carga la config de pago de
+  // ESE tenant, no la del default.
+  const { tenantId } = await resolveTenant()
+  const supabase = createServerClient()
+  const paymentConfig = await getPaymentConfig(supabase, tenantId).catch(() => null)
 
   // Se valida por credenciales (no por proveedor activo): una notificación puede
   // llegar por un pago iniciado aunque luego se cambie la pasarela activa.
@@ -59,8 +65,6 @@ export async function POST(req: NextRequest) {
   // Idempotencia por id de evento (no reprocesar reintentos del mismo evento).
   const { duplicate } = await markWebhookEventProcessed('bold', `${orderReference}:${rawStatus}:${paymentId ?? ''}`)
   if (duplicate) return NextResponse.json({ ok: true, idempotent: true })
-
-  const supabase = createServerClient()
 
   // 2) Idempotencia: si el pago ya estaba aprobado y llega otro SALE_APPROVED, no reprocesar
   const { data: existing } = await supabase
@@ -111,7 +115,7 @@ export async function POST(req: NextRequest) {
     // Descuento de stock (idempotente) al confirmarse el pago
     await applyStockForOrder(orderReference)
 
-    const storeConfig = await getStoreConfig().catch(() => null)
+    const storeConfig = await getStoreConfig(supabase, tenantId).catch(() => null)
     const emailConfig = storeConfig?.resend_api_key && storeConfig?.resend_from_email
       ? buildEmailConfig(
           storeConfig.resend_api_key,

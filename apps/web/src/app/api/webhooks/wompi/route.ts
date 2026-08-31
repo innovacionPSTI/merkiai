@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createServerClient, getPaymentConfig, getStoreConfig, applyStockForOrder, markWebhookEventProcessed } from '@merkiai/database'
+import { resolveTenant } from '@/lib/tenant-context'
 import { verifyWompiWebhook, isWompiTimestampFresh, mapWompiStatus } from '@/lib/wompi'
 import { amountCoversOrder } from '@/lib/payment-guards'
 import { sendOrderConfirmation, sendShippingNotification, buildEmailConfig } from '@/lib/email'
@@ -30,7 +31,9 @@ export async function POST(req: NextRequest) {
   const checksum = req.headers.get('x-checksum') ?? ''
 
   // Cargar credenciales desde la BD
-  const paymentConfig = await getPaymentConfig().catch(() => null)
+  // HU-216: config del TENANT resuelto por host (URLs de callback por subdominio).
+  const { tenantId } = await resolveTenant()
+  const paymentConfig = await getPaymentConfig(createServerClient(), tenantId).catch(() => null)
   const eventsSecret = paymentConfig?.wompi_events_secret ?? ''
 
   if (!verifyWompiWebhook(rawBody, timestamp, checksum, eventsSecret)) {
@@ -108,7 +111,7 @@ export async function POST(req: NextRequest) {
     // Descuento de stock (idempotente) al confirmarse el pago
     await applyStockForOrder(reference)
 
-    const storeConfig = await getStoreConfig().catch(() => null)
+    const storeConfig = await getStoreConfig(supabase, tenantId).catch(() => null)
     const emailConfig = storeConfig?.resend_api_key && storeConfig?.resend_from_email
       ? buildEmailConfig(storeConfig.resend_api_key, storeConfig.resend_from_email, storeConfig.store_name)
       : null

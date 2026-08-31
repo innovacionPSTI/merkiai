@@ -48,6 +48,10 @@ jest.mock('@/lib/wompi', () => ({
   mapWompiStatus: jest.fn(),
 }))
 
+jest.mock('@/lib/tenant-context', () => ({
+  resolveTenant: jest.fn(async () => ({ tenantId: '00000000-0000-0000-0000-000000000001' })),
+}))
+
 jest.mock('@/lib/email', () => ({
   sendOrderConfirmation: jest.fn(),
   sendShippingNotification: jest.fn(),

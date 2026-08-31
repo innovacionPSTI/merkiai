@@ -47,8 +47,8 @@ export async function createShipmentForOrder(
       return null
     }
 
-    // 2. Load shipping config
-    const config = await getShippingConfig()
+    // 2. Load shipping config (HU-216: del tenant del pedido, no del default)
+    const config = await getShippingConfig(supabase, order.tenant_id)
 
     if (config.provider !== 'skydropx') {
       // Fixed rate — no label to generate

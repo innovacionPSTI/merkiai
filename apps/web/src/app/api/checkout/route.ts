@@ -32,7 +32,8 @@ function isRateLimited(ip: string): boolean {
 async function saveAddressForUser(
   stackUserId: string,
   userEmail: string,
-  shipping: { name: string; phone: string | null; address: string; city: string; department: string | null; postal_code: string | null }
+  shipping: { name: string; phone: string | null; address: string; city: string; department: string | null; postal_code: string | null },
+  tenantId?: string,
 ) {
   try {
     const supabase = createServerClient()
@@ -85,6 +86,7 @@ async function saveAddressForUser(
       department: shipping.department,
       postal_code: shipping.postal_code,
       is_default: isDefault,
+      ...(tenantId ? { tenant_id: tenantId } : {}),
     })
   } catch {
     // Non-critical — never block the checkout
@@ -167,8 +169,13 @@ export async function POST(req: NextRequest) {
       )
     }
 
-    // Cargar configuración de pagos desde la BD
-    const paymentConfig = await getPaymentConfig()
+    // Tenant del pedido (resolución por host). Nunca bloquea el checkout: si
+    // falla, la BD usa el tenant por defecto.
+    let tenantId: string | undefined
+    try { tenantId = (await resolveTenant()).tenantId } catch { /* fallback al default */ }
+
+    // Cargar configuración de pagos del TENANT (HU-216: no del default)
+    const paymentConfig = await getPaymentConfig(createServerClient(), tenantId)
     if (!paymentConfig) {
       console.error('[checkout] 503: no existe fila en payment_config (id=1). Ejecuta el seed local o configura en admin → Configuración → Pagos.')
       return NextResponse.json({ error: 'Configuración de pagos no disponible' }, { status: 503 })
@@ -189,11 +196,6 @@ export async function POST(req: NextRequest) {
     // pedidos de invitado previos) y enlaza el pedido con `customer_id`. Para
     // invitados queda `null` y se reclama cuando el email se registre. Nunca
     // bloquea el checkout.
-    // Tenant del pedido (resolución por host). Nunca bloquea el checkout: si
-    // falla, la BD usa el tenant por defecto.
-    let tenantId: string | undefined
-    try { tenantId = (await resolveTenant()).tenantId } catch { /* fallback al default */ }
-
     let customerId: string | undefined
     try {
       const sessionUser = await stackServerApp.getUser()
@@ -222,7 +224,7 @@ export async function POST(req: NextRequest) {
             city: address.city,
             department: address.department ?? null,
             postal_code: address.postal_code ?? null,
-          })
+          }, tenantId)
         }
       } catch { /* non-critical */ }
     }

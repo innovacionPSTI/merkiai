@@ -18,12 +18,12 @@ Rutas **sin sesión ni host** que requieren service-role (no hay JWT de tenant q
 
 | Archivo/glob | Uso | Estado tenant-scoping |
 |---|---|---|
-| `src/app/api/webhooks/**` | callbacks de pago/envío (MP, TuCompra, Bold, Wompi, Skydropx) | ⏳ **pendiente**: leen `payment_config`/`store_config` sin tenant → cargan la config del **default** (llaves de pasarela equivocadas para tenants no-default). Fix: resolver `order.tenant_id` y leer la config de ese tenant. |
-| `src/app/api/checkout/**` | crea pedidos (no hay policy de INSERT para `authenticated`), status, finalize | ✅ el pedido se crea con `tenant_id` (resuelto por host); ⏳ `saveAddressForUser` debe setear `tenant_id`. |
+| `src/app/api/webhooks/**` | callbacks de pago/envío (MP, TuCompra, Bold, Wompi, Skydropx) | ✅ los de pago resuelven el tenant **por host** (`resolveTenant()`; el checkout configura las URLs de callback con el subdominio del tenant) → `getPaymentConfig/getStoreConfig(supabase, tenantId)`; Skydropx usa `order.tenant_id`. |
+| `src/app/api/checkout/**` | crea pedidos (no hay policy de INSERT para `authenticated`), status, finalize | ✅ pedido con `tenant_id`; `getPaymentConfig` por tenant; `saveAddressForUser` setea `tenant_id`. |
 | `src/app/api/auth/welcome/route.ts` | alta del comprador post-registro | ✅ resuelve tenant por host + `ensureCustomer(tenantId)`. |
 | `src/app/api/newsletter/route.ts` | suscripción | ✅ `tenant_id` + `onConflict tenant_id,email`. |
-| `src/lib/bold-reconcile.ts`, `src/lib/tucompra-reconcile.ts` | reconciliación de estado de pago | ⏳ mismo pendiente de config-por-tenant que los webhooks. |
-| `src/lib/shipping/shipments.ts` | creación de envíos | ⏳ config de envío por tenant. |
+| `src/lib/bold-reconcile.ts`, `src/lib/tucompra-reconcile.ts` | reconciliación de estado de pago | ✅ `getPaymentConfig/getStoreConfig(supabase, order.tenant_id)`. |
+| `src/lib/shipping/shipments.ts` | creación de envíos | ✅ `getShippingConfig(supabase, order.tenant_id)`. |
 
 ## Fugas corregidas (v60)
 
@@ -31,8 +31,10 @@ Rutas **sin sesión ni host** que requieren service-role (no hay JWT de tenant q
 - `api/auth/welcome`, `api/newsletter`: no ponían `tenant_id` → resolución por host + escritura acotada (**causa de que el comprador cayera al tenant default**).
 - `types.ts`: `newsletter_subscribers.tenant_id`.
 
-## Pendiente (cierre de HU-216)
+## Estado
 
-1. **Webhooks/reconcile/shipping** → leer `payment_config`/`store_config`/`shipping_config` del **tenant del pedido** (`order.tenant_id`), no del default.
-2. **`checkout saveAddressForUser`** → setear `tenant_id`.
-3. Auditar páginas de contenido restantes (`blog`, `[slug]`, PDP) — el catálogo y la home ya están scoped.
+- ✅ Webhooks/reconcile/shipping → config del tenant del pedido/host (no del default).
+- ✅ `checkout saveAddressForUser` → `tenant_id`; `checkout getPaymentConfig` por tenant.
+- ⏳ Auditar páginas de contenido restantes (`blog`, `[slug]`, PDP) — el catálogo y la home ya están scoped.
+
+> **Requisito operativo:** cada tenant configura en su pasarela (Bold/Wompi/MP/TuCompra) la **URL de webhook con su propio subdominio** (`https://<tenant>.merkiai.com/api/webhooks/...`), para que el webhook resuelva el tenant correcto por host. El checkout ya genera esas URLs por host.

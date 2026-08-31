@@ -88,7 +88,8 @@ export async function POST(req: NextRequest) {
     // Send tracking email when package enters transit for the first time
     if (newStatus === 'shipped' && updatedOrder) {
       try {
-        const storeConfig = await getStoreConfig()
+        // HU-216: store config del tenant del pedido (no del default).
+        const storeConfig = await getStoreConfig(supabase, updatedOrder.tenant_id)
         if (storeConfig?.resend_api_key && storeConfig?.resend_from_email && updatedOrder.tracking_number) {
           await sendShippingNotification(
             updatedOrder as unknown as Order & { tracking_number: string; carrier_name: string | null; label_url: string | null },

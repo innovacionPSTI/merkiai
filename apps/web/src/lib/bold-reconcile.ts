@@ -28,7 +28,7 @@ export async function reconcileBoldOrder(orderNumber: string): Promise<Reconcile
 
   const { data: order } = await supabase
     .from('orders')
-    .select('payment_method, payment_status')
+    .select('payment_method, payment_status, tenant_id')
     .eq('order_number', orderNumber)
     .single()
 
@@ -41,7 +41,7 @@ export async function reconcileBoldOrder(orderNumber: string): Promise<Reconcile
     return { ok: true, status: order.payment_status as ReconcileStatus }
   }
 
-  const config = await getPaymentConfig().catch(() => null)
+  const config = await getPaymentConfig(supabase, order.tenant_id).catch(() => null)
   if (!config?.bold_api_key) return { ok: false, reason: 'not_configured' }
 
   const gateway = new BoldGateway({
@@ -76,7 +76,7 @@ export async function reconcileBoldOrder(orderNumber: string): Promise<Reconcile
   if (paymentStatus === 'approved') {
     await applyStockForOrder(orderNumber)
 
-    const storeConfig = await getStoreConfig().catch(() => null)
+    const storeConfig = await getStoreConfig(supabase, order.tenant_id).catch(() => null)
     const emailConfig = storeConfig?.resend_api_key && storeConfig?.resend_from_email
       ? buildEmailConfig(
           storeConfig.resend_api_key,

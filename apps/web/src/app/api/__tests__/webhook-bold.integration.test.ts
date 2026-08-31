@@ -52,6 +52,10 @@ jest.mock('@/lib/shipping/shipments', () => ({
   createShipmentForOrder: jest.fn().mockResolvedValue(null),
 }))
 
+jest.mock('@/lib/tenant-context', () => ({
+  resolveTenant: jest.fn(async () => ({ tenantId: '00000000-0000-0000-0000-000000000001' })),
+}))
+
 import { getPaymentConfig, getStoreConfig } from '@merkiai/database'
 import { POST } from '../webhooks/bold/route'
 

@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createServerClient, getPaymentConfig, getStoreConfig, TuCompraGateway, applyStockForOrder, markWebhookEventProcessed } from '@merkiai/database'
+import { resolveTenant } from '@/lib/tenant-context'
 import { amountCoversOrder } from '@/lib/payment-guards'
 import { sendOrderConfirmation, buildEmailConfig } from '@/lib/email'
 import { createShipmentForOrder } from '@/lib/shipping/shipments'
@@ -26,7 +27,9 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: 'Invalid body' }, { status: 400 })
   }
 
-  const paymentConfig = await getPaymentConfig().catch(() => null)
+  // HU-216: config del TENANT resuelto por host (URLs de callback por subdominio).
+  const { tenantId } = await resolveTenant()
+  const paymentConfig = await getPaymentConfig(createServerClient(), tenantId).catch(() => null)
   if (!paymentConfig?.tucompra_user || !paymentConfig.tucompra_password || !paymentConfig.tucompra_terminal) {
     console.warn('[webhook/tucompra] Tu Compra no configurado')
     return NextResponse.json({ error: 'Gateway not configured' }, { status: 503 })
@@ -129,7 +132,7 @@ export async function POST(req: NextRequest) {
   if (paymentStatus === 'approved') {
     await applyStockForOrder(orderReference)
 
-    const storeConfig = await getStoreConfig().catch(() => null)
+    const storeConfig = await getStoreConfig(supabase, tenantId).catch(() => null)
     const emailConfig = storeConfig?.resend_api_key && storeConfig?.resend_from_email
       ? buildEmailConfig(storeConfig.resend_api_key, storeConfig.resend_from_email, storeConfig.store_name, storeConfig.email_provider)
       : null

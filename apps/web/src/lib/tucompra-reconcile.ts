@@ -29,7 +29,7 @@ export async function reconcileTuCompraOrder(orderNumber: string): Promise<Recon
 
   const { data: order } = await supabase
     .from('orders')
-    .select('payment_method, payment_status, tucompra_codigo_seguimiento, total')
+    .select('payment_method, payment_status, tucompra_codigo_seguimiento, total, tenant_id')
     .eq('order_number', orderNumber)
     .single()
 
@@ -41,7 +41,7 @@ export async function reconcileTuCompraOrder(orderNumber: string): Promise<Recon
     return { ok: true, status: order.payment_status as ReconcileStatus }
   }
 
-  const config = await getPaymentConfig().catch(() => null)
+  const config = await getPaymentConfig(supabase, order.tenant_id).catch(() => null)
   if (!config?.tucompra_user || !config.tucompra_password || !config.tucompra_terminal) {
     return { ok: false, reason: 'not_configured' }
   }
@@ -84,7 +84,7 @@ export async function reconcileTuCompraOrder(orderNumber: string): Promise<Recon
   if (paymentStatus === 'approved') {
     await applyStockForOrder(orderNumber)
 
-    const storeConfig = await getStoreConfig().catch(() => null)
+    const storeConfig = await getStoreConfig(supabase, order.tenant_id).catch(() => null)
     const emailConfig = storeConfig?.resend_api_key && storeConfig?.resend_from_email
       ? buildEmailConfig(
           storeConfig.resend_api_key,
