@@ -10,6 +10,7 @@ import type { Coupon } from '../../types'
 
 function makeCoupon(overrides: Partial<Coupon> = {}): Coupon {
   return {
+    tenant_id: '00000000-0000-0000-0000-000000000001',
     id: 1,
     code: 'TEST20',
     type: 'percentage',

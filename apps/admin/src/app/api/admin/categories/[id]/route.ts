@@ -1,13 +1,16 @@
-import { createServerClient } from '@merkiai/database'
 import type { Database } from '@merkiai/database'
 import { NextRequest, NextResponse } from 'next/server'
+import { getAdminUser } from '@/lib/auth'
+import { getAdminDb } from '@/lib/admin-db'
 
 type CategoryUpdate = Database['public']['Tables']['categories']['Update']
 
 export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   const { id } = await params
-  const body = await req.json() as CategoryUpdate
-  const supabase = createServerClient()
+  const adminUser = await getAdminUser()
+  if (!adminUser) return NextResponse.json({ error: 'No autorizado' }, { status: 401 })
+  const { tenant_id: _t, ...body } = (await req.json()) as CategoryUpdate & { tenant_id?: string }
+  const supabase = getAdminDb(adminUser.tenantId)
 
   const { data, error } = await supabase
     .from('categories')
@@ -22,7 +25,9 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
 
 export async function DELETE(_req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   const { id } = await params
-  const supabase = createServerClient()
+  const adminUser = await getAdminUser()
+  if (!adminUser) return NextResponse.json({ error: 'No autorizado' }, { status: 401 })
+  const supabase = getAdminDb(adminUser.tenantId)
 
   // Verificar que no haya productos asociados
   const { count } = await supabase

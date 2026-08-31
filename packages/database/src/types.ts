@@ -39,6 +39,7 @@ export type Database = {
       }
       categories: {
         Row: {
+          tenant_id: string
           id: number
           name: string
           slug: string
@@ -49,6 +50,7 @@ export type Database = {
           created_at: string
         }
         Insert: {
+          tenant_id?: string
           id?: number
           name: string
           slug: string
@@ -59,6 +61,7 @@ export type Database = {
           created_at?: string
         }
         Update: {
+          tenant_id?: string
           id?: number
           name?: string
           slug?: string
@@ -130,6 +133,7 @@ export type Database = {
       }
       product_variants: {
         Row: {
+          tenant_id: string
           id: number
           product_id: number
           roast: 'claro' | 'medio' | 'oscuro' | null
@@ -147,6 +151,7 @@ export type Database = {
           attributes: Json | null
         }
         Insert: {
+          tenant_id?: string
           id?: number
           product_id: number
           roast?: 'claro' | 'medio' | 'oscuro' | null
@@ -164,6 +169,7 @@ export type Database = {
           attributes?: Json | null
         }
         Update: {
+          tenant_id?: string
           id?: number
           product_id?: number
           roast?: 'claro' | 'medio' | 'oscuro' | null
@@ -310,6 +316,7 @@ export type Database = {
       }
       blog_posts: {
         Row: {
+          tenant_id: string
           id: number
           title: string
           slug: string
@@ -325,6 +332,7 @@ export type Database = {
           created_at: string
         }
         Insert: {
+          tenant_id?: string
           id?: number
           title: string
           slug: string
@@ -340,6 +348,7 @@ export type Database = {
           created_at?: string
         }
         Update: {
+          tenant_id?: string
           id?: number
           title?: string
           slug?: string
@@ -544,6 +553,7 @@ export type Database = {
       }
       nav_items: {
         Row: {
+          tenant_id: string
           id: number
           nav_key: string
           label: string
@@ -556,6 +566,7 @@ export type Database = {
           updated_at: string
         }
         Insert: {
+          tenant_id?: string
           id?: number
           nav_key?: string
           label: string
@@ -568,6 +579,7 @@ export type Database = {
           updated_at?: string
         }
         Update: {
+          tenant_id?: string
           id?: number
           nav_key?: string
           label?: string
@@ -589,6 +601,7 @@ export type Database = {
       }
       coupons: {
         Row: {
+          tenant_id: string
           id: number
           code: string
           type: 'percentage' | 'fixed'
@@ -601,6 +614,7 @@ export type Database = {
           created_at: string
         }
         Insert: {
+          tenant_id?: string
           id?: number
           code: string
           type: 'percentage' | 'fixed'
@@ -613,6 +627,7 @@ export type Database = {
           created_at?: string
         }
         Update: {
+          tenant_id?: string
           id?: number
           code?: string
           type?: 'percentage' | 'fixed'
@@ -628,6 +643,7 @@ export type Database = {
       }
       pages: {
         Row: {
+          tenant_id: string
           key: string
           label: string
           slug: string
@@ -641,6 +657,7 @@ export type Database = {
           updated_at: string
         }
         Insert: {
+          tenant_id?: string
           key: string
           label: string
           slug: string
@@ -654,6 +671,7 @@ export type Database = {
           updated_at?: string
         }
         Update: {
+          tenant_id?: string
           key?: string
           label?: string
           slug?: string
@@ -669,6 +687,7 @@ export type Database = {
       }
       page_sections: {
         Row: {
+          tenant_id: string
           id: number
           section_key: string    // UUID estable para export/import
           page_key: string
@@ -686,6 +705,7 @@ export type Database = {
           updated_at: string
         }
         Insert: {
+          tenant_id?: string
           id?: number
           section_key?: string
           page_key: string
@@ -703,6 +723,7 @@ export type Database = {
           updated_at?: string
         }
         Update: {
+          tenant_id?: string
           id?: number
           section_key?: string
           page_key?: string
@@ -729,6 +750,7 @@ export type Database = {
       }
       section_items: {
         Row: {
+          tenant_id: string
           id: number
           section_id: number
           item_type: string
@@ -748,6 +770,7 @@ export type Database = {
           updated_at: string
         }
         Insert: {
+          tenant_id?: string
           id?: number
           section_id: number
           item_type?: string
@@ -767,6 +790,7 @@ export type Database = {
           updated_at?: string
         }
         Update: {
+          tenant_id?: string
           id?: number
           section_id?: number
           item_type?: string
@@ -943,6 +967,7 @@ export type Database = {
       }
       shipping_profiles: {
         Row: {
+          tenant_id: string
           id: number
           email: string
           first_name: string | null
@@ -955,6 +980,7 @@ export type Database = {
           updated_at: string
         }
         Insert: {
+          tenant_id?: string
           id?: number
           email: string
           first_name?: string | null
@@ -967,6 +993,7 @@ export type Database = {
           updated_at?: string
         }
         Update: {
+          tenant_id?: string
           id?: number
           email?: string
           first_name?: string | null
@@ -1068,6 +1095,7 @@ export type Database = {
       }
       order_items: {
         Row: {
+          tenant_id: string
           id: number
           order_id: string | null
           product_id: number
@@ -1079,6 +1107,7 @@ export type Database = {
           price: number
         }
         Insert: {
+          tenant_id?: string
           id?: number
           order_id?: string | null
           product_id: number
@@ -1090,6 +1119,7 @@ export type Database = {
           price: number
         }
         Update: {
+          tenant_id?: string
           id?: number
           order_id?: string | null
           product_id?: number
@@ -1104,6 +1134,7 @@ export type Database = {
       }
       media_assets: {
         Row: {
+          tenant_id: string
           key: string
           url: string
           bucket: string
@@ -1118,6 +1149,7 @@ export type Database = {
           updated_at: string
         }
         Insert: {
+          tenant_id?: string
           key: string
           url: string
           bucket?: string
@@ -1132,6 +1164,7 @@ export type Database = {
           updated_at?: string
         }
         Update: {
+          tenant_id?: string
           key?: string
           url?: string
           bucket?: string
@@ -1155,6 +1188,7 @@ export type Database = {
       }
       variant_types: {
         Row: {
+          tenant_id: string
           id: number
           name: string
           values: Json          // string[]
@@ -1164,6 +1198,7 @@ export type Database = {
           created_at: string
         }
         Insert: {
+          tenant_id?: string
           id?: number
           name: string
           values?: Json
@@ -1173,6 +1208,7 @@ export type Database = {
           created_at?: string
         }
         Update: {
+          tenant_id?: string
           id?: number
           name?: string
           values?: Json
@@ -1208,6 +1244,7 @@ export type Database = {
       }
       themes: {
         Row: {
+          tenant_id: string
           id: number
           name: string
           is_active: boolean
@@ -1225,6 +1262,7 @@ export type Database = {
           updated_at: string
         }
         Insert: {
+          tenant_id?: string
           id?: number
           name: string
           is_active?: boolean
@@ -1242,6 +1280,7 @@ export type Database = {
           updated_at?: string
         }
         Update: {
+          tenant_id?: string
           id?: number
           name?: string
           is_active?: boolean
