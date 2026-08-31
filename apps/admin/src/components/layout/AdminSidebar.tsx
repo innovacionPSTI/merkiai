@@ -6,6 +6,7 @@ import { useState, useEffect } from 'react'
 import { useStackApp } from '@stackframe/stack'
 import type { AdminRole, AdminSection } from '@/lib/roles'
 import { ROLE_CONFIG } from '@/lib/roles'
+import { FEATURES } from '@/lib/features'
 
 // ── Tipos ────────────────────────────────────────────────────────────────────
 
@@ -90,6 +91,10 @@ const NAV: NavNode[] = [
     sections: ['contenido', 'blog', 'newsletter'],
     children: [
       { kind: 'leaf', href: '/contenido',  icon: '📄', label: 'Páginas',    section: 'contenido' },
+      // HU-218.3 (beta, tras flag pageBuilder): convive con Páginas.
+      ...(FEATURES.pageBuilder
+        ? [{ kind: 'leaf' as const, href: '/constructor', icon: '🧩', label: 'Constructor', section: 'contenido' as const }]
+        : []),
       { kind: 'leaf', href: '/blog',       icon: '✍️', label: 'Blog',       section: 'blog' },
       { kind: 'leaf', href: '/newsletter', icon: '📧', label: 'Newsletter', section: 'newsletter' },
     ],
