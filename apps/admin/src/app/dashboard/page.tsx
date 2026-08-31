@@ -1,7 +1,7 @@
 import type { Metadata } from 'next'
 import Link from 'next/link'
 import { getAdminUser } from '@/lib/auth'
-import { createServerClient } from '@merkiai/database'
+import { requireAdminDb } from '@/lib/admin-context'
 import type { AdminRole } from '@/lib/roles'
 
 export const metadata: Metadata = { title: 'Dashboard' }
@@ -35,7 +35,7 @@ const STATUS_COLOR: Record<string, string> = {
 // ── Queries por rol ───────────────────────────────────────────────────────────
 
 async function getAdminData() {
-  const db = createServerClient()
+  const { db } = await requireAdminDb()
   const now = new Date()
 
   const startOfDay = new Date(now); startOfDay.setHours(0, 0, 0, 0)
@@ -96,7 +96,7 @@ async function getAdminData() {
 }
 
 async function getVendedorData() {
-  const db = createServerClient()
+  const { db } = await requireAdminDb()
   const now = new Date()
   const startOfDay = new Date(now); startOfDay.setHours(0, 0, 0, 0)
 
@@ -130,7 +130,7 @@ async function getVendedorData() {
 }
 
 async function getGestorData() {
-  const db = createServerClient()
+  const { db } = await requireAdminDb()
   const in7days = new Date(); in7days.setDate(in7days.getDate() + 7)
 
   const [sections, blogPublished, blogDraft, heroItems, expiringCoupons] = await Promise.all([

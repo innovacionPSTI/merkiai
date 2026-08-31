@@ -1,6 +1,6 @@
 import { getAdminUser } from '@/lib/auth'
 import { redirect } from 'next/navigation'
-import { createServerClient } from '@merkiai/database'
+import { requireAdminDb } from '@/lib/admin-context'
 import ContenidoClient from './ContenidoClient'
 
 export const dynamic = 'force-dynamic'
@@ -12,7 +12,7 @@ export default async function ContenidoPage() {
     redirect('/sign-in')
   }
 
-  const supabase = createServerClient()
+  const { db: supabase } = await requireAdminDb()
   const [{ data: pages }, { data: navItems }, { data: sections }, { data: items }] =
     await Promise.all([
       supabase.from('pages').select('*').order('order_index'),

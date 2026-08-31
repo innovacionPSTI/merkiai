@@ -1,4 +1,4 @@
-import { createServerClient } from '@merkiai/database'
+import { requireAdminDb } from '@/lib/admin-context'
 import type { OrderStatus } from '@merkiai/database'
 import Link from 'next/link'
 import type { Metadata } from 'next'
@@ -31,7 +31,7 @@ export default async function PedidosAdminPage({
   const page    = Math.max(1, Number(sp.page ?? 1))
   const offset  = (page - 1) * PAGE_SIZE
 
-  const supabase = createServerClient()
+  const { db: supabase } = await requireAdminDb()
 
   // ── Consulta principal ────────────────────────────────────────────────────
   let query = supabase

@@ -1,6 +1,6 @@
 import { getAdminUser } from '@/lib/auth'
 import { redirect } from 'next/navigation'
-import { createServerClient } from '@merkiai/database'
+import { requireAdminDb } from '@/lib/admin-context'
 import NavClient from './NavClient'
 
 export const dynamic = 'force-dynamic'
@@ -12,7 +12,7 @@ export default async function NavPage() {
     redirect('/sign-in')
   }
 
-  const supabase = createServerClient()
+  const { db: supabase } = await requireAdminDb()
   const { data: navItems } = await supabase
     .from('nav_items')
     .select('*')

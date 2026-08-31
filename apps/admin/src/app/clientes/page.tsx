@@ -1,4 +1,4 @@
-import { createServerClient } from '@merkiai/database'
+import { requireAdminDb } from '@/lib/admin-context'
 import type { Metadata } from 'next'
 import ClientesClient from './ClientesClient'
 import type { ClientRow } from './ClientesClient'
@@ -7,7 +7,7 @@ export const metadata: Metadata = { title: 'Clientes' }
 export const dynamic = 'force-dynamic'
 
 export default async function ClientesPage() {
-  const supabase = createServerClient()
+  const { db: supabase } = await requireAdminDb()
 
   // ── 1. Emails de administradores (excluir del listado de clientes) ──────────
   const { data: adminProfiles } = await supabase

@@ -1,6 +1,6 @@
 import { redirect } from 'next/navigation'
 import type { Metadata } from 'next'
-import { createServerClient } from '@merkiai/database'
+import { requireAdminDb } from '@/lib/admin-context'
 import { getAdminUser } from '@/lib/auth'
 import { ROLE_CONFIG } from '@/lib/roles'
 import type { AdminRole } from '@/lib/roles'
@@ -17,7 +17,7 @@ export default async function UsuariosPage() {
     redirect('/no-autorizado')
   }
 
-  const supabase = createServerClient()
+  const { db: supabase } = await requireAdminDb()
   const { data: users } = await supabase
     .from('profiles')
     .select('id, email, full_name, role, created_at')

@@ -1,4 +1,4 @@
-import { createServerClient } from '@merkiai/database'
+import { requireAdminDb } from '@/lib/admin-context'
 import { notFound } from 'next/navigation'
 import Link from 'next/link'
 import type { Metadata } from 'next'
@@ -30,7 +30,7 @@ export default async function ClienteDetailPage({
   const { email: encodedEmail } = await params
   const email = decodeURIComponent(encodedEmail).toLowerCase()
 
-  const supabase = createServerClient()
+  const { db: supabase } = await requireAdminDb()
 
   // Perfil registrado (puede no existir si compró como invitado)
   const { data: customer } = await supabase

@@ -1,7 +1,7 @@
 import { redirect } from 'next/navigation'
 import type { Metadata } from 'next'
 import { getAdminUser } from '@/lib/auth'
-import { createServerClient } from '@merkiai/database'
+import { requireAdminDb } from '@/lib/admin-context'
 import type { NewsletterSubscriber } from '@merkiai/database'
 import NewsletterClient from './NewsletterClient'
 
@@ -19,7 +19,7 @@ export default async function NewsletterPage() {
     redirect('/no-autorizado')
   }
 
-  const supabase = createServerClient()
+  const { db: supabase } = await requireAdminDb()
   const { data } = await supabase
     .from('newsletter_subscribers')
     .select('*')

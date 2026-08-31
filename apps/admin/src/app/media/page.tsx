@@ -1,4 +1,4 @@
-import { createServerClient } from '@merkiai/database'
+import { requireAdminDb } from '@/lib/admin-context'
 import type { Metadata } from 'next'
 import MediaClient from './MediaClient'
 
@@ -6,7 +6,7 @@ export const metadata: Metadata = { title: 'Media' }
 export const dynamic = 'force-dynamic'
 
 export default async function MediaPage() {
-  const supabase = createServerClient()
+  const { db: supabase } = await requireAdminDb()
   const { data } = await supabase
     .from('media_assets')
     .select('*')

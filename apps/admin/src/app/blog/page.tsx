@@ -1,4 +1,4 @@
-import { createServerClient } from '@merkiai/database'
+import { requireAdminDb } from '@/lib/admin-context'
 import Link from 'next/link'
 import type { Metadata } from 'next'
 
@@ -6,7 +6,7 @@ export const metadata: Metadata = { title: 'Blog' }
 export const dynamic = 'force-dynamic'
 
 export default async function BlogAdminPage() {
-  const supabase = createServerClient()
+  const { db: supabase } = await requireAdminDb()
   const { data: posts } = await supabase
     .from('blog_posts')
     .select('*')

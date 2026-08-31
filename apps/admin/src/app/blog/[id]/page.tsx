@@ -1,7 +1,7 @@
 import { notFound } from 'next/navigation'
 import type { Metadata } from 'next'
 import Link from 'next/link'
-import { createServerClient } from '@merkiai/database'
+import { requireAdminDb } from '@/lib/admin-context'
 import BlogPostForm from '../BlogPostForm'
 
 export const metadata: Metadata = { title: 'Editar artículo — Blog' }
@@ -14,7 +14,7 @@ export default async function BlogEditPage({
 }) {
   const { id: rawId } = await params
   const id = parseInt(rawId, 10)
-  const supabase = createServerClient()
+  const { db: supabase } = await requireAdminDb()
   const { data: post } = await supabase
     .from('blog_posts')
     .select('*')

@@ -1,4 +1,4 @@
-import { createServerClient } from '@merkiai/database'
+import { requireAdminDb } from '@/lib/admin-context'
 import { notFound } from 'next/navigation'
 import Link from 'next/link'
 import type { Metadata } from 'next'
@@ -19,7 +19,7 @@ const STATUS_ORDER = ['pending', 'processing', 'shipped', 'delivered']
 
 export default async function PedidoDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params
-  const supabase = createServerClient()
+  const { db: supabase } = await requireAdminDb()
   const { data: order } = await supabase
     .from('orders')
     .select('*')
