@@ -24,7 +24,7 @@ export default async function HomePage() {
         const section = sectionsByType.get(type)
         if ((section?.enabled ?? true) === false) return null
         const Block = blocks[type]
-        return Block ? <Block key={type} section={section} data={data} /> : null
+        return Block ? <Block key={type} section={section} data={data} template={template} /> : null
       })}
     </>
   )

@@ -27,6 +27,8 @@ export interface BlockProps {
   section?: HomeSection
   /** Datos compartidos del home (productos/blog/bestSellers/categorías). */
   data: HomeData
+  /** Template activo (para defaults por bloque). */
+  template?: string
 }
 
 export type HomeBlock = ComponentType<BlockProps>
@@ -37,8 +39,8 @@ function HeroBlock({ section }: BlockProps) {
   return <HeroCarousel items={section?.items ?? []} />
 }
 
-function FeaturedBlock({ section, data }: BlockProps) {
-  const f = resolveBlockFields('featured_products', section)
+function FeaturedBlock({ section, data, template }: BlockProps) {
+  const f = resolveBlockFields('featured_products', section, template)
   return <FeaturedProducts products={data.featuredProducts} title={f.title as string | undefined} />
 }
 
@@ -46,9 +48,9 @@ function ServicesBlock({ section }: BlockProps) {
   return <ServicesSection items={section?.items ?? []} />
 }
 
-function BestSellersBlock({ section, data }: BlockProps) {
+function BestSellersBlock({ section, data, template }: BlockProps) {
   const { bestSellers, categories } = data
-  const f = resolveBlockFields('best_sellers', section)
+  const f = resolveBlockFields('best_sellers', section, template)
   return (
     <section className="bg-brand-cream-warm py-24">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -94,8 +96,8 @@ function BestSellersBlock({ section, data }: BlockProps) {
   )
 }
 
-function HistoriaBlock({ section }: BlockProps) {
-  const f = resolveBlockFields('historia', section)
+function HistoriaBlock({ section, template }: BlockProps) {
+  const f = resolveBlockFields('historia', section, template)
   const title    = (f.title as string)    || 'Vivir para Servir'
   const subtitle = (f.subtitle as string) || 'Cada taza que preparamos lleva el compromiso de la excelencia y el cuidado desde el origen hasta tu mesa.'
   const ctaText  = (f.cta_text as string) || 'Conoce nuestra historia →'
@@ -141,8 +143,8 @@ function BlogPreviewBlock({ data }: BlockProps) {
   )
 }
 
-function NewsletterBlock({ section }: BlockProps) {
-  const f = resolveBlockFields('newsletter', section)
+function NewsletterBlock({ section, template }: BlockProps) {
+  const f = resolveBlockFields('newsletter', section, template)
   return (
     <NewsletterSection
       title={f.title as string | undefined}

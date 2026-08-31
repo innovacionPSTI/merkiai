@@ -10,7 +10,7 @@
  * editor actual (`/contenido`) tras el flag `pageBuilder`.
  */
 import { useCallback, useEffect, useState } from 'react'
-import { listBlockTypes, getBlockSchema } from '@merkiai/database'
+import { listBlockTypes, getBlockSchema, listTemplates } from '@merkiai/database'
 import SectionEditor from './SectionEditor'
 
 interface PageOption { key: string; label: string }
@@ -26,8 +26,10 @@ interface SectionRow {
 
 const api = '/api/admin/cms/sections'
 
-export default function ConstructorClient({ pages, initialPageKey }: { pages: PageOption[]; initialPageKey: string }) {
+export default function ConstructorClient({ pages, initialPageKey, initialTemplate }: { pages: PageOption[]; initialPageKey: string; initialTemplate: string }) {
   const [pageKey, setPageKey] = useState(initialPageKey)
+  const [template, setTemplate] = useState(initialTemplate)
+  const [tplMsg, setTplMsg] = useState('')
   const [sections, setSections] = useState<SectionRow[]>([])
   const [loading, setLoading] = useState(true)
   const [expanded, setExpanded] = useState<number | null>(null)
@@ -81,8 +83,34 @@ export default function ConstructorClient({ pages, initialPageKey }: { pages: Pa
     await load(pageKey)
   }
 
+  async function changeTemplate(next: string) {
+    setTemplate(next); setTplMsg('')
+    const res = await fetch('/api/admin/config', {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ template: next }),
+    })
+    setTplMsg(res.ok ? 'Plantilla actualizada ✓' : 'No se pudo actualizar la plantilla')
+  }
+
+  const activeTpl = listTemplates().find((t) => t.name === template)
+
   return (
     <div className="space-y-6">
+      <div className="rounded-xl border border-slate-200 bg-white p-4">
+        <div className="flex flex-wrap items-center gap-3">
+          <label className="text-sm font-medium text-slate-700">Plantilla de la tienda</label>
+          <select
+            className="rounded-lg border border-slate-300 px-3 py-2 text-sm"
+            value={template}
+            onChange={(e) => changeTemplate(e.target.value)}
+          >
+            {listTemplates().map((t) => <option key={t.name} value={t.name}>{t.label}</option>)}
+          </select>
+          {tplMsg && <span className="text-sm text-green-600">{tplMsg}</span>}
+        </div>
+        {activeTpl?.description && <p className="mt-2 text-xs text-slate-500">{activeTpl.description}</p>}
+      </div>
       <div className="flex flex-wrap items-center gap-3">
         <label className="text-sm font-medium text-slate-600">Página</label>
         <select

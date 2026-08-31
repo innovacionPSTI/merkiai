@@ -5,8 +5,11 @@
 import {
   blockSchemas,
   TEMPLATE_HOME_LAYOUTS,
+  templates,
   getBlockSchema,
   getTemplateHomeLayout,
+  getTemplate,
+  listTemplates,
   listBlockTypes,
   resolveBlockFields,
 } from '../schema'
@@ -85,5 +88,34 @@ describe('resolveBlockFields', () => {
 
   it('tipo desconocido devuelve objeto vacío', () => {
     expect(resolveBlockFields('inexistente', {})).toEqual({})
+  })
+
+  it('aplica blockDefaults del template cuando no hay valor de sección', () => {
+    // 'esencial' define featured_products.title = 'Lo nuevo'.
+    expect(resolveBlockFields('featured_products', null, 'esencial').title).toBe('Lo nuevo')
+    // sin template, no hay override → default del schema (undefined aquí).
+    expect(resolveBlockFields('featured_products', null).title).toBeUndefined()
+  })
+
+  it('un valor real de sección gana sobre el default del template', () => {
+    const r = resolveBlockFields('featured_products', { title: 'Mi título' }, 'esencial')
+    expect(r.title).toBe('Mi título')
+  })
+})
+
+describe('templates', () => {
+  it('todo tipo del layout de cada template tiene schema', () => {
+    for (const t of listTemplates()) {
+      for (const type of t.layout) expect(getBlockSchema(type)).toBeDefined()
+    }
+  })
+
+  it('getTemplate cae a default para nombre desconocido', () => {
+    expect(getTemplate('inexistente').name).toBe('default')
+  })
+
+  it('TEMPLATE_HOME_LAYOUTS se deriva de templates', () => {
+    expect(TEMPLATE_HOME_LAYOUTS.esencial).toEqual(templates.esencial.layout)
+    expect(getTemplateHomeLayout('esencial')).toEqual(templates.esencial.layout)
   })
 })

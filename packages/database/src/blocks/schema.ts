@@ -329,21 +329,45 @@ export const blockSchemas: Record<string, BlockSchema> = {
   },
 }
 
-// ── Presets de layout por template ───────────────────────────────────────────
-// El orden de tipos que compone la home de cada template. Agregar un template =
-// nuevo preset (+ variantes de componente en el registry del storefront).
+// ── Templates ────────────────────────────────────────────────────────────────
+// Un Template define el **layout** de la home (orden de tipos de bloque) y,
+// opcionalmente, **defaults por bloque** que sobreescriben el default genérico
+// del schema cuando la sección no trae valor. Agregar un template = nueva
+// entrada aquí (+ variantes de componente en el registry del storefront). Base
+// del selector del admin (HU-218.5) y de los templates por nicho (HU-220/221).
 
-export const TEMPLATE_HOME_LAYOUTS: Record<string, readonly string[]> = {
-  default: [
-    'hero',
-    'featured_products',
-    'services',
-    'best_sellers',
-    'historia',
-    'blog_preview',
-    'newsletter',
-  ],
+export interface Template {
+  name: string
+  label: string
+  description?: string
+  /** Orden de tipos de bloque que compone la home. */
+  layout: readonly string[]
+  /** Defaults por tipo de bloque: `{ [section_type]: { [campo]: valor } }`. */
+  blockDefaults?: Record<string, Record<string, unknown>>
 }
+
+export const templates: Record<string, Template> = {
+  default: {
+    name: 'default',
+    label: 'Predeterminado',
+    description: 'Diseño completo: héroe, destacados, servicios, más vendidos, historia, blog y newsletter.',
+    layout: ['hero', 'featured_products', 'services', 'best_sellers', 'historia', 'blog_preview', 'newsletter'],
+  },
+  esencial: {
+    name: 'esencial',
+    label: 'Esencial',
+    description: 'Portada mínima: héroe, productos destacados y newsletter. Ideal para lanzar rápido.',
+    layout: ['hero', 'featured_products', 'newsletter'],
+    blockDefaults: {
+      featured_products: { title: 'Lo nuevo' },
+    },
+  },
+}
+
+/** Presets de layout por template (derivado de `templates`; compat). */
+export const TEMPLATE_HOME_LAYOUTS: Record<string, readonly string[]> = Object.fromEntries(
+  Object.entries(templates).map(([k, t]) => [k, t.layout]),
+)
 
 // ── Helpers ──────────────────────────────────────────────────────────────────
 
@@ -372,16 +396,20 @@ export interface SectionLike {
 export function resolveBlockFields(
   type: string,
   section?: SectionLike | null,
+  template?: string,
 ): Record<string, unknown> {
   const schema = blockSchemas[type]
   if (!schema) return {}
   const settings = (section?.settings ?? {}) as Record<string, unknown>
+  // Defaults del template (si hay) tienen prioridad sobre el default genérico
+  // del schema, pero NUNCA sobre un valor real de la sección.
+  const overrides = (template ? templates[template]?.blockDefaults?.[type] : undefined) ?? {}
   const out: Record<string, unknown> = {}
   for (const [key, f] of Object.entries(schema.fields)) {
     let v: unknown
     if (f.storage === 'column') v = section ? section[f.key ?? key] : undefined
     else if (f.storage === 'settings') v = settings[key]
-    if (v === undefined || v === null || v === '') v = f.default
+    if (v === undefined || v === null || v === '') v = overrides[key] ?? f.default
     out[key] = v
   }
   return out
@@ -389,7 +417,16 @@ export function resolveBlockFields(
 
 /** Orden de bloques de la home para un template (fallback a 'default'). */
 export function getTemplateHomeLayout(template = 'default'): readonly string[] {
-  return TEMPLATE_HOME_LAYOUTS[template] ?? TEMPLATE_HOME_LAYOUTS.default
+  return templates[template]?.layout ?? templates.default.layout
+}
+
+/** Templates disponibles (para el selector del admin). */
+export function listTemplates(): Template[] {
+  return Object.values(templates)
+}
+
+export function getTemplate(name = 'default'): Template {
+  return templates[name] ?? templates.default
 }
 
 /** Tipos de sección disponibles para el constructor de páginas. */
