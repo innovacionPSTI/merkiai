@@ -13,6 +13,7 @@ import type { ComponentType } from 'react'
 import Link from 'next/link'
 import Image from 'next/image'
 import type { getWebHomeData } from '@merkiai/database'
+import { getTemplateHomeLayout } from '@merkiai/database'
 import HeroCarousel from '@/components/home/HeroCarousel'
 import FeaturedProducts from '@/components/home/FeaturedProducts'
 import ServicesSection from '@/components/home/ServicesSection'
@@ -154,17 +155,16 @@ const DEFAULT_BLOCKS: Record<string, HomeBlock> = {
   newsletter:        NewsletterBlock,
 }
 
-/** Preset de layout por template: orden de tipos de bloque en el home. */
-const HOME_LAYOUTS: Record<string, string[]> = {
-  default: ['hero', 'featured_products', 'services', 'best_sellers', 'historia', 'blog_preview', 'newsletter'],
-}
-
 /** Registry de bloques para un template (hoy solo 'default'). */
 export function getHomeBlocks(_template = 'default'): Record<string, HomeBlock> {
   return DEFAULT_BLOCKS
 }
 
-/** Orden de bloques del home para un template. */
+/**
+ * Orden de bloques del home para un template.
+ * El preset (orden de tipos) es fuente de verdad del contrato de bloques
+ * (`@merkiai/database/blocks/schema`); aquí solo se mapea tipo → componente.
+ */
 export function getHomeLayout(template = 'default'): string[] {
-  return HOME_LAYOUTS[template] ?? HOME_LAYOUTS.default
+  return [...getTemplateHomeLayout(template)]
 }

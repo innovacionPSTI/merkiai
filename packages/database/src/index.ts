@@ -1,6 +1,7 @@
 export * from './types'
 export * from './client'
 export * from './queries/index'
+export * from './blocks/schema'
 export * from './lib/email'
 export * from './lib/stock'
 export * from './lib/bold-reconcile'
