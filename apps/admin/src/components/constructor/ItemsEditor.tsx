@@ -22,7 +22,7 @@ interface ItemRow {
 
 const api = '/api/admin/cms/items'
 
-export default function ItemsEditor({ sectionId, sectionType }: { sectionId: number; sectionType: string }) {
+export default function ItemsEditor({ sectionId, sectionType, onChange }: { sectionId: number; sectionType: string; onChange?: () => void }) {
   const schema = getBlockSchema(sectionType)
   const itemType = itemTypeOf(sectionType)
   const fieldDefs = schema?.items ? Object.entries(schema.items.fields) : []
@@ -44,6 +44,9 @@ export default function ItemsEditor({ sectionId, sectionType }: { sectionId: num
       setLoading(false)
     }
   }, [sectionId, sectionType])
+
+  // Refresca el preview del Constructor tras cargar/mutar ítems.
+  useEffect(() => { onChange?.() }, [items, onChange])
 
   useEffect(() => { void load() }, [load])
 

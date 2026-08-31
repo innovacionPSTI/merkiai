@@ -22,9 +22,11 @@ interface SectionRow {
 interface SectionEditorProps {
   section: SectionRow
   onSaved?: (updated: Record<string, unknown>) => void
+  /** Notifica cualquier cambio persistido (para refrescar el preview). */
+  onChange?: () => void
 }
 
-export default function SectionEditor({ section, onSaved }: SectionEditorProps) {
+export default function SectionEditor({ section, onSaved, onChange }: SectionEditorProps) {
   const schema = getBlockSchema(section.section_type)
   const [values, setValues] = useState<Record<string, unknown>>(
     () => resolveBlockFields(section.section_type, section),
@@ -53,6 +55,7 @@ export default function SectionEditor({ section, onSaved }: SectionEditorProps) 
       const updated = await res.json()
       setStatus('saved')
       onSaved?.(updated)
+      onChange?.()
     } catch (e) {
       setStatus('error')
       setErrorMsg(e instanceof Error ? e.message : 'Error al guardar')
@@ -85,7 +88,7 @@ export default function SectionEditor({ section, onSaved }: SectionEditorProps) 
         </div>
       )}
 
-      {hasItems && <ItemsEditor sectionId={section.id} sectionType={section.section_type} />}
+      {hasItems && <ItemsEditor sectionId={section.id} sectionType={section.section_type} onChange={onChange} />}
 
       {fields.length === 0 && !hasItems && (
         <p className="text-sm text-slate-500">Este bloque no tiene campos configurables.</p>
