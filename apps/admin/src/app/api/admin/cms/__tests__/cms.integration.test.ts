@@ -20,6 +20,9 @@ jest.mock('@/lib/auth', () => ({
 jest.mock('@/lib/admin-db', () => ({ getAdminDb: () => require('@merkiai/database').createServerClient() }))
 jest.mock('@merkiai/database', () => ({
   createServerClient: jest.fn(),
+  // La validación (HU-218.4) se ejercita en section-validation.test.ts. Aquí se
+  // neutraliza (schema undefined → validación no-op) para probar el flujo CRUD.
+  getBlockSchema: jest.fn(() => undefined),
 }))
 
 import { NextRequest } from 'next/server'
@@ -47,6 +50,7 @@ function buildSupabaseMock(returnData: unknown, returnError: unknown = null) {
   chain.eq     = jest.fn(self)
   chain.order  = jest.fn(self)
   chain.single = jest.fn(() => Promise.resolve(result))
+  chain.maybeSingle = jest.fn(() => Promise.resolve(result))
 
   // Hace el chain "thenable": `await query` resuelve con {data, error}
   // sin romper el encadenamiento de .select().order().eq()...

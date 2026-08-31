@@ -12,6 +12,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { getAdminUser } from '@/lib/auth'
 import { getAdminDb } from '@/lib/admin-db'
+import { validateSectionPayload } from '@/lib/section-validation'
 
 // ── Tipo de tabla CMS reconocida ─────────────────────────────────────────────
 // Note: section_settings and banners were dropped in migration 19 (unified CMS)
@@ -119,6 +120,12 @@ export async function POST(req: NextRequest, { params }: RouteParams) {
     return NextResponse.json({ error: `Campos requeridos: ${missing.join(', ')}` }, { status: 400 })
   }
 
+  // HU-218.4: valida los campos de la sección contra el contrato del bloque.
+  if (resource === 'sections' && typeof body.section_type === 'string') {
+    const v = validateSectionPayload(body.section_type, body)
+    if (!v.ok) return NextResponse.json({ error: 'Datos inválidos', details: v.errors }, { status: 422 })
+  }
+
   const now = new Date().toISOString()
   const supabase = getAdminDb(adminUser!.tenantId)
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -159,6 +166,20 @@ export async function PATCH(req: NextRequest, { params }: RouteParams) {
   const resolvedPk = config.pkNumeric ? Number(pkValue) : pkValue
   const now = new Date().toISOString()
   const supabase = getAdminDb(adminUser!.tenantId)
+
+  // HU-218.4: valida los campos contra el contrato del bloque. El PATCH no trae
+  // section_type → se resuelve por id (acotado por RLS al tenant del admin).
+  if (resource === 'sections') {
+    const type = typeof fields.section_type === 'string'
+      ? (fields.section_type as string)
+      : (await (supabase.from('page_sections') as any) // eslint-disable-line @typescript-eslint/no-explicit-any
+          .select('section_type').eq('id', resolvedPk).maybeSingle()).data?.section_type
+    if (typeof type === 'string') {
+      const v = validateSectionPayload(type, fields)
+      if (!v.ok) return NextResponse.json({ error: 'Datos inválidos', details: v.errors }, { status: 422 })
+    }
+  }
+
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const { data, error } = await (supabase.from(config.table) as any)
     .update({ ...fields, updated_at: now })
