@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { createServerClient } from '@merkiai/database'
+import { getAdminDb } from '@/lib/admin-db'
 import { getAdminUser } from '@/lib/auth'
 
 async function requireEditor() {
@@ -14,7 +14,7 @@ async function requireEditor() {
 
 /** GET /api/admin/media — lista de assets */
 export async function GET(req: NextRequest) {
-  const { error } = await requireEditor()
+  const { user, error } = await requireEditor()
   if (error) return error
 
   const { searchParams } = new URL(req.url)
@@ -22,7 +22,7 @@ export async function GET(req: NextRequest) {
   const limitParam = searchParams.get('limit')
   const limit = limitParam ? parseInt(limitParam, 10) : 200
 
-  const supabase = createServerClient()
+  const supabase = getAdminDb(user!.tenantId)
   let query = supabase
     .from('media_assets')
     .select('*')
@@ -38,13 +38,13 @@ export async function GET(req: NextRequest) {
 
 /** DELETE /api/admin/media?key=xxx — eliminar asset */
 export async function DELETE(req: NextRequest) {
-  const { error } = await requireEditor()
+  const { user, error } = await requireEditor()
   if (error) return error
 
   const key = new URL(req.url).searchParams.get('key')
   if (!key) return NextResponse.json({ error: 'key requerido' }, { status: 400 })
 
-  const supabase = createServerClient()
+  const supabase = getAdminDb(user!.tenantId)
   const { error: dbError } = await supabase.from('media_assets').delete().eq('key', key)
   if (dbError) return NextResponse.json({ error: dbError.message }, { status: 500 })
   return NextResponse.json({ ok: true })
@@ -52,13 +52,13 @@ export async function DELETE(req: NextRequest) {
 
 /** PATCH /api/admin/media — actualizar alt_text */
 export async function PATCH(req: NextRequest) {
-  const { error } = await requireEditor()
+  const { user, error } = await requireEditor()
   if (error) return error
 
   const body = await req.json() as { key: string; alt_text: string }
   if (!body.key) return NextResponse.json({ error: 'key requerido' }, { status: 400 })
 
-  const supabase = createServerClient()
+  const supabase = getAdminDb(user!.tenantId)
   const { data, error: dbError } = await supabase
     .from('media_assets')
     .update({ alt_text: body.alt_text ?? null, updated_at: new Date().toISOString() })

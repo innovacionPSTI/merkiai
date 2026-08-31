@@ -18,6 +18,7 @@ jest.mock('@/lib/auth', () => ({
 
 // ── Database mock ──────────────────────────────────────────────────────────────
 const mockFrom = jest.fn()
+jest.mock('@/lib/admin-db', () => ({ getAdminDb: () => ({ from: mockFrom }) }))
 jest.mock('@merkiai/database', () => ({
   createServerClient: () => ({ from: mockFrom }),
 }))

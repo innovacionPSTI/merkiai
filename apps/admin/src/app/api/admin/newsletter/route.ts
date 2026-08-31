@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server'
 import { getAdminUser } from '@/lib/auth'
-import { createServerClient } from '@merkiai/database'
+import { getAdminDb } from '@/lib/admin-db'
 
 async function requireAdmin() {
   const user = await getAdminUser()
@@ -13,10 +13,10 @@ async function requireAdmin() {
 
 /** GET /api/admin/newsletter — lista de suscriptores */
 export async function GET() {
-  const { error } = await requireAdmin()
+  const { user, error } = await requireAdmin()
   if (error) return error
 
-  const supabase = createServerClient()
+  const supabase = getAdminDb(user!.tenantId)
   const { data, error: dbError } = await supabase
     .from('newsletter_subscribers')
     .select('*')

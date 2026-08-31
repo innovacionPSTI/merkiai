@@ -1,6 +1,6 @@
 import { randomUUID } from 'crypto'
 import { NextRequest, NextResponse } from 'next/server'
-import { createServerClient } from '@merkiai/database'
+import { getAdminDb } from '@/lib/admin-db'
 import { getAdminUser } from '@/lib/auth'
 import { ASSIGNABLE_ROLES, ROLE_CONFIG } from '@/lib/roles'
 import type { AssignableRole, AdminRole } from '@/lib/roles'
@@ -19,7 +19,7 @@ export async function GET() {
     return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
   }
 
-  const supabase = createServerClient()
+  const supabase = getAdminDb(adminUser!.tenantId)
   const { data, error } = await supabase
     .from('profiles')
     .select('id, email, full_name, role, created_at')
@@ -88,7 +88,7 @@ export async function POST(request: NextRequest) {
   // Se genera el UUID en el servidor para evitar depender del DEFAULT de la BD
   // (puede no estar disponible si la tabla profiles preexistía antes de la migración).
   // En caso de conflicto por email, se actualiza solo el nombre — nunca el id ni el rol.
-  const supabase = createServerClient()
+  const supabase = getAdminDb(adminUser!.tenantId)
 
   const { data: existingProfile } = await supabase
     .from('profiles')
@@ -118,6 +118,7 @@ export async function POST(request: NextRequest) {
         email,
         full_name:  full_name ?? null,
         role:       'miembro',
+        tenant_id:  adminUser!.tenantId,
         created_at: new Date().toISOString(),
       })
       .select('id, email, full_name, role, created_at')
@@ -168,7 +169,7 @@ export async function PATCH(request: NextRequest) {
     return NextResponse.json({ error: 'Rol no asignable' }, { status: 400 })
   }
 
-  const supabase = createServerClient()
+  const supabase = getAdminDb(adminUser!.tenantId)
 
   const { data: target } = await supabase
     .from('profiles')
@@ -217,7 +218,7 @@ export async function DELETE(request: NextRequest) {
     return NextResponse.json({ error: 'No puedes revocar tu propio acceso' }, { status: 403 })
   }
 
-  const supabase = createServerClient()
+  const supabase = getAdminDb(adminUser!.tenantId)
 
   const { data: target } = await supabase
     .from('profiles')

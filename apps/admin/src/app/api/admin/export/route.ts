@@ -17,7 +17,7 @@
  *
  * Solo accesible por super_admin y admin.
  */
-import { createServerClient } from '@merkiai/database'
+import { getAdminDb } from '@/lib/admin-db'
 import { NextResponse } from 'next/server'
 import { getAdminUser } from '@/lib/auth'
 
@@ -31,10 +31,10 @@ async function requireAdmin() {
 }
 
 export async function GET() {
-  const { error } = await requireAdmin()
+  const { user, error } = await requireAdmin()
   if (error) return error
 
-  const db = createServerClient()
+  const db = getAdminDb(user!.tenantId)
 
   const [
     storeConfig,

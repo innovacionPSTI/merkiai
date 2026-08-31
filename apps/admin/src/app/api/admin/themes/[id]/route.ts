@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { getAdminUser } from '@/lib/auth'
-import { createServerClient } from '@merkiai/database'
+import { getAdminDb } from '@/lib/admin-db'
 
 async function requireAdmin() {
   const user = await getAdminUser()
@@ -19,7 +19,7 @@ type Params = { params: Promise<{ id: string }> }
  *   { setActive: true } → activa este tema (desactiva todos los demás)
  */
 export async function PATCH(req: NextRequest, { params }: Params) {
-  const { error } = await requireAdmin()
+  const { user, error } = await requireAdmin()
   if (error) return error
 
   const { id } = await params
@@ -27,7 +27,7 @@ export async function PATCH(req: NextRequest, { params }: Params) {
   if (isNaN(themeId)) return NextResponse.json({ error: 'ID inválido' }, { status: 400 })
 
   const body = await req.json()
-  const supabase = createServerClient()
+  const supabase = getAdminDb(user!.tenantId)
 
   // Activar tema: desactivar todos primero, luego activar éste
   if (body.setActive === true) {
@@ -70,14 +70,14 @@ export async function PATCH(req: NextRequest, { params }: Params) {
 
 /** DELETE /api/admin/themes/[id] — elimina un tema no activo y no por defecto */
 export async function DELETE(_req: NextRequest, { params }: Params) {
-  const { error } = await requireAdmin()
+  const { user, error } = await requireAdmin()
   if (error) return error
 
   const { id } = await params
   const themeId = parseInt(id, 10)
   if (isNaN(themeId)) return NextResponse.json({ error: 'ID inválido' }, { status: 400 })
 
-  const supabase = createServerClient()
+  const supabase = getAdminDb(user!.tenantId)
 
   const { data: theme } = await supabase
     .from('themes')

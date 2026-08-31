@@ -12,6 +12,7 @@ jest.mock('@/lib/auth', () => ({ getAdminUser: () => mockGetAdminUser() }))
 
 const mockSelect = jest.fn()
 const mockFrom   = jest.fn(() => ({ select: mockSelect }))
+jest.mock('@/lib/admin-db', () => ({ getAdminDb: () => ({ from: mockFrom }) }))
 jest.mock('@merkiai/database', () => ({
   createServerClient: () => ({ from: mockFrom }),
 }))

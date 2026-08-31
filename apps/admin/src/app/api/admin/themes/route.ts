@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { getAdminUser } from '@/lib/auth'
-import { createServerClient } from '@merkiai/database'
+import { getAdminDb } from '@/lib/admin-db'
 
 async function requireAdmin() {
   const user = await getAdminUser()
@@ -13,10 +13,10 @@ async function requireAdmin() {
 
 /** GET /api/admin/themes — lista todos los temas */
 export async function GET() {
-  const { error } = await requireAdmin()
+  const { user, error } = await requireAdmin()
   if (error) return error
 
-  const supabase = createServerClient()
+  const supabase = getAdminDb(user!.tenantId)
   const { data, error: dbError } = await supabase
     .from('themes')
     .select('*')
@@ -28,7 +28,7 @@ export async function GET() {
 
 /** POST /api/admin/themes — crea un nuevo tema */
 export async function POST(req: NextRequest) {
-  const { error } = await requireAdmin()
+  const { user, error } = await requireAdmin()
   if (error) return error
 
   const body = await req.json()
@@ -41,11 +41,12 @@ export async function POST(req: NextRequest) {
 
   if (!name) return NextResponse.json({ error: 'El nombre es requerido' }, { status: 400 })
 
-  const supabase = createServerClient()
+  const supabase = getAdminDb(user!.tenantId)
   const { data, error: dbError } = await supabase
     .from('themes')
     .insert({
       name,
+      tenant_id: user!.tenantId,
       is_active: false,
       color_primary:     color_primary     ?? '#614A2A',
       color_dark:        color_dark        ?? '#604B30',
