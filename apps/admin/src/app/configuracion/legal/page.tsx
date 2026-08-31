@@ -2,6 +2,7 @@ import { redirect } from 'next/navigation'
 import type { Metadata } from 'next'
 import { getStoreConfig } from '@merkiai/database'
 import { getAdminUser } from '@/lib/auth'
+import { getAdminDb } from '@/lib/admin-db'
 import { canAccess } from '@/lib/roles'
 import LegalConfigForm from '../LegalConfigForm'
 
@@ -14,7 +15,7 @@ export default async function ConfigLegalPage() {
     redirect('/no-autorizado')
   }
 
-  const storeConfig = await getStoreConfig().catch(() => null)
+  const storeConfig = await getStoreConfig(getAdminDb(adminUser.tenantId), adminUser.tenantId).catch(() => null)
 
   return (
     <div>

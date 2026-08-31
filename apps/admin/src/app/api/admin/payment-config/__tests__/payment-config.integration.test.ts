@@ -19,6 +19,8 @@
 
 import { NextRequest } from 'next/server'
 
+jest.mock('@/lib/auth', () => ({ getAdminUser: jest.fn(async () => ({ email: 'a@x.com', displayName: 'A', role: 'super_admin', tenantId: 't1', needsWorkspaceSelection: false })) }))
+jest.mock('@/lib/admin-db', () => ({ getAdminDb: () => ({}) }))
 jest.mock('@merkiai/database', () => ({
   getPaymentConfig: jest.fn(),
   updatePaymentConfig: jest.fn(),
@@ -189,7 +191,7 @@ describe('PATCH /api/admin/payment-config — proveedor activo', () => {
 
     const res = await PATCH(makePatchRequest({ active_provider: 'wompi' }))
     expect(res.status).toBe(200)
-    expect(mockUpdate).toHaveBeenCalledWith(expect.objectContaining({ active_provider: 'wompi' }))
+    expect(mockUpdate).toHaveBeenCalledWith(expect.objectContaining({ active_provider: 'wompi' }), expect.anything(), expect.anything())
   })
 
   it('permite desactivar todo con active_provider = "none" (sin chequear credenciales)', async () => {
@@ -199,7 +201,7 @@ describe('PATCH /api/admin/payment-config — proveedor activo', () => {
     expect(res.status).toBe(200)
     // 'none' no dispara validación de credenciales (no llama getPaymentConfig)
     expect(mockGet).not.toHaveBeenCalled()
-    expect(mockUpdate).toHaveBeenCalledWith(expect.objectContaining({ active_provider: 'none' }))
+    expect(mockUpdate).toHaveBeenCalledWith(expect.objectContaining({ active_provider: 'none' }), expect.anything(), expect.anything())
   })
 
   it('la respuesta PATCH también enmascara los secrets', async () => {

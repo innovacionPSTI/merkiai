@@ -2,6 +2,7 @@ import { redirect } from 'next/navigation'
 import type { Metadata } from 'next'
 import { getCoupons } from '@merkiai/database'
 import { getAdminUser } from '@/lib/auth'
+import { getAdminDb } from '@/lib/admin-db'
 import { canAccess } from '@/lib/roles'
 import CuponesClient from './CuponesClient'
 
@@ -14,7 +15,7 @@ export default async function CuponesPage() {
     redirect('/no-autorizado')
   }
 
-  const coupons = await getCoupons().catch(() => [])
+  const coupons = await getCoupons(getAdminDb(adminUser.tenantId)).catch(() => [])
 
   return (
     <div>

@@ -1,10 +1,12 @@
 import { getAdminConfig } from '@merkiai/database'
 import AdminConfigForm from './AdminConfigForm'
+import { requireAdminDb } from '@/lib/admin-context'
 
 export const metadata = { title: 'Apariencia del Panel' }
 
 export default async function SistemaAparienciaPage() {
-  const config = await getAdminConfig()
+  const { adminUser, db } = await requireAdminDb()
+  const config = await getAdminConfig(db, adminUser.tenantId)
 
   return (
     <div className="max-w-lg">

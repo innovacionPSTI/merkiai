@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { getVariantTypes, createVariantType } from '@merkiai/database'
 import { getAdminUser } from '@/lib/auth'
+import { getAdminDb } from '@/lib/admin-db'
 import { canAccess } from '@/lib/roles'
 import type { AdminRole } from '@/lib/roles'
 
@@ -11,7 +12,7 @@ export async function GET() {
     return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
   }
 
-  const data = await getVariantTypes()
+  const data = await getVariantTypes(false, getAdminDb(adminUser.tenantId))
   return NextResponse.json(data)
 }
 
@@ -43,7 +44,7 @@ export async function POST(request: NextRequest) {
       values: values.map((v) => String(v).trim()).filter(Boolean),
       display_type: display_type ?? 'pill',
       order_index: order_index ?? 0,
-    })
+    }, getAdminDb(adminUser.tenantId), adminUser.tenantId)
     return NextResponse.json(vt, { status: 201 })
   } catch (err: unknown) {
     const msg = (err as Error).message ?? 'Error al crear'

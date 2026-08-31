@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { updateVariantType, deleteVariantType } from '@merkiai/database'
 import { getAdminUser } from '@/lib/auth'
+import { getAdminDb } from '@/lib/admin-db'
 import { canAccess } from '@/lib/roles'
 import type { AdminRole } from '@/lib/roles'
 
@@ -33,7 +34,7 @@ export async function PATCH(request: NextRequest, { params }: Params) {
       display_type,
       active,
       order_index,
-    })
+    }, getAdminDb(adminUser.tenantId))
     return NextResponse.json(updated)
   } catch (err: unknown) {
     const msg = (err as Error).message ?? 'Error al actualizar'
@@ -57,7 +58,7 @@ export async function DELETE(_request: NextRequest, { params }: Params) {
   if (isNaN(numId)) return NextResponse.json({ error: 'ID inválido' }, { status: 400 })
 
   try {
-    await deleteVariantType(numId)
+    await deleteVariantType(numId, getAdminDb(adminUser.tenantId))
     return NextResponse.json({ ok: true })
   } catch (err: unknown) {
     return NextResponse.json({ error: (err as Error).message }, { status: 500 })

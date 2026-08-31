@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { getPaymentConfig, updatePaymentConfig } from '@merkiai/database'
 import type { PaymentConfig } from '@merkiai/database'
+import { getAdminUser } from '@/lib/auth'
+import { getAdminDb } from '@/lib/admin-db'
 
 /** Enmascara los últimos 4 caracteres de un secret. Devuelve null si el campo es null. */
 function maskSecret(value: string | null): string | null {
@@ -63,7 +65,9 @@ const VALID_PROVIDERS = ['none', 'wompi', 'mercadopago', 'tucompra', 'bold'] as 
 
 export async function GET() {
   try {
-    const config = await getPaymentConfig()
+    const adminUser = await getAdminUser()
+    if (!adminUser) return NextResponse.json({ error: 'No autorizado' }, { status: 401 })
+    const config = await getPaymentConfig(getAdminDb(adminUser.tenantId), adminUser.tenantId)
     if (!config) {
       return NextResponse.json({
         id: 1,
@@ -146,6 +150,9 @@ function missingCredentials(
 
 export async function PATCH(req: NextRequest) {
   try {
+    const adminUser = await getAdminUser()
+    if (!adminUser) return NextResponse.json({ error: 'No autorizado' }, { status: 401 })
+    const supabase = getAdminDb(adminUser.tenantId)
     const body = await req.json() as Partial<Omit<PaymentConfig, 'id' | 'updated_at'>>
 
     // Validación básica: public_key de Wompi debe empezar con pub_
@@ -167,7 +174,7 @@ export async function PATCH(req: NextRequest) {
       // No permitir activar una pasarela sin credenciales completas (evita
       // dejar el checkout apuntando a una pasarela que no puede cobrar).
       if (body.active_provider !== 'none') {
-        const current = await getPaymentConfig()
+        const current = await getPaymentConfig(supabase, adminUser.tenantId)
         const missing = missingCredentials(body.active_provider, body, current)
         if (missing.length) {
           return NextResponse.json(
@@ -178,7 +185,7 @@ export async function PATCH(req: NextRequest) {
       }
     }
 
-    const updated = await updatePaymentConfig(body)
+    const updated = await updatePaymentConfig(body, supabase, adminUser.tenantId)
     return NextResponse.json(maskConfig(updated))
   } catch (err) {
     console.error('[admin/payment-config PATCH]', err)

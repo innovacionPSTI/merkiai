@@ -1,5 +1,6 @@
 import { redirect } from 'next/navigation'
 import { getAdminUser } from '@/lib/auth'
+import { getAdminDb } from '@/lib/admin-db'
 import { canAccess } from '@/lib/roles'
 import { getThemes } from '@merkiai/database'
 import TemasClient from './TemasClient'
@@ -11,7 +12,7 @@ export default async function TemasPage() {
   if (!adminUser) redirect('/sign-in')
   if (!canAccess(adminUser.role, 'configuracion')) redirect('/dashboard')
 
-  const themes = await getThemes().catch(() => [])
+  const themes = await getThemes(getAdminDb(adminUser.tenantId)).catch(() => [])
 
   return (
     <div className="max-w-5xl mx-auto py-10 px-6">

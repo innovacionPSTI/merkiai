@@ -12,6 +12,8 @@
 
 import { NextRequest } from 'next/server'
 
+jest.mock('@/lib/auth', () => ({ getAdminUser: jest.fn(async () => ({ email: 'a@x.com', displayName: 'A', role: 'super_admin', tenantId: 't1', needsWorkspaceSelection: false })) }))
+jest.mock('@/lib/admin-db', () => ({ getAdminDb: () => ({}) }))
 jest.mock('@merkiai/database', () => ({
   getShippingConfig: jest.fn(),
   updateShippingConfig: jest.fn(),
@@ -168,7 +170,7 @@ describe('PATCH /api/admin/shipping — happy path', () => {
     const req = makePatchRequest({ provider: 'fixed', fixed_rate: 5000 })
     const res = await PATCH(req)
     expect(res.status).toBe(200)
-    expect(mockUpdate).toHaveBeenCalledWith(expect.objectContaining({ provider: 'fixed' }))
+    expect(mockUpdate).toHaveBeenCalledWith(expect.objectContaining({ provider: 'fixed' }), expect.anything(), expect.anything())
   })
 
   it('activa skydropx con credenciales completas en el body', async () => {
@@ -191,7 +193,7 @@ describe('PATCH /api/admin/shipping — happy path', () => {
     const res = await PATCH(req)
     expect(res.status).toBe(200)
     expect(mockUpdate).toHaveBeenCalledWith(
-      expect.objectContaining({ provider: 'skydropx', skydropx_client_id: 'cid' })
+      expect.objectContaining({ provider: 'skydropx', skydropx_client_id: 'cid' }), expect.anything(), expect.anything()
     )
   })
 
@@ -228,7 +230,7 @@ describe('PATCH /api/admin/shipping — envío gratis', () => {
 
     expect(res.status).toBe(200)
     expect(mockUpdate).toHaveBeenCalledWith(
-      expect.objectContaining({ free_shipping_enabled: false })
+      expect.objectContaining({ free_shipping_enabled: false }), expect.anything(), expect.anything()
     )
   })
 

@@ -12,6 +12,8 @@
 
 import { NextRequest } from 'next/server'
 
+jest.mock('@/lib/auth', () => ({ getAdminUser: jest.fn(async () => ({ email: 'a@x.com', displayName: 'A', role: 'super_admin', tenantId: 't1', needsWorkspaceSelection: false })) }))
+jest.mock('@/lib/admin-db', () => ({ getAdminDb: () => ({}) }))
 jest.mock('@merkiai/database', () => ({
   getStoreConfig: jest.fn(),
   updateStoreConfig: jest.fn(),
@@ -142,7 +144,7 @@ describe('PATCH /api/admin/config — validación WhatsApp', () => {
 
     expect(res.status).toBe(200)
     expect(mockUpdate).toHaveBeenCalledWith(
-      expect.objectContaining({ whatsapp_number: '573001234567' })
+      expect.objectContaining({ whatsapp_number: '573001234567' }), expect.anything(), expect.anything()
     )
   })
 
@@ -184,7 +186,7 @@ describe('PATCH /api/admin/config — happy path', () => {
 
     expect(res.status).toBe(200)
     expect(mockUpdate).toHaveBeenCalledWith(
-      expect.objectContaining({ logo_url: logoUrl })
+      expect.objectContaining({ logo_url: logoUrl }), expect.anything(), expect.anything()
     )
   })
 
@@ -221,7 +223,7 @@ describe('PATCH /api/admin/config — Resend', () => {
 
     expect(res.status).toBe(200)
     expect(mockUpdate).toHaveBeenCalledWith(
-      expect.objectContaining({ resend_from_email: 'hola@tienda.example.com' })
+      expect.objectContaining({ resend_from_email: 'hola@tienda.example.com' }), expect.anything(), expect.anything()
     )
   })
 
@@ -252,7 +254,7 @@ describe('PATCH /api/admin/config — contenido legal', () => {
 
     expect(res.status).toBe(200)
     expect(mockUpdate).toHaveBeenCalledWith(
-      expect.objectContaining({ terms_content: content })
+      expect.objectContaining({ terms_content: content }), expect.anything(), expect.anything()
     )
     const data = await res.json()
     expect(data.terms_content).toBe(content)
@@ -301,7 +303,9 @@ describe('PATCH /api/admin/config — redes sociales', () => {
       expect.objectContaining({
         instagram_url: 'https://instagram.com/commercecms',
         instagram_enabled: true,
-      })
+      }),
+      expect.anything(),
+      expect.anything(),
     )
   })
 

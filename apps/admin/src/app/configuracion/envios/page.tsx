@@ -2,6 +2,7 @@ import { redirect } from 'next/navigation'
 import type { Metadata } from 'next'
 import { getShippingConfig } from '@merkiai/database'
 import { getAdminUser } from '@/lib/auth'
+import { getAdminDb } from '@/lib/admin-db'
 import { canAccess } from '@/lib/roles'
 import ShippingConfigForm from '../ShippingConfigForm'
 
@@ -17,7 +18,7 @@ export default async function ConfigEnviosPage() {
   const fullAccess = adminUser.role === 'super_admin' || adminUser.role === 'admin'
   if (!fullAccess) redirect('/configuracion/general')
 
-  const shippingConfig = await getShippingConfig().catch(() => null)
+  const shippingConfig = await getShippingConfig(getAdminDb(adminUser.tenantId), adminUser.tenantId).catch(() => null)
 
   return (
     <div>

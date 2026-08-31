@@ -2,6 +2,7 @@ import { redirect } from 'next/navigation'
 import type { Metadata } from 'next'
 import { getStoreConfig } from '@merkiai/database'
 import { getAdminUser } from '@/lib/auth'
+import { getAdminDb } from '@/lib/admin-db'
 import { canAccess } from '@/lib/roles'
 import EmailConfigForm from '../EmailConfigForm'
 
@@ -17,7 +18,7 @@ export default async function ConfigEmailsPage() {
   const fullAccess = adminUser.role === 'super_admin' || adminUser.role === 'admin'
   if (!fullAccess) redirect('/configuracion/general')
 
-  const storeConfig = await getStoreConfig().catch(() => null)
+  const storeConfig = await getStoreConfig(getAdminDb(adminUser.tenantId), adminUser.tenantId).catch(() => null)
 
   const emailConfigData = storeConfig
     ? {

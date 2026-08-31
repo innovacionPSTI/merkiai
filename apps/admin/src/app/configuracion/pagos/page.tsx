@@ -2,6 +2,7 @@ import { redirect } from 'next/navigation'
 import type { Metadata } from 'next'
 import { getPaymentConfig } from '@merkiai/database'
 import { getAdminUser } from '@/lib/auth'
+import { getAdminDb } from '@/lib/admin-db'
 import { canAccess } from '@/lib/roles'
 import PaymentConfigForm from '../PaymentConfigForm'
 
@@ -17,7 +18,7 @@ export default async function ConfigPagosPage() {
   const fullAccess = adminUser.role === 'super_admin' || adminUser.role === 'admin'
   if (!fullAccess) redirect('/configuracion/general')
 
-  const paymentConfig = await getPaymentConfig().catch(() => null)
+  const paymentConfig = await getPaymentConfig(getAdminDb(adminUser.tenantId), adminUser.tenantId).catch(() => null)
 
   const paymentConfigData = paymentConfig
     ? {

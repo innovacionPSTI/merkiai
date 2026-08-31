@@ -16,12 +16,16 @@
 
 import { NextRequest, NextResponse } from 'next/server'
 import { getShippingConfig } from '@merkiai/database'
+import { getAdminUser } from '@/lib/auth'
+import { getAdminDb } from '@/lib/admin-db'
 import { skydropxFetch } from '@/lib/shipping/providers/skydropx/auth'
 
 // ─── POST: crear pickup ───────────────────────────────────────────────────────
 
 export async function POST(req: NextRequest) {
   try {
+    const adminUser = await getAdminUser()
+    if (!adminUser) return NextResponse.json({ error: 'No autorizado' }, { status: 401 })
     const body = await req.json() as {
       shipment_ids: string[]
       pickup_date: string
@@ -39,7 +43,7 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'pickup_date, pickup_time_from y pickup_time_to son requeridos' }, { status: 400 })
     }
 
-    const config = await getShippingConfig()
+    const config = await getShippingConfig(getAdminDb(adminUser.tenantId), adminUser.tenantId)
     if (!config.skydropx_client_id || !config.skydropx_client_secret) {
       return NextResponse.json({ error: 'Skydropx no está configurado' }, { status: 503 })
     }
@@ -94,11 +98,13 @@ export async function POST(req: NextRequest) {
 
 export async function GET(req: NextRequest) {
   try {
+    const adminUser = await getAdminUser()
+    if (!adminUser) return NextResponse.json({ error: 'No autorizado' }, { status: 401 })
     const { searchParams } = new URL(req.url)
     const page    = searchParams.get('page') ?? '1'
     const perPage = searchParams.get('per_page') ?? '20'
 
-    const config = await getShippingConfig()
+    const config = await getShippingConfig(getAdminDb(adminUser.tenantId), adminUser.tenantId)
     if (!config.skydropx_client_id || !config.skydropx_client_secret) {
       return NextResponse.json({ error: 'Skydropx no está configurado' }, { status: 503 })
     }

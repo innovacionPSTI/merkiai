@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { getCoupons, createCoupon, updateCoupon, deleteCoupon } from '@merkiai/database'
 import { getAdminUser } from '@/lib/auth'
+import { getAdminDb } from '@/lib/admin-db'
 
 async function requireAdmin() {
   const user = await getAdminUser()
@@ -13,7 +14,7 @@ export async function GET() {
   if (!user) return NextResponse.json({ error: 'No autorizado' }, { status: 401 })
 
   try {
-    const coupons = await getCoupons()
+    const coupons = await getCoupons(getAdminDb(user.tenantId))
     return NextResponse.json({ coupons })
   } catch (err) {
     console.error('[admin/coupons GET]', err)
@@ -41,7 +42,7 @@ export async function POST(req: NextRequest) {
       max_uses: max_uses ? Number(max_uses) : null,
       expires_at: expires_at || null,
       active: active !== false,
-    })
+    }, getAdminDb(user.tenantId), user.tenantId)
 
     return NextResponse.json({ coupon }, { status: 201 })
   } catch (err: unknown) {
@@ -64,7 +65,7 @@ export async function PATCH(req: NextRequest) {
     const { id, ...updates } = body
     if (!id) return NextResponse.json({ error: 'id requerido' }, { status: 400 })
 
-    const coupon = await updateCoupon(Number(id), updates)
+    const coupon = await updateCoupon(Number(id), updates, getAdminDb(user.tenantId))
     return NextResponse.json({ coupon })
   } catch (err) {
     console.error('[admin/coupons PATCH]', err)
@@ -80,7 +81,7 @@ export async function DELETE(req: NextRequest) {
     const { id } = await req.json()
     if (!id) return NextResponse.json({ error: 'id requerido' }, { status: 400 })
 
-    await deleteCoupon(Number(id))
+    await deleteCoupon(Number(id), getAdminDb(user.tenantId))
     return NextResponse.json({ ok: true })
   } catch (err) {
     console.error('[admin/coupons DELETE]', err)

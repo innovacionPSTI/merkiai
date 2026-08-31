@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { getStoreConfig, updateStoreConfig } from '@merkiai/database'
 import type { UpdateStoreConfigInput } from '@merkiai/database'
+import { getAdminUser } from '@/lib/auth'
+import { getAdminDb } from '@/lib/admin-db'
 
 function maskSecret(value: string | null): string | null {
   if (!value) return null
@@ -10,7 +12,9 @@ function maskSecret(value: string | null): string | null {
 
 export async function GET() {
   try {
-    const config = await getStoreConfig()
+    const adminUser = await getAdminUser()
+    if (!adminUser) return NextResponse.json({ error: 'No autorizado' }, { status: 401 })
+    const config = await getStoreConfig(getAdminDb(adminUser.tenantId), adminUser.tenantId)
     // Enmascarar la API key de Resend antes de enviarla al cliente
     return NextResponse.json({
       ...config,
@@ -25,6 +29,8 @@ export async function GET() {
 
 export async function PATCH(req: NextRequest) {
   try {
+    const adminUser = await getAdminUser()
+    if (!adminUser) return NextResponse.json({ error: 'No autorizado' }, { status: 401 })
     const body = await req.json() as UpdateStoreConfigInput & { resend_api_key?: string }
 
     // Sanitize whatsapp_number: strip non-digits, must be 10-15 digits if provided
@@ -39,7 +45,7 @@ export async function PATCH(req: NextRequest) {
       body.whatsapp_number = digits
     }
 
-    const updated = await updateStoreConfig(body)
+    const updated = await updateStoreConfig(body, getAdminDb(adminUser.tenantId), adminUser.tenantId)
     return NextResponse.json({
       ...updated,
       resend_api_key: maskSecret(updated.resend_api_key),

@@ -11,6 +11,8 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { getShippingConfig, updateShippingConfig } from '@merkiai/database'
 import type { UpdateShippingConfigInput } from '@merkiai/database'
+import { getAdminUser } from '@/lib/auth'
+import { getAdminDb } from '@/lib/admin-db'
 
 /** Mask sensitive credential fields for GET responses */
 function maskConfig(config: Awaited<ReturnType<typeof getShippingConfig>>) {
@@ -24,7 +26,9 @@ function maskConfig(config: Awaited<ReturnType<typeof getShippingConfig>>) {
 
 export async function GET() {
   try {
-    const config = await getShippingConfig()
+    const adminUser = await getAdminUser()
+    if (!adminUser) return NextResponse.json({ error: 'No autorizado' }, { status: 401 })
+    const config = await getShippingConfig(getAdminDb(adminUser.tenantId), adminUser.tenantId)
     return NextResponse.json(maskConfig(config))
   } catch (err) {
     console.error('[admin/shipping GET]', err)
@@ -34,6 +38,9 @@ export async function GET() {
 
 export async function PATCH(req: NextRequest) {
   try {
+    const adminUser = await getAdminUser()
+    if (!adminUser) return NextResponse.json({ error: 'No autorizado' }, { status: 401 })
+    const supabase = getAdminDb(adminUser.tenantId)
     const body = await req.json() as UpdateShippingConfigInput
 
     // Validate provider value
@@ -55,7 +62,7 @@ export async function PATCH(req: NextRequest) {
 
     // If switching to skydropx, credentials + origin address are required
     if (body.provider === 'skydropx') {
-      const current = await getShippingConfig()
+      const current = await getShippingConfig(supabase, adminUser.tenantId)
       const effectiveClientId     = body.skydropx_client_id     ?? current.skydropx_client_id
       const effectiveClientSecret = body.skydropx_client_secret ?? current.skydropx_client_secret
       const effectiveOriginName   = (body as Record<string, unknown>).origin_name   ?? current.origin_name
@@ -80,7 +87,7 @@ export async function PATCH(req: NextRequest) {
       }
     }
 
-    const updated = await updateShippingConfig(body)
+    const updated = await updateShippingConfig(body, supabase, adminUser.tenantId)
     return NextResponse.json(maskConfig(updated))
   } catch (err) {
     console.error('[admin/shipping PATCH]', err)

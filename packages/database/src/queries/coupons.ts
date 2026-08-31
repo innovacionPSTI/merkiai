@@ -72,11 +72,15 @@ export function validateCoupon(coupon: Coupon, orderSubtotal: number): CouponVal
 
 // ─── Write ────────────────────────────────────────────────────────────────────
 
-export async function createCoupon(input: CreateCouponInput, db: Db = createServerClient()): Promise<Coupon> {
+export async function createCoupon(
+  input: CreateCouponInput,
+  db: Db = createServerClient(),
+  tenantId = '00000000-0000-0000-0000-000000000001',
+): Promise<Coupon> {
   const supabase = db
   const { data, error } = await supabase
     .from('coupons')
-    .insert({ ...input, code: input.code.toUpperCase() })
+    .insert({ ...input, code: input.code.toUpperCase(), tenant_id: tenantId })
     .select()
     .single()
   if (error) throw error
