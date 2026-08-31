@@ -1,13 +1,16 @@
-import { createServerClient } from '@merkiai/database'
 import type { Database } from '@merkiai/database'
 import { NextRequest, NextResponse } from 'next/server'
+import { getAdminUser } from '@/lib/auth'
+import { getAdminDb } from '@/lib/admin-db'
 
 type ProductUpdate = Database['public']['Tables']['products']['Update']
 type VariantUpsert = Database['public']['Tables']['product_variants']['Insert']
 
 export async function GET(_req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   const { id } = await params
-  const supabase = createServerClient()
+  const adminUser = await getAdminUser()
+  if (!adminUser) return NextResponse.json({ error: 'No autorizado' }, { status: 401 })
+  const supabase = getAdminDb(adminUser.tenantId)
   const { data, error } = await supabase
     .from('products')
     .select('*, category:categories(*), variants:product_variants(*)')
@@ -19,10 +22,13 @@ export async function GET(_req: NextRequest, { params }: { params: Promise<{ id:
 
 export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   const { id } = await params
+  const adminUser = await getAdminUser()
+  if (!adminUser) return NextResponse.json({ error: 'No autorizado' }, { status: 401 })
   const body = await req.json()
-  const { variants, ...productData } = body
+  // tenant_id no se acepta del cliente (RLS lo protege igual, pero se elimina por claridad).
+  const { variants, tenant_id: _ignoredTenant, ...productData } = body
 
-  const supabase = createServerClient()
+  const supabase = getAdminDb(adminUser.tenantId)
 
   // Actualizar datos del producto
   const { data: product, error: productError } = await supabase
@@ -47,6 +53,7 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
       .map((v: any) => ({
         ...(v.id ? { id: v.id } : {}),
         product_id: Number(id),
+        tenant_id: adminUser.tenantId,
         roast: (v.roast || null) as VariantUpsert['roast'],
         weight: (v.weight || null) as VariantUpsert['weight'],
         grind: (v.grind || null) as VariantUpsert['grind'],
@@ -75,7 +82,9 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
 
 export async function DELETE(_req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   const { id } = await params
-  const supabase = createServerClient()
+  const adminUser = await getAdminUser()
+  if (!adminUser) return NextResponse.json({ error: 'No autorizado' }, { status: 401 })
+  const supabase = getAdminDb(adminUser.tenantId)
 
   // Eliminar variantes primero (FK)
   await supabase.from('product_variants').delete().eq('product_id', Number(id))

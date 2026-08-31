@@ -1,7 +1,9 @@
-import { createServerClient } from '@merkiai/database'
 import Link from 'next/link'
+import { redirect } from 'next/navigation'
 import type { Metadata } from 'next'
 import ProductosSearch from './ProductosSearch'
+import { getAdminUser } from '@/lib/auth'
+import { getAdminDb } from '@/lib/admin-db'
 
 export const metadata: Metadata = { title: 'Productos' }
 export const dynamic = 'force-dynamic'
@@ -14,7 +16,11 @@ export default async function ProductosPage({
   const sp = await searchParams
   const q = sp.q?.trim() ?? ''
 
-  const supabase = createServerClient()
+  // HU-158 Etapa 2/3: cliente RLS acotado al tenant del admin (antes: service-role
+  // sin filtro → mostraba productos de TODOS los tenants).
+  const adminUser = await getAdminUser()
+  if (!adminUser) redirect('/no-autorizado')
+  const supabase = getAdminDb(adminUser.tenantId)
   let query = supabase
     .from('products')
     .select('*, variants:product_variants(*), category:categories(name)')
