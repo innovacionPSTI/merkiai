@@ -26,6 +26,12 @@ export interface MintTenantJwtParams {
   role?: SupabaseRole
   /** Vigencia del token. Por defecto '1h'. */
   expiresIn?: string
+  /**
+   * Claims adicionales a incrustar en el JWT (p. ej. `{ is_admin: true }` para el
+   * panel de administración, que las políticas RLS leen con `auth.jwt()->>'is_admin'`).
+   * No puede sobreescribir `role`/`tenant_id`.
+   */
+  claims?: Record<string, unknown>
 }
 
 function encodeSecret(secret: string): Uint8Array {
@@ -41,11 +47,12 @@ function encodeSecret(secret: string): Uint8Array {
  * El llamador DEBE haber verificado antes que el usuario pertenece al tenant.
  */
 export async function mintTenantJwt(params: MintTenantJwtParams): Promise<string> {
-  const { userId, tenantId, secret, role = 'authenticated', expiresIn = '1h' } = params
+  const { userId, tenantId, secret, role = 'authenticated', expiresIn = '1h', claims = {} } = params
   if (!userId) throw new Error('[tenancy] userId requerido para firmar el JWT')
   if (!tenantId) throw new Error('[tenancy] tenantId requerido para firmar el JWT')
 
-  return new SignJWT({ role, tenant_id: tenantId })
+  // `role` y `tenant_id` mandan (no se pueden sobreescribir por `claims`).
+  return new SignJWT({ ...claims, role, tenant_id: tenantId })
     .setProtectedHeader({ alg: 'HS256' })
     .setSubject(userId)
     .setAudience('authenticated')

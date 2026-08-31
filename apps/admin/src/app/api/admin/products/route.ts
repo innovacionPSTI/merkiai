@@ -1,11 +1,18 @@
-import { createServerClient } from '@merkiai/database'
 import type { Database } from '@merkiai/database'
 import { NextRequest, NextResponse } from 'next/server'
 import { getTenantEntitlements, withinLimit } from '@/lib/entitlements'
+import { getAdminUser } from '@/lib/auth'
+import { getAdminDb } from '@/lib/admin-db'
 
 type VariantInsert = Database['public']['Tables']['product_variants']['Insert']
 
 export async function POST(req: NextRequest) {
+  // HU-158 Etapa 2: cliente RLS del admin acotado al tenant que administra
+  // (getAdminUser().tenantId), NO service-role.
+  const adminUser = await getAdminUser()
+  if (!adminUser) return NextResponse.json({ error: 'No autorizado' }, { status: 401 })
+  const tenantId = adminUser.tenantId
+
   const body = await req.json()
   const { name, slug, description, category_id, featured, active, allow_backorder, seo_title, seo_desc, images = [], variants = [], variant_options = [] } = body
 
@@ -14,11 +21,11 @@ export async function POST(req: NextRequest) {
   if (variants.length === 0)
     return NextResponse.json({ error: 'El producto debe tener al menos una variante' }, { status: 400 })
 
-  const supabase = createServerClient()
+  const supabase = getAdminDb(tenantId)
 
   // HU-173: límite de productos por plan. Regla de negocio: si el control plane
   // no está configurado (sin entitlements), no bloquea.
-  const { tenantId, entitlements } = await getTenantEntitlements()
+  const { entitlements } = await getTenantEntitlements(tenantId)
   if (entitlements) {
     const { count } = await supabase
       .from('products')
@@ -47,6 +54,7 @@ export async function POST(req: NextRequest) {
       seo_desc: seo_desc || null,
       images: Array.isArray(images) ? images : [],
       variant_options: Array.isArray(variant_options) && variant_options.length > 0 ? variant_options : null,
+      tenant_id: tenantId,
     })
     .select()
     .single()
@@ -56,6 +64,7 @@ export async function POST(req: NextRequest) {
   // Crear variantes
   const variantRows: VariantInsert[] = variants.map((v: any) => ({
     product_id: product.id,
+    tenant_id: tenantId,
     roast: (v.roast || null) as VariantInsert['roast'],
     weight: (v.weight || null) as VariantInsert['weight'],
     grind: (v.grind || null) as VariantInsert['grind'],

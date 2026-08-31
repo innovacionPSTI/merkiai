@@ -29,6 +29,9 @@ importers:
       '@merkiai/database':
         specifier: workspace:*
         version: link:../../packages/database
+      '@merkiai/tenancy':
+        specifier: workspace:*
+        version: link:../../packages/tenancy
       '@merkiai/ui':
         specifier: workspace:*
         version: link:../../packages/ui

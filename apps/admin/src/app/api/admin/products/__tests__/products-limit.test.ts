@@ -5,6 +5,11 @@
  */
 const mockFrom = jest.fn()
 jest.mock('@merkiai/database', () => ({ createServerClient: () => ({ from: mockFrom }) }))
+// HU-158 Etapa 2: la ruta usa getAdminUser (tenant) + getAdminDb (cliente RLS).
+jest.mock('@/lib/auth', () => ({
+  getAdminUser: jest.fn(async () => ({ email: 'a@x.com', displayName: 'A', role: 'admin', tenantId: 't1', needsWorkspaceSelection: false })),
+}))
+jest.mock('@/lib/admin-db', () => ({ getAdminDb: () => ({ from: mockFrom }) }))
 jest.mock('@/lib/entitlements', () => ({
   ...jest.requireActual('@/lib/entitlements'), // conserva withinLimit real
   getTenantEntitlements: jest.fn(async () => ({
