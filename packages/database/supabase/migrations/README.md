@@ -34,6 +34,15 @@ Ejecuta **solo**:
 Artefactos de la migración a multi-tenant (aplicar sobre `upgrade.sql`/`01_schema.sql` ya vigentes). **Aplicar primero en staging.**
 
 - `e17/01_tenant_id.sql` — **paso 1 (no disruptivo):** añade `tenant_id` (NOT NULL, DEFAULT = tenant por defecto `00000000-0000-0000-0000-000000000001`) a las 19 tablas tenant-scoped + índices, y a los 4 config singleton (conservando `CHECK id=1` por ahora); `processed_webhook_events` lo lleva nullable. La app single-tenant sigue funcionando (service-role + default). **No** toca RLS ni convierte singletons — eso viene tras cablear `@merkiai/tenancy`.
+- `e17/02_rls_catalog.sql` — RLS anon/authenticated por `tenant_id` en catálogo (`categories`/`products`/`product_variants`).
+- `e17/03_unique_por_tenant.sql` — UNIQUE globales → `(tenant_id, clave)` (desbloquea el 2º tenant) + singletons relajados a `UNIQUE(tenant_id)`.
+- `e17/04_fk_compuestas.sql` — `UNIQUE(id, tenant_id)` + FKs compuestas `(col, tenant_id)` (evita fuga referencial cross-tenant).
+- `e17/05_rls_session_flows.sql` — RLS `authenticated` de datos propios del comprador (`customers`/`customer_addresses`/`cart_items` + `orders` SELECT).
+- `e17/06_rls_content.sql` — RLS anon/authenticated por tenant en contenido (`pages`/`page_sections`/`section_items`/`blog_posts`/`nav_items`).
+- `e17/07_config_por_tenant.sql` — `UNIQUE(tenant_id)` en los 4 config; `store_config` lectura anon por tenant; `payment/admin/shipping_config` RLS sin política (solo service-role).
+- `e17/08_rls_themes.sql` — **RLS anon-tenant de `themes`** (apariencia por tenant en el storefront; sin ella la tienda no lee su tema por RLS).
 - `../platform/01_platform_schema.sql` — **BD de PLATAFORMA** (proyecto Supabase **distinto**, control plane): tabla `tenants` (`status`, `plan`, `data_isolation`, `db_ref`, `stack_team_id`) con RLS solo-service-role + seed del tenant por defecto (mismo UUID que arriba).
+- `../platform/02_tenant_domains.sql` — `subdomain`/`primary_domain` en `tenants` (resolución host→tenant).
+- `../platform/03_plans.sql` — catálogo `plans` (features/limits) + FK `tenants.plan`.
 
-Pasos siguientes (no incluidos aún): convertir singletons a fila-por-tenant, políticas RLS por `auth.jwt()->>'tenant_id'`, y cablear el `tenant client` en los 66 usos TENANT. Ver `docs/HU-156-service-role-mapping.md` y `docs/adr/ADR-001-auth-rls-multitenant.md`.
+Estado del cableado (E17): catálogo, contenido, config y **storefront** (tema/nav/marca/home) ya sirven por tenant vía cliente RLS (HU-156/157/207). **Pendiente:** admin tenant-scoped con cliente RLS (HU-158) y config-por-tenant en webhooks/reconcile (HU-216). Ver `docs/HU-216-service-role-audit.md`, `docs/HU-156-service-role-mapping.md` y `docs/adr/ADR-001-auth-rls-multitenant.md`.
