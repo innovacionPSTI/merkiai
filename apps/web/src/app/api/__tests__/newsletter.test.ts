@@ -23,6 +23,10 @@ jest.mock('@merkiai/database', () => ({
   getStoreConfig: jest.fn(),
 }))
 
+jest.mock('@/lib/tenant-context', () => ({
+  resolveTenant: jest.fn(async () => ({ tenantId: '00000000-0000-0000-0000-000000000001' })),
+}))
+
 jest.mock('@/lib/email', () => ({
   sendNewsletterConfirmation: jest.fn(),
   buildEmailConfig: jest.fn((apiKey: string, fromEmail: string, storeName?: string) => ({
@@ -86,8 +90,8 @@ describe('POST /api/newsletter — primera suscripción', () => {
     const body = await res.json()
     expect(body.ok).toBe(true)
     expect(mockUpsert).toHaveBeenCalledWith(
-      { email: 'new@example.com', active: true },
-      { onConflict: 'email' }
+      { email: 'new@example.com', active: true, tenant_id: '00000000-0000-0000-0000-000000000001' },
+      { onConflict: 'tenant_id,email' }
     )
   })
 

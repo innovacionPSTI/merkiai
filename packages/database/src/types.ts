@@ -370,18 +370,21 @@ export type Database = {
           email: string
           subscribed_at: string
           active: boolean
+          tenant_id: string
         }
         Insert: {
           id?: number
           email: string
           subscribed_at?: string
           active?: boolean
+          tenant_id?: string
         }
         Update: {
           id?: number
           email?: string
           subscribed_at?: string
           active?: boolean
+          tenant_id?: string
         }
         Relationships: []
       }

@@ -1,7 +1,7 @@
 import Link from 'next/link'
 import type { Metadata } from 'next'
 import { stackServerApp } from '@/stack'
-import { createServerClient, ensureCustomer } from '@merkiai/database'
+import { ensureCustomer } from '@merkiai/database'
 import { getRequestUserDb } from '@/lib/tenant-db'
 import { resolveTenant } from '@/lib/tenant-context'
 
@@ -19,7 +19,7 @@ interface DefaultAddress {
 async function getDefaultAddress(
   stackUserId: string,
   email: string,
-  db: ReturnType<typeof createServerClient>,
+  db: Awaited<ReturnType<typeof getRequestUserDb>>,
 ): Promise<DefaultAddress | null> {
   try {
     // HU-156: cliente `authenticated` (RLS `addresses_own`); el llamador lo pasa.

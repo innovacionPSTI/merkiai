@@ -1,9 +1,9 @@
 import type { Metadata } from 'next'
 import { stackServerApp } from '@/stack'
 import { redirect } from 'next/navigation'
-import { createServerClient } from '@merkiai/database'
 import ProfileForm from '@/components/account/ProfileForm'
 import AddressesForm from '@/components/account/AddressesForm'
+import { getRequestUserDb } from '@/lib/tenant-db'
 
 export const metadata: Metadata = { title: 'Mi perfil' }
 export const dynamic = 'force-dynamic'
@@ -12,8 +12,9 @@ export default async function PerfilPage() {
   const user = await stackServerApp.getUser()
   if (!user) redirect('/login')
 
-  // Load customer data server-side for initial render
-  const supabase = createServerClient()
+  // Cliente RLS `authenticated` (tenant + dueño); NO service-role (evita fuga
+  // cross-tenant de `customers`).
+  const supabase = await getRequestUserDb(user.id)
   const { data: customer } = await supabase
     .from('customers')
     .select('name, phone')

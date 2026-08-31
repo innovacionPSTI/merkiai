@@ -1,8 +1,8 @@
 import { Suspense } from 'react'
 import type { Metadata } from 'next'
 import { stackServerApp } from '@/stack'
-import { createServerClient } from '@merkiai/database'
 import CheckoutClient from '@/components/checkout/CheckoutClient'
+import { getRequestUserDb } from '@/lib/tenant-db'
 
 export const metadata: Metadata = { title: 'Checkout' }
 
@@ -21,7 +21,8 @@ async function getDefaultAddress(): Promise<SavedAddress | null> {
     const user = await stackServerApp.getUser()
     if (!user?.primaryEmail) return null
 
-    const supabase = createServerClient()
+    // Cliente RLS `authenticated` (tenant + dueño); NO service-role.
+    const supabase = await getRequestUserDb(user.id)
 
     // Look up the customer record
     const { data: customer } = await supabase

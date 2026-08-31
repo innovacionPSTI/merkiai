@@ -1,0 +1,35 @@
+{
+  "extends": "next/core-web-vitals",
+  "rules": {
+    "no-restricted-imports": [
+      "error",
+      {
+        "paths": [
+          {
+            "name": "@merkiai/database",
+            "importNames": ["createServerClient"],
+            "message": "Prohibido en el storefront: createServerClient usa service-role y OMITE la RLS por tenant (brecha cross-tenant). Usa getRequestCatalogDb() (catalogo/contenido, rol anon) o getRequestUserDb(userId) (datos con sesion, rol authenticated) de @/lib/tenant-db. Las rutas maquina-a-maquina sin sesion (webhooks/reconcile/checkout) estan allowlisted en overrides y deben acotar por tenant_id internamente (HU-216)."
+          }
+        ]
+      }
+    ]
+  },
+  "overrides": [
+    {
+      "files": [
+        "src/app/api/webhooks/**",
+        "src/app/api/checkout/**",
+        "src/app/api/auth/welcome/route.ts",
+        "src/app/api/newsletter/route.ts",
+        "src/lib/bold-reconcile.ts",
+        "src/lib/tucompra-reconcile.ts",
+        "src/lib/shipping/shipments.ts"
+      ],
+      "rules": { "no-restricted-imports": "off" }
+    },
+    {
+      "files": ["**/__tests__/**", "**/*.test.ts", "**/*.test.tsx"],
+      "rules": { "no-restricted-imports": "off" }
+    }
+  ]
+}

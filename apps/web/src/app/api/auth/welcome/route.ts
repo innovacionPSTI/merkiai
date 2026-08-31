@@ -1,7 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { stackServerApp } from '@/stack'
-import { createServerClient, getStoreConfig } from '@merkiai/database'
+import { createServerClient, getStoreConfig, ensureCustomer } from '@merkiai/database'
 import { sendWelcomeEmail, buildEmailConfig } from '@/lib/email'
+import { resolveTenant } from '@/lib/tenant-context'
 
 /**
  * POST /api/auth/welcome
@@ -55,49 +56,32 @@ export async function POST(request: NextRequest) {
     }
 
     const displayName = name || email.split('@')[0]
-    const supabase = createServerClient()
 
-    // ── 1. Upsert en customers ────────────────────────────────────────────────
-    // onConflict: 'email' garantiza idempotencia.
-    // Si el email ya existe como guest (stack_id null), el upsert actualiza su stack_id.
-    console.log('[welcome] upserting customer:', { email, stackId, displayName })
+    // HU-207: el comprador pertenece al TENANT resuelto por host, no al default.
+    const { tenantId } = await resolveTenant()
 
-    const { data: customer, error: upsertError } = await supabase
-      .from('customers')
-      .upsert(
-        {
-          stack_id: stackId,
-          email,
-          name: displayName,
-        },
-        { onConflict: 'email' },
-      )
-      .select('id')
-      .single()
-
-    if (upsertError) {
-      console.error('[welcome] customers upsert error:', JSON.stringify(upsertError))
+    // ── 1+2. Alta del customer + vinculación de pedidos previos ───────────────
+    // `ensureCustomer` hace el upsert por (tenant_id, stack_id/email) y vincula
+    // pedidos del mismo email — todo acotado al tenant.
+    let customer: { id: string } | null = null
+    if (stackId) {
+      customer = await ensureCustomer({ stackUserId: stackId, email, name: displayName, tenantId })
+        .catch((e) => { console.error('[welcome] ensureCustomer:', e); return null })
     } else {
-      console.log('[welcome] customer upserted:', customer?.id)
-    }
-
-    // ── 2. Vincular pedidos previos del mismo email ───────────────────────────
-    if (customer?.id) {
-      const { error: linkError } = await supabase
-        .from('orders')
-        .update({ customer_id: customer.id })
-        .eq('customer_email', email)
-        .is('customer_id', null)
-
-      if (linkError) {
-        console.error('[welcome] orders link error:', linkError.message)
-      }
+      // Sin stackId (race post-registro): upsert tenant-scoped por email.
+      const supabase = createServerClient()
+      const { data } = await supabase
+        .from('customers')
+        .upsert({ email, name: displayName, tenant_id: tenantId }, { onConflict: 'tenant_id,email' })
+        .select('id')
+        .single()
+      customer = data ?? null
     }
 
     // ── 3. Email de bienvenida ────────────────────────────────────────────────
     // Solo se envía si hay sesión válida (para no enviar a emails del body no verificados)
     if (sessionUser) {
-      const config = await getStoreConfig()
+      const config = await getStoreConfig(createServerClient(), tenantId)
       if (config?.resend_api_key && config?.resend_from_email) {
         await sendWelcomeEmail(
           email,
