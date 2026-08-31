@@ -7,7 +7,8 @@
  * Seguridad: guard admin (super_admin/admin/vendedor); solo acepta 'approved' o
  * 'rejected'; nunca accesible desde el sitio público.
  */
-import { createServerClient, applyStockForOrder, restoreStockForOrder } from '@merkiai/database'
+import { applyStockForOrder, restoreStockForOrder } from '@merkiai/database'
+import { getAdminDb } from '@/lib/admin-db'
 import type { Database } from '@merkiai/database'
 import { NextRequest, NextResponse } from 'next/server'
 import { getAdminUser } from '@/lib/auth'
@@ -29,7 +30,7 @@ export async function PATCH(
   req: NextRequest,
   { params }: { params: Promise<{ id: string }> },
 ) {
-  const { error: authError } = await requireVendedor()
+  const { user, error: authError } = await requireVendedor()
   if (authError) return authError
 
   const { id } = await params
@@ -44,7 +45,7 @@ export async function PATCH(
     return NextResponse.json({ error: 'payment_status debe ser "approved" o "rejected"' }, { status: 400 })
   }
 
-  const supabase = createServerClient()
+  const supabase = getAdminDb(user!.tenantId)
 
   // Al aprobar, el pedido avanza a preparación (processing). Rechazar no avanza.
   const updatePayload: OrderUpdate = {

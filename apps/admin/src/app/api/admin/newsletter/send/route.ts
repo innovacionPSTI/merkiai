@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { getAdminUser } from '@/lib/auth'
-import { createServerClient } from '@merkiai/database'
+import { getAdminDb } from '@/lib/admin-db'
 
 const RESEND_API_URL = 'https://api.resend.com/emails'
 
@@ -72,7 +72,7 @@ async function requireAdmin() {
  * Sends broadcast email to all active subscribers via Resend.
  */
 export async function POST(req: NextRequest) {
-  const { error } = await requireAdmin()
+  const { user, error } = await requireAdmin()
   if (error) return error
 
   const body = await req.json()
@@ -86,7 +86,7 @@ export async function POST(req: NextRequest) {
   }
 
   // Fetch store config for API key, fromEmail and store name
-  const supabase = createServerClient()
+  const supabase = getAdminDb(user!.tenantId)
   const { data: config } = await supabase
     .from('store_config')
     .select('resend_api_key, resend_from_email, store_name')

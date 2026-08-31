@@ -3,7 +3,7 @@
  * Actualiza las notas internas de un pedido.
  * Accesible por super_admin, admin y vendedor.
  */
-import { createServerClient } from '@merkiai/database'
+import { getAdminDb } from '@/lib/admin-db'
 import { NextRequest, NextResponse } from 'next/server'
 import { getAdminUser } from '@/lib/auth'
 
@@ -21,7 +21,7 @@ export async function PATCH(
   req: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
-  const { error } = await requireVendedor()
+  const { user, error } = await requireVendedor()
   if (error) return error
 
   const { id } = await params
@@ -33,7 +33,7 @@ export async function PATCH(
   const body = await req.json().catch(() => ({}))
   const notes = typeof body.internal_notes === 'string' ? body.internal_notes : null
 
-  const supabase = createServerClient()
+  const supabase = getAdminDb(user!.tenantId)
   const { data, error: dbError } = await supabase
     .from('orders')
     // eslint-disable-next-line @typescript-eslint/no-explicit-any

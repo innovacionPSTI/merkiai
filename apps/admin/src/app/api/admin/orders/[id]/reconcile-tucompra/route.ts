@@ -5,7 +5,8 @@
  * NO tiene webhook: se consulta el estado real a su API REST vía el núcleo compartido
  * `reconcileTuCompraOrder` de @merkiai/database (sin saltos HTTP entre apps).
  */
-import { createServerClient, reconcileTuCompraOrder } from '@merkiai/database'
+import { reconcileTuCompraOrder } from '@merkiai/database'
+import { getAdminDb } from '@/lib/admin-db'
 import { NextRequest, NextResponse } from 'next/server'
 import { getAdminUser } from '@/lib/auth'
 import { sendPaymentConfirmed } from '@/lib/email'
@@ -24,7 +25,7 @@ export async function POST(
   _req: NextRequest,
   { params }: { params: Promise<{ id: string }> },
 ) {
-  const { error: authError } = await requireVendedor()
+  const { user, error: authError } = await requireVendedor()
   if (authError) return authError
 
   const { id } = await params
@@ -33,7 +34,7 @@ export async function POST(
     return NextResponse.json({ error: 'ID inválido' }, { status: 400 })
   }
 
-  const supabase = createServerClient()
+  const supabase = getAdminDb(user!.tenantId)
   const { data: order } = await supabase
     .from('orders')
     .select('order_number, payment_method, customer_email, customer_name')

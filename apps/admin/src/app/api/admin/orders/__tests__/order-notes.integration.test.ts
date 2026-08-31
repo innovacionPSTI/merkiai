@@ -17,6 +17,8 @@ jest.mock('@merkiai/database', () => ({
   createServerClient: jest.fn(),
 }))
 
+jest.mock('@/lib/admin-db', () => ({ getAdminDb: () => require('@merkiai/database').createServerClient() }))
+
 jest.mock('@/lib/auth', () => ({
   getAdminUser: jest.fn(),
 }))
