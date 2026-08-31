@@ -466,6 +466,7 @@ export type Database = {
         Row: {
           id: number
           tenant_id: string
+          template: string
           whatsapp_number: string | null
           store_name: string
           store_email: string | null

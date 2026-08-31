@@ -10,6 +10,8 @@ export interface TrustBadge {
 
 export type StoreConfig = {
   id: number
+  /** Template de presentación del storefront (HU-217). Default 'default'. */
+  template: string
   whatsapp_number: string | null
   store_name: string
   /** Prefijo configurable del número de orden (ej. 'ORD' → ORD-0001). */
@@ -52,6 +54,7 @@ const DEFAULT_TENANT_ID = '00000000-0000-0000-0000-000000000001'
 
 const DEFAULT_CONFIG: StoreConfig = {
   id: 1,
+  template: 'default',
   whatsapp_number: null,
   store_name: 'Mi Tienda',
   order_prefix: 'ORD',
