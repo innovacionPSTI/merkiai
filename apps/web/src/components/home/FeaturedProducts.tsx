@@ -7,9 +7,10 @@ import { getProductOptions, getVariantAttrs, getVariantLabel, COLOR_HEX } from '
 
 interface FeaturedProductsProps {
   products: ProductWithVariants[]
+  title?: string
 }
 
-export default function FeaturedProducts({ products }: FeaturedProductsProps) {
+export default function FeaturedProducts({ products, title = 'Productos Destacados' }: FeaturedProductsProps) {
   const addItem = useCartStore((s) => s.addItem)
 
   const fmt = (n: number) =>
@@ -20,7 +21,7 @@ export default function FeaturedProducts({ products }: FeaturedProductsProps) {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="text-center mb-14">
           <h2 className="text-section font-display text-brand-primary">
-            Productos Destacados
+            {title}
           </h2>
           <p className="font-brand text-brand-primary/60 mt-4 max-w-xl mx-auto">
             Descubre nuestra selección de productos. Calidad garantizada en cada artículo.

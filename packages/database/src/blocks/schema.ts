@@ -351,6 +351,42 @@ export function getBlockSchema(type: string): BlockSchema | undefined {
   return blockSchemas[type]
 }
 
+/** Forma mínima de una fila de `page_sections` para resolver campos. */
+export interface SectionLike {
+  title?: string | null
+  subtitle?: string | null
+  body?: string | null
+  image_url?: string | null
+  cta_label?: string | null
+  cta_url?: string | null
+  settings?: unknown
+  [k: string]: unknown
+}
+
+/**
+ * Resuelve los campos configurables de una sección **según el contrato** del
+ * schema: cada campo se lee de su `storage` (columna o `settings`) y cae a su
+ * `default`. Es la lectura ÚNICA que comparten render web y editor admin — así
+ * un bloque nunca vuelve a leer `settings`/columnas de forma ad-hoc.
+ */
+export function resolveBlockFields(
+  type: string,
+  section?: SectionLike | null,
+): Record<string, unknown> {
+  const schema = blockSchemas[type]
+  if (!schema) return {}
+  const settings = (section?.settings ?? {}) as Record<string, unknown>
+  const out: Record<string, unknown> = {}
+  for (const [key, f] of Object.entries(schema.fields)) {
+    let v: unknown
+    if (f.storage === 'column') v = section ? section[f.key ?? key] : undefined
+    else if (f.storage === 'settings') v = settings[key]
+    if (v === undefined || v === null || v === '') v = f.default
+    out[key] = v
+  }
+  return out
+}
+
 /** Orden de bloques de la home para un template (fallback a 'default'). */
 export function getTemplateHomeLayout(template = 'default'): readonly string[] {
   return TEMPLATE_HOME_LAYOUTS[template] ?? TEMPLATE_HOME_LAYOUTS.default

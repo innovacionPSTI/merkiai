@@ -2,7 +2,17 @@
 
 import { useState } from 'react'
 
-export default function NewsletterSection() {
+interface NewsletterSectionProps {
+  title?: string
+  subtitle?: string
+  ctaLabel?: string
+}
+
+export default function NewsletterSection({
+  title = 'Suscríbete a nuestro boletín',
+  subtitle = 'Recibe novedades, ofertas y contenido exclusivo directamente en tu correo.',
+  ctaLabel,
+}: NewsletterSectionProps = {}) {
   const [email, setEmail] = useState('')
   const [status, setStatus] = useState<'idle' | 'loading' | 'success' | 'error'>('idle')
 
@@ -29,10 +39,10 @@ export default function NewsletterSection() {
       <div className="max-w-2xl mx-auto px-6 text-center">
         <h2 className="font-display text-brand-cream leading-none mb-4"
             style={{ fontSize: 'clamp(2rem, 5vw, 3.5rem)' }}>
-          Suscríbete a nuestro boletín
+          {title}
         </h2>
         <p className="font-brand text-brand-cream/60 mb-8">
-          Recibe novedades, ofertas y contenido exclusivo directamente en tu correo.
+          {subtitle}
         </p>
 
         {status === 'success' ? (
@@ -54,7 +64,7 @@ export default function NewsletterSection() {
               disabled={status === 'loading'}
               className="rounded-full bg-brand-cream text-brand-primary px-8 py-3 font-brand font-medium hover:bg-brand-yellow transition-colors disabled:opacity-60"
             >
-              {status === 'loading' ? 'Enviando...' : 'Suscribirse'}
+              {status === 'loading' ? 'Enviando...' : (ctaLabel || 'Suscribirse')}
             </button>
           </form>
         )}

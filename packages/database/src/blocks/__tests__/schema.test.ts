@@ -8,6 +8,7 @@ import {
   getBlockSchema,
   getTemplateHomeLayout,
   listBlockTypes,
+  resolveBlockFields,
 } from '../schema'
 
 // Los 13 section_type permitidos por el CHECK de page_sections.
@@ -59,5 +60,30 @@ describe('layout presets', () => {
 
   it('getTemplateHomeLayout cae a default para un template desconocido', () => {
     expect(getTemplateHomeLayout('inexistente')).toEqual(TEMPLATE_HOME_LAYOUTS.default)
+  })
+})
+
+describe('resolveBlockFields', () => {
+  it('lee campos de settings y aplica defaults del schema', () => {
+    // historia: title/subtitle/cta_text/cta_url viven en settings, con defaults.
+    const r = resolveBlockFields('historia', { settings: { title: 'Nuestra esencia' } })
+    expect(r.title).toBe('Nuestra esencia')            // valor de settings
+    expect(r.cta_text).toBe('Conoce nuestra historia →') // default del schema
+  })
+
+  it('lee campos de columna (storage column) con su key real', () => {
+    // cta: cta_label vive en la columna cta_label de page_sections.
+    const r = resolveBlockFields('cta', { cta_label: 'Comprar', title: 'Oferta' })
+    expect(r.cta_label).toBe('Comprar')
+    expect(r.title).toBe('Oferta')
+  })
+
+  it('vacío o nulo cae al default', () => {
+    const r = resolveBlockFields('best_sellers', { settings: { title: '' } })
+    expect(r.title).toBe('Tienda')
+  })
+
+  it('tipo desconocido devuelve objeto vacío', () => {
+    expect(resolveBlockFields('inexistente', {})).toEqual({})
   })
 })

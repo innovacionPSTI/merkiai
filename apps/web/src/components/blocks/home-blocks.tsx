@@ -13,7 +13,7 @@ import type { ComponentType } from 'react'
 import Link from 'next/link'
 import Image from 'next/image'
 import type { getWebHomeData } from '@merkiai/database'
-import { getTemplateHomeLayout } from '@merkiai/database'
+import { getTemplateHomeLayout, resolveBlockFields } from '@merkiai/database'
 import HeroCarousel from '@/components/home/HeroCarousel'
 import FeaturedProducts from '@/components/home/FeaturedProducts'
 import ServicesSection from '@/components/home/ServicesSection'
@@ -37,23 +37,25 @@ function HeroBlock({ section }: BlockProps) {
   return <HeroCarousel items={section?.items ?? []} />
 }
 
-function FeaturedBlock({ data }: BlockProps) {
-  return <FeaturedProducts products={data.featuredProducts} />
+function FeaturedBlock({ section, data }: BlockProps) {
+  const f = resolveBlockFields('featured_products', section)
+  return <FeaturedProducts products={data.featuredProducts} title={f.title as string | undefined} />
 }
 
 function ServicesBlock({ section }: BlockProps) {
   return <ServicesSection items={section?.items ?? []} />
 }
 
-function BestSellersBlock({ data }: BlockProps) {
+function BestSellersBlock({ section, data }: BlockProps) {
   const { bestSellers, categories } = data
+  const f = resolveBlockFields('best_sellers', section)
   return (
     <section className="bg-brand-cream-warm py-24">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex flex-col lg:flex-row gap-16 items-center">
           <div className="flex-1">
             <h2 className="font-display text-brand-primary leading-none mb-8" style={{ fontSize: 'clamp(2.5rem, 6vw, 5rem)' }}>
-              Tienda
+              {(f.title as string) || 'Tienda'}
             </h2>
             <div className="space-y-4">
               {categories.map((cat) => (
@@ -93,11 +95,11 @@ function BestSellersBlock({ data }: BlockProps) {
 }
 
 function HistoriaBlock({ section }: BlockProps) {
-  const meta = section?.settings as Record<string, string> | null | undefined
-  const title    = meta?.title    ?? 'Vivir para Servir'
-  const subtitle = meta?.subtitle ?? 'Cada taza que preparamos lleva el compromiso de la excelencia y el cuidado desde el origen hasta tu mesa.'
-  const ctaText  = meta?.cta_text ?? 'Conoce nuestra historia →'
-  const ctaUrl   = meta?.cta_url  ?? '/nosotros'
+  const f = resolveBlockFields('historia', section)
+  const title    = (f.title as string)    || 'Vivir para Servir'
+  const subtitle = (f.subtitle as string) || 'Cada taza que preparamos lleva el compromiso de la excelencia y el cuidado desde el origen hasta tu mesa.'
+  const ctaText  = (f.cta_text as string) || 'Conoce nuestra historia →'
+  const ctaUrl   = (f.cta_url as string)  || '/nosotros'
   return (
     <section className="relative py-40 overflow-hidden bg-brand-dark">
       <div className="absolute inset-0 bg-brand-text/60" />
@@ -139,8 +141,15 @@ function BlogPreviewBlock({ data }: BlockProps) {
   )
 }
 
-function NewsletterBlock() {
-  return <NewsletterSection />
+function NewsletterBlock({ section }: BlockProps) {
+  const f = resolveBlockFields('newsletter', section)
+  return (
+    <NewsletterSection
+      title={f.title as string | undefined}
+      subtitle={f.subtitle as string | undefined}
+      ctaLabel={f.cta_label as string | undefined}
+    />
+  )
 }
 
 // ── Registry + preset ────────────────────────────────────────────────────────
