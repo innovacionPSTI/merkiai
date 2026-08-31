@@ -1,11 +1,12 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { getAdminUser } from '@/lib/auth'
-import { createServerClient } from '@merkiai/database'
+import { getAdminDb } from '@/lib/admin-db'
 
 export async function GET() {
   try {
-    await getAdminUser()
-    const supabase = createServerClient()
+    const adminUser = await getAdminUser()
+    if (!adminUser) return NextResponse.json({ error: 'No autorizado' }, { status: 401 })
+    const supabase = getAdminDb(adminUser.tenantId)
     const { data, error } = await supabase
       .from('nav_items')
       .select('*')
@@ -19,15 +20,17 @@ export async function GET() {
 
 export async function POST(req: NextRequest) {
   try {
-    await getAdminUser()
+    const adminUser = await getAdminUser()
+    if (!adminUser) return NextResponse.json({ error: 'No autorizado' }, { status: 401 })
     const body = await req.json()
     const { label, href, enabled, order_index, parent_id } = body
     if (!label) return NextResponse.json({ error: 'label requerido' }, { status: 400 })
 
-    const supabase = createServerClient()
+    const supabase = getAdminDb(adminUser.tenantId)
     const { data, error } = await supabase
       .from('nav_items')
       .insert({
+        tenant_id: adminUser.tenantId,
         label,
         href: href || null,
         enabled: enabled ?? true,
@@ -45,12 +48,13 @@ export async function POST(req: NextRequest) {
 
 export async function PATCH(req: NextRequest) {
   try {
-    await getAdminUser()
+    const adminUser = await getAdminUser()
+    if (!adminUser) return NextResponse.json({ error: 'No autorizado' }, { status: 401 })
     const body = await req.json()
     const { id, ...fields } = body
     if (!id) return NextResponse.json({ error: 'id requerido' }, { status: 400 })
 
-    const supabase = createServerClient()
+    const supabase = getAdminDb(adminUser.tenantId)
     const { data, error } = await supabase
       .from('nav_items')
       .update({ ...fields, updated_at: new Date().toISOString() })
@@ -66,12 +70,13 @@ export async function PATCH(req: NextRequest) {
 
 export async function DELETE(req: NextRequest) {
   try {
-    await getAdminUser()
+    const adminUser = await getAdminUser()
+    if (!adminUser) return NextResponse.json({ error: 'No autorizado' }, { status: 401 })
     const { searchParams } = new URL(req.url)
     const id = searchParams.get('id')
     if (!id) return NextResponse.json({ error: 'id requerido' }, { status: 400 })
 
-    const supabase = createServerClient()
+    const supabase = getAdminDb(adminUser.tenantId)
     const { error } = await supabase.from('nav_items').delete().eq('id', Number(id))
     if (error) return NextResponse.json({ error: error.message }, { status: 500 })
     return NextResponse.json({ ok: true })

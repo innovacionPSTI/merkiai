@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { createServerClient, restoreStockForOrder } from '@merkiai/database'
+import { restoreStockForOrder } from '@merkiai/database'
 import { sendShippingNotification, sendStatusNotification } from '@/lib/email'
+import { getAdminUser } from '@/lib/auth'
+import { getAdminDb } from '@/lib/admin-db'
 
 const NOTIFIABLE_STATUSES = new Set(['shipped', 'delivered', 'cancelled'])
 
@@ -10,8 +12,10 @@ export async function PATCH(
 ) {
   try {
     const { id } = await params
+    const adminUser = await getAdminUser()
+    if (!adminUser) return NextResponse.json({ error: 'No autorizado' }, { status: 401 })
     const { status } = await req.json()
-    const supabase = createServerClient()
+    const supabase = getAdminDb(adminUser.tenantId)
 
     const { data: order, error } = await supabase
       .from('orders')

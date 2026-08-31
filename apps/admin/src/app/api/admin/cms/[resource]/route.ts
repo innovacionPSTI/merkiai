@@ -11,7 +11,7 @@
 
 import { NextRequest, NextResponse } from 'next/server'
 import { getAdminUser } from '@/lib/auth'
-import { createServerClient } from '@merkiai/database'
+import { getAdminDb } from '@/lib/admin-db'
 
 // ── Tipo de tabla CMS reconocida ─────────────────────────────────────────────
 // Note: section_settings and banners were dropped in migration 19 (unified CMS)
@@ -59,12 +59,9 @@ const RESOURCES: Record<string, ResourceConfig> = {
 // ── Auth helper ───────────────────────────────────────────────────────────────
 
 async function requireAdmin() {
-  try {
-    await getAdminUser()
-    return null
-  } catch {
-    return NextResponse.json({ error: 'No autorizado' }, { status: 401 })
-  }
+  const adminUser = await getAdminUser()
+  if (!adminUser) return { adminUser: null, error: NextResponse.json({ error: 'No autorizado' }, { status: 401 }) }
+  return { adminUser, error: null }
 }
 
 // ── Params type ───────────────────────────────────────────────────────────────
@@ -74,7 +71,7 @@ type RouteParams = { params: Promise<{ resource: string }> }
 // ── GET ───────────────────────────────────────────────────────────────────────
 
 export async function GET(req: NextRequest, { params }: RouteParams) {
-  const authError = await requireAdmin()
+  const { adminUser, error: authError } = await requireAdmin()
   if (authError) return authError
 
   const { resource } = await params
@@ -83,7 +80,7 @@ export async function GET(req: NextRequest, { params }: RouteParams) {
     return NextResponse.json({ error: `Recurso desconocido: ${resource}` }, { status: 404 })
   }
 
-  const supabase = createServerClient()
+  const supabase = getAdminDb(adminUser!.tenantId)
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   let query = (supabase.from(config.table) as any).select('*').order('order_index')
 
@@ -105,7 +102,7 @@ export async function GET(req: NextRequest, { params }: RouteParams) {
 // ── POST ──────────────────────────────────────────────────────────────────────
 
 export async function POST(req: NextRequest, { params }: RouteParams) {
-  const authError = await requireAdmin()
+  const { adminUser, error: authError } = await requireAdmin()
   if (authError) return authError
 
   const { resource } = await params
@@ -123,10 +120,10 @@ export async function POST(req: NextRequest, { params }: RouteParams) {
   }
 
   const now = new Date().toISOString()
-  const supabase = createServerClient()
+  const supabase = getAdminDb(adminUser!.tenantId)
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const { data, error } = await (supabase.from(config.table) as any)
-    .insert({ ...body, created_at: now, updated_at: now })
+    .insert({ ...body, tenant_id: adminUser!.tenantId, created_at: now, updated_at: now })
     .select()
     .single()
 
@@ -137,7 +134,7 @@ export async function POST(req: NextRequest, { params }: RouteParams) {
 // ── PATCH ─────────────────────────────────────────────────────────────────────
 
 export async function PATCH(req: NextRequest, { params }: RouteParams) {
-  const authError = await requireAdmin()
+  const { adminUser, error: authError } = await requireAdmin()
   if (authError) return authError
 
   const { resource } = await params
@@ -161,7 +158,7 @@ export async function PATCH(req: NextRequest, { params }: RouteParams) {
 
   const resolvedPk = config.pkNumeric ? Number(pkValue) : pkValue
   const now = new Date().toISOString()
-  const supabase = createServerClient()
+  const supabase = getAdminDb(adminUser!.tenantId)
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const { data, error } = await (supabase.from(config.table) as any)
     .update({ ...fields, updated_at: now })
@@ -176,7 +173,7 @@ export async function PATCH(req: NextRequest, { params }: RouteParams) {
 // ── DELETE ────────────────────────────────────────────────────────────────────
 
 export async function DELETE(req: NextRequest, { params }: RouteParams) {
-  const authError = await requireAdmin()
+  const { adminUser, error: authError } = await requireAdmin()
   if (authError) return authError
 
   const { resource } = await params
@@ -191,7 +188,7 @@ export async function DELETE(req: NextRequest, { params }: RouteParams) {
   }
 
   const resolvedPk = config.pkNumeric ? Number(pkValue) : pkValue
-  const supabase = createServerClient()
+  const supabase = getAdminDb(adminUser!.tenantId)
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const { error } = await (supabase.from(config.table) as any)
     .delete()

@@ -1,8 +1,11 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { createServerClient } from '@merkiai/database'
+import { getAdminUser } from '@/lib/auth'
+import { getAdminDb } from '@/lib/admin-db'
 
 export async function POST(request: NextRequest) {
   try {
+    const adminUser = await getAdminUser()
+    if (!adminUser) return NextResponse.json({ error: 'No autorizado' }, { status: 401 })
     const body = await request.json()
     const {
       title, slug, excerpt, content, cover_image,
@@ -13,10 +16,11 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'title y slug son requeridos' }, { status: 400 })
     }
 
-    const supabase = createServerClient()
+    const supabase = getAdminDb(adminUser.tenantId)
     const { data, error } = await supabase
       .from('blog_posts')
       .insert({
+        tenant_id:   adminUser.tenantId,
         title:       title.trim(),
         slug:        slug.trim(),
         excerpt:     excerpt     ?? null,

@@ -17,6 +17,12 @@ jest.mock('@merkiai/database', () => ({
   restoreStockForOrder: jest.fn().mockResolvedValue(undefined),
 }))
 
+// HU-158: la ruta usa getAdminUser + getAdminDb (RLS por tenant).
+jest.mock('@/lib/auth', () => ({
+  getAdminUser: jest.fn(async () => ({ email: 'a@x.com', displayName: 'A', role: 'admin', tenantId: 't1', needsWorkspaceSelection: false })),
+}))
+jest.mock('@/lib/admin-db', () => ({ getAdminDb: () => require('@merkiai/database').createServerClient() }))
+
 // Mock del módulo de email — evita llamadas reales a Resend
 jest.mock('@/lib/email', () => ({
   sendShippingNotification: jest.fn().mockResolvedValue(undefined),

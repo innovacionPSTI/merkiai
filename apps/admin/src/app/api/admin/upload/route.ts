@@ -1,10 +1,15 @@
 import { createServerClient } from '@merkiai/database'
 import { NextRequest, NextResponse } from 'next/server'
+import { getAdminUser } from '@/lib/auth'
 
 const ALLOWED_TYPES = ['image/jpeg', 'image/png', 'image/webp', 'image/gif']
 const MAX_SIZE = 5 * 1024 * 1024 // 5 MB
 
+// Nota: Storage (crear bucket/subir) requiere service-role → aquí `createServerClient`
+// es legítimo; el registro en `media_assets` se acota con `tenant_id` (HU-158).
 export async function POST(req: NextRequest) {
+  const adminUser = await getAdminUser()
+  if (!adminUser) return NextResponse.json({ error: 'No autorizado' }, { status: 401 })
   const formData = await req.formData()
   const file = formData.get('file') as File | null
   const bucket = (formData.get('bucket') as string) ?? 'products'
@@ -49,6 +54,7 @@ export async function POST(req: NextRequest) {
       size_bytes: file.size,
       alt_text:  altText || null,
       used_in:   [],
+      tenant_id: adminUser.tenantId,
     }).select().single()
     // Ignoramos el error — si falla el registro, el upload sigue siendo válido
   }

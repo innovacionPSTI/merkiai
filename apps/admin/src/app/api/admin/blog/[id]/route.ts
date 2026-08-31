@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { createServerClient } from '@merkiai/database'
+import { getAdminUser } from '@/lib/auth'
+import { getAdminDb } from '@/lib/admin-db'
 
 export async function PATCH(
   request: NextRequest,
@@ -18,7 +19,9 @@ export async function PATCH(
       return NextResponse.json({ error: 'title y slug son requeridos' }, { status: 400 })
     }
 
-    const supabase = createServerClient()
+    const adminUser = await getAdminUser()
+    if (!adminUser) return NextResponse.json({ error: 'No autorizado' }, { status: 401 })
+    const supabase = getAdminDb(adminUser.tenantId)
     const { error } = await supabase
       .from('blog_posts')
       .update({
@@ -57,7 +60,9 @@ export async function DELETE(
   try {
     const { id: rawId } = await params
     const id = parseInt(rawId, 10)
-    const supabase = createServerClient()
+    const adminUser = await getAdminUser()
+    if (!adminUser) return NextResponse.json({ error: 'No autorizado' }, { status: 401 })
+    const supabase = getAdminDb(adminUser.tenantId)
     const { error } = await supabase.from('blog_posts').delete().eq('id', id)
 
     if (error) {

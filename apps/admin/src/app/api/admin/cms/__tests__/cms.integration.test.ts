@@ -17,6 +17,7 @@
 jest.mock('@/lib/auth', () => ({
   getAdminUser: jest.fn(),
 }))
+jest.mock('@/lib/admin-db', () => ({ getAdminDb: () => require('@merkiai/database').createServerClient() }))
 jest.mock('@merkiai/database', () => ({
   createServerClient: jest.fn(),
 }))
@@ -91,13 +92,13 @@ beforeEach(() => {
 
 describe('Auth guard', () => {
   it('GET devuelve 401 si no está autenticado', async () => {
-    mockGetAdminUser.mockRejectedValue(new Error('No autorizado'))
+    mockGetAdminUser.mockResolvedValue(null)
     const res = await GET(makeRequest('GET', 'pages'), makeParams('pages'))
     expect(res.status).toBe(401)
   })
 
   it('POST devuelve 401 si no está autenticado', async () => {
-    mockGetAdminUser.mockRejectedValue(new Error('No autorizado'))
+    mockGetAdminUser.mockResolvedValue(null)
     const res = await POST(makeRequest('POST', 'pages', { key: 'x', label: 'x', slug: 'x' }), makeParams('pages'))
     expect(res.status).toBe(401)
   })
