@@ -38,6 +38,14 @@ create policy categories_admin_all on public.categories
   using      (tenant_id = (auth.jwt() ->> 'tenant_id')::uuid and coalesce((auth.jwt() ->> 'is_admin')::boolean, false))
   with check (tenant_id = (auth.jwt() ->> 'tenant_id')::uuid and coalesce((auth.jwt() ->> 'is_admin')::boolean, false));
 
+-- variant_types (plantillas de atributo por tenant; el form de producto las lee)
+alter table public.variant_types enable row level security;
+drop policy if exists variant_types_admin_all on public.variant_types;
+create policy variant_types_admin_all on public.variant_types
+  for all to authenticated
+  using      (tenant_id = (auth.jwt() ->> 'tenant_id')::uuid and coalesce((auth.jwt() ->> 'is_admin')::boolean, false))
+  with check (tenant_id = (auth.jwt() ->> 'tenant_id')::uuid and coalesce((auth.jwt() ->> 'is_admin')::boolean, false));
+
 -- =============================================================================
 -- SIGUIENTE (Etapa 3): mismas `*_admin_all` para orders, customers, customer_addresses,
 -- profiles, pages, page_sections, section_items, blog_posts, nav_items, coupons,

@@ -34,7 +34,7 @@ export default async function EditarProductoPage({ params }: { params: Promise<{
       .select('id, name')
       .eq('active', true)
       .order('name'),
-    getVariantTypes(true),
+    getVariantTypes(true, supabase),
   ])
 
   if (!product) notFound()
