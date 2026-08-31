@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createServerClient } from '@merkiai/database'
+import { resolveTenant } from '@/lib/tenant-context'
 
 /**
  * GET /api/checkout/status?order=ORD-XXXX
@@ -38,11 +39,16 @@ export async function GET(req: NextRequest) {
   if (!order) return NextResponse.json({ error: 'Falta el número de pedido' }, { status: 400 })
 
   try {
+    // Aislamiento: order_number es único POR tenant (e17/03). Sin acotar por el
+    // tenant del host, cualquiera podría leer el estado de un pedido de otra
+    // tienda conociendo su número. Resolvemos el tenant por host y filtramos.
+    const { tenantId } = await resolveTenant()
     const supabase = createServerClient()
     const { data } = await supabase
       .from('orders')
       .select('order_number, payment_status, payment_method')
       .eq('order_number', order)
+      .eq('tenant_id', tenantId)
       .maybeSingle()
 
     if (!data) return NextResponse.json({ error: 'Pedido no encontrado' }, { status: 404 })

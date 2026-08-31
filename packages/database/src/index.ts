@@ -11,3 +11,4 @@ export * from './lib/webhook-idempotency'
 // ─── Provider abstractions ────────────────────────────────────────────────────
 export * from './providers/payment/index'
 export * from './providers/email/index'
+export * from './providers/storage/index'
