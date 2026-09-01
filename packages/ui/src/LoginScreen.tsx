@@ -52,6 +52,11 @@ export interface LoginContent {
   loadingLabel?: string
   googleLabel?: string
   magicLinkLabel?: string
+  /** Textos del paso de Email OTP (cuando se pasa `onOtpVerify`). */
+  otpSentHint?: string
+  otpCodePlaceholder?: string
+  otpVerifyLabel?: string
+  otpResendLabel?: string
   forgotLabel?: string
   forgotHref?: string
   keepSignedLabel?: string
@@ -64,6 +69,13 @@ export interface LoginScreenProps {
   onGoogle?: () => void | Promise<void>
   /** Envía un enlace/código de acceso al email (magic link / Email OTP). */
   onMagicLink?: (email: string) => void | Promise<void>
+  /**
+   * Verifica el código de Email OTP que el usuario recibió. Si se pasa (junto
+   * con `onMagicLink`), tras "enviar código" se muestra el paso de ingreso de
+   * código (HU-214g). Si se omite, se mantiene el comportamiento de magic link
+   * por enlace (web/admin) sin cambios.
+   */
+  onOtpVerify?: (code: string) => void | Promise<void>
   loading?: boolean
   error?: string | null
 }
@@ -76,11 +88,12 @@ const DEFAULT_BRAND: Required<LoginBrand> = {
   radius: '14px',
 }
 
-export function LoginScreen({ content, brand, onSubmit, onGoogle, onMagicLink, loading, error }: LoginScreenProps) {
+export function LoginScreen({ content, brand, onSubmit, onGoogle, onMagicLink, onOtpVerify, loading, error }: LoginScreenProps) {
   const b = { ...DEFAULT_BRAND, ...brand }
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [magicSent, setMagicSent] = useState(false)
+  const [otpCode, setOtpCode] = useState('')
 
   const vars = {
     '--brand': b.primary,
@@ -222,9 +235,42 @@ export function LoginScreen({ content, brand, onSubmit, onGoogle, onMagicLink, l
 
               {onMagicLink && (
                 magicSent ? (
-                  <p style={{ fontSize: 13, color: '#2E5A3B', textAlign: 'center', margin: 0 }}>
-                    Te enviamos un enlace de acceso a <strong>{email}</strong>. Revisa tu correo.
-                  </p>
+                  onOtpVerify ? (
+                    // HU-214g · paso de Email OTP: ingresar y verificar el código.
+                    <div>
+                      <p style={{ fontSize: 13, color: '#2E5A3B', textAlign: 'center', margin: '0 0 10px' }}>
+                        {content.otpSentHint ?? 'Te enviamos un código a'} <strong>{email}</strong>.
+                      </p>
+                      <input
+                        type="text" inputMode="numeric" autoComplete="one-time-code"
+                        value={otpCode} onChange={(e) => setOtpCode(e.target.value.replace(/\s/g, ''))}
+                        placeholder={content.otpCodePlaceholder ?? 'Código de 6 dígitos'}
+                        style={{ ...input, textAlign: 'center', letterSpacing: 2, marginBottom: 8 }}
+                      />
+                      <button
+                        type="button" disabled={loading || otpCode.length < 6}
+                        onClick={() => void onOtpVerify(otpCode)}
+                        style={{
+                          width: '100%', padding: '12px', fontSize: 14, fontWeight: 600, color: 'var(--on-brand)',
+                          background: 'var(--brand)', border: 0, borderRadius: 'var(--radius)',
+                          cursor: (loading || otpCode.length < 6) ? 'default' : 'pointer', opacity: (loading || otpCode.length < 6) ? 0.6 : 1,
+                        }}
+                      >
+                        {content.otpVerifyLabel ?? 'Verificar código'}
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => { setMagicSent(false); setOtpCode('') }}
+                        style={{ width: '100%', marginTop: 8, background: 'none', border: 0, color: 'var(--brand)', fontSize: 13, cursor: 'pointer' }}
+                      >
+                        {content.otpResendLabel ?? 'Reenviar código'}
+                      </button>
+                    </div>
+                  ) : (
+                    <p style={{ fontSize: 13, color: '#2E5A3B', textAlign: 'center', margin: 0 }}>
+                      Te enviamos un enlace de acceso a <strong>{email}</strong>. Revisa tu correo.
+                    </p>
+                  )
                 ) : (
                   <button
                     type="button"
@@ -236,7 +282,7 @@ export function LoginScreen({ content, brand, onSubmit, onGoogle, onMagicLink, l
                       cursor: (loading || !email) ? 'default' : 'pointer', opacity: (loading || !email) ? 0.6 : 1,
                     }}
                   >
-                    {content.magicLinkLabel ?? 'Enviar enlace de acceso al correo'}
+                    {content.magicLinkLabel ?? (onOtpVerify ? 'Enviar código al correo' : 'Enviar enlace de acceso al correo')}
                   </button>
                 )
               )}

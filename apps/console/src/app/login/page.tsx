@@ -12,6 +12,7 @@ function ConsoleLogin() {
   const router = useRouter()
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const [otpNonce, setOtpNonce] = useState<string | null>(null) // HU-214g
 
   // HU-214: si ya hay sesión (p.ej. tras magic link/OAuth), reenviar a la consola.
   useEffect(() => {
@@ -39,12 +40,40 @@ function ConsoleLogin() {
     }
   }
 
+  // HU-214g · Email OTP: enviar código. `sendMagicLinkEmail` devuelve un `nonce`
+  // que identifica el intento; el correo incluye un código de 6 dígitos. El
+  // nonce se guarda para completar la verificación.
   async function handleMagicLink(mail: string) {
     setError(null)
     try {
-      await app.sendMagicLinkEmail(mail)
+      const res = await app.sendMagicLinkEmail(mail)
+      // La forma del resultado puede variar según versión de Stack Auth; se
+      // extrae el nonce de forma defensiva.
+      const nonce = (res as { data?: { nonce?: string }; nonce?: string })?.data?.nonce
+        ?? (res as { nonce?: string })?.nonce
+        ?? null
+      setOtpNonce(nonce)
     } catch {
-      setError('No se pudo enviar el enlace. Verifica el correo.')
+      setError('No se pudo enviar el código. Verifica el correo.')
+    }
+  }
+
+  // HU-214g · verificar el código. Stack Auth completa el OTP con
+  // `signInWithMagicLink(codigo + nonce)`.
+  async function handleOtpVerify(code: string) {
+    setError(null); setLoading(true)
+    try {
+      const fullCode = otpNonce ? `${code}${otpNonce}` : code
+      const result = await app.signInWithMagicLink(fullCode)
+      if (result.status === 'error') {
+        setError('Código inválido o expirado. Reenvía e intenta de nuevo.')
+      } else {
+        router.push('/')
+      }
+    } catch {
+      setError('No se pudo verificar el código. Intenta de nuevo.')
+    } finally {
+      setLoading(false)
     }
   }
 
@@ -54,6 +83,7 @@ function ConsoleLogin() {
       brand={CONSOLE_BRAND}
       onSubmit={handleSubmit}
       onMagicLink={handleMagicLink}
+      onOtpVerify={handleOtpVerify}
       loading={loading}
       error={error}
     />
