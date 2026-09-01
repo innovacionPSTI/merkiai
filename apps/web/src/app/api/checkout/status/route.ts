@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { createServerClient } from '@merkiai/database'
 import { resolveTenant } from '@/lib/tenant-context'
+import { getMachineDb } from '@/lib/machine-db'
 
 /**
  * GET /api/checkout/status?order=ORD-XXXX
@@ -39,11 +39,12 @@ export async function GET(req: NextRequest) {
   if (!order) return NextResponse.json({ error: 'Falta el número de pedido' }, { status: 400 })
 
   try {
-    // Aislamiento: order_number es único POR tenant (e17/03). Sin acotar por el
-    // tenant del host, cualquiera podría leer el estado de un pedido de otra
-    // tienda conociendo su número. Resolvemos el tenant por host y filtramos.
+    // Aislamiento (HU-216 + HU-227): order_number es único POR tenant (e17/03).
+    // Resolvemos el tenant por host y usamos el cliente de máquina con RLS
+    // (getMachineDb) → la RLS acota a ESE tenant aunque se olvidara el filtro
+    // explícito (que además mantenemos como defensa en profundidad).
     const { tenantId } = await resolveTenant()
-    const supabase = createServerClient()
+    const supabase = getMachineDb(tenantId)
     const { data } = await supabase
       .from('orders')
       .select('order_number, payment_status, payment_method')

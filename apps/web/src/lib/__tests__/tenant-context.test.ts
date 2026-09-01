@@ -4,7 +4,13 @@
  * HU-157 — resolución host→tenant vía el control plane.
  * Prueba la unidad pura `controlPlaneResolver` (sin `headers()` de Next).
  */
-import { controlPlaneResolver } from '../tenant-context'
+let mockHost = 'demo.merkiai.com'
+jest.mock('next/headers', () => ({
+  headers: async () => ({ get: (k: string) => (k === 'host' ? mockHost : null) }),
+}))
+
+import { controlPlaneResolver, resolveTenant } from '../tenant-context'
+import type { TenantResolver } from '../tenant-context'
 
 describe('controlPlaneResolver (HU-157)', () => {
   const OLD = { ...process.env }
@@ -56,5 +62,31 @@ describe('controlPlaneResolver (HU-157)', () => {
     process.env.INTERNAL_API_SECRET = 'secreto-interno'
     g.fetch.mockRejectedValue(new Error('network'))
     expect(await controlPlaneResolver.resolveByHost('x.merkiai.com')).toBeNull()
+  })
+})
+
+describe('resolveTenant — modo estricto (HU-229)', () => {
+  const OLD = { ...process.env }
+  afterEach(() => { process.env = { ...OLD }; mockHost = 'demo.merkiai.com' })
+
+  const unknown: TenantResolver = { async resolveByHost() { return null } }
+  const found: TenantResolver = { async resolveByHost() { return { tenantId: 't9', subdomain: 'demo', primaryDomain: null } } }
+
+  it('interino (default): host desconocido → tenant por defecto (fail-open)', async () => {
+    delete process.env.TENANT_RESOLUTION_STRICT
+    const r = await resolveTenant(unknown)
+    expect(r.subdomain).toBe('default')
+  })
+
+  it('estricto: host desconocido → lanza (fail-closed)', async () => {
+    process.env.TENANT_RESOLUTION_STRICT = 'true'
+    await expect(resolveTenant(unknown)).rejects.toThrow(/no asociado a un tenant/)
+  })
+
+  it('estricto: host que resuelve → devuelve el tenant', async () => {
+    process.env.TENANT_RESOLUTION_STRICT = 'true'
+    mockHost = 'otra.merkiai.com' // evita la caché de hosts previos
+    const r = await resolveTenant(found)
+    expect(r.tenantId).toBe('t9')
   })
 })

@@ -19,7 +19,7 @@
  * ---------------------------------------------------------------------------
  */
 import { headers } from 'next/headers'
-import type { PlanEntitlements } from '@merkiai/tenancy'
+import { MissingTenantContextError, type PlanEntitlements } from '@merkiai/tenancy'
 
 export interface ResolvedTenant {
   tenantId: string
@@ -106,20 +106,39 @@ const RESOLVE_TTL_MS = 60_000
 const cache = new Map<string, { value: ResolvedTenant; expires: number }>()
 
 /**
+ * Modo estricto (HU-229): en producción multi-tenant, un host que NO resuelve a
+ * un tenant debe **fallar cerrado** (no caer al tenant por defecto, que mezclaría
+ * datos / expondría la tienda default). Se activa con `TENANT_RESOLUTION_STRICT`.
+ * Por defecto **off** para preservar el comportamiento single-tenant interino.
+ */
+function strictMode(): boolean {
+  return process.env.TENANT_RESOLUTION_STRICT === 'true'
+}
+
+/**
  * Resuelve el tenant de la petición actual a partir del Host.
- * Fail-open al tenant por defecto si no hay host o el resolver no encuentra
- * (interim single-tenant / error transitorio del control plane).
+ * - Modo interino (default): fail-open al tenant por defecto si no hay host o el
+ *   resolver no encuentra (single-tenant / error transitorio del control plane).
+ * - Modo estricto (`TENANT_RESOLUTION_STRICT=true`): **fail-closed** — lanza
+ *   `MissingTenantContextError` si el host falta o no mapea a un tenant. Los
+ *   callers lo traducen a 404/redirect (nunca renderizan el default).
  */
 export async function resolveTenant(resolver: TenantResolver = defaultResolver()): Promise<ResolvedTenant> {
   const h = await headers()
   const host = (h.get('x-forwarded-host') ?? h.get('host') ?? '').toLowerCase().replace(/:\d+$/, '')
-  if (!host) return DEFAULT_TENANT
+  if (!host) {
+    if (strictMode()) throw new MissingTenantContextError('Petición sin Host')
+    return DEFAULT_TENANT
+  }
 
   const hit = cache.get(host)
   if (hit && hit.expires > Date.now()) return hit.value
 
   const resolved = await resolver.resolveByHost(host)
-  if (!resolved) return DEFAULT_TENANT // no cachear el fallback
+  if (!resolved) {
+    if (strictMode()) throw new MissingTenantContextError(`Host no asociado a un tenant: ${host}`)
+    return DEFAULT_TENANT // no cachear el fallback
+  }
 
   cache.set(host, { value: resolved, expires: Date.now() + RESOLVE_TTL_MS })
   return resolved
