@@ -104,8 +104,8 @@ export async function provisionTenant(input: ProvisionInput, deps: ProvisionDeps
     warnings.push('Stack Auth (proyecto admin) no configurado: Team no creado — provisioning parcial.')
   }
 
-  // 4) Seed de config por-tenant → HU-207.
-  warnings.push('Config por-tenant (store_config/…) pendiente de HU-207.')
+  // 4) Seed de config por-tenant (HU-207): lo hace el caller (actions.ts) vía el
+  //    endpoint interno del admin, porque esa config vive en el plano de tienda.
 
   return { tenantId, teamId, warnings }
 }

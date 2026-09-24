@@ -7,7 +7,7 @@ import { parsePlanForm } from '@/lib/plan-validation'
 import { getPlans } from '@/lib/plans'
 import { provisionTenant, ensureTenantTeam } from '@/lib/provisioning'
 import { adminIdentity } from '@/lib/admin-identity'
-import { provisionOwnerProfile } from '@/lib/admin-provision'
+import { provisionOwnerProfile, seedTenantConfigViaAdmin } from '@/lib/admin-provision'
 
 const SUBDOMAIN_RE = /^[a-z0-9-]{2,40}$/
 
@@ -49,8 +49,14 @@ export async function createTenant(
       { name, subdomain, plan, ownerEmail: ownerEmail || undefined },
       { db: platformDb(), adminIdentity: adminIdentity() },
     )
-    // Warnings "esperados" (config pendiente HU-207) no se muestran como problema.
-    const warnings = (res.warnings ?? []).filter((w) => !/HU-207/.test(w))
+    const warnings = res.warnings ?? []
+
+    // HU-207: sembrar la config por-tenant (store/payment/shipping/admin_config +
+    // página home) vía el admin. Idempotente; falla aparte (no tumba el tenant).
+    const seed = await seedTenantConfigViaAdmin({ tenantId: res.tenantId, storeName: name })
+    if (!seed.ok) {
+      warnings.push(`Config inicial no sembrada (${seed.error}). Reintenta o créala desde el admin.`)
+    }
 
     // Rol de admin del dueño: crea su `profiles` (rol admin + tenant_id) vía el
     // admin. Solo si hay Team (identidad lista) y email. Falla aparte (no tumba).
