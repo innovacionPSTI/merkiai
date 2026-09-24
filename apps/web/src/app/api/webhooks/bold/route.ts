@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { createServerClient, getPaymentConfig, getStoreConfig, BoldGateway, applyStockForOrder, markWebhookEventProcessed } from '@merkiai/database'
+import { getPaymentConfig, getStoreConfig, BoldGateway, applyStockForOrder, markWebhookEventProcessed } from '@merkiai/database'
 import { resolveTenant } from '@/lib/tenant-context'
+import { getMachineDb } from '@/lib/machine-db'
 import { amountCoversOrder } from '@/lib/payment-guards'
 import { sendOrderConfirmation, buildEmailConfig } from '@/lib/email'
 import { createShipmentForOrder } from '@/lib/shipping/shipments'
@@ -31,7 +32,7 @@ export async function POST(req: NextRequest) {
   // URLs de callback con el subdominio del tenant) → carga la config de pago de
   // ESE tenant, no la del default.
   const { tenantId } = await resolveTenant()
-  const supabase = createServerClient()
+  const supabase = getMachineDb(tenantId) // HU-227: RLS por tenant (antes service-role)
   const paymentConfig = await getPaymentConfig(supabase, tenantId).catch(() => null)
 
   // Se valida por credenciales (no por proveedor activo): una notificación puede

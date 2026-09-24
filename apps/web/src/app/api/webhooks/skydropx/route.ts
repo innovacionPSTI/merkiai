@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createServerClient, getStoreConfig } from '@merkiai/database'
+import { getMachineDb } from '@/lib/machine-db'
 import { sendShippingNotification, buildEmailConfig } from '@/lib/email'
 import type { Order } from '@merkiai/database'
 
@@ -71,6 +72,10 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ ok: true, skipped: true })
     }
 
+    // Bootstrap (HU-227): el pedido se identifica por `tracking_number` (global
+    // del transportador) → aún no se conoce el tenant. Esta lectura/actualización
+    // mínima es el único borde service-role legítimo; la config posterior ya va
+    // acotada por RLS con el `tenant_id` del pedido.
     const supabase = createServerClient()
 
     const { data: updatedOrder, error } = await supabase
@@ -88,8 +93,8 @@ export async function POST(req: NextRequest) {
     // Send tracking email when package enters transit for the first time
     if (newStatus === 'shipped' && updatedOrder) {
       try {
-        // HU-216: store config del tenant del pedido (no del default).
-        const storeConfig = await getStoreConfig(supabase, updatedOrder.tenant_id)
+        // HU-216/227: store config del tenant del pedido, vía RLS (no service-role).
+        const storeConfig = await getStoreConfig(getMachineDb(updatedOrder.tenant_id), updatedOrder.tenant_id)
         if (storeConfig?.resend_api_key && storeConfig?.resend_from_email && updatedOrder.tracking_number) {
           await sendShippingNotification(
             updatedOrder as unknown as Order & { tracking_number: string; carrier_name: string | null; label_url: string | null },

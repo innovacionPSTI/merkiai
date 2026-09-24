@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { createServerClient, getPaymentConfig, getStoreConfig, applyStockForOrder, markWebhookEventProcessed } from '@merkiai/database'
+import { getPaymentConfig, getStoreConfig, applyStockForOrder, markWebhookEventProcessed } from '@merkiai/database'
 import { resolveTenant } from '@/lib/tenant-context'
+import { getMachineDb } from '@/lib/machine-db'
 import { getMercadoPagoPayment, mapMercadoPagoStatus, verifyMercadoPagoSignature } from '@/lib/mercadopago'
 import { amountCoversOrder } from '@/lib/payment-guards'
 import { sendOrderConfirmation, sendShippingNotification, buildEmailConfig } from '@/lib/email'
@@ -36,7 +37,9 @@ export async function POST(req: NextRequest) {
   // Cargar credenciales desde la BD
   // HU-216: config del TENANT resuelto por host (URLs de callback por subdominio).
   const { tenantId } = await resolveTenant()
-  const paymentConfig = await getPaymentConfig(createServerClient(), tenantId).catch(() => null)
+  // HU-227: cliente de máquina acotado por RLS (antes service-role).
+  const supabase = getMachineDb(tenantId)
+  const paymentConfig = await getPaymentConfig(supabase, tenantId).catch(() => null)
   if (!paymentConfig?.mercadopago_access_token) {
     console.error('[webhook/mercadopago] access_token no configurado en BD')
     return NextResponse.json({ error: 'MP not configured' }, { status: 503 })
@@ -75,7 +78,6 @@ export async function POST(req: NextRequest) {
   }
 
   let paymentStatus = mapMercadoPagoStatus(mpStatus)
-  const supabase = createServerClient()
 
   // Guarda anti-subpago: el monto lo da la API de MP (no el cliente).
   if (paymentStatus === 'approved') {

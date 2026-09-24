@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { createServerClient, getPaymentConfig, getStoreConfig, TuCompraGateway, applyStockForOrder, markWebhookEventProcessed } from '@merkiai/database'
+import { getPaymentConfig, getStoreConfig, TuCompraGateway, applyStockForOrder, markWebhookEventProcessed } from '@merkiai/database'
 import { resolveTenant } from '@/lib/tenant-context'
+import { getMachineDb } from '@/lib/machine-db'
 import { amountCoversOrder } from '@/lib/payment-guards'
 import { sendOrderConfirmation, buildEmailConfig } from '@/lib/email'
 import { createShipmentForOrder } from '@/lib/shipping/shipments'
@@ -29,7 +30,8 @@ export async function POST(req: NextRequest) {
 
   // HU-216: config del TENANT resuelto por host (URLs de callback por subdominio).
   const { tenantId } = await resolveTenant()
-  const paymentConfig = await getPaymentConfig(createServerClient(), tenantId).catch(() => null)
+  const supabase = getMachineDb(tenantId) // HU-227: RLS por tenant (antes service-role)
+  const paymentConfig = await getPaymentConfig(supabase, tenantId).catch(() => null)
   if (!paymentConfig?.tucompra_user || !paymentConfig.tucompra_password || !paymentConfig.tucompra_terminal) {
     console.warn('[webhook/tucompra] Tu Compra no configurado')
     return NextResponse.json({ error: 'Gateway not configured' }, { status: 503 })
@@ -79,8 +81,7 @@ export async function POST(req: NextRequest) {
   }
 
   // codigoSeguimiento persistido (obligatorio para consultarEstadoTransaccion).
-  const supabasePre = createServerClient()
-  const { data: preOrder } = await supabasePre
+  const { data: preOrder } = await supabase
     .from('orders')
     .select('tucompra_codigo_seguimiento, total')
     .eq('order_number', orderReference)
@@ -105,7 +106,6 @@ export async function POST(req: NextRequest) {
   const { duplicate } = await markWebhookEventProcessed('tucompra', `${orderReference}:${paymentStatus}`)
   if (duplicate) return NextResponse.json({ ok: true, idempotent: true })
 
-  const supabase = createServerClient()
   const updatePayload: OrderUpdate = {
     payment_status: paymentStatus,
     updated_at: new Date().toISOString(),

@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { createServerClient, getPaymentConfig, getStoreConfig, applyStockForOrder, markWebhookEventProcessed } from '@merkiai/database'
+import { getPaymentConfig, getStoreConfig, applyStockForOrder, markWebhookEventProcessed } from '@merkiai/database'
 import { resolveTenant } from '@/lib/tenant-context'
+import { getMachineDb } from '@/lib/machine-db'
 import { verifyWompiWebhook, isWompiTimestampFresh, mapWompiStatus } from '@/lib/wompi'
 import { amountCoversOrder } from '@/lib/payment-guards'
 import { sendOrderConfirmation, sendShippingNotification, buildEmailConfig } from '@/lib/email'
@@ -33,7 +34,10 @@ export async function POST(req: NextRequest) {
   // Cargar credenciales desde la BD
   // HU-216: config del TENANT resuelto por host (URLs de callback por subdominio).
   const { tenantId } = await resolveTenant()
-  const paymentConfig = await getPaymentConfig(createServerClient(), tenantId).catch(() => null)
+  // HU-227: cliente de máquina acotado por RLS (antes service-role). Todas las
+  // lecturas/escrituras de la orden quedan acotadas al tenant del host.
+  const supabase = getMachineDb(tenantId)
+  const paymentConfig = await getPaymentConfig(supabase, tenantId).catch(() => null)
   const eventsSecret = paymentConfig?.wompi_events_secret ?? ''
 
   if (!verifyWompiWebhook(rawBody, timestamp, checksum, eventsSecret)) {
@@ -75,7 +79,6 @@ export async function POST(req: NextRequest) {
   if (duplicate) return NextResponse.json({ ok: true, idempotent: true })
 
   let paymentStatus = mapWompiStatus(wompiStatus)
-  const supabase = createServerClient()
 
   // Guarda anti-subpago: si el pago aprobado no cubre el total, no se aprueba.
   if (paymentStatus === 'approved') {
