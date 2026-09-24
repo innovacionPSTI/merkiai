@@ -11,6 +11,8 @@
  * (repositorio + este contexto) son estables; solo cambia la presentación.
  */
 import { cache } from 'react'
+import { notFound } from 'next/navigation'
+import { MissingTenantContextError } from '@merkiai/tenancy'
 import { getStoreConfig, getFooterPages, getNavTree, getActiveTheme } from '@merkiai/database'
 import { getRequestCatalogDb } from './tenant-db'
 import { resolveTenant } from './tenant-context'
@@ -28,3 +30,18 @@ export const getStoreContext = cache(async () => {
 })
 
 export type StoreContext = Awaited<ReturnType<typeof getStoreContext>>
+
+/**
+ * Igual que `getStoreContext`, pero traduce un tenant no resuelto (modo estricto
+ * de HU-229 → `MissingTenantContextError`) en un **404 limpio** en vez de un 500.
+ * Úsalo en las superficies del storefront (StoreShell, páginas). El root layout
+ * puede seguir usando `getStoreContext().catch(...)` para degradar el chrome.
+ */
+export async function requireStoreContext(): Promise<StoreContext> {
+  try {
+    return await getStoreContext()
+  } catch (e) {
+    if (e instanceof MissingTenantContextError) notFound()
+    throw e
+  }
+}

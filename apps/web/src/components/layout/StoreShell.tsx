@@ -11,10 +11,11 @@
  */
 import Navbar from './Navbar'
 import Footer from './Footer'
-import { getStoreContext } from '@/lib/store-context'
+import { requireStoreContext } from '@/lib/store-context'
 
 export default async function StoreShell({ children }: { children: React.ReactNode }) {
-  const { config, navItems, footerPages } = await getStoreContext()
+  // HU-229: si el host no resuelve a un tenant (modo estricto), 404 limpio.
+  const { config, navItems, footerPages } = await requireStoreContext()
 
   return (
     <>

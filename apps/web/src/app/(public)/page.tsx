@@ -1,5 +1,5 @@
 import { getWebHomeData } from '@merkiai/database'
-import { getStoreContext } from '@/lib/store-context'
+import { requireStoreContext } from '@/lib/store-context'
 import { getHomeBlocks, getHomeLayout } from '@/components/blocks/home-blocks'
 
 // E17/HU-157: la home lee datos del tenant resuelto por Host → render dinámico.
@@ -7,7 +7,7 @@ export const dynamic = 'force-dynamic'
 
 export default async function HomePage() {
   // HU-217: contexto de tienda (tenant/db/config/template) + datos del home.
-  const ctx = await getStoreContext()
+  const ctx = await requireStoreContext()
   const data = await getWebHomeData(ctx.db)
 
   const template = ctx.config?.template ?? 'default'

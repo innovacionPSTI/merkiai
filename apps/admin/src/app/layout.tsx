@@ -7,6 +7,7 @@ import { StackProvider, StackTheme } from '@stackframe/stack'
 import { stackServerApp } from '../stack'
 import AdminSidebar from '@/components/layout/AdminSidebar'
 import { getAdminUser } from '@/lib/auth'
+import { getAdminDb } from '@/lib/admin-db'
 import { getAdminConfig } from '@merkiai/database'
 import { getActiveTenantId } from '@/lib/active-tenant'
 import { listWorkspaces } from '@/lib/workspaces'
@@ -66,8 +67,10 @@ export default async function AdminRootLayout({ children }: { children: React.Re
   // ── Tenant activo (HU-158) ─────────────────────────────────────────────────
   const activeTenantId = await getActiveTenantId()
 
-  // ── Configuración visual del panel (por tenant activo) ─────────────────────
-  const adminConfig = await getAdminConfig(undefined, activeTenantId).catch(() => null)
+  // ── Configuración visual del panel (por tenant activo, vía RLS) ────────────
+  // HU-158: se lee con el cliente acotado por RLS (no service-role). `.catch`
+  // mantiene el login operable si faltara el secreto (degrada a colores default).
+  const adminConfig = await getAdminConfig(getAdminDb(activeTenantId), activeTenantId).catch(() => null)
   const adminCSS = adminConfig
     ? `:root {
   --brand-primary: ${hexToRgb(adminConfig.accent_color)};
