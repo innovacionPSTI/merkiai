@@ -46,13 +46,13 @@ Específicas:
 
 Para cada uno de los **3 proyectos** (web/admin/console):
 
-- [ ] **OAuth de Google con keys propias** (no las *Shared keys* de dev) — quita la marca de Stack Auth y arregla el drop de cookie en el primer retorno.
-- [ ] **Authorized redirect URIs** en Google Cloud por subdominio: `*.merkiai.com` (web), `admin.merkiai.com`, `console.merkiai.com`.
-- [ ] **Trusted Domains** en Stack Auth (¡distinto de los redirect URIs de Google!): **web** = `*.merkiai.com` (wildcard, si lo soporta) + dominios propios; **admin** = solo `admin.merkiai.com`; **console** = solo `console.merkiai.com`; `localhost` en dev.
-- [ ] **`cookieDomain` host-scoped** — **prohibido** `Domain=.merkiai.com` (filtraría sesiones de compradores entre tiendas).
-- [ ] **Account-linking** por email verificado habilitado (evita `CONTACT_CHANNEL_ALREADY_USED…`).
-- [ ] Proyecto **admin**: creación de Teams server-side habilitada (la consola crea el Team del tenant).
-- [ ] **Secreto interno**: idealmente separar `PROVISIONING_API_SECRET` (console↔admin) del resto (HU-228, pendiente ops).
+- [ ] **OAuth de Google con keys propias** (no las *Shared keys* de dev) — quita la marca de Stack Auth y arregla el drop de cookie en el primer retorno. *(Se puede dejar para el final; con Shared keys funciona en dev.)*
+- [ ] **Authorized redirect URIs** en Google Cloud por subdominio: `*.merkiai.com` (web), `admin.merkiai.com`, `console.merkiai.com`. *(Va con las keys propias de Google.)*
+- [x] **Trusted Domains** en Stack Auth (¡distinto de los redirect URIs de Google!): **web** = `*.merkiai.com` (wildcard, si lo soporta) + dominios propios; **admin** = solo `admin.merkiai.com`; **console** = solo `console.merkiai.com`; `localhost` en dev.
+- [x] **`cookieDomain` host-scoped** — **YA correcto por defecto**: los `StackServerApp` usan `tokenStore: 'nextjs-cookie'` **sin** `cookieDomain` → cookies sin atributo `Domain` (host-scoped), y cada app es un proyecto Stack distinto. Nada que configurar; solo confirmar que el dashboard no fuerce un "custom cookie domain" compartido.
+- [ ] **Account-linking** por email verificado — **en el dashboard de Stack Auth** (proyecto → Auth/OAuth). Evita `CONTACT_CHANNEL_ALREADY_USED…`. **Va JUNTO con el OAuth de Google** (déjalo para el final con las keys propias).
+- [x] Proyecto **admin**: creación de Teams server-side habilitada (la consola crea el Team del tenant).
+- [ ] **Secreto interno**: hoy el aprovisionamiento (console→admin) usa el **`INTERNAL_API_SECRET` compartido** — suficiente para el go-live. *(Opcional/futuro HU-228: separar un `PROVISIONING_API_SECRET` dedicado; NO implementado, no bloquea.)*
 
 ## 4. Flags de activación **[OPS]**
 
