@@ -1,6 +1,7 @@
-# Commerce CMS — Estado del Proyecto
-> **Última actualización:** Agosto 2026 (v60) · **Stack:** Next.js 16 · Supabase · Stack Auth · Tailwind · Turborepo
-> **En curso (E17 multi-tenant):** aprovisionamiento de tenants operable end-to-end (HU-209/215, validado con `prueba1`), storefront tenant-scoped (HU-207/157, validado en vivo), auditoría anti service-role + enforcement por lint (HU-216). **Pendiente mayor:** admin tenant-scoped con cliente RLS (HU-158, epic por etapas) y config-por-tenant en webhooks/reconcile (HU-216).
+# Merkiai — Estado del Proyecto
+> **Última actualización:** Septiembre 2026 (v66) · **Stack:** Next.js 16 · Supabase · Stack Auth · Tailwind · Turborepo
+> **MVP SaaS — code-side casi listo para go-live.** Hecho: aislamiento del admin cerrado (**HU-158** ✅, todo por `getAdminDb`/RLS), **seed de config por tenant** en el alta (**HU-207**), **fail-closed del host** + 404 (**HU-229**, flag `TENANT_RESOLUTION_STRICT`), **islas de webhooks a cliente-máquina RLS** (**HU-227**, `getMachineDb`), **Email OTP** en la consola (**HU-214g**), y el **Constructor de páginas schema-driven** (**HU-217/218** contrato de bloques + validación zod, **219** preview en vivo, **220** aplicar plantilla). Doc de secretos (**HU-228**) y spike de IA (**HU-231**). Limpieza: eliminado `lib/skydropx` (env, muerto) — Skydropx va 100% por `shipping_config` (BD); `.env.example` por app validados contra código.
+> **Pendiente para el go-live (ops):** Stack Auth prod (**HU-214**: OAuth keys, Trusted Domains) + activar flags + **alta end-to-end en vivo**. Ver `docs/GO-LIVE-SAAS.md`. **Después:** billing (HU-192/193/194), `api/checkout` a RLS, RLS de `storage.objects`.
 
 ---
 
@@ -740,13 +741,13 @@ merkiai/
 
 ## 🔑 Variables de entorno necesarias
 
-Ver `.env.example` en la raíz del proyecto para la lista completa.
-Las más críticas para arrancar:
-- `NEXT_PUBLIC_SUPABASE_URL`
-- `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY`
-- `SUPABASE_SERVICE_ROLE_KEY`
+Cada app tiene su propio `.env.example` (fuente de verdad, validada contra el código):
+- `apps/web/.env.example` · `apps/admin/.env.example` · `apps/console/.env.example`
+- `.env.example` (raíz) = índice + secretos compartidos.
 
-> **Nota:** El número de WhatsApp ya **no** se configura via variable de entorno. Se gestiona desde el panel admin en `/configuracion` y se persiste en la tabla `store_config`.
+Críticas: `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY`, `SUPABASE_SERVICE_ROLE_KEY`, `SUPABASE_JWT_SECRET` (RLS por tenant, fail-closed en web+admin), `INTERNAL_API_SECRET` (server-to-server, las 3 apps). Multi-tenant: `CONTROL_PLANE_URL`, `TENANT_RESOLUTION_STRICT`. Ver `docs/GO-LIVE-SAAS.md`.
+
+> **Nota:** Las integraciones por tienda **no** usan env: pagos (`payment_config`), emails/WhatsApp/marca (`store_config`) y **envíos Skydropx — credenciales + tarifa + origen** (`shipping_config`). Todo en el admin → Supabase.
 
 ---
 

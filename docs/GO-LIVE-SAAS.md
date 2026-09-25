@@ -36,7 +36,7 @@ Específicas:
 
 | App | Variables |
 |---|---|
-| **web** | `NEXT_PUBLIC_ROOT_DOMAIN`, `SKYDROPX_*`, `HEXCLAVE_*` (proyecto web), `TENANT_RESOLUTION_STRICT` |
+| **web** | `NEXT_PUBLIC_ROOT_DOMAIN`, `HEXCLAVE_*` (proyecto web), `TENANT_RESOLUTION_STRICT`, `DRAFT_SECRET`, `MAINTENANCE_MODE` |
 | **admin** | `NEXT_PUBLIC_ADMIN_URL`, `HEXCLAVE_*` (proyecto admin), `NEXT_PUBLIC_FEATURE_PAGE_BUILDER` |
 | **console** | `ADMIN_APP_URL` (URL del admin), `SUPABASE_*` (proyecto **plataforma**), `ADMIN_HEXCLAVE_SECRET_SERVER_KEY` + `NEXT_PUBLIC_ADMIN_HEXCLAVE_*` (proyecto **admin**, para crear Teams/invitar), `HEXCLAVE_*` (proyecto console, para su propio login) |
 

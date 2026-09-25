@@ -249,6 +249,8 @@ Consolidar todo el contenido gestionable (banners, secciones del home, testimoni
 | S-07 | Webhook Skydropx — actualizar estado de pedido automáticamente | Alta | ✅ |
 | S-08 | Email automático al cliente con número de tracking | Media | ✅ |
 
+> **Config por tenant (no env):** las credenciales de Skydropx (client_id/secret, base_url, dirección de origen) y la tarifa/proveedor viven **por tienda en `shipping_config`** (BD), no en variables de entorno. El proveedor vivo es `apps/web/src/lib/shipping/providers/skydropx` (auth + cotización + guía). *Limpieza (sep-2026): se eliminó `apps/web/src/lib/skydropx` (implementación legacy basada en env `SKYDROPX_*`, sin importadores) — código muerto.*
+
 ---
 
 ### Épica 8 — Páginas de contenido y servicios  ·  *(v2: E11)*
