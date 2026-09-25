@@ -19,6 +19,8 @@ jest.mock('@merkiai/database', () => ({
   createServerClient: jest.fn(),
   getStoreConfig: jest.fn().mockResolvedValue(null), // no email config → skip email
 }))
+// HU-227: getStoreConfig se lee vía getMachineDb (db ignorado aquí, getStoreConfig mockeado).
+jest.mock('@/lib/machine-db', () => ({ getMachineDb: jest.fn(() => ({})) }))
 
 import { createServerClient } from '@merkiai/database'
 import { POST } from '../webhooks/skydropx/route'

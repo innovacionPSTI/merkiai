@@ -29,6 +29,8 @@ const mockFrom = jest.fn(() => ({
   update: jest.fn(() => ({ eq: jest.fn(() => ({ select: jest.fn(() => ({ single: mockSingle, maybeSingle: mockSingle })) })) })),
 }))
 
+// HU-227: los webhooks usan getMachineDb (RLS) en vez de createServerClient.
+jest.mock('@/lib/machine-db', () => ({ getMachineDb: jest.fn(() => ({ from: mockFrom })) }))
 jest.mock('@merkiai/database', () => ({
   createServerClient: jest.fn(() => ({ from: mockFrom })),
   getPaymentConfig: jest.fn(),
