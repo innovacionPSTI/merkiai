@@ -71,7 +71,7 @@ export async function provisionTenant(input: ProvisionInput, deps: ProvisionDeps
   // 2) Crear la fila del tenant
   const created = await db
     .from('tenants')
-    .insert({ name, subdomain, plan, status: 'active', data_isolation: 'shared', db_ref: null })
+    .insert({ name, subdomain, plan, status: 'active', data_isolation: 'shared', db_ref: null, owner_email: ownerEmail || null })
     .select('id')
     .single()
   if (created.error || !created.data?.id) throw created.error ?? new Error('[provision] no se pudo crear el tenant')

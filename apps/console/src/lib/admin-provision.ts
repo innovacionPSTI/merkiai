@@ -44,6 +44,37 @@ export async function seedTenantConfigViaAdmin(
   }
 }
 
+/**
+ * Puente consola → admin para PURGAR los datos de un tenant (HU-209 · borrado).
+ * El admin borra todas las filas del plano de tienda de ese tenant_id.
+ */
+export async function purgeTenantViaAdmin(
+  tenantId: string,
+): Promise<{ ok: boolean; error?: string }> {
+  const base = (process.env.ADMIN_APP_URL ?? 'https://admin.merkiai.com').replace(/\/$/, '')
+  const secret = process.env.INTERNAL_API_SECRET
+  if (!secret) return { ok: false, error: 'INTERNAL_API_SECRET no configurado en la consola.' }
+  try {
+    const res = await fetch(`${base}/api/internal/tenants/purge`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'x-internal-secret': secret },
+      cache: 'no-store',
+      redirect: 'manual',
+      body: JSON.stringify({ tenantId }),
+    })
+    if (res.type === 'opaqueredirect' || (res.status >= 300 && res.status < 400)) {
+      return { ok: false, error: 'admin redirigió la petición (¿middleware pidiendo sesión?).' }
+    }
+    if (!res.ok) {
+      const t = await res.text().catch(() => '')
+      return { ok: false, error: `admin respondió ${res.status}${t ? `: ${t.slice(0, 140)}` : ''}` }
+    }
+    return { ok: true }
+  } catch (e) {
+    return { ok: false, error: e instanceof Error ? e.message : String(e) }
+  }
+}
+
 export async function provisionOwnerProfile(
   input: ProvisionOwnerInput,
 ): Promise<{ ok: boolean; error?: string }> {

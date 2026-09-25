@@ -7,7 +7,7 @@ import { parsePlanForm } from '@/lib/plan-validation'
 import { getPlans } from '@/lib/plans'
 import { provisionTenant, ensureTenantTeam } from '@/lib/provisioning'
 import { adminIdentity } from '@/lib/admin-identity'
-import { provisionOwnerProfile, seedTenantConfigViaAdmin } from '@/lib/admin-provision'
+import { provisionOwnerProfile, seedTenantConfigViaAdmin, purgeTenantViaAdmin } from '@/lib/admin-provision'
 
 const SUBDOMAIN_RE = /^[a-z0-9-]{2,40}$/
 
@@ -142,6 +142,8 @@ export async function inviteTenantOwner(
   // Rol de super admin del dueño (profiles en la BD del admin). ESTO es lo que
   // habilita el acceso; sin esto el dueño se une al Team pero ve "Sin acceso".
   const prof = await provisionOwnerProfile({ email, tenantId: id, role: 'super_admin' })
+  // Denormaliza el dueño en la fila del tenant (para mostrarlo en el listado).
+  await db.from('tenants').update({ owner_email: email }).eq('id', id)
   revalidatePath('/')
   if (!prof.ok) {
     return { ok: false, error: `No se pudo asignar el rol de super admin: ${prof.error}` }
@@ -174,18 +176,32 @@ export async function deleteTenant(
   }
 
   const db = platformDb()
-  // Best-effort: borrar el Team en Stack Auth para no dejar huérfanos.
+  const warnings: string[] = []
+
+  // 1) Purga TODOS los datos del plano de tienda de ese tenant (config, contenido,
+  //    catálogo, pedidos, clientes, perfiles) vía el admin. Best-effort.
+  const purge = await purgeTenantViaAdmin(id)
+  if (!purge.ok) warnings.push(`No se purgaron los datos de tienda (${purge.error}).`)
+
+  // 2) Borra el Team en Stack Auth (no dejar huérfanos). Best-effort.
   const { data } = await db.from('tenants').select('stack_team_id').eq('id', id).maybeSingle()
   const teamId = (data as { stack_team_id?: string | null } | null)?.stack_team_id
   const identity = adminIdentity()
   if (teamId && identity?.deleteOrg) {
-    try { await identity.deleteOrg(teamId) } catch { /* el Team puede reciclarse aparte */ }
+    try { await identity.deleteOrg(teamId) } catch (e) { warnings.push(`No se borró el Team en Stack Auth (${e instanceof Error ? e.message : String(e)}).`) }
   }
 
+  // 3) Borra la fila de plataforma. (El wildcard *.merkiai.com es compartido: no
+  //    hay DNS por-tenant que desmontar.)
   const { error } = await db.from('tenants').delete().eq('id', id)
-  if (error) return { ok: false, error: `No se pudo eliminar: ${error.message}` }
+  if (error) return { ok: false, error: `No se pudo eliminar el tenant: ${error.message}` }
   revalidatePath('/')
-  return { ok: true, message: 'Tenant eliminado.' }
+  return {
+    ok: true,
+    message: warnings.length
+      ? `Tenant eliminado con avisos: ${warnings.join(' ')}`
+      : 'Tenant des-aprovisionado por completo (datos de tienda, Team y registro).',
+  }
 }
 
 /** Suspende / reactiva un tenant (consola). */

@@ -17,6 +17,7 @@ interface TenantRow {
   data_isolation: string
   status: string
   created_at: string
+  owner_email: string | null
 }
 
 const statusTone = (s: string): BadgeTone => (s === 'active' ? 'success' : s === 'suspended' || s === 'canceled' ? 'danger' : 'warn')
@@ -25,7 +26,7 @@ export default async function TenantsPage() {
   const [{ data }, plans] = await Promise.all([
     platformDb()
       .from('tenants')
-      .select('id, name, subdomain, primary_domain, plan, data_isolation, status, created_at')
+      .select('id, name, subdomain, primary_domain, plan, data_isolation, status, created_at, owner_email')
       .order('created_at', { ascending: false }),
     getPlans(),
   ])
@@ -58,6 +59,7 @@ export default async function TenantsPage() {
                 <tr>
                   <th style={th}>Nombre</th>
                   <th style={th}>Subdominio / dominio</th>
+                  <th style={th}>Dueño (super admin)</th>
                   <th style={th}>Plan</th>
                   <th style={th}>Aislamiento</th>
                   <th style={th}>Estado</th>
@@ -70,6 +72,7 @@ export default async function TenantsPage() {
                   <tr key={t.id}>
                     <td style={td}>{t.name}</td>
                     <td style={td}>{t.primary_domain ?? `${t.subdomain}.merkiai.com`}</td>
+                    <td style={td}>{t.owner_email ?? <span style={{ color: '#999' }}>— sin dueño —</span>}</td>
                     <td style={td}>
                       <form action={setTenantPlan} style={{ display: 'flex', gap: 6 }}>
                         <input type="hidden" name="id" value={t.id} />
@@ -93,7 +96,7 @@ export default async function TenantsPage() {
                       </form>
                     </td>
                     <td style={td}>
-                      <TenantManage tenant={{ id: t.id, name: t.name, subdomain: t.subdomain }} />
+                      <TenantManage tenant={{ id: t.id, name: t.name, subdomain: t.subdomain, ownerEmail: t.owner_email }} />
                     </td>
                   </tr>
                 ))}

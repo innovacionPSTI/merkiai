@@ -24,7 +24,7 @@ const dangerBtn: React.CSSProperties = {
 export default function TenantManage({
   tenant,
 }: {
-  tenant: { id: string; name: string; subdomain: string | null }
+  tenant: { id: string; name: string; subdomain: string | null; ownerEmail?: string | null }
 }) {
   const subdomain = tenant.subdomain ?? ''
   const [inviteState, inviteAction] = useActionState(inviteTenantOwner, initial)
@@ -37,9 +37,12 @@ export default function TenantManage({
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 8, minWidth: 260 }}>
       {/* Dueño (super admin) */}
+      <div style={{ fontSize: 12, color: '#555' }}>
+        Dueño actual: <strong>{tenant.ownerEmail || '— sin asignar —'}</strong>
+      </div>
       <form action={inviteAction} style={{ display: 'flex', gap: 6, alignItems: 'center', flexWrap: 'wrap' }}>
         <input type="hidden" name="id" value={tenant.id} />
-        <input style={{ ...input, marginRight: 0, minWidth: 160 }} type="email" name="ownerEmail" placeholder="email del dueño" required />
+        <input style={{ ...input, marginRight: 0, minWidth: 160 }} type="email" name="ownerEmail" placeholder={tenant.ownerEmail ? 'cambiar dueño' : 'email del dueño'} required />
         <button type="submit" style={smallBtn}><Pending idle="Invitar dueño" busy="Enviando…" /></button>
       </form>
       {inviteState.error && <span style={{ color: '#B42318', fontSize: 12 }}>{inviteState.error}</span>}
@@ -54,8 +57,9 @@ export default function TenantManage({
         <div style={{ border: '1px solid #F0C9C4', background: '#FEF3F2', borderRadius: 8, padding: 10 }}>
           <p style={{ margin: '0 0 6px', fontSize: 12, fontWeight: 700, color: '#B42318' }}>⚠ Zona de peligro</p>
           <p style={{ margin: '0 0 8px', fontSize: 12, color: '#7A271A' }}>
-            Esta acción es irreversible: elimina el registro del tenant y su Team. No borra los datos
-            de la tienda (productos/pedidos). Para confirmar, escribe el subdominio <strong>{subdomain || '—'}</strong>.
+            Esta acción es <strong>irreversible</strong>: des-aprovisiona TODO — datos de la tienda
+            (config, contenido, catálogo, pedidos, clientes, perfiles), el Team en Stack Auth y el
+            registro del tenant. Para confirmar, escribe el subdominio <strong>{subdomain || '—'}</strong>.
           </p>
           <form action={deleteAction} style={{ display: 'flex', gap: 6, alignItems: 'center', flexWrap: 'wrap' }}>
             <input type="hidden" name="id" value={tenant.id} />
