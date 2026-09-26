@@ -1,4 +1,4 @@
-import { createServerClient, type Db } from '../client'
+import type { Db } from '../client'
 import type { ShippingProviderType } from '../types'
 
 export type ShippingConfig = {
@@ -28,9 +28,8 @@ export type UpdateShippingConfigInput = Partial<Omit<ShippingConfig, 'id' | 'upd
  * Reads the singleton shipping_config row.
  * Falls back to a safe default if the table is empty (e.g. before migration runs).
  */
-const DEFAULT_TENANT_ID = '00000000-0000-0000-0000-000000000001'
 
-export async function getShippingConfig(db: Db = createServerClient(), tenantId: string = DEFAULT_TENANT_ID): Promise<ShippingConfig> {
+export async function getShippingConfig(db: Db, tenantId: string): Promise<ShippingConfig> {
   const supabase = db
   const { data, error } = await supabase
     .from('shipping_config')
@@ -70,7 +69,7 @@ export async function getShippingConfig(db: Db = createServerClient(), tenantId:
  * Requires service_role key (admin context).
  */
 export async function updateShippingConfig(
-  input: UpdateShippingConfigInput, db: Db = createServerClient(), tenantId: string = DEFAULT_TENANT_ID
+  input: UpdateShippingConfigInput, db: Db, tenantId: string
 ): Promise<ShippingConfig> {
   const supabase = db
   const { data, error } = await supabase

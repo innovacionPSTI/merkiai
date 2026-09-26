@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { updateAdminConfig } from '@merkiai/database'
 import { getAdminUser } from '@/lib/auth'
+import { getAdminDb } from '@/lib/admin-db'
 
 export async function PATCH(req: NextRequest) {
   const user = await getAdminUser()
@@ -14,7 +15,7 @@ export async function PATCH(req: NextRequest) {
   const updated = await updateAdminConfig({
     ...(accent_color && { accent_color }),
     ...(sidebar_color && { sidebar_color }),
-  })
+  }, getAdminDb(user.tenantId), user.tenantId)
 
   return NextResponse.json(updated)
 }

@@ -22,6 +22,8 @@ jest.mock('../../client', () => ({
   createServerClient: jest.fn(() => ({ from: mockFrom })),
 }))
 
+const db = { from: mockFrom } as any
+
 beforeEach(() => jest.clearAllMocks())
 
 const fullConfig = {
@@ -47,7 +49,7 @@ const fullConfig = {
 describe('getStoreConfig', () => {
   it('devuelve el registro cuando la BD responde correctamente', async () => {
     mockMaybeSingle.mockResolvedValueOnce({ data: fullConfig, error: null })
-    const result = await getStoreConfig()
+    const result = await getStoreConfig(db, DEFAULT_TENANT_ID)
     expect(result.whatsapp_number).toBe('573001234567')
     expect(result.logo_url).toBe('https://example.com/logo.png')
     expect(result.store_name).toBe('Merkiai')
@@ -55,7 +57,7 @@ describe('getStoreConfig', () => {
 
   it('devuelve DEFAULT_CONFIG cuando la BD devuelve error', async () => {
     mockMaybeSingle.mockResolvedValueOnce({ data: null, error: { message: 'table not found' } })
-    const result = await getStoreConfig()
+    const result = await getStoreConfig(db, DEFAULT_TENANT_ID)
     expect(result.id).toBe(1)
     expect(result.store_name).toBe('Mi Tienda')
     expect(result.order_prefix).toBe('ORD')
@@ -65,31 +67,31 @@ describe('getStoreConfig', () => {
 
   it('devuelve DEFAULT_CONFIG cuando data es null (tabla vacía)', async () => {
     mockMaybeSingle.mockResolvedValueOnce({ data: null, error: null })
-    const result = await getStoreConfig()
+    const result = await getStoreConfig(db, DEFAULT_TENANT_ID)
     expect(result.id).toBe(1)
     expect(result.whatsapp_number).toBeNull()
   })
 
   it('propaga si la promesa lanza (sin catch externo)', async () => {
     mockMaybeSingle.mockRejectedValueOnce(new Error('Network error'))
-    await expect(getStoreConfig()).rejects.toThrow('Network error')
+    await expect(getStoreConfig(db, DEFAULT_TENANT_ID)).rejects.toThrow('Network error')
   })
 
   it('usa la tabla store_config', async () => {
     mockMaybeSingle.mockResolvedValueOnce({ data: fullConfig, error: null })
-    await getStoreConfig()
+    await getStoreConfig(db, DEFAULT_TENANT_ID)
     expect(mockFrom).toHaveBeenCalledWith('store_config')
   })
 
   it('filtra por tenant_id (por defecto, el tenant por defecto)', async () => {
     mockMaybeSingle.mockResolvedValueOnce({ data: fullConfig, error: null })
-    await getStoreConfig()
+    await getStoreConfig(db, DEFAULT_TENANT_ID)
     expect(mockEq).toHaveBeenCalledWith('tenant_id', DEFAULT_TENANT_ID)
   })
 
   it('filtra por el tenant indicado', async () => {
     mockMaybeSingle.mockResolvedValueOnce({ data: fullConfig, error: null })
-    await getStoreConfig(undefined, 'tenant-x')
+    await getStoreConfig(db, 'tenant-x')
     expect(mockEq).toHaveBeenCalledWith('tenant_id', 'tenant-x')
   })
 })
@@ -97,7 +99,7 @@ describe('getStoreConfig', () => {
 describe('updateStoreConfig', () => {
   it('hace upsert por tenant_id con los campos provistos', async () => {
     mockUpsertChain.mockResolvedValueOnce({ data: { ...fullConfig, whatsapp_number: '573009999999' }, error: null })
-    const result = await updateStoreConfig({ whatsapp_number: '573009999999' })
+    const result = await updateStoreConfig({ whatsapp_number: '573009999999' }, db, DEFAULT_TENANT_ID)
     expect(mockUpsert).toHaveBeenCalledWith(
       expect.objectContaining({ tenant_id: DEFAULT_TENANT_ID, whatsapp_number: '573009999999' }),
       expect.objectContaining({ onConflict: 'tenant_id' }),
@@ -107,7 +109,7 @@ describe('updateStoreConfig', () => {
 
   it('incluye updated_at en el upsert', async () => {
     mockUpsertChain.mockResolvedValueOnce({ data: fullConfig, error: null })
-    await updateStoreConfig({ store_name: 'Merkiai Nuevo' })
+    await updateStoreConfig({ store_name: 'Merkiai Nuevo' }, db, DEFAULT_TENANT_ID)
     const upsertArg = mockUpsert.mock.calls[0]![0]
     expect(upsertArg).toHaveProperty('updated_at')
     expect(typeof upsertArg.updated_at).toBe('string')
@@ -116,12 +118,12 @@ describe('updateStoreConfig', () => {
   it('lanza el error de Supabase cuando el upsert falla', async () => {
     const dbError = { message: 'DB write error', code: '42P01' }
     mockUpsertChain.mockResolvedValueOnce({ data: null, error: dbError })
-    await expect(updateStoreConfig({ store_name: 'X' })).rejects.toMatchObject(dbError)
+    await expect(updateStoreConfig({ store_name: 'X' }, db, DEFAULT_TENANT_ID)).rejects.toMatchObject(dbError)
   })
 
   it('reenvía order_prefix en el upsert (prefijo configurable del número de orden)', async () => {
     mockUpsertChain.mockResolvedValueOnce({ data: { ...fullConfig, order_prefix: 'SHOP' }, error: null })
-    const result = await updateStoreConfig({ order_prefix: 'SHOP' })
+    const result = await updateStoreConfig({ order_prefix: 'SHOP' }, db, DEFAULT_TENANT_ID)
     expect(mockUpsert).toHaveBeenCalledWith(
       expect.objectContaining({ tenant_id: DEFAULT_TENANT_ID, order_prefix: 'SHOP' }),
       expect.objectContaining({ onConflict: 'tenant_id' }),
@@ -132,7 +134,7 @@ describe('updateStoreConfig', () => {
   it('actualiza solo logo_url sin afectar otros campos', async () => {
     const updated = { ...fullConfig, logo_url: 'https://example.com/new-logo.png' }
     mockUpsertChain.mockResolvedValueOnce({ data: updated, error: null })
-    const result = await updateStoreConfig({ logo_url: 'https://example.com/new-logo.png' })
+    const result = await updateStoreConfig({ logo_url: 'https://example.com/new-logo.png' }, db, DEFAULT_TENANT_ID)
     expect(result.logo_url).toBe('https://example.com/new-logo.png')
     const upsertArg = mockUpsert.mock.calls[0]![0]
     expect(upsertArg).not.toHaveProperty('whatsapp_number')
@@ -148,7 +150,7 @@ describe('updateStoreConfig', () => {
     const result = await updateStoreConfig({
       terms_content: '## Términos\n\nEsto es un ejemplo.',
       privacy_content: '## Privacidad\n\nDatos protegidos.',
-    })
+    }, db, DEFAULT_TENANT_ID)
     expect(result.terms_content).toContain('## Términos')
   })
 })

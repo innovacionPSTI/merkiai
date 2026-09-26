@@ -2,7 +2,8 @@ import { NextRequest, NextResponse } from 'next/server'
 import { stackServerApp } from '@/stack'
 import { createServerClient, getStoreConfig, ensureCustomer } from '@merkiai/database'
 import { sendWelcomeEmail, buildEmailConfig } from '@/lib/email'
-import { resolveTenant } from '@/lib/tenant-context'
+import { resolveTenant } from '@/lib/tenant-context';
+import { getMachineDb } from '@/lib/machine-db'
 
 /**
  * POST /api/auth/welcome
@@ -65,7 +66,7 @@ export async function POST(request: NextRequest) {
     // pedidos del mismo email — todo acotado al tenant.
     let customer: { id: string } | null = null
     if (stackId) {
-      customer = await ensureCustomer({ stackUserId: stackId, email, name: displayName, tenantId })
+      customer = await ensureCustomer({ stackUserId: stackId, email, name: displayName, tenantId }, getMachineDb(tenantId))
         .catch((e) => { console.error('[welcome] ensureCustomer:', e); return null })
     } else {
       // Sin stackId (race post-registro): upsert tenant-scoped por email.

@@ -1,11 +1,10 @@
-import { createServerClient, type Db } from '../client'
+import type { Db } from '../client'
 import type { PaymentConfig } from '../types'
 
 /** Tenant por defecto (config por-tenant, HU-207). */
-const DEFAULT_TENANT_ID = '00000000-0000-0000-0000-000000000001'
 
 /** Lee la configuración de pasarelas de pago del tenant. */
-export async function getPaymentConfig(db: Db = createServerClient(), tenantId: string = DEFAULT_TENANT_ID): Promise<PaymentConfig | null> {
+export async function getPaymentConfig(db: Db, tenantId: string): Promise<PaymentConfig | null> {
   const supabase = db
   const { data, error } = await supabase
     .from('payment_config')
@@ -21,7 +20,7 @@ export async function getPaymentConfig(db: Db = createServerClient(), tenantId: 
  *  Los campos de secret que vengan como string vacío se omiten para
  *  evitar sobreescribir credenciales existentes accidentalmente. */
 export async function updatePaymentConfig(
-  input: Partial<Omit<PaymentConfig, 'id' | 'updated_at'>>, db: Db = createServerClient(), tenantId: string = DEFAULT_TENANT_ID
+  input: Partial<Omit<PaymentConfig, 'id' | 'updated_at'>>, db: Db, tenantId: string
 ): Promise<PaymentConfig> {
   const supabase = db
 

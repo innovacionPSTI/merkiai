@@ -82,7 +82,6 @@ export async function createTenant(
   }
 }
 
-const DEFAULT_TENANT_ID = '00000000-0000-0000-0000-000000000001'
 
 /** Estado de las acciones por-tenant (invitar dueño / eliminar). */
 export interface TenantActionState {
@@ -170,7 +169,6 @@ export async function deleteTenant(
   const confirm = String(formData.get('confirm') ?? '').trim().toLowerCase()
   const subdomain = String(formData.get('subdomain') ?? '').trim().toLowerCase()
   if (!id) return { ok: false, error: 'Falta el tenant.' }
-  if (id === DEFAULT_TENANT_ID) return { ok: false, error: 'No se puede eliminar el tenant por defecto (migración).' }
   if (!subdomain || confirm !== subdomain) {
     return { ok: false, error: `La confirmación no coincide. Escribe "${subdomain}" para eliminar.` }
   }

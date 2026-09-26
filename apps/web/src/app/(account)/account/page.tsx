@@ -4,6 +4,7 @@ import { stackServerApp } from '@/stack'
 import { ensureCustomer } from '@merkiai/database'
 import { getRequestUserDb } from '@/lib/tenant-db'
 import { resolveTenant } from '@/lib/tenant-context'
+import { getMachineDb } from '@/lib/machine-db'
 
 export const metadata: Metadata = { title: 'Mi perfil' }
 
@@ -67,7 +68,7 @@ export default async function MiCuentaPage() {
   // stack_id/email y reclama pedidos de invitado). Best-effort, service-role.
   if (user?.id && email) {
     const { tenantId } = await resolveTenant()
-    await ensureCustomer({ stackUserId: user.id, email, name: displayName, tenantId }).catch(() => null)
+    await ensureCustomer({ stackUserId: user.id, email, name: displayName, tenantId }, getMachineDb(tenantId)).catch(() => null)
   }
 
   const defaultAddress = user

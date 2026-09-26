@@ -1,5 +1,5 @@
 import Link from 'next/link'
-import { getStoreConfig } from '@merkiai/database'
+import { getStoreContext } from '@/lib/store-context'
 
 /**
  * Layout para todas las rutas /handler/* de Stack Auth.
@@ -8,7 +8,7 @@ import { getStoreConfig } from '@merkiai/database'
  * se integre coherentemente con el diseño del sitio.
  */
 export default async function HandlerLayout({ children }: { children: React.ReactNode }) {
-  const config = await getStoreConfig().catch(() => null)
+  const { config } = await getStoreContext().catch(() => ({ config: null }))
   const storeName = config?.store_name ?? 'Mi Tienda'
 
   return (

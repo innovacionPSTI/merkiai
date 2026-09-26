@@ -18,6 +18,8 @@ jest.mock('../../client', () => ({
   createServerClient: () => ({ from: mockFrom }),
 }))
 
+const db = { from: mockFrom } as any
+
 import { getAdminConfig, updateAdminConfig } from '../admin-config'
 
 describe('getAdminConfig', () => {
@@ -27,14 +29,14 @@ describe('getAdminConfig', () => {
     const row = { id: 1, tenant_id: DEFAULT_TENANT_ID, accent_color: '#4F46E5', sidebar_color: '#0F172A', updated_at: '2025-01-01' }
     mockMaybeSingle.mockResolvedValue({ data: row, error: null })
 
-    const result = await getAdminConfig()
+    const result = await getAdminConfig(db, DEFAULT_TENANT_ID)
     expect(result.accent_color).toBe('#4F46E5')
     expect(mockEq).toHaveBeenCalledWith('tenant_id', DEFAULT_TENANT_ID)
   })
 
   it('returns DEFAULT_ADMIN_CONFIG when DB returns error', async () => {
     mockMaybeSingle.mockResolvedValue({ data: null, error: { message: 'not found' } })
-    const result = await getAdminConfig()
+    const result = await getAdminConfig(db, DEFAULT_TENANT_ID)
     expect(result.id).toBe(1)
     expect(result.accent_color).toBe('#4F46E5')
     expect(result.sidebar_color).toBe('#0F172A')
@@ -42,7 +44,7 @@ describe('getAdminConfig', () => {
 
   it('returns DEFAULT_ADMIN_CONFIG when data is null', async () => {
     mockMaybeSingle.mockResolvedValue({ data: null, error: null })
-    const result = await getAdminConfig()
+    const result = await getAdminConfig(db, DEFAULT_TENANT_ID)
     expect(result.id).toBe(1)
   })
 })
@@ -54,7 +56,7 @@ describe('updateAdminConfig', () => {
     const updated = { id: 1, tenant_id: DEFAULT_TENANT_ID, accent_color: '#FF0000', sidebar_color: '#0F172A', updated_at: '2025-06-01' }
     mockUpsertSingle.mockResolvedValue({ data: updated, error: null })
 
-    const result = await updateAdminConfig({ accent_color: '#FF0000' })
+    const result = await updateAdminConfig({ accent_color: '#FF0000' }, db, DEFAULT_TENANT_ID)
     expect(result.accent_color).toBe('#FF0000')
     expect(mockFrom).toHaveBeenCalledWith('admin_config')
     expect(mockUpsert).toHaveBeenCalledWith(
@@ -65,12 +67,12 @@ describe('updateAdminConfig', () => {
 
   it('throws on DB error', async () => {
     mockUpsertSingle.mockResolvedValue({ data: null, error: { message: 'constraint violation' } })
-    await expect(updateAdminConfig({ sidebar_color: '#000' })).rejects.toMatchObject({ message: 'constraint violation' })
+    await expect(updateAdminConfig({ sidebar_color: '#000' }, db, DEFAULT_TENANT_ID)).rejects.toMatchObject({ message: 'constraint violation' })
   })
 
   it('includes updated_at in upsert payload', async () => {
     mockUpsertSingle.mockResolvedValue({ data: { id: 1, tenant_id: DEFAULT_TENANT_ID, accent_color: '#4F46E5', sidebar_color: '#222', updated_at: '2025-06-01' }, error: null })
-    await updateAdminConfig({ sidebar_color: '#222' })
+    await updateAdminConfig({ sidebar_color: '#222' }, db, DEFAULT_TENANT_ID)
     expect(mockUpsert).toHaveBeenCalledWith(
       expect.objectContaining({ updated_at: expect.any(String) }),
       expect.objectContaining({ onConflict: 'tenant_id' }),

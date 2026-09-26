@@ -26,6 +26,7 @@ jest.mock('@merkiai/database', () => ({
 // RLS obligatoria: el cliente `authenticated` en test es el mock (mockFrom).
 jest.mock('@/lib/tenant-db', () => ({ getRequestUserDb: jest.fn(async () => ({ from: mockFrom })) }))
 jest.mock('@/lib/tenant-context', () => ({ resolveTenant: jest.fn(async () => ({ tenantId: 'tenant-test' })) }))
+jest.mock('@/lib/machine-db', () => ({ getMachineDb: jest.fn(() => ({ from: mockFrom })) }))
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 

@@ -1,14 +1,12 @@
-import { createServerClient, type Db } from '../client'
-
-const DEFAULT_TENANT_ID = '00000000-0000-0000-0000-000000000001'
+import type { Db } from '../client'
 
 export interface EnsureCustomerInput {
   /** ID del usuario en Stack Auth (`sub` del JWT). */
   stackUserId: string
   email: string
   name?: string | null
-  /** Tenant activo (resuelto por host en el plano de tienda). */
-  tenantId?: string
+  /** Tenant activo (resuelto por host en el plano de tienda). Obligatorio. */
+  tenantId: string
 }
 
 /**
@@ -27,12 +25,12 @@ export interface EnsureCustomerInput {
  */
 export async function ensureCustomer(
   input: EnsureCustomerInput,
-  db: Db = createServerClient(),
+  db: Db,
 ): Promise<{ id: string }> {
-  const { stackUserId, email, name = null } = input
-  const tenantId = input.tenantId ?? DEFAULT_TENANT_ID
+  const { stackUserId, email, name = null, tenantId } = input
   if (!stackUserId) throw new Error('[customers] stackUserId requerido')
   if (!email) throw new Error('[customers] email requerido')
+  if (!tenantId) throw new Error('[customers] tenantId requerido')
 
   const sb = db
 

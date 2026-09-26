@@ -3,7 +3,8 @@ import Link from 'next/link'
 import { stackServerApp } from '@/stack'
 import { getOrdersByCustomer, ensureCustomer } from '@merkiai/database'
 import { getRequestUserDb } from '@/lib/tenant-db'
-import { resolveTenant } from '@/lib/tenant-context'
+import { resolveTenant } from '@/lib/tenant-context';
+import { getMachineDb } from '@/lib/machine-db'
 
 export const metadata: Metadata = { title: 'Mis pedidos' }
 
@@ -36,7 +37,7 @@ export default async function PedidosPage() {
       email: user.primaryEmail,
       name: user.displayName,
       tenantId,
-    }).catch(() => null)
+    }, getMachineDb(tenantId)).catch(() => null)
     if (customer) {
       const db = await getRequestUserDb(user.id)
       orders = await getOrdersByCustomer(customer.id, db).catch(() => [])

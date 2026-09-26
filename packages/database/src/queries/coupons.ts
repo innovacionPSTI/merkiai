@@ -74,8 +74,8 @@ export function validateCoupon(coupon: Coupon, orderSubtotal: number): CouponVal
 
 export async function createCoupon(
   input: CreateCouponInput,
-  db: Db = createServerClient(),
-  tenantId = '00000000-0000-0000-0000-000000000001',
+  db: Db,
+  tenantId: string,
 ): Promise<Coupon> {
   const supabase = db
   const { data, error } = await supabase

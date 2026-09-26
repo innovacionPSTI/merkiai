@@ -22,6 +22,7 @@
  */
 
 import { getShippingConfig } from '@merkiai/database'
+import { getStoreContext } from '../store-context'
 import { FixedRateProvider } from './providers/fixed-rate'
 import { SkydropxProvider } from './providers/skydropx'
 import type { ShippingProvider } from './types'
@@ -38,7 +39,8 @@ export type { SkydropxConfig, SkydropxOriginAddress, SkydropxShipmentResult } fr
 export async function getShippingProvider(): Promise<ShippingProvider> {
   let config
   try {
-    config = await getShippingConfig()
+    const ctx = await getStoreContext()
+    config = await getShippingConfig(ctx.db, ctx.tenantId)
   } catch {
     console.warn('[shipping] Could not load shipping_config — using fixed rate fallback')
     return new FixedRateProvider(8000)

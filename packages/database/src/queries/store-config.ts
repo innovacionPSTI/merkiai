@@ -1,4 +1,4 @@
-import { createServerClient, type Db } from '../client'
+import type { Db } from '../client'
 
 /** Un badge de confianza que aparece en la página de producto. */
 export interface TrustBadge {
@@ -50,7 +50,6 @@ export type StoreConfig = {
 export type UpdateStoreConfigInput = Partial<Omit<StoreConfig, 'id' | 'updated_at'>>
 
 /** Tenant por defecto (coincide con e17/01). Config por-tenant (HU-207). */
-const DEFAULT_TENANT_ID = '00000000-0000-0000-0000-000000000001'
 
 const DEFAULT_CONFIG: StoreConfig = {
   id: 1,
@@ -85,7 +84,7 @@ const DEFAULT_CONFIG: StoreConfig = {
   updated_at: new Date().toISOString(),
 }
 
-export async function getStoreConfig(db: Db = createServerClient(), tenantId: string = DEFAULT_TENANT_ID): Promise<StoreConfig> {
+export async function getStoreConfig(db: Db, tenantId: string): Promise<StoreConfig> {
   const supabase = db
   const { data, error } = await supabase
     .from('store_config')
@@ -104,7 +103,7 @@ export async function getStoreConfig(db: Db = createServerClient(), tenantId: st
   }
 }
 
-export async function updateStoreConfig(input: UpdateStoreConfigInput, db: Db = createServerClient(), tenantId: string = DEFAULT_TENANT_ID): Promise<StoreConfig> {
+export async function updateStoreConfig(input: UpdateStoreConfigInput, db: Db, tenantId: string): Promise<StoreConfig> {
   const supabase = db
 
   // No sobreescribir resend_api_key si viene vacío

@@ -1,14 +1,14 @@
 import type { Metadata } from 'next'
-import { getStoreConfig, getPageWithSections } from '@merkiai/database'
+import { getPageWithSections } from '@merkiai/database'
+import { getStoreContext } from '@/lib/store-context'
 import LegalPage from '@/components/legal/LegalPage'
 
 export const dynamic = 'force-dynamic'
 
 export async function generateMetadata(): Promise<Metadata> {
-  const [config, page] = await Promise.all([
-    getStoreConfig().catch(() => null),
-    getPageWithSections('privacy').catch(() => null),
-  ])
+  const ctx = await getStoreContext().catch(() => null)
+  const config = ctx?.config ?? null
+  const page = ctx ? await getPageWithSections('privacy', true, ctx.db).catch(() => null) : null
   return {
     title: page?.meta_title ?? `Política de privacidad | ${config?.store_name ?? 'Mi Tienda'}`,
     description: page?.meta_description ?? undefined,
@@ -17,10 +17,9 @@ export async function generateMetadata(): Promise<Metadata> {
 }
 
 export default async function PrivacidadPage() {
-  const [config, page] = await Promise.all([
-    getStoreConfig().catch(() => null),
-    getPageWithSections('privacy').catch(() => null),
-  ])
+  const ctx = await getStoreContext().catch(() => null)
+  const config = ctx?.config ?? null
+  const page = ctx ? await getPageWithSections('privacy', true, ctx.db).catch(() => null) : null
 
   // Extraer contenido del primer section_type='text' (seed de migración 18)
   const textSection = page?.sections?.find((s) => s.section_type === 'text')

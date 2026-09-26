@@ -33,7 +33,7 @@ export async function reconcileBoldOrder(orderNumber: string): Promise<Reconcile
 
   const { data: order } = await supabase
     .from('orders')
-    .select('payment_method, payment_status')
+    .select('payment_method, payment_status, tenant_id')
     .eq('order_number', orderNumber)
     .single()
 
@@ -44,7 +44,8 @@ export async function reconcileBoldOrder(orderNumber: string): Promise<Reconcile
     return { ok: true, status: order.payment_status as ReconcileStatus }
   }
 
-  const config = await getPaymentConfig().catch(() => null)
+  // Config del TENANT del pedido (no del default) — bootstrap por order_number.
+  const config = await getPaymentConfig(supabase, order.tenant_id).catch(() => null)
   if (!config?.bold_api_key) return { ok: false, reason: 'not_configured' }
 
   const gateway = new BoldGateway({

@@ -1,5 +1,7 @@
 import { NextResponse } from 'next/server'
-import { getPaymentConfig, getActiveGateways } from '@merkiai/database'
+import { getPaymentConfig, getActiveGateways } from '@merkiai/database';
+import { resolveTenant } from '@/lib/tenant-context';
+import { getMachineDb } from '@/lib/machine-db'
 
 const GATEWAY_META: Record<string, { label: string; desc: string }> = {
   wompi:       { label: 'Wompi',       desc: 'Tarjeta débito/crédito, PSE, Bancolombia' },
@@ -15,7 +17,8 @@ const GATEWAY_META: Record<string, { label: string; desc: string }> = {
  */
 export async function GET() {
   try {
-    const config = await getPaymentConfig()
+    const { tenantId } = await resolveTenant();
+    const config = await getPaymentConfig(getMachineDb(tenantId), tenantId)
     if (!config) throw new Error('No payment config')
     const names  = getActiveGateways(config)
 

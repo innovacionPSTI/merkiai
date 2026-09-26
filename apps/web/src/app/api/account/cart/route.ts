@@ -2,7 +2,8 @@ import { NextRequest, NextResponse } from 'next/server'
 import { stackServerApp } from '@/stack'
 import { getCartItems, replaceCart, clearCart, ensureCustomer } from '@merkiai/database'
 import { getRequestUserDb } from '@/lib/tenant-db'
-import { resolveTenant } from '@/lib/tenant-context'
+import { resolveTenant } from '@/lib/tenant-context';
+import { getMachineDb } from '@/lib/machine-db'
 
 /**
  * Sincroniza el carrito del usuario logueado con la BD (HU-156).
@@ -14,7 +15,7 @@ async function resolveBuyer(user: { id: string; primaryEmail: string; displayNam
   const { tenantId } = await resolveTenant()
   const customer = await ensureCustomer({
     stackUserId: user.id, email: user.primaryEmail, name: user.displayName, tenantId,
-  })
+  }, getMachineDb(tenantId))
   const db = await getRequestUserDb(user.id)
   return { tenantId, customerId: customer.id, db }
 }

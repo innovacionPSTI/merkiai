@@ -1,11 +1,11 @@
 import Link from 'next/link'
-import { getStoreConfig } from '@merkiai/database'
+import { getStoreContext } from '@/lib/store-context'
 
 /**
  * Layout para las páginas de autenticación (login y registro).
  */
 export default async function AuthLayout({ children }: { children: React.ReactNode }) {
-  const config = await getStoreConfig().catch(() => null)
+  const { config } = await getStoreContext().catch(() => ({ config: null }))
   const storeName = config?.store_name ?? 'Mi Tienda'
 
   return (

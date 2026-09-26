@@ -16,15 +16,11 @@ import { createTenantClient, mintTenantJwt } from '@merkiai/tenancy'
 import type { Database } from '@merkiai/database/types'
 import { resolveTenant } from './tenant-context'
 
-/** Tenant por defecto (coincide con la migración e17/01_tenant_id.sql). */
-const DEFAULT_TENANT_ID =
-  process.env.DEFAULT_TENANT_ID ?? '00000000-0000-0000-0000-000000000001'
-
 /**
  * Cliente de solo-lectura del storefront, scoped por tenant vía RLS.
- * @param tenantId tenant activo (por defecto, el tenant por defecto).
+ * @param tenantId tenant activo (obligatorio; resuelto por host).
  */
-export function getTenantDb(tenantId: string = DEFAULT_TENANT_ID) {
+export function getTenantDb(tenantId: string) {
   const secret = process.env.SUPABASE_JWT_SECRET
   if (!secret) {
     throw new Error('[web] SUPABASE_JWT_SECRET no configurado (requerido por getTenantDb)')
@@ -69,7 +65,7 @@ export async function getRequestCatalogDb() {
  * (customers/orders/addresses/cart) apliquen. HU-156 (enabler; ver
  * docs/HU-156-rls-flujos-con-sesion.md antes de cablear).
  */
-export function getUserTenantDb(userId: string, tenantId: string = DEFAULT_TENANT_ID) {
+export function getUserTenantDb(userId: string, tenantId: string) {
   const secret = process.env.SUPABASE_JWT_SECRET
   if (!secret) {
     throw new Error('[web] SUPABASE_JWT_SECRET no configurado (requerido por getUserTenantDb)')

@@ -14,6 +14,9 @@ const mockGetStoreConfig = jest.fn()
 jest.mock('@merkiai/database', () => ({
   getStoreConfig: () => mockGetStoreConfig(),
 }))
+// HU-232: la ruta resuelve tenant + usa getMachineDb (RLS).
+jest.mock('@/lib/tenant-context', () => ({ resolveTenant: jest.fn(async () => ({ tenantId: 't1' })) }))
+jest.mock('@/lib/machine-db', () => ({ getMachineDb: jest.fn(() => ({})) }))
 
 beforeEach(() => jest.clearAllMocks())
 

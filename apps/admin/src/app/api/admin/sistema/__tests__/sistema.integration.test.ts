@@ -9,6 +9,7 @@
 
 const mockGetAdminUser = jest.fn()
 jest.mock('@/lib/auth', () => ({ getAdminUser: () => mockGetAdminUser() }))
+jest.mock('@/lib/admin-db', () => ({ getAdminDb: jest.fn(() => ({})) }))
 
 const mockUpdateAdminConfig = jest.fn()
 jest.mock('@merkiai/database', () => ({
@@ -23,7 +24,7 @@ import { NextRequest } from 'next/server'
 // ── Helpers ───────────────────────────────────────────────────────────────────
 
 function makeAdminUser(role = 'super_admin') {
-  return { id: '1', role }
+  return { id: '1', role, tenantId: 'tenant-test' }
 }
 
 function buildRequest(body: object): NextRequest {
@@ -72,7 +73,7 @@ describe('PATCH /api/admin/sistema', () => {
     expect(res.status).toBe(200)
     const json = await res.json()
     expect(json.accent_color).toBe('#FF0000')
-    expect(mockUpdateAdminConfig).toHaveBeenCalledWith({ accent_color: '#FF0000' })
+    expect(mockUpdateAdminConfig).toHaveBeenCalledWith({ accent_color: '#FF0000' }, expect.anything(), expect.anything())
   })
 
   it('updates sidebar_color for super_admin', async () => {
@@ -81,7 +82,7 @@ describe('PATCH /api/admin/sistema', () => {
 
     const res = await PATCH(buildRequest({ sidebar_color: '#111111' }))
     expect(res.status).toBe(200)
-    expect(mockUpdateAdminConfig).toHaveBeenCalledWith({ sidebar_color: '#111111' })
+    expect(mockUpdateAdminConfig).toHaveBeenCalledWith({ sidebar_color: '#111111' }, expect.anything(), expect.anything())
   })
 
   it('updates both colors at once', async () => {
@@ -93,7 +94,7 @@ describe('PATCH /api/admin/sistema', () => {
     expect(mockUpdateAdminConfig).toHaveBeenCalledWith({
       accent_color: '#FF0000',
       sidebar_color: '#111111',
-    })
+    }, expect.anything(), expect.anything())
   })
 
   it('skips empty strings — does not pass falsy values to updateAdminConfig', async () => {
@@ -103,7 +104,7 @@ describe('PATCH /api/admin/sistema', () => {
     // accent_color is empty string — should be filtered out
     const res = await PATCH(buildRequest({ accent_color: '', sidebar_color: '#111111' }))
     expect(res.status).toBe(200)
-    expect(mockUpdateAdminConfig).toHaveBeenCalledWith({ sidebar_color: '#111111' })
+    expect(mockUpdateAdminConfig).toHaveBeenCalledWith({ sidebar_color: '#111111' }, expect.anything(), expect.anything())
   })
 
   it('propagates updateAdminConfig errors', async () => {

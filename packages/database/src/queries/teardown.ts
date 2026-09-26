@@ -53,8 +53,7 @@ export async function purgeTenantData(
   db: Db = createServerClient(),
 ): Promise<PurgeTenantResult> {
   if (!tenantId) throw new Error('[teardown] tenantId requerido')
-  const DEFAULT = '00000000-0000-0000-0000-000000000001'
-  if (tenantId === DEFAULT) throw new Error('[teardown] no se puede purgar el tenant por defecto')
+  // Sin trato especial al tenant por defecto (HU-232): es una tienda más.
 
   const supabase = db
   const results: Record<string, 'ok' | string> = {}

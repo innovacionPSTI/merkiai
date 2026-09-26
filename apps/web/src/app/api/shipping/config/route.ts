@@ -1,5 +1,7 @@
 import { NextResponse } from 'next/server'
-import { getShippingConfig } from '@merkiai/database'
+import { getShippingConfig } from '@merkiai/database';
+import { resolveTenant } from '@/lib/tenant-context';
+import { getMachineDb } from '@/lib/machine-db'
 
 /**
  * GET /api/shipping/config
@@ -10,7 +12,8 @@ import { getShippingConfig } from '@merkiai/database'
  */
 export async function GET() {
   try {
-    const config = await getShippingConfig()
+    const { tenantId } = await resolveTenant();
+    const config = await getShippingConfig(getMachineDb(tenantId), tenantId)
     return NextResponse.json({
       provider:                 config.provider,
       fixed_rate:               config.fixed_rate,

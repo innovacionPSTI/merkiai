@@ -1,4 +1,4 @@
-import { createServerClient, type Db } from '../client'
+import type { Db } from '../client'
 
 export interface AdminConfig {
   id: number
@@ -12,7 +12,6 @@ export interface AdminConfig {
 export type UpdateAdminConfigInput = Partial<Pick<AdminConfig, 'accent_color' | 'sidebar_color'>>
 
 /** Tenant por defecto (config por-tenant, HU-207). */
-const DEFAULT_TENANT_ID = '00000000-0000-0000-0000-000000000001'
 
 const DEFAULT_ADMIN_CONFIG: AdminConfig = {
   id: 1,
@@ -21,7 +20,7 @@ const DEFAULT_ADMIN_CONFIG: AdminConfig = {
   updated_at: new Date().toISOString(),
 }
 
-export async function getAdminConfig(db: Db = createServerClient(), tenantId: string = DEFAULT_TENANT_ID): Promise<AdminConfig> {
+export async function getAdminConfig(db: Db, tenantId: string): Promise<AdminConfig> {
   const supabase = db
   const { data, error } = await supabase
     .from('admin_config')
@@ -33,7 +32,7 @@ export async function getAdminConfig(db: Db = createServerClient(), tenantId: st
   return data as AdminConfig
 }
 
-export async function updateAdminConfig(input: UpdateAdminConfigInput, db: Db = createServerClient(), tenantId: string = DEFAULT_TENANT_ID): Promise<AdminConfig> {
+export async function updateAdminConfig(input: UpdateAdminConfigInput, db: Db, tenantId: string): Promise<AdminConfig> {
   const supabase = db
   const { data, error } = await supabase
     .from('admin_config')

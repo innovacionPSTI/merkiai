@@ -1,4 +1,4 @@
-import { getStoreConfig } from '@merkiai/database'
+import { getStoreContext } from './store-context'
 
 /**
  * Mensajes predeterminados por tipo de servicio.
@@ -12,7 +12,7 @@ const DEFAULT_MESSAGES: Record<string, string> = {
 }
 
 export async function getWhatsAppNumber(): Promise<string> {
-  const config = await getStoreConfig().catch(() => null)
+  const { config } = await getStoreContext().catch(() => ({ config: null }))
   return config?.whatsapp_number ?? '573XXXXXXXXX'
 }
 

@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createServerClient, getPaymentConfig, TuCompraGateway } from '@merkiai/database'
 import { reconcileTuCompraOrder } from '@/lib/tucompra-reconcile'
+import { resolveTenant } from '@/lib/tenant-context'
+import { getMachineDb } from '@/lib/machine-db'
 
 /**
  * POST /api/checkout/tucompra/finalize-daviplata  { order: "ORD-XXXX", otp: "123456" }
@@ -68,7 +70,8 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'No hay código de seguimiento para este pedido.' }, { status: 400 })
     }
 
-    const config = await getPaymentConfig().catch(() => null)
+    const { tenantId } = await resolveTenant()
+    const config = await getPaymentConfig(getMachineDb(tenantId), tenantId).catch(() => null)
     if (!config?.tucompra_user || !config.tucompra_password || !config.tucompra_terminal) {
       return NextResponse.json({ error: 'Tu Compra no está configurado.' }, { status: 503 })
     }

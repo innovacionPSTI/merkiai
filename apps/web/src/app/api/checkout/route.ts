@@ -2,7 +2,8 @@ import { NextRequest, NextResponse } from 'next/server'
 import { createOrder, getPaymentConfig, createServerClient, getPaymentGateway, getActiveProvider, getStockForVariants, TuCompraGateway, ensureCustomer } from '@merkiai/database'
 import { stackServerApp } from '@/stack'
 import { baseUrlFromRequest } from '@/lib/base-url'
-import { resolveTenant } from '@/lib/tenant-context'
+import { resolveTenant } from '@/lib/tenant-context';
+import { getMachineDb } from '@/lib/machine-db'
 
 // ── Rate limiting (best-effort, per-instance) ──────────────────────────────────
 // Allows MAX_REQUESTS per IP within WINDOW_MS. In Vercel's serverless model
@@ -169,10 +170,9 @@ export async function POST(req: NextRequest) {
       )
     }
 
-    // Tenant del pedido (resolución por host). Nunca bloquea el checkout: si
-    // falla, la BD usa el tenant por defecto.
-    let tenantId: string | undefined
-    try { tenantId = (await resolveTenant()).tenantId } catch { /* fallback al default */ }
+    // Tenant del pedido (resolución por host; siempre un tenantId — en modo
+    // interino resolveTenant devuelve el default, en estricto lanza si no resuelve).
+    const { tenantId } = await resolveTenant()
 
     // Cargar configuración de pagos del TENANT (HU-216: no del default)
     const paymentConfig = await getPaymentConfig(createServerClient(), tenantId)
@@ -205,7 +205,7 @@ export async function POST(req: NextRequest) {
           email: sessionUser.primaryEmail,
           name,
           tenantId,
-        })
+        }, getMachineDb(tenantId))
         customerId = customer.id
       }
     } catch {

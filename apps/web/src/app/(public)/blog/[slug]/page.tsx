@@ -1,4 +1,5 @@
-import { getBlogPostBySlug, getBlogPostBySlugAny, getBlogPosts, getStoreConfig } from '@merkiai/database'
+import { getBlogPostBySlug, getBlogPostBySlugAny, getBlogPosts } from '@merkiai/database'
+import { getStoreContext } from '@/lib/store-context'
 import { notFound } from 'next/navigation'
 import { cookies } from 'next/headers'
 import Link from 'next/link'
@@ -65,7 +66,7 @@ export default async function BlogPostPage({ params, searchParams }: Props) {
       ? getBlogPostBySlugAny(slug)
       : getBlogPostBySlug(slug)
     ).catch(() => null),
-    getStoreConfig().catch(() => null),
+    getStoreContext().then((c) => c.config).catch(() => null),
   ])
 
   const post = rawPost

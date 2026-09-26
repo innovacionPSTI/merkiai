@@ -46,8 +46,8 @@ export interface CreateVariantTypeInput {
 /** Crea un nuevo tipo de variante */
 export async function createVariantType(
   input: CreateVariantTypeInput,
-  db: Db = createServerClient(),
-  tenantId = '00000000-0000-0000-0000-000000000001',
+  db: Db,
+  tenantId: string,
 ): Promise<VariantType> {
   const supabase = db
   const { data, error } = await supabase

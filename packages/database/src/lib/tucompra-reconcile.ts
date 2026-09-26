@@ -32,7 +32,7 @@ export async function reconcileTuCompraOrder(orderNumber: string): Promise<TuCom
 
   const { data: order } = await supabase
     .from('orders')
-    .select('payment_method, payment_status, tucompra_codigo_seguimiento, total')
+    .select('payment_method, payment_status, tucompra_codigo_seguimiento, total, tenant_id')
     .eq('order_number', orderNumber)
     .single()
 
@@ -43,7 +43,8 @@ export async function reconcileTuCompraOrder(orderNumber: string): Promise<TuCom
     return { ok: true, status: order.payment_status as ReconcileStatus }
   }
 
-  const config = await getPaymentConfig().catch(() => null)
+  // Config del TENANT del pedido (no del default) — bootstrap por order_number.
+  const config = await getPaymentConfig(supabase, order.tenant_id).catch(() => null)
   if (!config?.tucompra_user || !config.tucompra_password || !config.tucompra_terminal) {
     return { ok: false, reason: 'not_configured' }
   }

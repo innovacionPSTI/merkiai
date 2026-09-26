@@ -1,5 +1,5 @@
 import type { Metadata } from 'next'
-import { getStoreConfig } from '@merkiai/database'
+import { getStoreContext } from '@/lib/store-context'
 
 export const metadata: Metadata = {
   title: 'Sitio en mantenimiento',
@@ -9,7 +9,7 @@ export const metadata: Metadata = {
 export const dynamic = 'force-dynamic'
 
 export default async function MaintenancePage() {
-  const config = await getStoreConfig().catch(() => null)
+  const { config } = await getStoreContext().catch(() => ({ config: null }))
   const storeName = config?.store_name ?? 'Mi Tienda'
   const whatsapp = config?.whatsapp_number
 

@@ -13,7 +13,8 @@
  */
 import type { Metadata } from 'next'
 import { notFound } from 'next/navigation'
-import { getPageWithSections, getStoreConfig } from '@merkiai/database'
+import { getPageWithSections } from '@merkiai/database'
+import { getStoreContext } from '@/lib/store-context'
 import SectionRenderer from '@/components/sections/SectionRenderer'
 import { getRequestCatalogDb } from '@/lib/tenant-db'
 
@@ -38,7 +39,7 @@ export default async function CmsPage({ params }: Props) {
   const { slug } = await params
   const [pageData, config] = await Promise.all([
     getPageWithSections(slug, true, await getRequestCatalogDb()).catch(() => null),
-    getStoreConfig().catch(() => null),
+    getStoreContext().then((c) => c.config).catch(() => null),
   ])
 
   if (!pageData) notFound()

@@ -1,5 +1,7 @@
 import { NextResponse } from 'next/server'
-import { getPaymentConfig, TuCompraGateway } from '@merkiai/database'
+import { getPaymentConfig, TuCompraGateway } from '@merkiai/database';
+import { resolveTenant } from '@/lib/tenant-context';
+import { getMachineDb } from '@/lib/machine-db'
 
 type MethodCfg = { tipo: string; id: string; enabled?: boolean }
 
@@ -10,7 +12,8 @@ type MethodCfg = { tipo: string; id: string; enabled?: boolean }
  */
 export async function GET() {
   try {
-    const config = await getPaymentConfig().catch(() => null)
+    const { tenantId } = await resolveTenant();
+    const config = await getPaymentConfig(getMachineDb(tenantId), tenantId).catch(() => null)
     if (!config?.tucompra_user || !config.tucompra_password || !config.tucompra_terminal) {
       return NextResponse.json({ banks: [] })
     }

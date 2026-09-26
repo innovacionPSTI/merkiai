@@ -1,6 +1,7 @@
 # Merkiai — Estado del Proyecto
 > **Última actualización:** Septiembre 2026 (v66) · **Stack:** Next.js 16 · Supabase · Stack Auth · Tailwind · Turborepo
 > **MVP SaaS — code-side casi listo para go-live.** Hecho: aislamiento del admin cerrado (**HU-158** ✅, todo por `getAdminDb`/RLS), **seed de config por tenant** en el alta (**HU-207**), **fail-closed del host** + 404 (**HU-229**, flag `TENANT_RESOLUTION_STRICT`), **islas de webhooks a cliente-máquina RLS** (**HU-227**, `getMachineDb`), **Email OTP** en la consola (**HU-214g**), y el **Constructor de páginas schema-driven** (**HU-217/218** contrato de bloques + validación zod, **219** preview en vivo, **220** aplicar plantilla). Doc de secretos (**HU-228**) y spike de IA (**HU-231**). Limpieza: eliminado `lib/skydropx` (env, muerto) — Skydropx va 100% por `shipping_config` (BD); `.env.example` por app validados contra código.
+> **Generalización del tenant (HU-232):** el tenant por defecto es **una tienda más** — `tenantId`/`db` obligatorios en las queries (sin defaults al default), storefront lee del contexto por host (se corrigió que varias páginas leían la config del default), y `deleteTenant`/`purge` sin protecciones dedicadas. Consola: listado con dueño (`owner_email`) + borrado = des-aprovisionamiento total (HU-209).
 > **Pendiente para el go-live (ops):** Stack Auth prod (**HU-214**: OAuth keys, Trusted Domains) + activar flags + **alta end-to-end en vivo**. Ver `docs/GO-LIVE-SAAS.md`. **Después:** billing (HU-192/193/194), `api/checkout` a RLS, RLS de `storage.objects`.
 
 ---

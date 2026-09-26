@@ -1,4 +1,5 @@
-import { getProductBySlug, getProducts, getStoreConfig } from '@merkiai/database'
+import { getProductBySlug, getProducts } from '@merkiai/database'
+import { getStoreContext } from '@/lib/store-context'
 import { notFound } from 'next/navigation'
 import type { Metadata } from 'next'
 import ProductDetail from '@/components/shop/ProductDetail'
@@ -47,7 +48,7 @@ export default async function ProductPage({ params }: Props) {
   const db = await getRequestCatalogDb()
   const [product, storeConfig] = await Promise.all([
     getProductBySlug(slug, db).catch(() => null),
-    getStoreConfig().catch(() => null),
+    getStoreContext().then((c) => c.config).catch(() => null),
   ])
   if (!product) notFound()
 

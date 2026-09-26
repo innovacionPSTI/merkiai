@@ -2,7 +2,8 @@ import { NextRequest, NextResponse } from 'next/server'
 import { stackServerApp } from '@/stack'
 import { ensureCustomer } from '@merkiai/database'
 import { getRequestUserDb } from '@/lib/tenant-db'
-import { resolveTenant } from '@/lib/tenant-context'
+import { resolveTenant } from '@/lib/tenant-context';
+import { getMachineDb } from '@/lib/machine-db'
 
 /**
  * GET /api/account/profile — nombre/teléfono/email del customer logueado.
@@ -21,7 +22,7 @@ export async function GET() {
     const { tenantId } = await resolveTenant()
     const customer = await ensureCustomer({
       stackUserId: user.id, email: user.primaryEmail, name: user.displayName, tenantId,
-    })
+    }, getMachineDb(tenantId))
 
     const db = await getRequestUserDb(user.id)
     const { data } = await db
@@ -49,7 +50,7 @@ export async function PATCH(req: NextRequest) {
     const { tenantId } = await resolveTenant()
     const customer = await ensureCustomer({
       stackUserId: user.id, email: user.primaryEmail, name: user.displayName, tenantId,
-    })
+    }, getMachineDb(tenantId))
 
     const db = await getRequestUserDb(user.id)
     const { error } = await db

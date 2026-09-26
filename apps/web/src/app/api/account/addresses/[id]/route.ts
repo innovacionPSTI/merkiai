@@ -2,7 +2,8 @@ import { NextRequest, NextResponse } from 'next/server'
 import { stackServerApp } from '@/stack'
 import { ensureCustomer } from '@merkiai/database'
 import { getRequestUserDb } from '@/lib/tenant-db'
-import { resolveTenant } from '@/lib/tenant-context'
+import { resolveTenant } from '@/lib/tenant-context';
+import { getMachineDb } from '@/lib/machine-db'
 
 /**
  * PATCH/DELETE /api/account/addresses/[id] — editar/eliminar una dirección.
@@ -13,7 +14,7 @@ async function buyer(user: { id: string; primaryEmail: string; displayName: stri
   const { tenantId } = await resolveTenant()
   const customer = await ensureCustomer({
     stackUserId: user.id, email: user.primaryEmail, name: user.displayName, tenantId,
-  })
+  }, getMachineDb(tenantId))
   const db = await getRequestUserDb(user.id)
   return { customerId: customer.id, db }
 }

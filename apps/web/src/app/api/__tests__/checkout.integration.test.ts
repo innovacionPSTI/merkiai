@@ -31,6 +31,10 @@ jest.mock('@/stack', () => ({
   stackServerApp: { getUser: jest.fn().mockResolvedValue(null) },
 }))
 
+// HU-232: el checkout resuelve tenant + usa getMachineDb (RLS).
+jest.mock('@/lib/tenant-context', () => ({ resolveTenant: jest.fn(async () => ({ tenantId: 't1' })) }))
+jest.mock('@/lib/machine-db', () => ({ getMachineDb: jest.fn(() => ({})) }))
+
 import { createOrder, getPaymentConfig, getPaymentGateway, getActiveProvider, getStockForVariants } from '@merkiai/database'
 import { POST } from '../checkout/route'
 
