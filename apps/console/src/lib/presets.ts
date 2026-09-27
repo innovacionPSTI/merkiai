@@ -40,3 +40,24 @@ export async function getPresetsForPlan(planKey: string): Promise<PresetRow[]> {
     (p) => p.active && (p.available_in_plans.length === 0 || p.available_in_plans.includes(planKey)),
   )
 }
+
+/** Un preset por key (o null). */
+export async function getPresetByKey(key: string): Promise<PresetRow | null> {
+  const { data } = await platformDb().from('presets').select(COLS).eq('key', key).maybeSingle()
+  return (data as PresetRow) ?? null
+}
+
+/**
+ * Payload que espera el endpoint interno de seed (HU-235) para "aplicar preset".
+ * Traduce un PresetRow (BD plataforma) al contrato de `applyPresetToStore`.
+ */
+export function toPresetPayload(p: PresetRow): Record<string, unknown> {
+  return {
+    theme: p.theme,
+    template: p.template,
+    home_sections: p.home_sections,
+    sample_categories: p.sample_categories,
+    sample_products: p.sample_products,
+    inventory_model: p.inventory_model,
+  }
+}

@@ -18,7 +18,13 @@ export interface ProvisionOwnerInput {
  * para el tenant recién creado.
  */
 export async function seedTenantConfigViaAdmin(
-  input: { tenantId: string; storeName?: string },
+  input: {
+    tenantId: string
+    storeName?: string
+    // HU-235: preset a aplicar + topes del plan ya resueltos por la consola.
+    preset?: Record<string, unknown>
+    limits?: { categories?: number; products?: number }
+  },
 ): Promise<{ ok: boolean; error?: string }> {
   const base = (process.env.ADMIN_APP_URL ?? 'https://admin.merkiai.com').replace(/\/$/, '')
   const secret = process.env.INTERNAL_API_SECRET
@@ -29,7 +35,12 @@ export async function seedTenantConfigViaAdmin(
       headers: { 'Content-Type': 'application/json', 'x-internal-secret': secret },
       cache: 'no-store',
       redirect: 'manual',
-      body: JSON.stringify({ tenantId: input.tenantId, storeName: input.storeName }),
+      body: JSON.stringify({
+        tenantId: input.tenantId,
+        storeName: input.storeName,
+        preset: input.preset,
+        limits: input.limits,
+      }),
     })
     if (res.type === 'opaqueredirect' || (res.status >= 300 && res.status < 400)) {
       return { ok: false, error: 'admin redirigió la petición (¿middleware pidiendo sesión?).' }

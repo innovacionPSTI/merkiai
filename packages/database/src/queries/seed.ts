@@ -135,8 +135,9 @@ export async function seedTenantConfig(
  * Materializa las secciones de arranque del home para un tenant (HU-234).
  * Idempotente: si el tenant ya tiene alguna sección de home, no hace nada.
  * Marca todo como `sample` para reemplazo/borrado en lote desde el admin.
+ * Exportada para reutilizarla desde el orquestador de presets (HU-235).
  */
-async function seedHomeSections(
+export async function seedHomeSections(
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   supabase: any,
   tenantId: string,
