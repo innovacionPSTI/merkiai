@@ -4,6 +4,7 @@ import { revalidatePath } from 'next/cache'
 import { requirePlatformOperator } from '@/lib/platform-auth'
 import { platformDb } from '@/lib/platform-db'
 import { parsePlanForm } from '@/lib/plan-validation'
+import { parsePresetForm } from '@/lib/preset-validation'
 import { getPlans } from '@/lib/plans'
 import { provisionTenant, ensureTenantTeam } from '@/lib/provisioning'
 import { adminIdentity } from '@/lib/admin-identity'
@@ -229,6 +230,48 @@ export async function savePlan(formData: FormData) {
 
   await platformDb().from('plans').upsert(parsed.value, { onConflict: 'key' })
   revalidatePath('/')
+}
+
+/** Estado del formulario de Preset (para `useActionState`). */
+export interface PresetActionState { ok: boolean; error?: string; message?: string }
+
+/** Crea o edita un Preset de nicho (HU-233). Gated por `platform:operate`. */
+export async function savePreset(
+  _prev: PresetActionState,
+  formData: FormData,
+): Promise<PresetActionState> {
+  await requirePlatformOperator()
+  const parsed = parsePresetForm({
+    key:                String(formData.get('key') ?? ''),
+    name:               String(formData.get('name') ?? ''),
+    niche:              String(formData.get('niche') ?? ''),
+    description:        String(formData.get('description') ?? ''),
+    theme:              String(formData.get('theme') ?? ''),
+    template:           String(formData.get('template') ?? 'default'),
+    home_sections:      String(formData.get('home_sections') ?? ''),
+    sample_categories:  String(formData.get('sample_categories') ?? ''),
+    sample_products:    String(formData.get('sample_products') ?? ''),
+    inventory_model:    String(formData.get('inventory_model') ?? 'single'),
+    available_in_plans: String(formData.get('available_in_plans') ?? ''),
+    active:             String(formData.get('active') ?? 'true'),
+  })
+  if (!parsed.ok) return { ok: false, error: parsed.error }
+
+  const { error } = await platformDb()
+    .from('presets')
+    .upsert({ ...parsed.value, updated_at: new Date().toISOString() }, { onConflict: 'key' })
+  if (error) return { ok: false, error: `No se pudo guardar: ${error.message}` }
+  revalidatePath('/presets')
+  return { ok: true, message: `Preset "${parsed.value.name}" guardado.` }
+}
+
+/** Elimina un Preset (HU-233). Gated. Acción simple (form de la fila). */
+export async function deletePreset(formData: FormData) {
+  await requirePlatformOperator()
+  const key = String(formData.get('key') ?? '').trim()
+  if (!key) return
+  await platformDb().from('presets').delete().eq('key', key)
+  revalidatePath('/presets')
 }
 
 /** Asigna un plan existente a un tenant (HU-173). Gated. */
