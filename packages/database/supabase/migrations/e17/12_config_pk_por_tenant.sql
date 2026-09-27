@@ -25,13 +25,16 @@ begin
     -- 1) Quitar el PK actual (sobre `id`), sea cual sea su nombre por defecto.
     execute format('alter table public.%I drop constraint if exists %I', t, t || '_pkey');
 
-    -- 2) PK sobre tenant_id (una fila por tenant). tenant_id ya es NOT NULL (e17/01).
+    -- 2) Quitar el UNIQUE por tenant redundante. Según qué migración lo creó puede
+    --    ser una CONSTRAINT (e17/03 · add constraint) o un ÍNDICE suelto (e17/07 ·
+    --    create unique index). Se intentan ambos con IF EXISTS (idempotente).
+    execute format('alter table public.%I drop constraint if exists %I', t, t || '_tenant_uk');
+    execute format('drop index if exists public.%I', t || '_tenant_uk');
+
+    -- 3) PK sobre tenant_id (una fila por tenant). tenant_id ya es NOT NULL (e17/01).
     if not exists (select 1 from pg_constraint where conname = t || '_tenant_pk') then
       execute format('alter table public.%I add constraint %I primary key (tenant_id)', t, t || '_tenant_pk');
     end if;
-
-    -- 3) El unique index por tenant de e17/07 ya lo cubre el PK → eliminar.
-    execute format('drop index if exists public.%I', t || '_tenant_uk');
   end loop;
 end $$;
 
