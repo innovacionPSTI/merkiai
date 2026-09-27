@@ -61,6 +61,7 @@ const PRESET: PresetPayload = {
   theme: { name: 'Moda', color_primary: '#0f766e', font_body: 'inter', ignorame: 'x' },
   template: 'boutique',
   home_sections: [{ section_type: 'hero', title: 'H', items: [{ item_type: 'slide', title: 'S' }] }],
+  inventory_model: 'multi_location',
   sample_categories: [
     { name: 'Camisas' }, { name: 'Pantalones' }, { name: 'Zapatos' },
   ],
@@ -129,5 +130,23 @@ describe('applyPresetToStore (HU-235)', () => {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const res = await applyPresetToStore(T, { template: 'default' }, {}, db as any)
     expect(res.results.theme).toMatch(/skipped/)
+  })
+
+  it('inventory_model: degrada multi_location a single si el plan no lo habilita (HU-237)', async () => {
+    const db = fakeDb()
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const res = await applyPresetToStore(T, PRESET, { allowMultiLocation: false }, db as any)
+    expect(res.results.inventory_model).toMatch(/degradado a single/)
+    expect(db.log.updates.find((u) => u.table === 'store_config' && 'inventory_model' in u.row)?.row)
+      .toEqual({ inventory_model: 'single' })
+  })
+
+  it('inventory_model: respeta multi_location si el plan lo habilita (HU-237)', async () => {
+    const db = fakeDb()
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const res = await applyPresetToStore(T, PRESET, { allowMultiLocation: true }, db as any)
+    expect(res.results.inventory_model).toBe('ok')
+    expect(db.log.updates.find((u) => u.table === 'store_config' && 'inventory_model' in u.row)?.row)
+      .toEqual({ inventory_model: 'multi_location' })
   })
 })

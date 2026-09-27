@@ -19,10 +19,12 @@
 - [ ] `e17/01…11` **en orden** (tenant_id, RLS catálogo, UNIQUE por tenant, FK compuestas, RLS flujos con sesión, RLS contenido, config por tenant, RLS themes, RLS admin, RLS admin_all, `store_template`).
 - [ ] **`e17/12_config_pk_por_tenant.sql`** ⭐ **NUEVO/OBLIGATORIO** — sin esto, crear config de un tenant nuevo falla (colisión del `id=1`); el admin da error al guardar y el seed no crea las 4 config. (Encontrado en la prueba del punto 5.)
 - [ ] Verificar: `select conname from pg_constraint where conname like '%_tenant_pk';` lista `store_config_tenant_pk`, etc.
+- [ ] **`e17/13_inventory_model.sql`** ⭐ **NUEVO** (HU-237) — columna `store_config.inventory_model` (`single`|`multi_location`, default `single`). Sin esto, aplicar un preset con modelo de inventario o el onboarding multi-ubicación fallan.
 
 **Proyecto de PLATAFORMA (consola):**
 - [ ] `platform/01_platform_schema.sql` + `03_plans.sql`.
 - [ ] **`platform/04_owner_email.sql`** ⭐ **NUEVO** — columna `owner_email` para mostrar el dueño en el listado de la consola.
+- [ ] **`platform/05_presets.sql`** ⭐ **NUEVO** (HU-233) — tabla `presets` (bundles curados por nicho que se aplican al crear tiendas).
 
 ## 2. Variables de entorno por app **[OPS]**
 

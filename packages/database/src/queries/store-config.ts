@@ -12,6 +12,8 @@ export type StoreConfig = {
   id: number
   /** Template de presentación del storefront (HU-217). Default 'default'. */
   template: string
+  /** Modelo de inventario (HU-237). 'single' | 'multi_location' (gated por plan). */
+  inventory_model: 'single' | 'multi_location'
   whatsapp_number: string | null
   store_name: string
   /** Prefijo configurable del número de orden (ej. 'ORD' → ORD-0001). */
@@ -54,6 +56,7 @@ export type UpdateStoreConfigInput = Partial<Omit<StoreConfig, 'id' | 'updated_a
 const DEFAULT_CONFIG: StoreConfig = {
   id: 1,
   template: 'default',
+  inventory_model: 'single',
   whatsapp_number: null,
   store_name: 'Mi Tienda',
   order_prefix: 'ORD',

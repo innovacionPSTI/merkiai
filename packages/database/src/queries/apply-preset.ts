@@ -15,7 +15,9 @@
  *  - **Límites (HU-239)**: el llamador resuelve los topes del plan y los pasa en
  *    `opts.limits`; aquí solo se recortan los arreglos de ejemplo a esos topes.
  *    (La resolución/enforcement de entitlements vive en el llamador, server-side.)
- *  - **inventory_model**: se aplica en HU-237, cuando exista `store_config.inventory_model`.
+ *  - **inventory_model** (HU-237): se escribe en `store_config`; si el preset pide
+ *    `multi_location` y el plan no lo habilita (`opts.allowMultiLocation`), se degrada
+ *    a `single` en vez de fallar.
  *
  * Corre con service-role (control plane / admin autorizado); `tenant_id` se fija
  * explícitamente en cada escritura porque el service-role no pasa por RLS.
@@ -59,6 +61,12 @@ export interface ApplyPresetLimits {
 
 export interface ApplyPresetOptions {
   limits?: ApplyPresetLimits
+  /**
+   * ¿El plan habilita multi-ubicación? (HU-237, feature `multi_location`). Lo
+   * resuelve el llamador (server-side, HU-239). Si es false, un preset que pida
+   * `multi_location` se degrada a `single` en lugar de fallar.
+   */
+  allowMultiLocation?: boolean
 }
 
 export interface ApplyPresetResult {
@@ -108,6 +116,9 @@ export async function applyPresetToStore(
 
   results.theme = await applyTheme(supabase, tenantId, preset.theme)
   results.template = await applyTemplate(supabase, tenantId, preset.template)
+  results.inventory_model = await applyInventoryModel(
+    supabase, tenantId, preset.inventory_model, !!opts.allowMultiLocation,
+  )
   results.home_sections = await seedHomeSections(supabase, tenantId, preset.home_sections ?? [])
   results.categories = await seedSampleCategories(
     supabase, tenantId, cap(preset.sample_categories, opts.limits?.categories),
@@ -150,6 +161,24 @@ async function applyTemplate(supabase: any, tenantId: string, template?: string)
   try {
     const { error } = await supabase.from('store_config').update({ template: t }).eq('tenant_id', tenantId)
     return error ? `error: ${error.message}` : 'ok'
+  } catch (e) {
+    return `error: ${e instanceof Error ? e.message : String(e)}`
+  }
+}
+
+/** Modelo de inventario (HU-237): escribe store_config.inventory_model. Si el
+ *  preset pide multi_location pero el plan no lo habilita, degrada a single. */
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+async function applyInventoryModel(
+  supabase: any, tenantId: string, model: 'single' | 'multi_location' | undefined, allowMulti: boolean,
+): Promise<'ok' | string> {
+  if (!model) return 'skipped (sin modelo)'
+  const effective = model === 'multi_location' && !allowMulti ? 'single' : model
+  try {
+    const { error } = await supabase
+      .from('store_config').update({ inventory_model: effective }).eq('tenant_id', tenantId)
+    if (error) return `error: ${error.message}`
+    return effective === model ? 'ok' : 'ok (degradado a single: plan sin multi_location)'
   } catch (e) {
     return `error: ${e instanceof Error ? e.message : String(e)}`
   }

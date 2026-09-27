@@ -27,6 +27,7 @@ import { withInternalAuth } from '@/lib/internal-route'
  *    categorías/productos). Si viene, se siembra la config con las secciones del
  *    preset y luego se copia el resto al plano de tienda.
  *  - limits (opt): topes del plan (HU-239) que la consola ya resolvió.
+ *  - allowMultiLocation (opt, HU-237): si el plan habilita multi-ubicación.
  */
 export const POST = withInternalAuth(async (req: NextRequest) => {
   const body = (await req.json().catch(() => ({}))) as {
@@ -34,6 +35,7 @@ export const POST = withInternalAuth(async (req: NextRequest) => {
     storeName?: string
     preset?: PresetPayload
     limits?: ApplyPresetLimits
+    allowMultiLocation?: boolean
   }
   const tenantId = String(body.tenantId ?? '').trim()
   if (!tenantId) {
@@ -53,7 +55,9 @@ export const POST = withInternalAuth(async (req: NextRequest) => {
 
     // HU-235: copiar el resto del preset (Tema/Template/categorías/productos).
     if (preset) {
-      const applied = await applyPresetToStore(tenantId, preset, { limits: body.limits }, db)
+      const applied = await applyPresetToStore(
+        tenantId, preset, { limits: body.limits, allowMultiLocation: body.allowMultiLocation }, db,
+      )
       results.preset = applied.results
     }
 
