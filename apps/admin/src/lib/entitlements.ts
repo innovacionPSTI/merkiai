@@ -10,21 +10,20 @@
  * control plane no está configurado o no responde, se devuelve `null` y NO se
  * bloquea (fail-open intencional, a diferencia de la RLS que es fail-closed).
  */
-/** Entitlements del plan (features + límites). Definición local para no acoplar
- *  el admin al paquete `@merkiai/tenancy` por una sola función. */
-export interface PlanEntitlements {
-  features: Record<string, boolean | string | number | null>
-  limits: Record<string, number | null>
-}
-
-/** ¿`current` está dentro del límite `key`? (sin límite = permitido). */
-export function withinLimit(ent: PlanEntitlements | null | undefined, key: string, current: number): boolean {
-  const max = ent?.limits?.[key]
-  if (max === null || max === undefined) return true
-  return current < max
-}
-
+// HU-239: el modelo de entitlements y el gating viven en @merkiai/tenancy
+// (catálogo canónico único). Aquí solo se re-exportan + la consulta al control
+// plane, específica del admin.
 import { getActiveTenantId } from './active-tenant'
+import type { PlanEntitlements } from '@merkiai/tenancy'
+
+export type { PlanEntitlements, EntitlementDef, EntitlementKind } from '@merkiai/tenancy'
+export {
+  hasFeature, withinLimit, limitOf,
+  resolveFeature, resolveLimit,
+  requireFeature, enforceLimit,
+  EntitlementError, entitlementDef,
+  ENTITLEMENTS_CATALOG, FEATURES, LIMITS,
+} from '@merkiai/tenancy'
 
 export async function getTenantEntitlements(
   tenantId?: string,

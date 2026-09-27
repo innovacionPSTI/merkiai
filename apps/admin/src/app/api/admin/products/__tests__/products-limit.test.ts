@@ -40,5 +40,5 @@ it('devuelve 403 al alcanzar el límite de productos del plan', async () => {
   const res = await POST(req({ name: 'Nuevo', slug: 'nuevo', variants: [{ price: 1000 }] }))
   expect(res.status).toBe(403)
   const body = await res.json()
-  expect(body.error).toMatch(/[Ll]ímite de productos/)
+  expect(body.error).toMatch(/l[íi]mite de productos/i)
 })

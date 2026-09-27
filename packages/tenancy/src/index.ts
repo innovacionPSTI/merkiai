@@ -32,5 +32,12 @@ export type { DbTarget, DbTargetRegistry } from './factory'
 
 export type { IdentityProvider, IdentityUser } from './identity'
 
-export { hasFeature, withinLimit, limitOf } from './entitlements'
-export type { PlanEntitlements } from './entitlements'
+export {
+  hasFeature, withinLimit, limitOf,
+  resolveFeature, resolveLimit,
+  requireFeature, enforceLimit,
+  EntitlementError,
+  entitlementDef,
+  ENTITLEMENTS_CATALOG, FEATURES, LIMITS,
+} from './entitlements'
+export type { PlanEntitlements, EntitlementDef, EntitlementKind } from './entitlements'

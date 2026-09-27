@@ -1,6 +1,6 @@
 import type { Database } from '@merkiai/database'
 import { NextRequest, NextResponse } from 'next/server'
-import { getTenantEntitlements, withinLimit } from '@/lib/entitlements'
+import { getTenantEntitlements, enforceLimit, EntitlementError, LIMITS } from '@/lib/entitlements'
 import { getAdminUser } from '@/lib/auth'
 import { getAdminDb } from '@/lib/admin-db'
 
@@ -31,11 +31,13 @@ export async function POST(req: NextRequest) {
       .from('products')
       .select('id', { count: 'exact', head: true })
       .eq('tenant_id', tenantId)
-    if (!withinLimit(entitlements, 'products', count ?? 0)) {
-      return NextResponse.json(
-        { error: 'Límite de productos del plan alcanzado. Actualiza el plan para agregar más.' },
-        { status: 403 },
-      )
+    try {
+      enforceLimit(entitlements, LIMITS.PRODUCTS, count ?? 0)
+    } catch (e) {
+      if (e instanceof EntitlementError) {
+        return NextResponse.json({ error: e.message, code: e.code, key: e.key }, { status: 403 })
+      }
+      throw e
     }
   }
 
