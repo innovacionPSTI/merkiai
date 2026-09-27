@@ -63,6 +63,13 @@ const NAV: NavNode[] = [
     section: 'dashboard',
   },
   {
+    kind: 'leaf',
+    href: '/onboarding',
+    icon: '🚀',
+    label: 'Configura tu tienda',
+    section: 'configuracion',
+  },
+  {
     kind: 'group',
     icon: '☕',
     label: 'Catálogo',
