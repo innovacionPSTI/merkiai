@@ -22,6 +22,12 @@ declare
   cfg text[] := array['store_config','payment_config','shipping_config','admin_config'];
 begin
   foreach t in array cfg loop
+    -- 0) Quitar el CHECK singleton `id = 1` si quedó (shipping_config lo conserva:
+    --    e17/03 intentó borrar un índice `_singleton_idx` inexistente, no la
+    --    CONSTRAINT `_singleton`). Con `id` SERIAL, el tenant nuevo recibe id=2 y
+    --    violaba el CHECK → su config no se creaba. Idempotente para los 4.
+    execute format('alter table public.%I drop constraint if exists %I', t, t || '_singleton');
+
     -- 1) Quitar el PK actual (sobre `id`), sea cual sea su nombre por defecto.
     execute format('alter table public.%I drop constraint if exists %I', t, t || '_pkey');
 
