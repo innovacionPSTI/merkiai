@@ -65,15 +65,17 @@ Para cada uno de los **3 proyectos** (web/admin/console):
 - [ ] **`TENANT_RESOLUTION_STRICT=true`** en `web` → un host sin tenant da **404** (no sirve el default). *(Actívalo solo cuando el control plane resuelva bien; con él, un fallo del control plane corta el host.)*
 - [ ] **`NEXT_PUBLIC_FEATURE_PAGE_BUILDER=true`** en `admin` (opcional) → habilita el Constructor de páginas.
 
-## 5. Verificación end-to-end (alta real de prueba) **[APP+OPS]**
+## 5. Verificación end-to-end (alta real de prueba) **[APP+OPS]** — ✅ VALIDADO (sep-2026)
 
-- [ ] En **console**: crear un tenant de prueba (nombre, subdominio, email del dueño, plan). Debe reportar **éxito** (no "modo parcial"): crea `tenants` + Team en Stack Auth + invita al dueño.
-- [ ] **HU-207**: el tenant nace con su config → verificar en la BD de tienda que existen filas `store_config`/`payment_config`/`shipping_config`/`admin_config` + página `home` con ese `tenant_id`.
-- [ ] **HU-209**: el dueño acepta la invitación y entra a `admin.merkiai.com` → ve su panel (rol `super_admin`), **no** "Sin acceso".
-- [ ] **Storefront**: `sub.merkiai.com` sirve la tienda del tenant (catálogo/config propios, **no** los del default). Un subdominio inexistente → 404/redirect.
-- [ ] **Aislamiento**: crear un producto en el tenant de prueba → NO aparece en otra tienda ni en el default.
-- [ ] **Pago de prueba** (sandbox de la pasarela activa): completar checkout → el **webhook** actualiza el pedido del tenant correcto (config de pasarela por tenant, RLS por host).
-- [ ] **Email/OTP** (console): probar login con "Enviar código al correo" → ingresar código → entra *(HU-214g; confirmar la forma del `nonce` de Stack Auth)*.
+- [x] En **console**: crear un tenant reporta **éxito** (crea `tenants` + Team en Stack Auth + invita al dueño); el listado muestra el **dueño** (`owner_email`).
+- [x] **HU-207**: el tenant nace con sus **4 config** (`store/payment/shipping/admin_config`) + página `home`. *(Requirió `e17/12`: PK por tenant + drop del índice `shipping_config_singleton`.)*
+- [x] **HU-209**: el dueño entra a `admin.merkiai.com` con rol `super_admin` (no "Sin acceso"); guarda config sin error.
+- [x] **Storefront**: el subdominio sirve la tienda del tenant (config/tema propios); un subdominio inexistente → 404/redirect. *(Home sin secciones muestra fallbacks genéricos — ya sin "café"; contenido real vía Constructor / HU-234.)*
+- [x] **Aislamiento**: producto creado en el tenant NO aparece en otra tienda (RLS confirmada).
+- [ ] **Pago de prueba** — ⏸ **DIFERIDO** hasta refinar los medios de pago (PRV-07/HU-188).
+- [ ] **Email/OTP** (console) — ⏸ **DIFERIDO** junto con el refinamiento de pagos/auth. El login por contraseña funciona.
+
+> **Estado:** núcleo del alta multi-tenant **validado en vivo**. Pendientes deliberados: pago de prueba + Email/OTP (con el refinamiento de pagos) y OAuth de Google propio (punto 3).
 
 ## 6. Post-activación
 
