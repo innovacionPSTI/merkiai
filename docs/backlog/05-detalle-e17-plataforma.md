@@ -290,6 +290,8 @@
 **Módulo:** wizard en admin, checklist de setup
 **Estado:** 🔲 Pendiente (roadmap)
 
+> ⚠️ **Ampliada por HU-236** (onboarding por plan): esta HU es el núcleo básico; la versión completa (apariencia/Tema, Presets de nicho, Template de páginas, modelo de inventario, catálogo, sucursales, todo **gated por entitlements**) se define en el cluster HU-233…239 y su fundamento en `docs/adr/ADR-002-presets-onboarding-entitlements.md`. **No implementar HU-169 aislada** — hacerlo dentro de HU-236.
+
 | # | Escenario | Resultado esperado |
 |---|-----------|-------------------|
 | AC-1 | Wizard de arranque | Identidad/tema, pasarela activa, proveedor de envío, dominio, legales |
