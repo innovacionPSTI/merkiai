@@ -22,12 +22,13 @@ declare
   cfg text[] := array['store_config','payment_config','shipping_config','admin_config'];
 begin
   foreach t in array cfg loop
-    -- 0) Quitar la constraint singleton `_singleton` si quedó. shipping_config la
-    --    conserva porque e17/03 intentó borrar un índice `_singleton_idx`
-    --    inexistente, no la CONSTRAINT `_singleton` (que es UNIQUE, no CHECK) →
-    --    impedía una segunda fila (23505 al crear config de otro tenant).
-    --    Idempotente para los 4 (drop constraint sirve para UNIQUE o CHECK).
+    -- 0) Quitar el singleton `_singleton` si quedó. En shipping_config es un
+    --    ÍNDICE ÚNICO (no una constraint), por eso e17/03 no lo borró y
+    --    `pg_constraint` no lo muestra → impedía una segunda fila (23505 al crear
+    --    config de otro tenant). Se intenta como constraint Y como índice (según
+    --    la tabla puede ser uno u otro). Idempotente para los 4.
     execute format('alter table public.%I drop constraint if exists %I', t, t || '_singleton');
+    execute format('drop index if exists public.%I', t || '_singleton');
 
     -- 1) Quitar el PK actual (sobre `id`), sea cual sea su nombre por defecto.
     execute format('alter table public.%I drop constraint if exists %I', t, t || '_pkey');
