@@ -82,7 +82,7 @@ function BestSellersBlock({ section, data, template }: BlockProps) {
                 {product.image_url ? (
                   <Image src={product.image_url} alt={product.product_name} fill className="object-cover transition-transform duration-500 group-hover:scale-105" sizes="(max-width: 768px) 45vw, 20vw" />
                 ) : (
-                  <div className="w-full h-full flex items-center justify-center text-brand-primary/10 font-display text-4xl">☕</div>
+                  <div className="w-full h-full flex items-center justify-center text-brand-primary/10 font-display text-4xl">🛍️</div>
                 )}
                 <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-brand-primary/70 to-transparent p-3 opacity-0 group-hover:opacity-100 transition-opacity duration-300">
                   <p className="font-brand text-brand-cream text-xs font-medium truncate">{product.product_name}</p>
@@ -98,8 +98,8 @@ function BestSellersBlock({ section, data, template }: BlockProps) {
 
 function HistoriaBlock({ section, template }: BlockProps) {
   const f = resolveBlockFields('historia', section, template)
-  const title    = (f.title as string)    || 'Vivir para Servir'
-  const subtitle = (f.subtitle as string) || 'Cada taza que preparamos lleva el compromiso de la excelencia y el cuidado desde el origen hasta tu mesa.'
+  const title    = (f.title as string)    || 'Nuestra historia'
+  const subtitle = (f.subtitle as string) || 'Nos mueve la excelencia y el cuidado en cada detalle, desde el origen hasta tus manos.'
   const ctaText  = (f.cta_text as string) || 'Conoce nuestra historia →'
   const ctaUrl   = (f.cta_url as string)  || '/nosotros'
   return (
@@ -122,7 +122,7 @@ function BlogPreviewBlock({ data }: BlockProps) {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex flex-col lg:flex-row gap-12 items-start">
           <div className="lg:w-2/5 bg-brand-yellow rounded-3xl p-10 flex flex-col justify-between min-h-64">
-            <h2 className="font-display text-brand-primary leading-none" style={{ fontSize: 'clamp(2.5rem, 5vw, 4.5rem)' }}>Notas<br />de<br />Café</h2>
+            <h2 className="font-display text-brand-primary leading-none" style={{ fontSize: 'clamp(2.5rem, 5vw, 4.5rem)' }}>Del<br />blog</h2>
             <Link href="/blog" className="inline-block mt-6 border border-brand-primary text-brand-primary rounded-full px-6 py-2 font-brand text-sm hover:bg-brand-primary hover:text-brand-cream transition-colors">Ver más →</Link>
           </div>
           <div className="flex-1 space-y-6">

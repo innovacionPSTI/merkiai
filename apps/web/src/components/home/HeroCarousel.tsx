@@ -33,10 +33,10 @@ export default function HeroCarousel({ items }: HeroCarouselProps) {
       >
         <div className="relative z-10 max-w-7xl mx-auto px-6 text-center">
           <h1 className="text-hero font-display text-brand-cream leading-none mb-6">
-            Café de<br />Especialidad
+            Bienvenido a<br />tu tienda
           </h1>
           <p className="font-brand text-brand-cream/80 text-xl mb-10">
-            Trazabilidad completa desde el origen hasta tu taza
+            Descubre nuestra selección de productos
           </p>
           <div className="flex gap-4 justify-center flex-wrap">
             <Link href="/shop" className="bg-brand-cream text-brand-primary rounded-full px-8 py-3 font-brand font-medium hover:bg-brand-yellow transition-colors">

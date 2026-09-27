@@ -66,7 +66,7 @@ export default async function PedidosPage() {
           </div>
           <p className="font-brand font-semibold text-brand-primary mb-1">Aún no tienes pedidos</p>
           <p className="font-brand text-sm text-brand-primary/50 mb-6">
-            Explora nuestro catálogo y encuentra tu café ideal
+            Explora nuestro catálogo y encuentra lo que buscas
           </p>
           <Link
             href="/shop"
