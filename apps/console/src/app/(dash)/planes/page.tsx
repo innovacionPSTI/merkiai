@@ -1,7 +1,8 @@
 import { PageHeader, PanelCard, StatusBadge } from '@merkiai/ui'
 import { getPlans } from '@/lib/plans'
-import { input, btn, th, td, mono, scroll, money } from '@/lib/styles'
-import { savePlan } from '../../actions'
+import { th, td, mono, scroll, money } from '@/lib/styles'
+import { deletePlan } from '../../actions'
+import PlanForm from './PlanForm'
 
 export const dynamic = 'force-dynamic'
 
@@ -24,6 +25,7 @@ export default async function PlanesPage() {
                 <th style={th}>Límites</th>
                 <th style={th}>Aislam.</th>
                 <th style={th}>Estado</th>
+                <th style={th}></th>
               </tr>
             </thead>
             <tbody>
@@ -36,6 +38,14 @@ export default async function PlanesPage() {
                   <td style={{ ...td, ...mono }}>{JSON.stringify(p.limits)}</td>
                   <td style={td}>{p.data_isolation}</td>
                   <td style={td}><StatusBadge tone={p.active ? 'success' : 'neutral'}>{p.active ? 'activo' : 'inactivo'}</StatusBadge></td>
+                  <td style={td}>
+                    <form action={deletePlan}>
+                      <input type="hidden" name="key" value={p.key} />
+                      <button type="submit" style={{ background: 'none', border: 'none', color: '#dc2626', cursor: 'pointer', fontSize: 13 }}>
+                        Eliminar
+                      </button>
+                    </form>
+                  </td>
                 </tr>
               ))}
             </tbody>
@@ -44,25 +54,7 @@ export default async function PlanesPage() {
       </PanelCard>
 
       <PanelCard title="Crear / editar plan">
-        <p style={{ margin: '0 0 12px', color: '#888', fontSize: 13 }}>Usa una key existente para sobrescribir.</p>
-        <form action={savePlan} style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8, maxWidth: 760 }}>
-          <input style={input} name="key" placeholder="key (p.ej. pro)" required />
-          <input style={input} name="name" placeholder="Nombre visible" required />
-          <input style={input} name="price_cents" type="number" min={0} placeholder="precio en centavos" defaultValue={0} />
-          <input style={input} name="currency" placeholder="COP" defaultValue="COP" />
-          <textarea style={{ ...input, ...mono, gridColumn: '1 / span 2', minHeight: 56 }} name="features" placeholder='{"pos": true, "ai": false}' />
-          <textarea style={{ ...input, ...mono, gridColumn: '1 / span 2', minHeight: 56 }} name="limits" placeholder='{"products": 2000, "users": 10}' />
-          <select style={input} name="data_isolation" defaultValue="shared">
-            <option value="shared">shared</option>
-            <option value="schema">schema</option>
-            <option value="dedicated">dedicated</option>
-          </select>
-          <select style={input} name="active" defaultValue="true">
-            <option value="true">activo</option>
-            <option value="false">inactivo</option>
-          </select>
-          <button type="submit" style={{ ...btn, gridColumn: '1 / span 2' }}>Guardar plan</button>
-        </form>
+        <PlanForm plans={plans} />
       </PanelCard>
     </>
   )

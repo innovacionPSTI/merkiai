@@ -1,4 +1,32 @@
-import { parsePlanForm, parseJsonObject } from '../plan-validation'
+import { parsePlanForm, parseJsonObject, buildEntitlements } from '../plan-validation'
+
+const CATALOG = [
+  { key: 'multi_location', kind: 'feature' as const },
+  { key: 'ai_design', kind: 'feature' as const },
+  { key: 'products', kind: 'limit' as const },
+  { key: 'users', kind: 'limit' as const },
+]
+
+describe('buildEntitlements (HU-239 v2)', () => {
+  it('features → booleanos explícitos; límites → número si hay valor', () => {
+    const { features, limits } = buildEntitlements(
+      { features: { multi_location: true, ai_design: false }, limits: { products: '2000', users: '' } },
+      CATALOG,
+    )
+    expect(features).toEqual({ multi_location: true, ai_design: false })
+    expect(limits).toEqual({ products: 2000 }) // users vacío = ilimitado (omitido)
+  })
+
+  it('límite en blanco o negativo se omite (ilimitado)', () => {
+    const { limits } = buildEntitlements({ limits: { products: '', users: '-5' } }, CATALOG)
+    expect(limits).toEqual({})
+  })
+
+  it('features ausentes = false', () => {
+    const { features } = buildEntitlements({}, CATALOG)
+    expect(features).toEqual({ multi_location: false, ai_design: false })
+  })
+})
 
 describe('parseJsonObject', () => {
   it('vacío → {}', () => {

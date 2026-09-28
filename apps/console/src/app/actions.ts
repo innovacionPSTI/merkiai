@@ -3,7 +3,8 @@
 import { revalidatePath } from 'next/cache'
 import { requirePlatformOperator } from '@/lib/platform-auth'
 import { platformDb } from '@/lib/platform-db'
-import { parsePlanForm } from '@/lib/plan-validation'
+import { parsePlanForm, buildEntitlements } from '@/lib/plan-validation'
+import { ENTITLEMENTS_CATALOG } from '@merkiai/tenancy'
 import { parsePresetForm } from '@/lib/preset-validation'
 import { getPlans } from '@/lib/plans'
 import { provisionTenant, ensureTenantTeam } from '@/lib/provisioning'
@@ -216,13 +217,27 @@ export async function setTenantStatus(formData: FormData) {
 /** Crea o edita un plan del catálogo (HU-173). Gated por `platform:operate`. */
 export async function savePlan(formData: FormData) {
   await requirePlatformOperator()
+
+  // HU-239 v2: features/limits vienen como campos por-clave del catálogo
+  // (`feature_<key>` checkbox, `limit_<key>` número). Fallback a JSON crudo si
+  // el form los envía (retrocompatibilidad).
+  const rawFeatures: Record<string, boolean> = {}
+  const rawLimits: Record<string, string> = {}
+  for (const def of ENTITLEMENTS_CATALOG) {
+    if (def.kind === 'feature') rawFeatures[def.key] = formData.get(`feature_${def.key}`) != null
+    else rawLimits[def.key] = String(formData.get(`limit_${def.key}`) ?? '')
+  }
+  const { features, limits } = buildEntitlements({ features: rawFeatures, limits: rawLimits }, ENTITLEMENTS_CATALOG)
+  const featuresJson = formData.get('features') != null ? String(formData.get('features')) : JSON.stringify(features)
+  const limitsJson = formData.get('limits') != null ? String(formData.get('limits')) : JSON.stringify(limits)
+
   const parsed = parsePlanForm({
     key:            String(formData.get('key') ?? ''),
     name:           String(formData.get('name') ?? ''),
     price_cents:    String(formData.get('price_cents') ?? '0'),
     currency:       String(formData.get('currency') ?? 'COP'),
-    features:       String(formData.get('features') ?? ''),
-    limits:         String(formData.get('limits') ?? ''),
+    features:       featuresJson,
+    limits:         limitsJson,
     data_isolation: String(formData.get('data_isolation') ?? 'shared'),
     active:         String(formData.get('active') ?? 'true'),
   })
@@ -230,6 +245,19 @@ export async function savePlan(formData: FormData) {
 
   await platformDb().from('plans').upsert(parsed.value, { onConflict: 'key' })
   revalidatePath('/')
+  revalidatePath('/planes')
+}
+
+/** Elimina un plan (HU-239 v2). No borra si algún tenant lo usa. Gated. */
+export async function deletePlan(formData: FormData) {
+  await requirePlatformOperator()
+  const key = String(formData.get('key') ?? '').trim()
+  if (!key) return
+  const { count } = await platformDb()
+    .from('tenants').select('id', { count: 'exact', head: true }).eq('plan', key)
+  if ((count ?? 0) > 0) return // en uso: no se elimina (la UI avisa)
+  await platformDb().from('plans').delete().eq('key', key)
+  revalidatePath('/planes')
 }
 
 /** Estado del formulario de Preset (para `useActionState`). */

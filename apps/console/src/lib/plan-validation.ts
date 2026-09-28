@@ -27,6 +27,32 @@ export function parseJsonObject(raw: string | undefined | null): Record<string, 
   }
 }
 
+/**
+ * Construye `features`/`limits` desde campos por-clave del editor (HU-239 v2),
+ * usando el catálogo canónico como fuente de las claves. Puro y testeable.
+ *  - feature → boolean explícito (checkbox marcado o no).
+ *  - limit   → número si se ingresó un valor válido ≥ 0; en blanco = ilimitado
+ *              (se omite → `resolveLimit` cae al default del catálogo).
+ */
+export function buildEntitlements(
+  raw: { features?: Record<string, boolean>; limits?: Record<string, string | undefined> },
+  catalog: { key: string; kind: 'feature' | 'limit' }[],
+): { features: Record<string, boolean>; limits: Record<string, number> } {
+  const features: Record<string, boolean> = {}
+  const limits: Record<string, number> = {}
+  for (const def of catalog) {
+    if (def.kind === 'feature') {
+      features[def.key] = !!raw.features?.[def.key]
+    } else {
+      const v = (raw.limits?.[def.key] ?? '').toString().trim()
+      if (v === '') continue // ilimitado
+      const n = Number.parseInt(v, 10)
+      if (Number.isFinite(n) && n >= 0) limits[def.key] = n
+    }
+  }
+  return { features, limits }
+}
+
 export interface PlanFormFields {
   key?: string
   name?: string
