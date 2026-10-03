@@ -1,6 +1,7 @@
 'use client'
 
 import { useState } from 'react'
+import { PageHeader, Icon } from '@merkiai/ui'
 import { ASSIGNABLE_ROLES, ROLE_LABELS } from '@/lib/roles'
 import type { AssignableRole } from '@/lib/roles'
 
@@ -103,20 +104,18 @@ export default function UsuariosClient({ users: initialUsers, currentUserEmail }
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="font-display text-brand-primary text-2xl">Usuarios del sistema</h1>
-          <p className="font-brand text-sm text-brand-primary/50 mt-1">
-            Gestiona quién tiene acceso al panel y qué puede hacer
-          </p>
-        </div>
-        <button
-          onClick={() => { setShowInvite(true); setInviteMsg(null) }}
-          className="font-brand text-sm bg-brand-primary text-brand-cream px-4 py-2.5 rounded-xl hover:bg-brand-dark transition-colors flex items-center gap-2"
-        >
-          <span>+</span> Agregar usuario
-        </button>
-      </div>
+      <PageHeader
+        title="Usuarios del sistema"
+        description="Gestiona quién tiene acceso al panel y qué puede hacer."
+        action={
+          <button
+            onClick={() => { setShowInvite(true); setInviteMsg(null) }}
+            className="font-brand text-sm bg-brand-primary text-brand-cream px-4 py-2.5 rounded-xl hover:bg-brand-dark transition-colors flex items-center gap-2"
+          >
+            <Icon name="plus" size={16} /> Agregar usuario
+          </button>
+        }
+      />
 
       {/* Mensaje global */}
       {inviteMsg && (
@@ -357,7 +356,7 @@ export default function UsuariosClient({ users: initialUsers, currentUserEmail }
                         key={s}
                         className="font-brand text-xs text-brand-primary/60 flex items-center gap-2"
                       >
-                        <span className="text-green-500">✓</span> {s}
+                        <span className="text-green-500"><Icon name="check" size={13} /></span> {s}
                       </li>
                     ))}
                   </ul>
