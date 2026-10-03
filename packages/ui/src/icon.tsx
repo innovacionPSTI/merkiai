@@ -11,7 +11,7 @@ export type IconName =
   | 'dashboard' | 'rocket' | 'search' | 'filter' | 'plus' | 'edit' | 'trash'
   | 'more' | 'bell' | 'external' | 'check' | 'alert' | 'clock' | 'settings'
   | 'chart' | 'calendar' | 'refresh' | 'truck' | 'ban' | 'money'
-  | 'chevron-left' | 'chevron-right'
+  | 'chevron-left' | 'chevron-right' | 'close'
   // admin · objetos
   | 'catalog' | 'product' | 'category' | 'variant' | 'sales' | 'order'
   | 'customer' | 'users' | 'coupon' | 'content' | 'builder' | 'blog'
@@ -64,6 +64,7 @@ const P: Record<IconName, ReactNode> = {
   money: (<><rect x="2" y="6" width="20" height="12" rx="2" /><circle cx="12" cy="12" r="2.5" /><path d="M6 10v4M18 10v4" /></>),
   'chevron-left': (<path d="M15 6l-6 6 6 6" />),
   'chevron-right': (<path d="M9 6l6 6-6 6" />),
+  close: (<path d="M6 6l12 12M18 6L6 18" />),
 }
 
 export function Icon({ name, size = 18, ...rest }: { name: IconName; size?: number } & Omit<SVGProps<SVGSVGElement>, 'name'>) {

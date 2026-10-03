@@ -2,6 +2,7 @@
 
 import { useState, useTransition } from 'react'
 import { useRouter } from 'next/navigation'
+import { Icon, contrastRatio, contrastLevel, type ContrastLevel } from '@merkiai/ui'
 import type { Theme } from '@merkiai/database'
 
 // ── Constantes ────────────────────────────────────────────────────────────────
@@ -138,6 +139,55 @@ function ThemePreview({ form }: { form: ThemeFormData }) {
           ))}
         </div>
       </div>
+    </div>
+  )
+}
+
+/** Verificación de contraste WCAG (HU-247/248) de los pares clave del tema. */
+function ContrastCheck({ form }: { form: ThemeFormData }) {
+  const pairs: { label: string; fg: string; bg: string }[] = [
+    { label: 'Texto sobre fondo', fg: form.color_text, bg: form.color_cream },
+    { label: 'Marca sobre fondo', fg: form.color_primary, bg: form.color_cream },
+    { label: 'Fondo sobre botón', fg: form.color_cream, bg: form.color_primary },
+  ]
+  const tone: Record<ContrastLevel, string> = {
+    AAA: 'bg-green-100 text-green-700',
+    AA: 'bg-green-100 text-green-700',
+    'AA Large': 'bg-yellow-100 text-yellow-700',
+    Fail: 'bg-red-100 text-red-600',
+  }
+  const rows = pairs.map((p) => {
+    const ratio = contrastRatio(p.fg, p.bg)
+    return { ...p, ratio, level: contrastLevel(ratio) }
+  })
+  const failing = rows.filter((r) => r.level === 'Fail').length
+
+  return (
+    <div className="mt-4 border border-gray-200 rounded-xl p-4">
+      <div className="flex items-center justify-between mb-3">
+        <span className="text-xs font-medium text-gray-700">Verificación de contraste</span>
+        <span className={`text-xs font-semibold px-2 py-0.5 rounded-full inline-flex items-center gap-1 ${failing ? 'bg-red-100 text-red-600' : 'bg-green-100 text-green-700'}`}>
+          <Icon name={failing ? 'alert' : 'check'} size={13} />
+          {failing ? `${failing} con problemas` : 'Todo correcto'}
+        </span>
+      </div>
+      <ul className="space-y-2">
+        {rows.map((r) => (
+          <li key={r.label} className="flex items-center justify-between text-xs">
+            <span className="flex items-center gap-2 text-gray-600">
+              <span className="w-4 h-4 rounded border border-black/10" style={{ background: r.bg }}>
+                <span className="block w-2 h-2 m-1 rounded-sm" style={{ background: r.fg }} />
+              </span>
+              {r.label}
+            </span>
+            <span className="flex items-center gap-2">
+              <span className="tabular-nums text-gray-500">{r.ratio.toFixed(2)}:1</span>
+              <span className={`font-semibold px-2 py-0.5 rounded-full ${tone[r.level]}`}>{r.level}</span>
+            </span>
+          </li>
+        ))}
+      </ul>
+      <p className="text-[11px] text-gray-400 mt-3">WCAG 2.1 — AA requiere ≥ 4.5:1 (texto normal).</p>
     </div>
   )
 }
@@ -362,6 +412,7 @@ function ThemeModal({
           <div className="lg:col-span-2">
             <div className="text-xs font-medium text-gray-700 mb-2">Vista previa</div>
             <ThemePreview form={form} />
+            <ContrastCheck form={form} />
           </div>
         </div>
 
@@ -511,7 +562,7 @@ export default function TemasClient({ initialThemes }: { initialThemes: Theme[] 
       {/* Grid de temas */}
       {themes.length === 0 ? (
         <div className="text-center py-16 text-gray-400">
-          <div className="text-4xl mb-3">🎨</div>
+          <div className="flex justify-center mb-3"><Icon name="palette" size={32} /></div>
           <div className="text-sm">No hay temas. Crea el primero.</div>
         </div>
       ) : (
@@ -551,7 +602,7 @@ export default function TemasClient({ initialThemes }: { initialThemes: Theme[] 
       {error && (
         <div className="fixed bottom-6 right-6 bg-red-600 text-white px-5 py-3 rounded-xl shadow-lg text-sm z-50">
           {error}
-          <button onClick={() => setError(null)} className="ml-3 opacity-70 hover:opacity-100">✕</button>
+          <button onClick={() => setError(null)} className="ml-3 opacity-70 hover:opacity-100 inline-flex align-middle"><Icon name="close" size={15} /></button>
         </div>
       )}
     </>

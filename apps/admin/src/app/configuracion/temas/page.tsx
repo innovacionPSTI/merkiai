@@ -1,4 +1,5 @@
 import { redirect } from 'next/navigation'
+import { PageHeader } from '@merkiai/ui'
 import { getAdminUser } from '@/lib/auth'
 import { getAdminDb } from '@/lib/admin-db'
 import { canAccess } from '@/lib/roles'
@@ -17,11 +18,10 @@ export default async function TemasPage() {
   return (
     <div className="max-w-5xl mx-auto py-10 px-6">
       <div className="mb-8">
-        <h1 className="text-2xl font-semibold text-gray-900">Temas</h1>
-        <p className="text-sm text-gray-500 mt-1">
-          Personaliza la paleta de colores y tipografía del sitio web. El tema activo se aplica
-          de forma inmediata en la próxima carga de página.
-        </p>
+        <PageHeader
+          title="Temas"
+          description="Personaliza la paleta de colores y tipografía del sitio web. El tema activo se aplica de forma inmediata en la próxima carga de página."
+        />
       </div>
       <TemasClient initialThemes={themes} />
     </div>
