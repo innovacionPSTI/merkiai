@@ -2,6 +2,7 @@ import { requireAdminDb } from '@/lib/admin-context'
 import type { OrderStatus } from '@merkiai/database'
 import Link from 'next/link'
 import type { Metadata } from 'next'
+import { PageHeader, Icon } from '@merkiai/ui'
 import PickupModal from '@/components/pedidos/PickupModal'
 import PedidosSearch from './PedidosSearch'
 
@@ -76,9 +77,12 @@ export default async function PedidosAdminPage({
 
   return (
     <div>
-      <div className="flex items-center justify-between mb-6">
-        <h1 className="font-display text-brand-primary text-3xl">Pedidos</h1>
-        <PickupModal shippedOrders={(shippedOrders ?? []) as unknown as Parameters<typeof PickupModal>[0]['shippedOrders']} />
+      <div className="mb-6">
+        <PageHeader
+          title="Pedidos"
+          description="Gestiona y da seguimiento a los pedidos de tu tienda."
+          action={<PickupModal shippedOrders={(shippedOrders ?? []) as unknown as Parameters<typeof PickupModal>[0]['shippedOrders']} />}
+        />
       </div>
 
       {/* Búsqueda */}
@@ -176,17 +180,17 @@ export default async function PedidosAdminPage({
             {page > 1 && (
               <Link
                 href={filterHref({ page: String(page - 1) })}
-                className="font-brand text-sm border border-gray-200 rounded-full px-4 py-1.5 text-brand-primary/60 hover:border-brand-primary hover:text-brand-primary transition-colors"
+                className="font-brand text-sm border border-gray-200 rounded-full px-4 py-1.5 text-brand-primary/60 hover:border-brand-primary hover:text-brand-primary transition-colors inline-flex items-center gap-1.5"
               >
-                ← Anterior
+                <Icon name="chevron-left" size={15} /> Anterior
               </Link>
             )}
             {page < totalPages && (
               <Link
                 href={filterHref({ page: String(page + 1) })}
-                className="font-brand text-sm border border-gray-200 rounded-full px-4 py-1.5 text-brand-primary/60 hover:border-brand-primary hover:text-brand-primary transition-colors"
+                className="font-brand text-sm border border-gray-200 rounded-full px-4 py-1.5 text-brand-primary/60 hover:border-brand-primary hover:text-brand-primary transition-colors inline-flex items-center gap-1.5"
               >
-                Siguiente →
+                Siguiente <Icon name="chevron-right" size={15} />
               </Link>
             )}
           </div>
