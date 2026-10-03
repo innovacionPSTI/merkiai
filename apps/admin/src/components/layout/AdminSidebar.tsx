@@ -2,8 +2,9 @@
 
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
-import { useState, useEffect } from 'react'
+import { useState, useEffect, type ReactNode } from 'react'
 import { useStackApp } from '@stackframe/stack'
+import { Icon } from '@merkiai/ui'
 import type { AdminRole, AdminSection } from '@/lib/roles'
 import { ROLE_CONFIG } from '@/lib/roles'
 import { FEATURES } from '@/lib/features'
@@ -14,7 +15,7 @@ import { FEATURES } from '@/lib/features'
 interface NavLeaf {
   kind: 'leaf'
   href: string
-  icon: string
+  icon: ReactNode
   label: string
   section: AdminSection
 }
@@ -33,7 +34,7 @@ interface NavSubLeaf {
 interface NavLeafWithSubs {
   kind: 'leaf-group'
   href: string
-  icon: string
+  icon: ReactNode
   label: string
   section: AdminSection
   children: NavSubLeaf[]
@@ -42,7 +43,7 @@ interface NavLeafWithSubs {
 /** Grupo contenedor (no navega, solo agrupa) */
 interface NavGroup {
   kind: 'group'
-  icon: string
+  icon: ReactNode
   label: string
   /** Sections que pertenecen al grupo — se muestra si el usuario tiene acceso a ALGUNA */
   sections: AdminSection[]
@@ -58,69 +59,69 @@ const NAV: NavNode[] = [
   {
     kind: 'leaf',
     href: '/dashboard',
-    icon: '📊',
+    icon: <Icon name="dashboard" />,
     label: 'Dashboard',
     section: 'dashboard',
   },
   {
     kind: 'leaf',
     href: '/onboarding',
-    icon: '🚀',
+    icon: <Icon name="rocket" />,
     label: 'Configura tu tienda',
     section: 'configuracion',
   },
   {
     kind: 'group',
-    icon: '☕',
+    icon: <Icon name="catalog" />,
     label: 'Catálogo',
     sections: ['productos', 'categorias', 'variantes'],
     children: [
-      { kind: 'leaf', href: '/productos',  icon: '☕', label: 'Productos',   section: 'productos' },
-      { kind: 'leaf', href: '/categorias', icon: '📂', label: 'Categorías',  section: 'categorias' },
-      { kind: 'leaf', href: '/variantes',  icon: '🎛️', label: 'Variantes',   section: 'variantes' },
+      { kind: 'leaf', href: '/productos',  icon: <Icon name="product" />,  label: 'Productos',   section: 'productos' },
+      { kind: 'leaf', href: '/categorias', icon: <Icon name="category" />, label: 'Categorías',  section: 'categorias' },
+      { kind: 'leaf', href: '/variantes',  icon: <Icon name="variant" />,  label: 'Variantes',   section: 'variantes' },
     ],
   },
   {
     kind: 'group',
-    icon: '📦',
+    icon: <Icon name="sales" />,
     label: 'Ventas',
     sections: ['pedidos', 'clientes', 'cupones'],
     children: [
-      { kind: 'leaf', href: '/pedidos',  icon: '📦', label: 'Pedidos',  section: 'pedidos' },
-      { kind: 'leaf', href: '/clientes', icon: '👥', label: 'Clientes', section: 'clientes' },
-      { kind: 'leaf', href: '/cupones',  icon: '🎟️', label: 'Cupones',  section: 'cupones' },
+      { kind: 'leaf', href: '/pedidos',  icon: <Icon name="order" />,    label: 'Pedidos',  section: 'pedidos' },
+      { kind: 'leaf', href: '/clientes', icon: <Icon name="customer" />, label: 'Clientes', section: 'clientes' },
+      { kind: 'leaf', href: '/cupones',  icon: <Icon name="coupon" />,   label: 'Cupones',  section: 'cupones' },
     ],
   },
   {
     kind: 'group',
-    icon: '🖼️',
+    icon: <Icon name="content" />,
     label: 'Contenido',
     sections: ['contenido', 'blog', 'newsletter'],
     children: [
-      { kind: 'leaf', href: '/contenido',  icon: '📄', label: 'Páginas',    section: 'contenido' },
+      { kind: 'leaf', href: '/contenido',  icon: <Icon name="content" />, label: 'Páginas',    section: 'contenido' },
       // HU-218.3 (beta, tras flag pageBuilder): convive con Páginas.
       ...(FEATURES.pageBuilder
-        ? [{ kind: 'leaf' as const, href: '/constructor', icon: '🧩', label: 'Constructor', section: 'contenido' as const }]
+        ? [{ kind: 'leaf' as const, href: '/constructor', icon: <Icon name="builder" />, label: 'Constructor', section: 'contenido' as const }]
         : []),
-      { kind: 'leaf', href: '/blog',       icon: '✍️', label: 'Blog',       section: 'blog' },
-      { kind: 'leaf', href: '/newsletter', icon: '📧', label: 'Newsletter', section: 'newsletter' },
+      { kind: 'leaf', href: '/blog',       icon: <Icon name="blog" />,       label: 'Blog',       section: 'blog' },
+      { kind: 'leaf', href: '/newsletter', icon: <Icon name="newsletter" />, label: 'Newsletter', section: 'newsletter' },
     ],
   },
   {
     kind: 'group',
-    icon: '🎨',
+    icon: <Icon name="appearance" />,
     label: 'Apariencia',
     sections: ['apariencia', 'media'],
     children: [
-      { kind: 'leaf', href: '/configuracion/temas', icon: '🎨', label: 'Temas',    section: 'apariencia' },
-      { kind: 'leaf', href: '/media',               icon: '🖼️', label: 'Archivos', section: 'media' },
+      { kind: 'leaf', href: '/configuracion/temas', icon: <Icon name="palette" />, label: 'Temas',    section: 'apariencia' },
+      { kind: 'leaf', href: '/media',               icon: <Icon name="media" />,   label: 'Archivos', section: 'media' },
     ],
   },
   // Configuración como nodo raíz expandible — evita el doble nivel "Configuración > Configuración"
   {
     kind: 'leaf-group',
     href: '/configuracion',
-    icon: '⚙️',
+    icon: <Icon name="settings" />,
     label: 'Configuración',
     section: 'configuracion',
     children: [
@@ -133,12 +134,12 @@ const NAV: NavNode[] = [
   },
   {
     kind: 'group',
-    icon: '🔐',
+    icon: <Icon name="system" />,
     label: 'Sistema',
     sections: ['usuarios', 'sistema'],
     children: [
-      { kind: 'leaf', href: '/usuarios',          icon: '🔐', label: 'Usuarios',   section: 'usuarios' },
-      { kind: 'leaf', href: '/sistema/apariencia', icon: '🎛️', label: 'Apariencia', section: 'sistema' },
+      { kind: 'leaf', href: '/usuarios',          icon: <Icon name="users" />,    label: 'Usuarios',   section: 'usuarios' },
+      { kind: 'leaf', href: '/sistema/apariencia', icon: <Icon name="settings" />, label: 'Apariencia', section: 'sistema' },
     ],
   },
 ]

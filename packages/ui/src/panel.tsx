@@ -9,19 +9,34 @@ import type { CSSProperties, ReactNode } from 'react'
 
 // ── Tokens + CSS base (inyectar una vez con <PanelStyles/>) ──────────────────
 export const PANEL_CSS = `
-  .mk-shell { --mk-bg:#f6f7f9; --mk-surface:#fff; --mk-border:#e6e8eb; --mk-text:#1f2937; --mk-muted:#6b7280; --mk-primary:#2E5A3B; --mk-primary-contrast:#fff; --mk-radius:10px; --mk-shadow:0 1px 2px rgba(16,24,40,.06),0 1px 3px rgba(16,24,40,.08);
-    display:grid; grid-template-columns:236px minmax(0,1fr); min-height:100vh; background:var(--mk-bg); color:var(--mk-text); font-family:system-ui,sans-serif; }
-  .mk-side { background:var(--mk-surface); border-right:1px solid var(--mk-border); padding:16px 12px; display:flex; flex-direction:column; }
-  .mk-brand { font-weight:700; color:var(--mk-primary); font-size:16px; padding:6px 10px 12px; }
-  .mk-group { margin-top:12px; }
-  .mk-group > .mk-lbl { font-size:11px; letter-spacing:.06em; text-transform:uppercase; color:var(--mk-muted); padding:8px 10px 4px; }
-  .mk-nav a, .mk-nav span { display:flex; align-items:center; gap:10px; padding:8px 10px; border-radius:8px; font-size:14px; text-decoration:none; color:var(--mk-text); }
-  .mk-nav a:hover { background:#eef1f4; }
-  .mk-nav a.active { background:var(--mk-primary); color:var(--mk-primary-contrast); }
-  .mk-nav span.disabled { color:#b0b4bb; }
-  .mk-ico { width:16px; height:16px; display:inline-flex; flex:0 0 16px; }
+  .mk-shell {
+    /* Tokens semánticos theme-driven (HU-240). Cambiar estos reskinea el panel. */
+    --ui-bg:#f6f7f9; --ui-surface:#fff; --ui-surface-2:#f1f2f5; --ui-border:#e6e8eb;
+    --ui-text:#1f2430; --ui-muted:#6b7280;
+    --ui-primary:#4f46e5; --ui-primary-weak:#eef0fe; --ui-primary-contrast:#fff; --ui-accent:#7c3aed;
+    --ui-success:#16a34a; --ui-warning:#d97706; --ui-danger:#dc2626;
+    --ui-radius:10px; --ui-radius-lg:16px;
+    --ui-shadow:0 1px 2px rgba(16,24,40,.06),0 1px 3px rgba(16,24,40,.08);
+    --ui-shadow-lg:0 8px 24px rgba(16,24,40,.12);
+    /* Alias retrocompat --mk-* → --ui-* (consumidores antiguos siguen funcionando). */
+    --mk-bg:var(--ui-bg); --mk-surface:var(--ui-surface); --mk-border:var(--ui-border);
+    --mk-text:var(--ui-text); --mk-muted:var(--ui-muted); --mk-primary:var(--ui-primary);
+    --mk-primary-contrast:var(--ui-primary-contrast); --mk-radius:var(--ui-radius); --mk-shadow:var(--ui-shadow);
+    display:grid; grid-template-columns:240px minmax(0,1fr); min-height:100vh; background:var(--ui-bg); color:var(--ui-text);
+    font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",system-ui,sans-serif; }
+  .mk-side { background:var(--ui-surface); border-right:1px solid var(--ui-border); padding:14px 12px; display:flex; flex-direction:column; }
+  .mk-brand { display:flex; align-items:center; gap:9px; font-weight:700; color:var(--ui-primary); font-size:16px; padding:6px 10px 12px; }
+  .mk-group { margin-top:10px; }
+  .mk-group > .mk-lbl { font-size:10.5px; letter-spacing:.07em; text-transform:uppercase; color:var(--ui-muted); padding:10px 10px 4px; }
+  .mk-nav a, .mk-nav span { display:flex; align-items:center; gap:11px; padding:8px 10px; border-radius:var(--ui-radius); font-size:14px; text-decoration:none; color:var(--ui-text); }
+  .mk-nav a svg, .mk-nav span svg { stroke:var(--ui-muted); flex:0 0 auto; }
+  .mk-nav a:hover { background:var(--ui-surface-2); }
+  .mk-nav a.active { background:var(--ui-primary); color:var(--ui-primary-contrast); }
+  .mk-nav a.active svg { stroke:var(--ui-primary-contrast); }
+  .mk-nav span.disabled { color:#b4b8c0; }
+  .mk-ico { width:18px; height:18px; display:inline-flex; flex:0 0 18px; }
   .mk-main { min-width:0; display:flex; flex-direction:column; }
-  .mk-topbar { position:sticky; top:0; z-index:10; background:var(--mk-surface); border-bottom:1px solid var(--mk-border); padding:12px 24px; display:flex; align-items:center; justify-content:space-between; }
+  .mk-topbar { position:sticky; top:0; z-index:10; background:var(--ui-surface); border-bottom:1px solid var(--ui-border); padding:12px 24px; display:flex; align-items:center; justify-content:space-between; }
   .mk-content { padding:24px; max-width:1180px; width:100%; box-sizing:border-box; }
   @media (max-width:820px){ .mk-shell{grid-template-columns:1fr} .mk-side{display:none} }
 `
@@ -78,12 +93,16 @@ export function PanelSidebar({ brand, groups, footer }: { brand?: ReactNode; gro
 // ── PageHeader ───────────────────────────────────────────────────────────────
 export function PageHeader({ title, description, action }: { title: ReactNode; description?: ReactNode; action?: ReactNode }) {
   return (
-    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: 16, marginBottom: 20 }}>
+    <div style={{
+      display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: 16, marginBottom: 18,
+      background: 'var(--ui-surface)', border: '1px solid var(--ui-border)', borderLeft: '5px solid var(--ui-primary)',
+      borderRadius: 'var(--ui-radius-lg)', boxShadow: 'var(--ui-shadow)', padding: '20px 24px',
+    }}>
       <div>
-        <h1 style={{ margin: 0, fontSize: 24, color: 'var(--mk-primary)' }}>{title}</h1>
-        {description ? <p style={{ margin: '4px 0 0', color: 'var(--mk-muted)', fontSize: 14 }}>{description}</p> : null}
+        <h1 style={{ margin: 0, fontSize: 25, letterSpacing: '-.01em', color: 'var(--ui-text)' }}>{title}</h1>
+        {description ? <p style={{ margin: '6px 0 0', color: 'var(--ui-muted)', fontSize: 14, lineHeight: 1.5, maxWidth: 620 }}>{description}</p> : null}
       </div>
-      {action ? <div>{action}</div> : null}
+      {action ? <div style={{ flex: '0 0 auto' }}>{action}</div> : null}
     </div>
   )
 }
@@ -104,12 +123,27 @@ export function PanelCard({ title, action, children, style }: { title?: ReactNod
 }
 
 // ── StatCard (KPI) ───────────────────────────────────────────────────────────
-export function StatCard({ label, value, hint }: { label: ReactNode; value: ReactNode; hint?: ReactNode }) {
+export function StatCard({ label, value, hint, icon, tone = 'primary' }: {
+  label: ReactNode; value: ReactNode; hint?: ReactNode; icon?: ReactNode;
+  tone?: 'primary' | 'success' | 'warning' | 'danger'
+}) {
+  const tile: Record<string, { bg: string; fg: string }> = {
+    primary: { bg: 'var(--ui-primary-weak)', fg: 'var(--ui-primary)' },
+    success: { bg: 'rgba(22,163,74,.12)', fg: 'var(--ui-success)' },
+    warning: { bg: 'rgba(217,119,6,.12)', fg: 'var(--ui-warning)' },
+    danger: { bg: 'rgba(220,38,38,.12)', fg: 'var(--ui-danger)' },
+  }
+  const t = tile[tone]
   return (
-    <div style={{ background: 'var(--mk-surface)', border: '1px solid var(--mk-border)', borderRadius: 'var(--mk-radius)', boxShadow: 'var(--mk-shadow)', padding: 16, flex: '1 1 180px', minWidth: 160 }}>
-      <div style={{ fontSize: 12, color: 'var(--mk-muted)', textTransform: 'uppercase', letterSpacing: '.04em' }}>{label}</div>
-      <div style={{ fontSize: 28, fontWeight: 700, marginTop: 4 }}>{value}</div>
-      {hint ? <div style={{ fontSize: 12, color: 'var(--mk-muted)', marginTop: 2 }}>{hint}</div> : null}
+    <div style={{ display: 'flex', alignItems: 'center', gap: 14, background: 'var(--ui-surface)', border: '1px solid var(--ui-border)', borderRadius: 'var(--ui-radius-lg)', boxShadow: 'var(--ui-shadow)', padding: '16px 18px', flex: '1 1 180px', minWidth: 160 }}>
+      {icon ? (
+        <span style={{ width: 40, height: 40, borderRadius: 11, background: t.bg, color: t.fg, display: 'grid', placeItems: 'center', flex: '0 0 auto' }}>{icon}</span>
+      ) : null}
+      <div>
+        <div style={{ fontSize: 10.5, color: 'var(--ui-muted)', textTransform: 'uppercase', letterSpacing: '.06em' }}>{label}</div>
+        <div style={{ fontSize: 24, fontWeight: 700, marginTop: 2, lineHeight: 1.1 }}>{value}</div>
+        {hint ? <div style={{ fontSize: 12, color: 'var(--ui-muted)', marginTop: 2 }}>{hint}</div> : null}
+      </div>
     </div>
   )
 }

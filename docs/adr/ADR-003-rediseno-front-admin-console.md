@@ -103,8 +103,9 @@ Kit objetivo (✅ = ya existe, ⬆️ = existe y se rehace theme-driven, 🆕 = 
 | Tenants (`/`) | Ya usa `PageHeader`/`StatCard`/`StatusBadge` (base) | `PageHeaderBar` + `StatCard` con los KPIs reales (**Total/Activos/Suspendidos/Planes**) + `DataTable` con plan en `Chip`, estado en `StatusBadge`, **kebab** con las acciones reales (**Suspender/Reactivar**, **cambiar plan**, editar, gestionar usuarios, eliminar/purgar — HU-209). Disposición inspirada en img 5. |
 | Planes (`/planes`) | Tabla + `PlanForm` (catálogo, HU-239 v2) | Lista de `ResourceCard` (chips de features, precio, grid de métricas de **entitlements**, acciones) — disposición img 1; edición con `Wizard` + `SelectableCard` para elegir **features del catálogo** (no "productos" de la referencia). |
 | Presets (`/presets`) | Tabla | Grid de `ResourceCard` + `FilterBar` (buscar/estado/vista) — disposición img 6; formulario con `Field` + `SelectableCard` por nicho. |
-| Dominios · Auditoría | Deshabilitados en el sidebar | Pendientes (HU-174 dominios / auditoría); se diseñan cuando existan. |
+| Auditoría | Deshabilitado en el sidebar | Pendiente; se diseña cuando exista. |
 
+> **Dominios es función del ADMIN, no del operador:** cada cliente **asocia su tienda a su propio dominio** desde su panel (self-service, HU-174). Por eso **no** es una sección del console; la entrada "Dominios" (hoy deshabilitada en el sidebar del console) se **retira** en HU-244.
 > **No se incluyen** "Pool y Créditos" ni "Teléfonos": son de VoxAlly, no de Merkiai.
 
 ### Admin (`apps/admin`)
