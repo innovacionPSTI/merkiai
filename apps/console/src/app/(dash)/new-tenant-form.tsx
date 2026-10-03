@@ -2,6 +2,7 @@
 
 import { useActionState } from 'react'
 import { useFormStatus } from 'react-dom'
+import { Icon } from '@merkiai/ui'
 import { createTenant, type CreateTenantState } from '../actions'
 import { input, btn } from '@/lib/styles'
 
@@ -42,11 +43,11 @@ export default function NewTenantForm({ plans }: { plans: { key: string; name: s
         </p>
       )}
       {state.ok && state.message && (
-        <p style={{ margin: '8px 0 0', color: '#1D7A46', fontSize: 13 }}>{state.message}</p>
+        <p style={{ margin: '8px 0 0', color: 'var(--ui-success)', fontSize: 13 }}>{state.message}</p>
       )}
       {state.warnings?.map((w, i) => (
-        <p key={i} style={{ margin: '6px 0 0', color: '#B54708', fontSize: 12 }}>
-          ⚠ {w}
+        <p key={i} style={{ margin: '6px 0 0', color: 'var(--ui-warning)', fontSize: 12, display: 'flex', alignItems: 'center', gap: 6 }}>
+          <Icon name="alert" size={13} /> {w}
         </p>
       ))}
 

@@ -36,7 +36,7 @@ export default function PlanForm({ plans }: { plans: PlanRow[] }) {
           value={selectedKey}
           onChange={(e) => setSelectedKey(e.target.value)}
         >
-          <option value="">➕ Nuevo plan</option>
+          <option value="">Nuevo plan</option>
           {plans.map((pl) => (
             <option key={pl.key} value={pl.key}>{pl.name} ({pl.key})</option>
           ))}

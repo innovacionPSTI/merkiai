@@ -2,6 +2,7 @@
 
 import { useActionState, useState } from 'react'
 import { useFormStatus } from 'react-dom'
+import { Icon } from '@merkiai/ui'
 import { inviteTenantOwner, deleteTenant, type TenantActionState } from '../actions'
 import { input } from '@/lib/styles'
 
@@ -13,12 +14,12 @@ function Pending({ idle, busy }: { idle: string; busy: string }) {
 }
 
 const smallBtn: React.CSSProperties = {
-  padding: '4px 10px', borderRadius: 6, border: '1px solid #2E5A3B',
-  background: '#fff', color: '#2E5A3B', cursor: 'pointer', fontSize: 13,
+  padding: '5px 10px', borderRadius: 'var(--ui-radius)', border: '1px solid var(--ui-border)',
+  background: 'var(--ui-surface)', color: 'var(--ui-text)', cursor: 'pointer', fontSize: 13,
 }
 const dangerBtn: React.CSSProperties = {
-  padding: '6px 12px', borderRadius: 6, border: 0,
-  background: '#B42318', color: '#fff', cursor: 'pointer', fontSize: 13,
+  padding: '6px 12px', borderRadius: 'var(--ui-radius)', border: 0,
+  background: 'var(--ui-danger)', color: '#fff', cursor: 'pointer', fontSize: 13,
 }
 
 export default function TenantManage({
@@ -37,7 +38,7 @@ export default function TenantManage({
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 8, minWidth: 260 }}>
       {/* Dueño (super admin) */}
-      <div style={{ fontSize: 12, color: '#555' }}>
+      <div style={{ fontSize: 12, color: 'var(--ui-muted)' }}>
         Dueño actual: <strong>{tenant.ownerEmail || '— sin asignar —'}</strong>
       </div>
       <form action={inviteAction} style={{ display: 'flex', gap: 6, alignItems: 'center', flexWrap: 'wrap' }}>
@@ -45,17 +46,17 @@ export default function TenantManage({
         <input style={{ ...input, marginRight: 0, minWidth: 160 }} type="email" name="ownerEmail" placeholder={tenant.ownerEmail ? 'cambiar dueño' : 'email del dueño'} required />
         <button type="submit" style={smallBtn}><Pending idle="Invitar dueño" busy="Enviando…" /></button>
       </form>
-      {inviteState.error && <span style={{ color: '#B42318', fontSize: 12 }}>{inviteState.error}</span>}
-      {inviteState.ok && inviteState.message && <span style={{ color: '#1D7A46', fontSize: 12 }}>{inviteState.message}</span>}
+      {inviteState.error && <span style={{ color: 'var(--ui-danger)', fontSize: 12 }}>{inviteState.error}</span>}
+      {inviteState.ok && inviteState.message && <span style={{ color: 'var(--ui-success)', fontSize: 12 }}>{inviteState.message}</span>}
 
       {/* Zona de peligro */}
       {!showDanger ? (
-        <button type="button" onClick={() => setShowDanger(true)} style={{ ...smallBtn, borderColor: '#B42318', color: '#B42318', alignSelf: 'flex-start' }}>
+        <button type="button" onClick={() => setShowDanger(true)} style={{ ...smallBtn, borderColor: 'var(--ui-danger)', color: 'var(--ui-danger)', alignSelf: 'flex-start' }}>
           Eliminar…
         </button>
       ) : (
-        <div style={{ border: '1px solid #F0C9C4', background: '#FEF3F2', borderRadius: 8, padding: 10 }}>
-          <p style={{ margin: '0 0 6px', fontSize: 12, fontWeight: 700, color: '#B42318' }}>⚠ Zona de peligro</p>
+        <div style={{ border: '1px solid #F0C9C4', background: '#FEF3F2', borderRadius: 'var(--ui-radius)', padding: 10 }}>
+          <p style={{ margin: '0 0 6px', fontSize: 12, fontWeight: 700, color: 'var(--ui-danger)', display: 'flex', alignItems: 'center', gap: 6 }}><Icon name="alert" size={14} /> Zona de peligro</p>
           <p style={{ margin: '0 0 8px', fontSize: 12, color: '#7A271A' }}>
             Esta acción es <strong>irreversible</strong>: des-aprovisiona TODO — datos de la tienda
             (config, contenido, catálogo, pedidos, clientes, perfiles), el Team en Stack Auth y el
@@ -75,11 +76,11 @@ export default function TenantManage({
             <button type="submit" style={{ ...dangerBtn, opacity: canDelete ? 1 : 0.5, cursor: canDelete ? 'pointer' : 'not-allowed' }} disabled={!canDelete}>
               <Pending idle="Eliminar definitivamente" busy="Eliminando…" />
             </button>
-            <button type="button" onClick={() => { setShowDanger(false); setConfirmText('') }} style={{ ...smallBtn, borderColor: '#ccc', color: '#555' }}>
+            <button type="button" onClick={() => { setShowDanger(false); setConfirmText('') }} style={smallBtn}>
               Cancelar
             </button>
           </form>
-          {deleteState.error && <p style={{ margin: '6px 0 0', color: '#B42318', fontSize: 12 }}>{deleteState.error}</p>}
+          {deleteState.error && <p style={{ margin: '6px 0 0', color: 'var(--ui-danger)', fontSize: 12 }}>{deleteState.error}</p>}
         </div>
       )}
     </div>

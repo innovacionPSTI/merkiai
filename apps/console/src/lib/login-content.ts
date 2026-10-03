@@ -34,9 +34,9 @@ export const CONSOLE_LOGIN_CONTENT: LoginContent = {
   forgotHref: '/handler/forgot-password',
 }
 
-/** Marca por defecto (Merkiai). Ajustar cuando exista la paleta final. */
+/** Marca por defecto (Merkiai). Indigo, alineado al tema del panel (HU-240). */
 export const CONSOLE_BRAND: LoginBrand = {
-  primary: '#2E5A3B',
-  gradientFrom: '#3C7A4E',
-  gradientTo: '#22412E',
+  primary: '#4F46E5',
+  gradientFrom: '#6366F1',
+  gradientTo: '#4338CA',
 }
