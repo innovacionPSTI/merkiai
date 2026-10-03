@@ -38,6 +38,20 @@ export const PANEL_CSS = `
   .mk-main { min-width:0; display:flex; flex-direction:column; }
   .mk-topbar { position:sticky; top:0; z-index:10; background:var(--ui-surface); border-bottom:1px solid var(--ui-border); padding:12px 24px; display:flex; align-items:center; justify-content:space-between; }
   .mk-content { padding:24px; max-width:1180px; width:100%; box-sizing:border-box; }
+  /* Tabla temable (HU-241) */
+  .mk-tablewrap { overflow-x:auto; }
+  .mk-table { width:100%; border-collapse:collapse; }
+  .mk-table thead th { text-align:left; font-size:10.5px; letter-spacing:.06em; text-transform:uppercase; color:var(--ui-muted); font-weight:600; padding:11px 16px; border-bottom:1px solid var(--ui-border); white-space:nowrap; }
+  .mk-table tbody td { padding:13px 16px; border-bottom:1px solid var(--ui-border); vertical-align:middle; font-size:14px; }
+  .mk-table tbody tr:last-child td { border-bottom:0; }
+  .mk-table tbody tr:hover { background:var(--ui-surface-2); }
+  /* Controles temables */
+  .mk-input { padding:7px 10px; border:1px solid var(--ui-border); border-radius:var(--ui-radius); font-size:13.5px; background:var(--ui-surface); color:var(--ui-text); }
+  .mk-input:focus { outline:2px solid var(--ui-primary-weak); border-color:var(--ui-primary); }
+  .mk-btn { display:inline-flex; align-items:center; gap:7px; padding:8px 14px; border-radius:var(--ui-radius); border:0; background:var(--ui-primary); color:var(--ui-primary-contrast); font-weight:600; font-size:13.5px; cursor:pointer; box-shadow:var(--ui-shadow); }
+  .mk-btn svg { stroke:var(--ui-primary-contrast); }
+  .mk-btn-ghost { display:inline-flex; align-items:center; gap:7px; padding:7px 12px; border-radius:var(--ui-radius); border:1px solid var(--ui-border); background:var(--ui-surface); color:var(--ui-text); font-size:13px; cursor:pointer; }
+  .mk-btn-sm { padding:5px 10px; font-size:12.5px; box-shadow:none; }
   @media (max-width:820px){ .mk-shell{grid-template-columns:1fr} .mk-side{display:none} }
 `
 
@@ -168,6 +182,63 @@ export function StatusBadge({ children, tone = 'neutral' }: { children: ReactNod
       <span style={{ width: 6, height: 6, borderRadius: 999, background: c.fg }} />
       {children}
     </span>
+  )
+}
+
+// ── Chip (atributo / neutral) ────────────────────────────────────────────────
+export function Chip({ children, variant = 'attr' }: { children: ReactNode; variant?: 'attr' | 'neutral' }) {
+  const v = variant === 'attr'
+    ? { bg: 'var(--ui-primary-weak)', fg: 'var(--ui-primary)' }
+    : { bg: 'var(--ui-surface-2)', fg: 'var(--ui-muted)' }
+  return (
+    <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6, background: v.bg, color: v.fg, fontSize: 12, fontWeight: 600, padding: '3px 10px', borderRadius: 999 }}>
+      {children}
+    </span>
+  )
+}
+
+// ── IconTile (recuadro de icono) ─────────────────────────────────────────────
+export function IconTile({ children, tone = 'primary', size = 34 }: {
+  children: ReactNode; tone?: 'primary' | 'success' | 'warning' | 'danger'; size?: number
+}) {
+  const tones: Record<string, { bg: string; fg: string }> = {
+    primary: { bg: 'var(--ui-primary-weak)', fg: 'var(--ui-primary)' },
+    success: { bg: 'rgba(22,163,74,.12)', fg: 'var(--ui-success)' },
+    warning: { bg: 'rgba(217,119,6,.12)', fg: 'var(--ui-warning)' },
+    danger: { bg: 'rgba(220,38,38,.12)', fg: 'var(--ui-danger)' },
+  }
+  const t = tones[tone]
+  return (
+    <span style={{ width: size, height: size, borderRadius: Math.round(size * 0.3), background: t.bg, color: t.fg, display: 'grid', placeItems: 'center', flex: '0 0 auto' }}>
+      {children}
+    </span>
+  )
+}
+
+// ── Field (label + control + helper/error) ───────────────────────────────────
+export function Field({ label, required, helper, error, children }: {
+  label?: ReactNode; required?: boolean; helper?: ReactNode; error?: ReactNode; children: ReactNode
+}) {
+  return (
+    <label style={{ display: 'grid', gap: 5 }}>
+      {label ? (
+        <span style={{ fontSize: 13, fontWeight: 600, color: 'var(--ui-text)' }}>
+          {label}{required ? <span style={{ color: 'var(--ui-danger)' }}> *</span> : null}
+        </span>
+      ) : null}
+      {children}
+      {error ? <span style={{ fontSize: 12, color: 'var(--ui-danger)' }}>{error}</span>
+        : helper ? <span style={{ fontSize: 12, color: 'var(--ui-muted)' }}>{helper}</span> : null}
+    </label>
+  )
+}
+
+// ── DataTable (envoltorio temable) ───────────────────────────────────────────
+export function DataTable({ children, minWidth = 720 }: { children: ReactNode; minWidth?: number }) {
+  return (
+    <div className="mk-tablewrap">
+      <table className="mk-table" style={{ minWidth }}>{children}</table>
+    </div>
   )
 }
 

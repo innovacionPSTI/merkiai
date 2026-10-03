@@ -1,7 +1,6 @@
-import { PageHeader, PanelCard, StatCard, StatGrid, StatusBadge, EmptyState, type BadgeTone } from '@merkiai/ui'
+import { PageHeader, PanelCard, StatCard, StatGrid, StatusBadge, EmptyState, DataTable, Chip, Icon, type BadgeTone } from '@merkiai/ui'
 import { platformDb } from '@/lib/platform-db'
 import { getPlans } from '@/lib/plans'
-import { input, btn, th, td, scroll } from '@/lib/styles'
 import { setTenantStatus, setTenantPlan } from '../actions'
 import NewTenantForm from './new-tenant-form'
 import TenantManage from './tenant-manage'
@@ -39,10 +38,10 @@ export default async function TenantsPage() {
       <PageHeader title="Tenants" description="Alta, plan y ciclo de vida de las tiendas." />
 
       <StatGrid>
-        <StatCard label="Total tenants" value={tenants.length} />
-        <StatCard label="Activos" value={activos} />
-        <StatCard label="Suspendidos" value={suspendidos} />
-        <StatCard label="Planes" value={plans.length} hint="en el catálogo" />
+        <StatCard label="Total tenants" value={tenants.length} icon={<Icon name="tenant" size={20} />} />
+        <StatCard label="Activos" value={activos} tone="success" icon={<Icon name="check" size={20} />} />
+        <StatCard label="Suspendidos" value={suspendidos} tone="warning" icon={<Icon name="alert" size={20} />} />
+        <StatCard label="Planes" value={plans.length} hint="en el catálogo" icon={<Icon name="plan" size={20} />} />
       </StatGrid>
 
       <PanelCard title="Nuevo tenant">
@@ -51,58 +50,56 @@ export default async function TenantsPage() {
 
       <PanelCard title={`Tenants (${tenants.length})`}>
         {tenants.length === 0 ? (
-          <EmptyState icon="🏬" title="Aún no hay tenants" description="Crea el primero con el formulario de arriba." />
+          <EmptyState icon={<Icon name="tenant" size={28} />} title="Aún no hay tenants" description="Crea el primero con el formulario de arriba." />
         ) : (
-          <div style={scroll}>
-            <table style={{ width: '100%', borderCollapse: 'collapse', minWidth: 720 }}>
-              <thead>
-                <tr>
-                  <th style={th}>Nombre</th>
-                  <th style={th}>Subdominio / dominio</th>
-                  <th style={th}>Dueño (super admin)</th>
-                  <th style={th}>Plan</th>
-                  <th style={th}>Aislamiento</th>
-                  <th style={th}>Estado</th>
-                  <th style={th}>Acción</th>
-                  <th style={th}>Gestión</th>
+          <DataTable minWidth={760}>
+            <thead>
+              <tr>
+                <th>Nombre</th>
+                <th>Subdominio / dominio</th>
+                <th>Dueño (super admin)</th>
+                <th>Plan</th>
+                <th>Aislamiento</th>
+                <th>Estado</th>
+                <th>Acción</th>
+                <th>Gestión</th>
+              </tr>
+            </thead>
+            <tbody>
+              {tenants.map((t) => (
+                <tr key={t.id}>
+                  <td style={{ fontWeight: 600 }}>{t.name}</td>
+                  <td style={{ color: 'var(--ui-muted)' }}>{t.primary_domain ?? `${t.subdomain}.merkiai.com`}</td>
+                  <td>{t.owner_email ?? <span style={{ color: 'var(--ui-muted)' }}>— sin dueño —</span>}</td>
+                  <td>
+                    <form action={setTenantPlan} style={{ display: 'flex', gap: 6 }}>
+                      <input type="hidden" name="id" value={t.id} />
+                      <select name="plan" defaultValue={t.plan} className="mk-input">
+                        {plans.map((p) => (
+                          <option key={p.key} value={p.key}>{p.name} ({p.key})</option>
+                        ))}
+                      </select>
+                      <button type="submit" className="mk-btn mk-btn-sm">Asignar</button>
+                    </form>
+                  </td>
+                  <td><Chip variant="neutral">{t.data_isolation}</Chip></td>
+                  <td><StatusBadge tone={statusTone(t.status)}>{t.status}</StatusBadge></td>
+                  <td>
+                    <form action={setTenantStatus} style={{ display: 'inline' }}>
+                      <input type="hidden" name="id" value={t.id} />
+                      <input type="hidden" name="status" value={t.status === 'active' ? 'suspended' : 'active'} />
+                      <button type="submit" className="mk-btn-ghost mk-btn-sm">
+                        {t.status === 'active' ? 'Suspender' : 'Reactivar'}
+                      </button>
+                    </form>
+                  </td>
+                  <td>
+                    <TenantManage tenant={{ id: t.id, name: t.name, subdomain: t.subdomain, ownerEmail: t.owner_email }} />
+                  </td>
                 </tr>
-              </thead>
-              <tbody>
-                {tenants.map((t) => (
-                  <tr key={t.id}>
-                    <td style={td}>{t.name}</td>
-                    <td style={td}>{t.primary_domain ?? `${t.subdomain}.merkiai.com`}</td>
-                    <td style={td}>{t.owner_email ?? <span style={{ color: '#999' }}>— sin dueño —</span>}</td>
-                    <td style={td}>
-                      <form action={setTenantPlan} style={{ display: 'flex', gap: 6 }}>
-                        <input type="hidden" name="id" value={t.id} />
-                        <select name="plan" defaultValue={t.plan} style={input}>
-                          {plans.map((p) => (
-                            <option key={p.key} value={p.key}>{p.name} ({p.key})</option>
-                          ))}
-                        </select>
-                        <button type="submit" style={{ ...btn, padding: '4px 10px' }}>Asignar</button>
-                      </form>
-                    </td>
-                    <td style={td}>{t.data_isolation}</td>
-                    <td style={td}><StatusBadge tone={statusTone(t.status)}>{t.status}</StatusBadge></td>
-                    <td style={td}>
-                      <form action={setTenantStatus} style={{ display: 'inline' }}>
-                        <input type="hidden" name="id" value={t.id} />
-                        <input type="hidden" name="status" value={t.status === 'active' ? 'suspended' : 'active'} />
-                        <button type="submit" style={{ padding: '4px 10px', borderRadius: 6, border: '1px solid #ccc', background: '#fff', cursor: 'pointer' }}>
-                          {t.status === 'active' ? 'Suspender' : 'Reactivar'}
-                        </button>
-                      </form>
-                    </td>
-                    <td style={td}>
-                      <TenantManage tenant={{ id: t.id, name: t.name, subdomain: t.subdomain, ownerEmail: t.owner_email }} />
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
+              ))}
+            </tbody>
+          </DataTable>
         )}
       </PanelCard>
     </>
