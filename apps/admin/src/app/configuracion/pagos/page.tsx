@@ -1,5 +1,6 @@
 import { redirect } from 'next/navigation'
 import type { Metadata } from 'next'
+import { PageHeader } from '@merkiai/ui'
 import { getPaymentConfig } from '@merkiai/database'
 import { getAdminUser } from '@/lib/auth'
 import { getAdminDb } from '@/lib/admin-db'
@@ -47,11 +48,7 @@ export default async function ConfigPagosPage() {
   return (
     <div>
       <div className="mb-8">
-        <p className="font-brand text-xs text-brand-primary/40 uppercase tracking-wider mb-1">Configuración</p>
-        <h1 className="font-display text-brand-primary text-3xl">Pagos</h1>
-        <p className="font-brand text-sm text-brand-primary/50 mt-1">
-          Credenciales de Wompi, MercadoPago y Tu Compra. Los secrets nunca se exponen al cliente.
-        </p>
+        <PageHeader title="Pagos" description="Credenciales de Wompi, MercadoPago y Tu Compra. Los secrets nunca se exponen al cliente." />
       </div>
 
       <div className="bg-white rounded-2xl p-6 shadow-sm">

@@ -1,5 +1,6 @@
 import { redirect } from 'next/navigation'
 import type { Metadata } from 'next'
+import { PageHeader } from '@merkiai/ui'
 import { getStoreConfig } from '@merkiai/database'
 import { getAdminUser } from '@/lib/auth'
 import { getAdminDb } from '@/lib/admin-db'
@@ -31,11 +32,7 @@ export default async function ConfigEmailsPage() {
   return (
     <div>
       <div className="mb-8">
-        <p className="font-brand text-xs text-brand-primary/40 uppercase tracking-wider mb-1">Configuración</p>
-        <h1 className="font-display text-brand-primary text-3xl">Emails</h1>
-        <p className="font-brand text-sm text-brand-primary/50 mt-1">
-          Resend para confirmaciones de pedido, newsletters y notificaciones transaccionales.
-        </p>
+        <PageHeader title="Emails" description="Resend para confirmaciones de pedido, newsletters y notificaciones transaccionales." />
       </div>
 
       <div className="bg-white rounded-2xl p-6 shadow-sm">
