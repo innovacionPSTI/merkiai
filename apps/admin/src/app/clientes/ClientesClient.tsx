@@ -2,6 +2,7 @@
 
 import { useState, useMemo } from 'react'
 import Link from 'next/link'
+import { PageHeader } from '@merkiai/ui'
 
 export type ClientType = 'con_cuenta' | 'sin_cuenta'
 
@@ -61,12 +62,7 @@ export default function ClientesClient({ clients }: Props) {
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div>
-        <h1 className="font-display text-brand-primary text-2xl">Clientes</h1>
-        <p className="font-brand text-sm text-brand-primary/50 mt-1">
-          {total} clientes en total
-        </p>
-      </div>
+      <PageHeader title="Clientes" description={`${total} clientes en total.`} />
 
       {/* Contadores */}
       <div className="grid grid-cols-3 gap-4">

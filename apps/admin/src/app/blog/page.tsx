@@ -1,6 +1,7 @@
 import { requireAdminDb } from '@/lib/admin-context'
 import Link from 'next/link'
 import type { Metadata } from 'next'
+import { PageHeader, Icon } from '@merkiai/ui'
 
 export const metadata: Metadata = { title: 'Blog' }
 export const dynamic = 'force-dynamic'
@@ -14,14 +15,19 @@ export default async function BlogAdminPage() {
 
   return (
     <div>
-      <div className="flex items-center justify-between mb-8">
-        <h1 className="font-display text-brand-primary text-3xl">Blog</h1>
-        <Link
-          href="/blog/nuevo"
-          className="bg-brand-primary text-brand-cream rounded-full px-5 py-2 font-brand text-sm hover:bg-brand-dark transition-colors"
-        >
-          + Nuevo artículo
-        </Link>
+      <div className="mb-8">
+        <PageHeader
+          title="Blog"
+          description="Publica y administra los artículos de tu tienda."
+          action={
+            <Link
+              href="/blog/nuevo"
+              className="bg-brand-primary text-brand-cream rounded-full px-5 py-2 font-brand text-sm hover:bg-brand-dark transition-colors inline-flex items-center gap-2"
+            >
+              <Icon name="plus" size={16} /> Nuevo artículo
+            </Link>
+          }
+        />
       </div>
 
       <div className="bg-white rounded-2xl shadow-sm overflow-hidden">

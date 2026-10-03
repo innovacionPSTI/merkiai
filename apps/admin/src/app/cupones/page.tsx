@@ -1,5 +1,6 @@
 import { redirect } from 'next/navigation'
 import type { Metadata } from 'next'
+import { PageHeader } from '@merkiai/ui'
 import { getCoupons } from '@merkiai/database'
 import { getAdminUser } from '@/lib/auth'
 import { getAdminDb } from '@/lib/admin-db'
@@ -19,8 +20,8 @@ export default async function CuponesPage() {
 
   return (
     <div>
-      <div className="flex items-center justify-between mb-8">
-        <h1 className="font-display text-brand-primary text-3xl">Cupones</h1>
+      <div className="mb-8">
+        <PageHeader title="Cupones" description="Crea y administra los códigos de descuento de tu tienda." />
       </div>
       <CuponesClient initialCoupons={coupons} />
     </div>
