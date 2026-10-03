@@ -1,7 +1,7 @@
-import { PageHeader, PanelCard, StatusBadge, ResourceCard, CardGrid, Chip, EmptyState, Icon } from '@merkiai/ui'
+import { PageHeader, PanelCard } from '@merkiai/ui'
 import { getPresets } from '@/lib/presets'
-import { deletePreset } from '../../actions'
 import PresetForm from './PresetForm'
+import PresetsBrowser from './PresetsBrowser'
 
 export const dynamic = 'force-dynamic'
 
@@ -16,33 +16,7 @@ export default async function PresetsPage() {
       />
 
       <PanelCard title={`Catálogo (${presets.length})`}>
-        {presets.length === 0 ? (
-          <EmptyState icon={<Icon name="preset" size={28} />} title="Aún no hay presets" description="Crea el primero con el formulario de abajo." />
-        ) : (
-          <CardGrid>
-            {presets.map((p) => (
-              <ResourceCard
-                key={p.key}
-                title={p.name}
-                badge={<StatusBadge tone={p.active ? 'success' : 'neutral'}>{p.active ? 'activo' : 'inactivo'}</StatusBadge>}
-                chips={<><Chip>{p.niche}</Chip><Chip variant="neutral">{p.template}</Chip></>}
-                metrics={[
-                  { label: 'Inventario', value: p.inventory_model },
-                  { label: 'Planes', value: p.available_in_plans.length ? p.available_in_plans.join(', ') : 'todos' },
-                  { label: 'Key', value: <code>{p.key}</code> },
-                ]}
-                actions={
-                  <form action={deletePreset}>
-                    <input type="hidden" name="key" value={p.key} />
-                    <button type="submit" style={{ background: 'none', border: 0, color: 'var(--ui-danger)', cursor: 'pointer', fontSize: 13, display: 'inline-flex', alignItems: 'center', gap: 6 }}>
-                      <Icon name="trash" size={15} /> Eliminar
-                    </button>
-                  </form>
-                }
-              />
-            ))}
-          </CardGrid>
-        )}
+        <PresetsBrowser presets={presets} />
       </PanelCard>
 
       <PanelCard title="Crear / editar preset">

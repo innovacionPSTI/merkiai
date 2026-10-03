@@ -234,6 +234,64 @@ export function Field({ label, required, helper, error, children }: {
   )
 }
 
+// ── FilterBar (búsqueda + segmentado + toggle de vista) ───────────────────────
+export interface Segment { value: string; label: ReactNode }
+export function FilterBar({
+  search, onSearch, searchPlaceholder = 'Buscar…',
+  segments, activeSegment, onSegment,
+  view, onView,
+  extra,
+}: {
+  search?: string; onSearch?: (v: string) => void; searchPlaceholder?: string
+  segments?: Segment[]; activeSegment?: string; onSegment?: (v: string) => void
+  view?: 'grid' | 'list'; onView?: (v: 'grid' | 'list') => void
+  extra?: ReactNode
+}) {
+  return (
+    <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap', marginBottom: 14 }}>
+      {onSearch ? (
+        <div style={{ position: 'relative', flex: '1 1 220px', minWidth: 180 }}>
+          <span style={{ position: 'absolute', left: 10, top: '50%', transform: 'translateY(-50%)', color: 'var(--ui-muted)', pointerEvents: 'none', display: 'inline-flex' }}>
+            <Icon name="search" size={16} />
+          </span>
+          <input
+            value={search ?? ''} onChange={(e) => onSearch(e.target.value)} placeholder={searchPlaceholder}
+            className="mk-input" style={{ width: '100%', paddingLeft: 32 }}
+          />
+        </div>
+      ) : null}
+      {segments?.length ? (
+        <div style={{ display: 'inline-flex', background: 'var(--ui-surface-2)', borderRadius: 999, padding: 3 }}>
+          {segments.map((s) => {
+            const on = (activeSegment ?? segments[0].value) === s.value
+            return (
+              <button key={s.value} type="button" onClick={() => onSegment?.(s.value)}
+                style={{ border: 0, cursor: 'pointer', padding: '5px 12px', borderRadius: 999, fontSize: 13, fontWeight: 600,
+                  background: on ? 'var(--ui-surface)' : 'transparent', color: on ? 'var(--ui-text)' : 'var(--ui-muted)',
+                  boxShadow: on ? 'var(--ui-shadow)' : 'none' }}>
+                {s.label}
+              </button>
+            )
+          })}
+        </div>
+      ) : null}
+      {extra}
+      {onView ? (
+        <div style={{ display: 'inline-flex', border: '1px solid var(--ui-border)', borderRadius: 'var(--ui-radius)', overflow: 'hidden', marginLeft: 'auto' }}>
+          {(['grid', 'list'] as const).map((v) => (
+            <button key={v} type="button" aria-label={v === 'grid' ? 'Vista en cuadrícula' : 'Vista en lista'} onClick={() => onView(v)}
+              style={{ border: 0, cursor: 'pointer', padding: '7px 10px', display: 'inline-flex',
+                background: view === v ? 'var(--ui-primary-weak)' : 'var(--ui-surface)',
+                color: view === v ? 'var(--ui-primary)' : 'var(--ui-muted)' }}>
+              <Icon name={v} size={16} />
+            </button>
+          ))}
+        </div>
+      ) : null}
+    </div>
+  )
+}
+
 // ── ResourceCard (tarjeta de recurso: plan, preset, producto…) ────────────────
 export interface CardMetric { label: ReactNode; value: ReactNode }
 export function ResourceCard({ title, badge, chips, price, priceSuffix, metrics, actions }: {

@@ -11,7 +11,7 @@ export type IconName =
   | 'dashboard' | 'rocket' | 'search' | 'filter' | 'plus' | 'edit' | 'trash'
   | 'more' | 'bell' | 'external' | 'check' | 'alert' | 'clock' | 'settings'
   | 'chart' | 'calendar' | 'refresh' | 'truck' | 'ban' | 'money'
-  | 'chevron-left' | 'chevron-right' | 'close'
+  | 'chevron-left' | 'chevron-right' | 'close' | 'grid' | 'list'
   // admin · objetos
   | 'catalog' | 'product' | 'category' | 'variant' | 'sales' | 'order'
   | 'customer' | 'users' | 'coupon' | 'content' | 'builder' | 'blog'
@@ -65,6 +65,8 @@ const P: Record<IconName, ReactNode> = {
   'chevron-left': (<path d="M15 6l-6 6 6 6" />),
   'chevron-right': (<path d="M9 6l6 6-6 6" />),
   close: (<path d="M6 6l12 12M18 6L6 18" />),
+  grid: (<><rect x="3" y="3" width="7" height="7" rx="1.5" /><rect x="14" y="3" width="7" height="7" rx="1.5" /><rect x="3" y="14" width="7" height="7" rx="1.5" /><rect x="14" y="14" width="7" height="7" rx="1.5" /></>),
+  list: (<path d="M8 6h13M8 12h13M8 18h13M3 6h.01M3 12h.01M3 18h.01" />),
 }
 
 export function Icon({ name, size = 18, ...rest }: { name: IconName; size?: number } & Omit<SVGProps<SVGSVGElement>, 'name'>) {
