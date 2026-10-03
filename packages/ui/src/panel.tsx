@@ -1,4 +1,5 @@
 import type { CSSProperties, ReactNode } from 'react'
+import { Icon } from './icon'
 
 /**
  * Design system de paneles internos (HU-210). Presentacional, sin dependencias
@@ -280,6 +281,27 @@ export function DataTable({ children, minWidth = 720 }: { children: ReactNode; m
   return (
     <div className="mk-tablewrap">
       <table className="mk-table" style={{ minWidth }}>{children}</table>
+    </div>
+  )
+}
+
+// ── Pagination ───────────────────────────────────────────────────────────────
+export function Pagination({ summary, prevHref, nextHref }: {
+  summary?: ReactNode; prevHref?: string | null; nextHref?: string | null
+}) {
+  const base: CSSProperties = {
+    display: 'inline-flex', alignItems: 'center', gap: 6, padding: '6px 12px',
+    borderRadius: 999, border: '1px solid var(--ui-border)', fontSize: 13, textDecoration: 'none',
+  }
+  const on: CSSProperties = { ...base, color: 'var(--ui-text)', cursor: 'pointer' }
+  const off: CSSProperties = { ...base, color: 'var(--ui-muted)', opacity: 0.45, pointerEvents: 'none' }
+  return (
+    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginTop: 16 }}>
+      <span style={{ fontSize: 12.5, color: 'var(--ui-muted)' }}>{summary}</span>
+      <div style={{ display: 'flex', gap: 8 }}>
+        <a href={prevHref ?? undefined} style={prevHref ? on : off}><Icon name="chevron-left" size={15} /> Anterior</a>
+        <a href={nextHref ?? undefined} style={nextHref ? on : off}>Siguiente <Icon name="chevron-right" size={15} /></a>
+      </div>
     </div>
   )
 }

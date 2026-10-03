@@ -2,7 +2,7 @@ import { requireAdminDb } from '@/lib/admin-context'
 import type { OrderStatus } from '@merkiai/database'
 import Link from 'next/link'
 import type { Metadata } from 'next'
-import { PageHeader, Icon } from '@merkiai/ui'
+import { PageHeader, Pagination } from '@merkiai/ui'
 import PickupModal from '@/components/pedidos/PickupModal'
 import PedidosSearch from './PedidosSearch'
 
@@ -172,29 +172,11 @@ export default async function PedidosAdminPage({
 
       {/* Paginación */}
       {totalPages > 1 && (
-        <div className="flex items-center justify-between mt-4">
-          <p className="font-brand text-xs text-brand-primary/40">
-            {offset + 1}–{Math.min(offset + PAGE_SIZE, count ?? 0)} de {count} pedidos
-          </p>
-          <div className="flex gap-2">
-            {page > 1 && (
-              <Link
-                href={filterHref({ page: String(page - 1) })}
-                className="font-brand text-sm border border-gray-200 rounded-full px-4 py-1.5 text-brand-primary/60 hover:border-brand-primary hover:text-brand-primary transition-colors inline-flex items-center gap-1.5"
-              >
-                <Icon name="chevron-left" size={15} /> Anterior
-              </Link>
-            )}
-            {page < totalPages && (
-              <Link
-                href={filterHref({ page: String(page + 1) })}
-                className="font-brand text-sm border border-gray-200 rounded-full px-4 py-1.5 text-brand-primary/60 hover:border-brand-primary hover:text-brand-primary transition-colors inline-flex items-center gap-1.5"
-              >
-                Siguiente <Icon name="chevron-right" size={15} />
-              </Link>
-            )}
-          </div>
-        </div>
+        <Pagination
+          summary={`${offset + 1}–${Math.min(offset + PAGE_SIZE, count ?? 0)} de ${count} pedidos`}
+          prevHref={page > 1 ? filterHref({ page: String(page - 1) }) : null}
+          nextHref={page < totalPages ? filterHref({ page: String(page + 1) }) : null}
+        />
       )}
     </div>
   )
