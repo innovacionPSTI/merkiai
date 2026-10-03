@@ -1,5 +1,6 @@
 import type { Metadata } from 'next'
 import Link from 'next/link'
+import { PageHeader, IconTile, Icon, type IconName } from '@merkiai/ui'
 import { getAdminUser } from '@/lib/auth'
 import { requireAdminDb } from '@/lib/admin-context'
 import type { AdminRole } from '@/lib/roles'
@@ -182,20 +183,20 @@ async function getGestorData() {
 // ── Componentes UI ────────────────────────────────────────────────────────────
 
 function StatCard({
-  label, value, sub, icon, href, color = 'bg-white',
+  label, value, sub, icon, href, tone = 'primary',
 }: {
   label: string
   value: string
   sub?: string
-  icon: string
+  icon: IconName
   href?: string
-  color?: string
+  tone?: 'primary' | 'success' | 'warning' | 'danger'
 }) {
   const inner = (
-    <div className={`${color} rounded-2xl p-5 shadow-sm h-full`}>
+    <div className="bg-white rounded-2xl p-5 shadow-sm h-full border border-gray-100">
       <div className="flex items-start justify-between mb-3">
         <p className="font-brand text-sm text-brand-primary/50">{label}</p>
-        <span className="text-2xl leading-none">{icon}</span>
+        <IconTile tone={tone} size={36}><Icon name={icon} size={18} /></IconTile>
       </div>
       <p className="font-brand font-bold text-brand-primary text-2xl leading-tight">{value}</p>
       {sub && <p className="font-brand text-xs text-brand-primary/40 mt-1">{sub}</p>}
@@ -227,10 +228,10 @@ async function AdminDashboard() {
       <div>
         <SectionTitle>Resumen de ventas</SectionTitle>
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-          <StatCard label="Ventas hoy"     value={fmt(d.salesDay)}   sub={`${d.ordersDay} pedidos`}      icon="💰" />
-          <StatCard label="Ventas semana"  value={fmt(d.salesWeek)}  icon="📈" />
-          <StatCard label="Ventas mes"     value={fmt(d.salesMonth)} sub={`${d.ordersMonth} pedidos`}    icon="🗓️" />
-          <StatCard label="Clientes nuevos (sem.)" value={fmtNum(d.newCustomers)} icon="👥" href="/clientes" />
+          <StatCard label="Ventas hoy"     value={fmt(d.salesDay)}   sub={`${d.ordersDay} pedidos`}      icon="money" />
+          <StatCard label="Ventas semana"  value={fmt(d.salesWeek)}  icon="chart" />
+          <StatCard label="Ventas mes"     value={fmt(d.salesMonth)} sub={`${d.ordersMonth} pedidos`}    icon="calendar" />
+          <StatCard label="Clientes nuevos (sem.)" value={fmtNum(d.newCustomers)} icon="customer" href="/clientes" />
         </div>
       </div>
 
@@ -282,9 +283,9 @@ async function AdminDashboard() {
             label="Pedidos pendientes"
             value={fmtNum(d.pendingCount)}
             sub="Requieren procesamiento"
-            icon="⏳"
+            icon="clock"
+            tone={d.pendingCount > 0 ? 'warning' : 'primary'}
             href="/pedidos?status=pending"
-            color={d.pendingCount > 0 ? 'bg-yellow-50' : 'bg-white'}
           />
 
           {/* Top productos */}
@@ -312,7 +313,7 @@ async function AdminDashboard() {
           {/* Bajo stock */}
           {d.lowStock.length > 0 && (
             <div>
-              <SectionTitle>⚠️ Bajo stock</SectionTitle>
+              <SectionTitle>Bajo stock</SectionTitle>
               <Card>
                 <ul className="divide-y divide-gray-50">
                   {(d.lowStock as any[]).map((v, i) => (
@@ -350,13 +351,13 @@ async function VendedorDashboard() {
             label="Pendientes"
             value={fmtNum(d.pendingCount)}
             sub="Por procesar"
-            icon="⏳"
+            icon="clock"
+            tone={d.pendingCount > 0 ? 'warning' : 'primary'}
             href="/pedidos?status=pending"
-            color={d.pendingCount > 0 ? 'bg-yellow-50' : 'bg-white'}
           />
-          <StatCard label="En proceso"  value={fmtNum(d.processingCount)} sub="Preparando" icon="🔄" href="/pedidos?status=processing" />
-          <StatCard label="Enviados"    value={fmtNum(d.shippedCount)}    sub="En camino"  icon="🚚" href="/pedidos?status=shipped" />
-          <StatCard label="Entregados hoy" value={fmtNum(d.deliveredToday)} icon="✅" color="bg-green-50" />
+          <StatCard label="En proceso"  value={fmtNum(d.processingCount)} sub="Preparando" icon="refresh" href="/pedidos?status=processing" />
+          <StatCard label="Enviados"    value={fmtNum(d.shippedCount)}    sub="En camino"  icon="truck" href="/pedidos?status=shipped" />
+          <StatCard label="Entregados hoy" value={fmtNum(d.deliveredToday)} icon="check" tone="success" />
         </div>
       </div>
 
@@ -411,7 +412,7 @@ async function VendedorDashboard() {
 
         {/* Bajo stock */}
         <div>
-          <SectionTitle>{d.lowStock.length > 0 ? '⚠️ Bajo stock' : 'Stock'}</SectionTitle>
+          <SectionTitle>{d.lowStock.length > 0 ? 'Bajo stock' : 'Stock'}</SectionTitle>
           <Card>
             {d.lowStock.length === 0 ? (
               <p className="font-brand text-brand-primary/40 text-center py-10 text-sm">Todos los productos tienen stock suficiente.</p>
@@ -452,10 +453,10 @@ async function GestorDashboard() {
       <div>
         <SectionTitle>Estado del sitio</SectionTitle>
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-          <StatCard label="Secciones activas"   value={fmtNum(enabledCount)}  icon="✅" href="/contenido" color="bg-green-50" />
-          <StatCard label="Secciones inactivas" value={fmtNum(disabledCount)} icon="⛔" href="/contenido" color={disabledCount > 0 ? 'bg-red-50' : 'bg-white'} />
-          <StatCard label="Slides hero activos" value={fmtNum(d.heroSlides)}  icon="🖼️" href="/contenido" />
-          <StatCard label="Artículos publicados" value={fmtNum(d.blogPublished)} icon="📰" href="/blog" color="bg-green-50" />
+          <StatCard label="Secciones activas"   value={fmtNum(enabledCount)}  icon="check" tone="success" href="/contenido" />
+          <StatCard label="Secciones inactivas" value={fmtNum(disabledCount)} icon="ban" tone={disabledCount > 0 ? 'danger' : 'primary'} href="/contenido" />
+          <StatCard label="Slides hero activos" value={fmtNum(d.heroSlides)}  icon="media" href="/contenido" />
+          <StatCard label="Artículos publicados" value={fmtNum(d.blogPublished)} icon="blog" tone="success" href="/blog" />
         </div>
       </div>
 
@@ -468,8 +469,8 @@ async function GestorDashboard() {
               <Link href="/blog" className="font-brand text-xs text-brand-primary underline">Gestionar</Link>
             </div>
             <div className="grid grid-cols-2 gap-3">
-              <StatCard label="Publicados" value={fmtNum(d.blogPublished)} icon="📰" href="/blog" color="bg-green-50" />
-              <StatCard label="Borradores" value={fmtNum(d.blogDraft)}     icon="✏️"  href="/blog" color={d.blogDraft > 0 ? 'bg-yellow-50' : 'bg-white'} />
+              <StatCard label="Publicados" value={fmtNum(d.blogPublished)} icon="blog" tone="success" href="/blog" />
+              <StatCard label="Borradores" value={fmtNum(d.blogDraft)}     icon="edit" tone={d.blogDraft > 0 ? 'warning' : 'primary'} href="/blog" />
             </div>
           </div>
 
@@ -498,7 +499,7 @@ async function GestorDashboard() {
           {d.expiringCoupons.length > 0 && (
             <div>
               <div className="flex items-center justify-between mb-4">
-                <SectionTitle>🎟️ Cupones por vencer</SectionTitle>
+                <SectionTitle>Cupones por vencer</SectionTitle>
                 <Link href="/cupones" className="font-brand text-xs text-brand-primary underline">Ver todos</Link>
               </div>
               <Card>
@@ -549,13 +550,11 @@ export default async function DashboardPage() {
 
   return (
     <div className="space-y-8">
-      <div className="flex items-start justify-between">
-        <div>
-          <h1 className="font-display text-brand-primary text-3xl">Dashboard</h1>
-          <p className="font-brand text-sm text-brand-primary/40 mt-1">{greeting}</p>
-        </div>
-        <p className="font-brand text-sm text-brand-primary/40 capitalize hidden sm:block">{today}</p>
-      </div>
+      <PageHeader
+        title="Dashboard"
+        description={greeting}
+        action={<span className="font-brand text-sm text-brand-primary/40 capitalize hidden sm:block">{today}</span>}
+      />
 
       {(role === 'super_admin' || role === 'admin') && <AdminDashboard />}
       {role === 'vendedor'     && <VendedorDashboard />}

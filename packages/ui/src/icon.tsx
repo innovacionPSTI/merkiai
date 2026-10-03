@@ -10,6 +10,7 @@ export type IconName =
   // genéricos / acciones
   | 'dashboard' | 'rocket' | 'search' | 'filter' | 'plus' | 'edit' | 'trash'
   | 'more' | 'bell' | 'external' | 'check' | 'alert' | 'clock' | 'settings'
+  | 'chart' | 'calendar' | 'refresh' | 'truck' | 'ban' | 'money'
   // admin · objetos
   | 'catalog' | 'product' | 'category' | 'variant' | 'sales' | 'order'
   | 'customer' | 'users' | 'coupon' | 'content' | 'builder' | 'blog'
@@ -54,6 +55,12 @@ const P: Record<IconName, ReactNode> = {
   preset: (<><rect x="3" y="3" width="7" height="7" rx="1.5" /><rect x="14" y="3" width="7" height="7" rx="1.5" /><rect x="3" y="14" width="7" height="7" rx="1.5" /><rect x="14" y="14" width="7" height="7" rx="1.5" /></>),
   domain: (<><circle cx="12" cy="12" r="9" /><path d="M3 12h18M12 3a14 14 0 000 18M12 3a14 14 0 010 18" /></>),
   audit: (<><rect x="4" y="5" width="16" height="16" rx="2" /><path d="M8 3v4M16 3v4M8 12h8M8 16h5" /></>),
+  chart: (<><path d="M3 3v18h18" /><path d="M7 15l4-4 3 3 5-6" /></>),
+  calendar: (<><rect x="3" y="4" width="18" height="17" rx="2" /><path d="M3 9h18M8 2v4M16 2v4" /></>),
+  refresh: (<><path d="M21 12a9 9 0 11-3-6.7L21 7" /><path d="M21 3v4h-4" /></>),
+  truck: (<><path d="M1 4h14v11H1zM15 8h4l3 3v4h-7z" /><circle cx="6" cy="18" r="1.6" /><circle cx="18" cy="18" r="1.6" /></>),
+  ban: (<><circle cx="12" cy="12" r="9" /><path d="M5.6 5.6l12.8 12.8" /></>),
+  money: (<><rect x="2" y="6" width="20" height="12" rx="2" /><circle cx="12" cy="12" r="2.5" /><path d="M6 10v4M18 10v4" /></>),
 }
 
 export function Icon({ name, size = 18, ...rest }: { name: IconName; size?: number } & Omit<SVGProps<SVGSVGElement>, 'name'>) {
