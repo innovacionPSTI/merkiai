@@ -1,6 +1,5 @@
-import { PageHeader, PanelCard, StatusBadge } from '@merkiai/ui'
+import { PageHeader, PanelCard, StatusBadge, ResourceCard, CardGrid, Chip, EmptyState, Icon } from '@merkiai/ui'
 import { getPresets } from '@/lib/presets'
-import { th, td, mono, scroll } from '@/lib/styles'
 import { deletePreset } from '../../actions'
 import PresetForm from './PresetForm'
 
@@ -17,54 +16,37 @@ export default async function PresetsPage() {
       />
 
       <PanelCard title={`Catálogo (${presets.length})`}>
-        <div style={scroll}>
-          <table style={{ width: '100%', borderCollapse: 'collapse', minWidth: 880 }}>
-            <thead>
-              <tr>
-                <th style={th}>Key</th>
-                <th style={th}>Nombre</th>
-                <th style={th}>Nicho</th>
-                <th style={th}>Template</th>
-                <th style={th}>Inventario</th>
-                <th style={th}>Planes</th>
-                <th style={th}>Estado</th>
-                <th style={th}></th>
-              </tr>
-            </thead>
-            <tbody>
-              {presets.map((p) => (
-                <tr key={p.key}>
-                  <td style={{ ...td, ...mono }}>{p.key}</td>
-                  <td style={td}>{p.name}</td>
-                  <td style={td}>{p.niche}</td>
-                  <td style={{ ...td, ...mono }}>{p.template}</td>
-                  <td style={td}>{p.inventory_model}</td>
-                  <td style={{ ...td, ...mono }}>{p.available_in_plans.length ? p.available_in_plans.join(', ') : 'todos'}</td>
-                  <td style={td}>
-                    <StatusBadge tone={p.active ? 'success' : 'neutral'}>{p.active ? 'activo' : 'inactivo'}</StatusBadge>
-                  </td>
-                  <td style={td}>
-                    <form action={deletePreset}>
-                      <input type="hidden" name="key" value={p.key} />
-                      <button type="submit" style={{ background: 'none', border: 'none', color: '#dc2626', cursor: 'pointer', fontSize: 13 }}>
-                        Eliminar
-                      </button>
-                    </form>
-                  </td>
-                </tr>
-              ))}
-              {presets.length === 0 && (
-                <tr>
-                  <td style={{ ...td, color: '#888' }} colSpan={8}>Aún no hay presets. Crea el primero abajo.</td>
-                </tr>
-              )}
-            </tbody>
-          </table>
-        </div>
+        {presets.length === 0 ? (
+          <EmptyState icon={<Icon name="preset" size={28} />} title="Aún no hay presets" description="Crea el primero con el formulario de abajo." />
+        ) : (
+          <CardGrid>
+            {presets.map((p) => (
+              <ResourceCard
+                key={p.key}
+                title={p.name}
+                badge={<StatusBadge tone={p.active ? 'success' : 'neutral'}>{p.active ? 'activo' : 'inactivo'}</StatusBadge>}
+                chips={<><Chip>{p.niche}</Chip><Chip variant="neutral">{p.template}</Chip></>}
+                metrics={[
+                  { label: 'Inventario', value: p.inventory_model },
+                  { label: 'Planes', value: p.available_in_plans.length ? p.available_in_plans.join(', ') : 'todos' },
+                  { label: 'Key', value: <code>{p.key}</code> },
+                ]}
+                actions={
+                  <form action={deletePreset}>
+                    <input type="hidden" name="key" value={p.key} />
+                    <button type="submit" style={{ background: 'none', border: 0, color: 'var(--ui-danger)', cursor: 'pointer', fontSize: 13, display: 'inline-flex', alignItems: 'center', gap: 6 }}>
+                      <Icon name="trash" size={15} /> Eliminar
+                    </button>
+                  </form>
+                }
+              />
+            ))}
+          </CardGrid>
+        )}
       </PanelCard>
 
       <PanelCard title="Crear / editar preset">
-        <p style={{ margin: '0 0 12px', color: '#888', fontSize: 13 }}>Usa una key existente para sobrescribir. Los campos JSON aceptan objeto/array.</p>
+        <p style={{ margin: '0 0 12px', color: 'var(--ui-muted)', fontSize: 13 }}>Usa una key existente para sobrescribir. Los campos JSON aceptan objeto/array.</p>
         <PresetForm />
       </PanelCard>
     </>

@@ -233,6 +233,48 @@ export function Field({ label, required, helper, error, children }: {
   )
 }
 
+// ── ResourceCard (tarjeta de recurso: plan, preset, producto…) ────────────────
+export interface CardMetric { label: ReactNode; value: ReactNode }
+export function ResourceCard({ title, badge, chips, price, priceSuffix, metrics, actions }: {
+  title: ReactNode; badge?: ReactNode; chips?: ReactNode; price?: ReactNode; priceSuffix?: ReactNode;
+  metrics?: CardMetric[]; actions?: ReactNode
+}) {
+  return (
+    <section style={{ display: 'flex', flexDirection: 'column', background: 'var(--ui-surface)', border: '1px solid var(--ui-border)', borderRadius: 'var(--ui-radius-lg)', boxShadow: 'var(--ui-shadow)', overflow: 'hidden' }}>
+      <div style={{ padding: 18, display: 'flex', flexDirection: 'column', gap: 12, flex: 1 }}>
+        <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 10 }}>
+          <h3 style={{ margin: 0, fontSize: 17 }}>{title}</h3>
+          {badge}
+        </div>
+        {chips ? <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>{chips}</div> : null}
+        {price != null ? (
+          <div style={{ display: 'flex', alignItems: 'baseline', gap: 6 }}>
+            <span style={{ fontSize: 26, fontWeight: 700 }}>{price}</span>
+            {priceSuffix ? <span style={{ color: 'var(--ui-muted)', fontSize: 13 }}>{priceSuffix}</span> : null}
+          </div>
+        ) : null}
+        {metrics?.length ? (
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12, marginTop: 'auto' }}>
+            {metrics.map((m, i) => (
+              <div key={i}>
+                <div style={{ fontSize: 10.5, letterSpacing: '.06em', textTransform: 'uppercase', color: 'var(--ui-muted)' }}>{m.label}</div>
+                <div style={{ fontSize: 14, marginTop: 2 }}>{m.value}</div>
+              </div>
+            ))}
+          </div>
+        ) : null}
+      </div>
+      {actions ? (
+        <div style={{ borderTop: '1px solid var(--ui-border)', padding: '10px 18px', display: 'flex', gap: 14, alignItems: 'center' }}>{actions}</div>
+      ) : null}
+    </section>
+  )
+}
+
+export function CardGrid({ children, min = 280 }: { children: ReactNode; min?: number }) {
+  return <div style={{ display: 'grid', gridTemplateColumns: `repeat(auto-fill, minmax(${min}px, 1fr))`, gap: 14 }}>{children}</div>
+}
+
 // ── DataTable (envoltorio temable) ───────────────────────────────────────────
 export function DataTable({ children, minWidth = 720 }: { children: ReactNode; minWidth?: number }) {
   return (
