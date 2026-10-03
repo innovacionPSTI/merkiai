@@ -81,8 +81,8 @@ Kit objetivo (✅ = ya existe, ⬆️ = existe y se rehace theme-driven, 🆕 = 
 | `Chip` / `Badge` | ⬆️ | Dos variantes: **estado** (success/warning/danger/neutral) y **atributo** (primary-weak). |
 | `DataTable` | 🆕 | Tabla con encabezados, celdas-pill, **columna de acciones kebab** (dropdown con destructiva en rojo), selección por checkbox, **paginación** ("Filas por página · 1–N de M"). |
 | `RowActionsMenu` (kebab) | 🆕 | Menú de acciones por fila (img 5). |
-| `SubNavRail` | 🆕 | Riel vertical de sub-secciones dentro del contenido (Organizaciones; Configuración empresarial — img 1/7/9). |
-| `Tabs` | 🆕 | Tabs horizontales dentro de una vista (Usuarios/Roles/Invitaciones; Voz/SMS/WhatsApp; Marca/Tema/… — img 4/7/9). |
+| `SubNavRail` | 🆕 *(opcional)* | Riel vertical de sub-secciones **solo si** alguna vista las necesita fuera del sidebar. Hoy Merkiai navega por el sidebar principal, así que puede no ser necesario. |
+| `Tabs` | 🆕 | Tabs horizontales dentro de una vista (p. ej. pestañas del Tema en HU-247). No se usa para "Roles/Invitaciones" (no existen como tales en Merkiai). |
 | `FilterBar` | 🆕 | Búsqueda + toggle segmentado (Todos/Activo/Inactivo) + dropdowns + **toggle de vista grid/lista** (img 6). |
 | `FilterPanel` | 🆕 | Panel lateral de filtros como tarjeta (img 8). |
 | `Wizard` / `Stepper` (modal) | 🆕 | Modal multipaso "Paso N de M", footer Cancelar/Atrás/Siguiente, primaria deshabilitada hasta validez (disposición img 2–4). |
@@ -109,18 +109,21 @@ Kit objetivo (✅ = ya existe, ⬆️ = existe y se rehace theme-driven, 🆕 = 
 
 ### Admin (`apps/admin`)
 
-| Pantalla | Hoy | Rediseño (componentes) |
+> Estructura real del admin (sidebar): **Dashboard**, **Configura tu tienda** (onboarding, HU-236), grupo **Catálogo** (Productos/Categorías/Variantes), grupo **Ventas** (Pedidos/Clientes/Cupones), grupo **Contenido** (Páginas/Constructor/Blog/Newsletter), grupo **Apariencia** (Temas/Archivos), grupo **Configuración** (General/Envíos/Pagos/Emails/Legal), grupo **Sistema** (Usuarios/Apariencia). El mapeo respeta estas secciones; donde se proponen filtros/vista grid-lista es como **mejora opcional** (hoy varias pantallas solo tienen búsqueda).
+
+| Pantalla (real) | Hoy | Rediseño (componentes) |
 |---|---|---|
-| Shell/Sidebar | Emojis | `AppShell`+`AppSidebar` con `Icon` (sin emojis), grupos VOZ/CHAT/… , selector de tienda arriba. |
-| Dashboard | Tailwind a mano | Fila de `StatCard` + tarjetas de resumen. |
-| Productos / Categorías / Variantes | Tablas/grids a mano | `FilterBar` + grid de `ResourceCard` o `DataTable` con kebab — img 6. |
+| Shell/Sidebar | **Emojis** + grupos reales | `AppShell`+`AppSidebar` con `Icon` (sin emojis), mismos grupos (Catálogo/Ventas/Contenido/Apariencia/Configuración/Sistema), selector de tienda (ya existe `/seleccionar-tienda`). |
+| Dashboard | Métricas de ventas a mano (día/semana/mes, pedidos recientes, top productos) | `StatCard`/`StatGrid` para las métricas reales + `PanelCard` con pedidos recientes y top productos. |
+| Productos / Categorías / Variantes | Búsqueda (`ProductosSearch`) | `PageHeaderBar` + (opcional) `FilterBar` con vista grid/lista + grid de `ResourceCard` o `DataTable` con kebab — disposición img 6. |
 | Pedidos | Tabla | `DataTable` con estado en `StatusBadge`, filtros, paginación. |
-| Clientes | Tabla | `FilterPanel` lateral + `DataTable` con checkbox/kebab/paginación — img 8. |
+| Clientes | Página agregada (perfiles + customers) | `DataTable` con paginación; (opcional) `FilterPanel` lateral — disposición img 8. |
 | Cupones / Blog / Newsletter / Media | Mixto | `FilterBar` + `DataTable`/`ResourceCard`. |
 | Contenido / Constructor | Específico | Mantener la lógica; envolver en `PageHeaderBar` + `Tabs`/`PanelCard`. |
-| Configuración (`/configuracion/*`, `/usuarios`, `/sistema/apariencia`) | Rail propio | `SubNavRail` "Configuración empresarial" + `Tabs` (Usuarios/Roles/Invitaciones) + `DataTable` de roles en `Chip` — img 7. |
+| Configuración (`/configuracion/general·envios·pagos·emails·legal`) | Formularios por sub-ruta | `PageHeaderBar` + `Field` (label+helper+error) en cada formulario; las sub-rutas ya están en el sidebar (no se añade rail). |
+| Usuarios (`/usuarios`) | Lista + invitar + cambio de rol inline | `PageHeaderBar` + `DataTable` de usuarios con rol en `Chip` + acción **Invitar usuario** (modal) + cambio de rol inline. **No** hay pantalla de "Roles" (los roles se definen en código, `ROLE_CONFIG`). |
 | Onboarding (`/onboarding`, HU-236) | v1 funcional | Rehacer con `Wizard`/`Stepper` + `SelectableCard` (presets/inventario) manteniendo la lógica actual. |
-| Apariencia / Tema | `/configuracion/temas` | Pantalla de Personalización del Tema: `Tabs` (Marca/Tema/Textos/Dominios/Localización), `ColorField` + `PalettePreview` + verificación de contraste + vista previa en vivo — img 9 (HU-247). |
+| Apariencia / Tema (`/configuracion/temas`, `/sistema/apariencia`) | Formularios de tema | Pantalla de Personalización del Tema: `ColorField` + `PalettePreview` + verificación de contraste + vista previa en vivo — disposición img 9 (HU-247). |
 
 ## 8. HU nuevas de front (cluster HU-240…248)
 
@@ -132,7 +135,7 @@ Kit objetivo (✅ = ya existe, ⬆️ = existe y se rehace theme-driven, 🆕 = 
 - **HU-243 · Wizard/Stepper modal + SelectableCard.** Patrón de asistente por tarjetas (selección de features/nichos). **M.**
 - **HU-244 · Rediseño Console.** Migrar las pantallas reales: Tenants (KPIs reales + DataTable + kebab con Suspender/Reactivar/cambiar plan/editar/eliminar), Planes (ResourceCard + Wizard), Presets (grid + FilterBar). **M/L.**
 - **HU-245 · Rediseño Admin — shell + navegación + Dashboard.** `AppSidebar` con iconos, selector de tienda, Dashboard con `StatCard`. **L.**
-- **HU-246 · Rediseño Admin — listados y Configuración.** Productos/Categorías/Pedidos/Clientes/Cupones/… + Configuración con `SubNavRail`+`Tabs`+`DataTable`. **L.**
+- **HU-246 · Rediseño Admin — listados y Configuración.** Productos/Categorías/Variantes/Pedidos/Clientes/Cupones/Blog/Newsletter/Media con `DataTable`/`ResourceCard` + `FilterBar`; formularios de Configuración (General/Envíos/Pagos/Emails/Legal) con `Field`; Usuarios con `DataTable` + invitar + rol inline (sin pantalla de Roles). **L.**
 - **HU-247 · Personalización del Tema (UI).** Pantalla de edición del Tema (marca/producto, claro/oscuro, verificación de contraste, vista previa en vivo); se apoya en HU-121. **M/L.**
 - **HU-248 · Accesibilidad y pulido.** Contraste AA, foco por teclado, `aria-*`, estados vacíos/carga/error consistentes, responsive. **M.**
 

@@ -135,7 +135,7 @@
 > - **HU-243 · Wizard/Stepper modal + SelectableCard.** Asistente multipaso por tarjetas (selección de features del catálogo / nichos). **M.**
 > - **HU-244 · Rediseño Console.** Migrar las pantallas reales: Tenants (KPIs Total/Activos/Suspendidos/Planes + DataTable + kebab Suspender/Reactivar/cambiar plan/editar/eliminar), Planes (ResourceCard + Wizard), Presets (grid+FilterBar). **M/L.**
 > - **HU-245 · Rediseño Admin — shell + navegación + Dashboard.** `AppSidebar` con iconos (sin emojis), selector de tienda, Dashboard con `StatCard`. **L.**
-> - **HU-246 · Rediseño Admin — listados y Configuración.** Productos/Categorías/Pedidos/Clientes/Cupones/Blog/Newsletter/Media + Configuración con `SubNavRail`+`Tabs`+`DataTable` de roles. **L.**
+> - **HU-246 · Rediseño Admin — listados y Configuración.** Productos/Categorías/Variantes/Pedidos/Clientes/Cupones/Blog/Newsletter/Media con `DataTable`/`ResourceCard`+`FilterBar`; Configuración (General/Envíos/Pagos/Emails/Legal) con `Field`; Usuarios con `DataTable`+invitar+rol inline (los roles son de código, sin pantalla de Roles). **L.**
 > - **HU-247 · Personalización del Tema (UI).** Pantalla de edición del Tema (colores de marca/producto, claro/oscuro, verificación de contraste, vista previa en vivo); se apoya en HU-121. **M/L.**
 > - **HU-248 · Accesibilidad y pulido.** Contraste AA, foco por teclado, `aria-*`, estados vacío/carga/error consistentes, responsive. **M.**
 
