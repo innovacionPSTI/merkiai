@@ -1,6 +1,7 @@
 'use client'
 
 import { useState } from 'react'
+import { Icon } from '@merkiai/ui'
 
 const EMAIL_PROVIDERS = [
   { value: 'resend', label: 'Resend', description: 'resend.com — API REST, dominio propio' },
@@ -162,7 +163,7 @@ export default function EmailConfigForm({ initialConfig }: Props) {
           {saving ? 'Guardando…' : 'Guardar configuración'}
         </button>
         {saved && (
-          <span className="font-brand text-sm text-green-600">✓ Guardado correctamente</span>
+          <span className="font-brand text-sm text-green-600 inline-flex items-center gap-1.5"><Icon name="check" size={15} /> Guardado correctamente</span>
         )}
         {error && (
           <span className="font-brand text-sm text-red-600">{error}</span>

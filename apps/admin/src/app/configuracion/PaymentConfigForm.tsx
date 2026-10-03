@@ -76,7 +76,7 @@ function WebhookUrl({ provider, note }: { provider: string; note?: string }) {
           onClick={() => { navigator.clipboard?.writeText(url); setCopied(true); setTimeout(() => setCopied(false), 2000) }}
           className="shrink-0 font-brand text-xs text-brand-primary underline hover:text-brand-dark"
         >
-          {copied ? '✓ Copiada' : 'Copiar'}
+          {copied ? 'Copiada' : 'Copiar'}
         </button>
       </div>
       <p className="font-brand text-[11px] text-brand-primary/40 mt-1">
@@ -103,7 +103,7 @@ function CopyableUrl({ label, path, note }: { label: string; path: string; note?
           onClick={() => { navigator.clipboard?.writeText(url); setCopied(true); setTimeout(() => setCopied(false), 2000) }}
           className="shrink-0 font-brand text-xs text-brand-primary underline hover:text-brand-dark"
         >
-          {copied ? '✓ Copiada' : 'Copiar'}
+          {copied ? 'Copiada' : 'Copiar'}
         </button>
       </div>
       <p className="font-brand text-[11px] text-brand-primary/40 mt-1">
@@ -252,7 +252,7 @@ function TuCompraMethods({ initial, initialEnv }: {
         <p className="font-brand text-xs text-brand-primary/40 mt-1.5">
           {env === 'demo'
             ? 'Las transacciones no cobran dinero real. Ideal para probar el flujo.'
-            : '⚠ Cobros reales a los clientes. Verifica credenciales de producción.'}
+            : 'Cobros reales a los clientes. Verifica credenciales de producción.'}
           {' '}API: <code className="text-brand-primary/60">{apiUrl}</code>
         </p>
       </div>
@@ -430,7 +430,7 @@ export default function PaymentConfigForm({ initialConfig }: Props) {
     setSaving(true); setMsg(null)
     try {
       await patch(buildFields(new FormData(e.currentTarget)))
-      setMsg({ type: 'ok', text: '✓ Credenciales guardadas' })
+      setMsg({ type: 'ok', text: 'Credenciales guardadas' })
     } catch (err) {
       setMsg({ type: 'err', text: err instanceof Error ? err.message : 'Error' })
     } finally {
@@ -447,7 +447,7 @@ export default function PaymentConfigForm({ initialConfig }: Props) {
       payload.active_provider = provider
       await patch(payload)
       setActiveProvider(provider)
-      setMsg({ type: 'ok', text: provider === 'none' ? '✓ Pago manual activado' : `✓ ${PROVIDER_LABEL[provider]} es ahora la pasarela activa` })
+      setMsg({ type: 'ok', text: provider === 'none' ? 'Pago manual activado' : `${PROVIDER_LABEL[provider]} es ahora la pasarela activa` })
     } catch (err) {
       setMsg({ type: 'err', text: err instanceof Error ? err.message : 'Error' })
     } finally {
