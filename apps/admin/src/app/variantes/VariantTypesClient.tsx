@@ -1,6 +1,7 @@
 'use client'
 
 import { useState } from 'react'
+import { PageHeader, Icon } from '@merkiai/ui'
 import type { VariantType } from '@merkiai/database'
 
 interface Props {
@@ -121,20 +122,18 @@ export default function VariantTypesClient({ variantTypes: initial }: Props) {
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="font-display text-brand-primary text-2xl">Tipos de variante</h1>
-          <p className="font-brand text-sm text-brand-primary/50 mt-0.5">
-            Plantillas globales reutilizables que se asignan a los productos para generar combinaciones.
-          </p>
-        </div>
-        <button
-          onClick={openNew}
-          className="font-brand text-sm bg-brand-primary text-brand-cream px-4 py-2 rounded-xl hover:bg-brand-dark transition-colors"
-        >
-          + Nuevo tipo
-        </button>
-      </div>
+      <PageHeader
+        title="Tipos de variante"
+        description="Plantillas globales reutilizables que se asignan a los productos para generar combinaciones."
+        action={
+          <button
+            onClick={openNew}
+            className="font-brand text-sm bg-brand-primary text-brand-cream px-4 py-2 rounded-xl hover:bg-brand-dark transition-colors inline-flex items-center gap-2"
+          >
+            <Icon name="plus" size={16} /> Nuevo tipo
+          </button>
+        }
+      />
 
       {/* Lista */}
       {items.length === 0 ? (

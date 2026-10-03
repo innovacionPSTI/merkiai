@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useRef } from 'react'
+import { PageHeader, Icon } from '@merkiai/ui'
 import CategoryFormModal, { type SavedCategory } from './CategoryFormModal'
 
 type Category = SavedCategory
@@ -93,20 +94,18 @@ export default function CategoriasClient({ categories: initial }: { categories: 
       )}
 
       <div className="space-y-6">
-        <div className="flex items-center justify-between">
-          <div>
-            <h1 className="font-display text-brand-primary text-2xl">Categorías</h1>
-            <p className="font-brand text-sm text-brand-primary/50 mt-1">
-              {categories.length} categorías · Arrastra para reordenar
-            </p>
-          </div>
-          <button
-            onClick={() => setModal({ open: true })}
-            className="font-brand text-sm bg-brand-primary text-brand-cream px-4 py-2 rounded-xl hover:bg-brand-dark transition-colors"
-          >
-            + Nueva categoría
-          </button>
-        </div>
+        <PageHeader
+          title="Categorías"
+          description={`${categories.length} categorías · Arrastra para reordenar.`}
+          action={
+            <button
+              onClick={() => setModal({ open: true })}
+              className="font-brand text-sm bg-brand-primary text-brand-cream px-4 py-2 rounded-xl hover:bg-brand-dark transition-colors inline-flex items-center gap-2"
+            >
+              <Icon name="plus" size={16} /> Nueva categoría
+            </button>
+          }
+        />
 
         <div className="bg-white rounded-2xl shadow-sm overflow-hidden">
           {categories.length === 0 ? (

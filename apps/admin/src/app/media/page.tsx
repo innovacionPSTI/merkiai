@@ -1,5 +1,6 @@
 import { requireAdminDb } from '@/lib/admin-context'
 import type { Metadata } from 'next'
+import { PageHeader } from '@merkiai/ui'
 import MediaClient from './MediaClient'
 
 export const metadata: Metadata = { title: 'Media' }
@@ -16,8 +17,7 @@ export default async function MediaPage() {
   return (
     <div className="space-y-2">
       <div className="mb-6">
-        <h1 className="font-display text-2xl text-brand-primary">Archivos</h1>
-        <p className="text-sm text-gray-500 mt-1">Imágenes y archivos subidos al almacenamiento</p>
+        <PageHeader title="Archivos" description="Imágenes y archivos subidos al almacenamiento." />
       </div>
 
       <MediaClient initialAssets={data ?? []} />

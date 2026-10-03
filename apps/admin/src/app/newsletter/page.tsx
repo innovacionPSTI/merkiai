@@ -1,5 +1,6 @@
 import { redirect } from 'next/navigation'
 import type { Metadata } from 'next'
+import { PageHeader } from '@merkiai/ui'
 import { getAdminUser } from '@/lib/auth'
 import { requireAdminDb } from '@/lib/admin-context'
 import type { NewsletterSubscriber } from '@merkiai/database'
@@ -30,10 +31,10 @@ export default async function NewsletterPage() {
   return (
     <div>
       <div className="mb-8">
-        <h1 className="font-display text-brand-primary text-3xl">Newsletter</h1>
-        <p className="font-brand text-brand-primary/50 text-sm mt-1">
-          Gestiona suscriptores y envía campañas de correo a tu audiencia
-        </p>
+        <PageHeader
+          title="Newsletter"
+          description="Gestiona suscriptores y envía campañas de correo a tu audiencia."
+        />
       </div>
       <NewsletterClient initialSubscribers={subscribers} />
     </div>

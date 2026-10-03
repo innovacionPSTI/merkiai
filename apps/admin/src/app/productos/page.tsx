@@ -1,6 +1,7 @@
 import Link from 'next/link'
 import { redirect } from 'next/navigation'
 import type { Metadata } from 'next'
+import { PageHeader, Icon } from '@merkiai/ui'
 import ProductosSearch from './ProductosSearch'
 import { getAdminUser } from '@/lib/auth'
 import { getAdminDb } from '@/lib/admin-db'
@@ -37,14 +38,19 @@ export default async function ProductosPage({
 
   return (
     <div>
-      <div className="flex items-center justify-between mb-8">
-        <h1 className="font-display text-brand-primary text-3xl">Productos</h1>
-        <Link
-          href="/productos/nuevo"
-          className="bg-brand-primary text-brand-cream rounded-full px-5 py-2 font-brand text-sm hover:bg-brand-dark transition-colors"
-        >
-          + Nuevo producto
-        </Link>
+      <div className="mb-8">
+        <PageHeader
+          title="Productos"
+          description="Administra el catálogo de productos de tu tienda."
+          action={
+            <Link
+              href="/productos/nuevo"
+              className="bg-brand-primary text-brand-cream rounded-full px-5 py-2 font-brand text-sm hover:bg-brand-dark transition-colors inline-flex items-center gap-2"
+            >
+              <Icon name="plus" size={16} /> Nuevo producto
+            </Link>
+          }
+        />
       </div>
 
       <div className="bg-white rounded-2xl shadow-sm overflow-hidden">
