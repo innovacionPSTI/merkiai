@@ -76,7 +76,7 @@ Kit objetivo (✅ = ya existe, ⬆️ = existe y se rehace theme-driven, 🆕 = 
 | `Icon` / `IconTile` | 🆕 | Familia única; tile con fondo `primary-weak`. |
 | `PageHeaderBar` | ⬆️ | Cabecera-tarjeta con **barra de acento** izquierda, título + subtítulo + acción primaria (como img 1/5/8). |
 | `Card` / `PanelCard` | ⬆️ | Contenedor base (surface, radius, shadow). |
-| `StatCard` | ⬆️ | KPI: icono-tile + label en mayúsculas + número grande (fila de KPIs, img 5/9). |
+| `StatCard` / `StatGrid` | ✅ | Ya existen (los usa Tenants); se alinean a tokens + icono-tile. KPI: label en mayúsculas + número grande. |
 | `ResourceCard` | 🆕 | Tarjeta de recurso: título + badge, fila de chips, dato destacado (precio), **grid 2×2 de métricas**, fila de acciones al pie (img 1/9). |
 | `Chip` / `Badge` | ⬆️ | Dos variantes: **estado** (success/warning/danger/neutral) y **atributo** (primary-weak). |
 | `DataTable` | 🆕 | Tabla con encabezados, celdas-pill, **columna de acciones kebab** (dropdown con destructiva en rojo), selección por checkbox, **paginación** ("Filas por página · 1–N de M"). |
@@ -85,11 +85,10 @@ Kit objetivo (✅ = ya existe, ⬆️ = existe y se rehace theme-driven, 🆕 = 
 | `Tabs` | 🆕 | Tabs horizontales dentro de una vista (Usuarios/Roles/Invitaciones; Voz/SMS/WhatsApp; Marca/Tema/… — img 4/7/9). |
 | `FilterBar` | 🆕 | Búsqueda + toggle segmentado (Todos/Activo/Inactivo) + dropdowns + **toggle de vista grid/lista** (img 6). |
 | `FilterPanel` | 🆕 | Panel lateral de filtros como tarjeta (img 8). |
-| `Wizard` / `Stepper` (modal) | 🆕 | Modal multipaso "Paso N de M", footer Cancelar/Atrás/Siguiente, primaria deshabilitada hasta validez (img 2–4). |
-| `SelectableCard` | 🆕 | Tarjeta grande seleccionable con check (selección de productos/features — img 3). |
+| `Wizard` / `Stepper` (modal) | 🆕 | Modal multipaso "Paso N de M", footer Cancelar/Atrás/Siguiente, primaria deshabilitada hasta validez (disposición img 2–4). |
+| `SelectableCard` | 🆕 | Tarjeta grande seleccionable con check — para **features del catálogo** (planes) y **nichos** (presets). *(En la referencia son "productos"; en Merkiai son features/nichos.)* |
 | `Field` (form) | 🆕 | Label + control + **helper text** + estado de error; required `*`. |
-| `EditablePricingTable` | 🆕 | Tabla con costo/input/margen calculado (img 4) — reusable para límites/tarifas. |
-| `EmptyState` | 🆕 | Vacío con icono, mensaje y CTA. |
+| `EmptyState` | ✅ | Ya existe en `@merkiai/ui`; se alinea a tokens. |
 | `ColorField` / `PalettePreview` | 🆕 | Edición de color del Tema + vista previa (img 9 → HU-247). |
 | `StatusBadge` | ✅ | Ya existe; se alinea a los tokens semánticos. |
 
@@ -97,13 +96,16 @@ Kit objetivo (✅ = ya existe, ⬆️ = existe y se rehace theme-driven, 🆕 = 
 
 ### Console (`apps/console`)
 
-| Pantalla | Hoy | Rediseño (componentes) |
+> **Nota sobre las referencias:** las capturas de VoxAlly se usan **solo** como guía de disposición gráfica y de cómo organizar/presentar la información. Los **dominios de Merkiai son los reales** (tenants, planes, presets, entitlements), **no** los de la referencia (pool de créditos, teléfonos, motores de voz, márgenes). El mapeo de abajo refleja las pantallas que **existen hoy** en el código.
+
+| Pantalla (real) | Hoy | Rediseño (componentes) |
 |---|---|---|
-| Organizaciones / Tenants (`/`) | Tabla simple verde | `PageHeaderBar` + fila de `StatCard` (Total/Activos/Fallidos/Permisos) + `DataTable` con plan en `Chip`, recarga ON en toggle, estado en `StatusBadge`, **kebab** con acciones (abrir/editar/gestionar usuarios/recargar/otorgar/reducir/eliminar) — img 5. |
-| Planes de Facturación (`/planes`) | Tabla + `PlanForm` plano | Lista de `ResourceCard` (chips de productos, precio, grid de métricas, acciones) — img 1; creación con `Wizard` 3 pasos + `SelectableCard` (productos) + `EditablePricingTable` (tarifas) — img 2–4. |
-| Presets (`/presets`) | Tabla | Grid de `ResourceCard` + `FilterBar` (buscar/estado/vista) — img 6; formulario con `Field` + `SelectableCard` por nicho. |
-| Pool y Créditos | Sub-tab | `SubNavRail` + `StatCard`s de saldo + `DataTable` de movimientos. |
-| Teléfonos | Sub-tab | `DataTable` de números con tarifas (costos de operador). |
+| Tenants (`/`) | Ya usa `PageHeader`/`StatCard`/`StatusBadge` (base) | `PageHeaderBar` + `StatCard` con los KPIs reales (**Total/Activos/Suspendidos/Planes**) + `DataTable` con plan en `Chip`, estado en `StatusBadge`, **kebab** con las acciones reales (**Suspender/Reactivar**, **cambiar plan**, editar, gestionar usuarios, eliminar/purgar — HU-209). Disposición inspirada en img 5. |
+| Planes (`/planes`) | Tabla + `PlanForm` (catálogo, HU-239 v2) | Lista de `ResourceCard` (chips de features, precio, grid de métricas de **entitlements**, acciones) — disposición img 1; edición con `Wizard` + `SelectableCard` para elegir **features del catálogo** (no "productos" de la referencia). |
+| Presets (`/presets`) | Tabla | Grid de `ResourceCard` + `FilterBar` (buscar/estado/vista) — disposición img 6; formulario con `Field` + `SelectableCard` por nicho. |
+| Dominios · Auditoría | Deshabilitados en el sidebar | Pendientes (HU-174 dominios / auditoría); se diseñan cuando existan. |
+
+> **No se incluyen** "Pool y Créditos" ni "Teléfonos": son de VoxAlly, no de Merkiai.
 
 ### Admin (`apps/admin`)
 
@@ -127,8 +129,8 @@ Kit objetivo (✅ = ya existe, ⬆️ = existe y se rehace theme-driven, 🆕 = 
 - **HU-240 · Fundaciones de UI: tokens theme-driven + iconografía + kit base.** *(Enabler.)* Set de tokens semánticos `--ui-*` (light/dark) alimentado por el Tema; familia única de iconos (`Icon`/`IconTile`); completar `@merkiai/ui` con los primitivos base (`AppShell`, `PageHeaderBar`, `Card`, `StatCard`, `Chip`, `Field`, `EmptyState`). Elimina `lib/styles` verde del console y emojis del admin. **L.**
 - **HU-241 · DataTable + RowActionsMenu + paginación.** Tabla estándar con kebab, selección, paginación y celdas-pill. **M.**
 - **HU-242 · ResourceCard + FilterBar + FilterPanel + vista grid/lista.** Tarjeta de recurso con métricas y los patrones de filtrado/vista. **M.**
-- **HU-243 · Wizard/Stepper modal + SelectableCard + EditablePricingTable.** Patrón de asistente por tarjetas y tabla editable. **M.**
-- **HU-244 · Rediseño Console.** Migrar Organizaciones, Planes, Presets, Pool y Créditos, Teléfonos al kit. **L.**
+- **HU-243 · Wizard/Stepper modal + SelectableCard.** Patrón de asistente por tarjetas (selección de features/nichos). **M.**
+- **HU-244 · Rediseño Console.** Migrar las pantallas reales: Tenants (KPIs reales + DataTable + kebab con Suspender/Reactivar/cambiar plan/editar/eliminar), Planes (ResourceCard + Wizard), Presets (grid + FilterBar). **M/L.**
 - **HU-245 · Rediseño Admin — shell + navegación + Dashboard.** `AppSidebar` con iconos, selector de tienda, Dashboard con `StatCard`. **L.**
 - **HU-246 · Rediseño Admin — listados y Configuración.** Productos/Categorías/Pedidos/Clientes/Cupones/… + Configuración con `SubNavRail`+`Tabs`+`DataTable`. **L.**
 - **HU-247 · Personalización del Tema (UI).** Pantalla de edición del Tema (marca/producto, claro/oscuro, verificación de contraste, vista previa en vivo); se apoya en HU-121. **M/L.**
