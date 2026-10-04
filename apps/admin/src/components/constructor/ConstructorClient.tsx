@@ -88,6 +88,27 @@ export default function ConstructorClient({ pages, initialPageKey, initialTempla
     await load(pageKey)
   }
 
+  // HU-255 · importar una página desde un paquete .json → página nueva (borrador)
+  async function importPageFile(file: File) {
+    try {
+      const pkg = JSON.parse(await file.text())
+      const key = prompt('Key de la nueva página (a-z, 0-9, -, _):', '')?.trim().toLowerCase()
+      if (!key) return
+      const slug = prompt('Slug (URL) de la nueva página:', key)?.trim().toLowerCase()
+      if (!slug) return
+      const label = prompt('Nombre visible:', key) ?? key
+      const res = await fetch('/api/admin/cms/page-import', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ package: pkg, key, slug, label }),
+      })
+      if (!res.ok) { setTplMsg((await res.json().catch(() => ({}))).error || 'No se pudo importar'); return }
+      setTplMsg('Página importada como borrador ✓')
+    } catch {
+      setTplMsg('Archivo de página inválido')
+    }
+  }
+
   async function changeTemplate(next: string) {
     setTemplate(next); setTplMsg('')
     const res = await fetch('/api/admin/config', {
@@ -150,6 +171,21 @@ export default function ConstructorClient({ pages, initialPageKey, initialTempla
             </button>
           )}
           {tplMsg && <span className="text-sm text-green-600">{tplMsg}</span>}
+          <div className="ml-auto flex items-center gap-2">
+            <a
+              href={`/api/admin/cms/page-export?page_key=${encodeURIComponent(pageKey)}`}
+              className="rounded-lg border border-slate-300 px-3 py-2 text-sm text-slate-700 hover:bg-slate-50"
+            >
+              Exportar página
+            </a>
+            <label className="rounded-lg border border-slate-300 px-3 py-2 text-sm text-slate-700 hover:bg-slate-50 cursor-pointer">
+              Importar página
+              <input
+                type="file" accept="application/json,.json" className="hidden"
+                onChange={(e) => { const f = e.target.files?.[0]; if (f) void importPageFile(f); e.target.value = '' }}
+              />
+            </label>
+          </div>
         </div>
         {activeTpl?.description && <p className="mt-2 text-xs text-slate-500">{activeTpl.description}</p>}
       </div>

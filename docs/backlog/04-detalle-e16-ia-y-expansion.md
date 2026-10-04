@@ -664,14 +664,14 @@
 > Como comerciante, quiero exportar/guardar una página completa y volver a importarla, para reutilizarla o moverla entre tiendas.
 
 **Estimación:** M (5 puntos) · **Track:** packaging — **espejo de HU-129**
-**Módulo:** `packages/database` (`page-package.ts`: `buildPagePackage`/`parsePagePackage`), endpoints + botones en el Constructor
-**Estado:** 🔲 Pendiente (go-live) — reusa el patrón versionado/tolerante de `template-package.ts`
+**Módulo:** `packages/database` (`page-package.ts`: `buildPagePackage`/`parsePagePackage`/`exportPage`/`importPagePackage`), endpoints `GET /api/admin/cms/page-export` + `POST /api/admin/cms/page-import`, botones en el Constructor
+**Estado:** ✅ **Implementada.** Paquete JSON versionado (`kind: 'merkiai.page'`, v1) con los campos de la página (label/page_type/show_in_footer/meta_*) + `page_sections` (incluye `settings`, y por tanto el **estilo** de HU-253) + `section_items`; **puro y tolerante** (ignora claves desconocidas, defaults, rechaza versiones futuras, descarta secciones sin `section_type`). `exportPage` lee página+secciones+ítems; `importPagePackage` crea una **página nueva en borrador** (`enabled=false`) regenerando `section_key`/ids (sin colisiones) y conservando el `enabled`/orden de cada sección/ítem. Endpoints acotados por rol (`contenido`) + RLS; validación de key/slug + 409 en colisión. En el Constructor: botones **"Exportar página"** (descarga) e **"Importar página"** (file picker + key/slug/label). 6 tests.
 
 | # | Escenario | Resultado esperado |
 |---|-----------|-------------------|
-| AC-1 | Exportar | Paquete JSON versionado con `page_sections`+`section_items` (y su estilo) |
-| AC-2 | Importar | Crea una página nueva/borrador; tolerante a versiones (defaults, ignora claves desconocidas, rechaza versiones futuras) |
-| AC-3 | Base de templates | El paquete alimenta la construcción de templates/presets (HU-256) |
+| AC-1 | Exportar | ✅ Paquete JSON versionado con `page_sections`+`section_items` (incluye el estilo en `settings`) |
+| AC-2 | Importar | ✅ Crea una página nueva en **borrador**; tolerante a versiones (defaults, ignora claves desconocidas, rechaza versiones futuras) |
+| AC-3 | Base de templates | ✅ `parsePagePackage` normaliza el contenido reutilizable para HU-256 |
 
 ### HU-256 — "Guardar como preset/plantilla" desde una tienda construida · E3
 
