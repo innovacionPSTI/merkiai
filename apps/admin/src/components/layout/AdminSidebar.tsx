@@ -126,6 +126,7 @@ const NAV: NavNode[] = [
     section: 'configuracion',
     children: [
       { href: '/configuracion/general', label: 'General' },
+      { href: '/configuracion/dominio', label: 'Dominio' },
       { href: '/configuracion/envios',  label: 'Envíos',  fullAccessOnly: true },
       { href: '/configuracion/pagos',   label: 'Pagos',   fullAccessOnly: true },
       { href: '/configuracion/emails',  label: 'Emails',  fullAccessOnly: true },
