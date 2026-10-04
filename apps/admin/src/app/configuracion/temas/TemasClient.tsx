@@ -302,6 +302,13 @@ function ThemeCard({
         >
           Editar
         </button>
+        <a
+          href={`/api/admin/themes/${theme.id}/export`}
+          className="py-1.5 px-2 text-xs font-medium text-gray-600 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors inline-flex items-center"
+          title="Exportar plantilla (.json)"
+        >
+          <Icon name="external" size={14} />
+        </a>
         {!theme.is_active && (
           <button
             onClick={() => onActivate(theme.id)}
@@ -631,6 +638,26 @@ export default function TemasClient({ initialThemes }: { initialThemes: Theme[] 
     })
   }
 
+  // HU-129 · importar paquete de plantilla (.json) → tema inactivo
+  async function handleImportFile(file: File) {
+    setError(null)
+    try {
+      const text = await file.text()
+      const pkg = JSON.parse(text)
+      const res = await fetch('/api/admin/themes/import', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(pkg),
+      })
+      if (!res.ok) throw new Error((await res.json().catch(() => ({}))).error ?? 'No se pudo importar la plantilla')
+      const { theme } = await res.json()
+      setThemes((prev) => [...prev, theme])
+      startTransition(() => router.refresh())
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Archivo de plantilla inválido')
+    }
+  }
+
   async function handleDelete(id: number) {
     if (!confirm('¿Eliminar este tema?')) return
     startTransition(async () => {
@@ -651,15 +678,30 @@ export default function TemasClient({ initialThemes }: { initialThemes: Theme[] 
         <div className="text-sm text-gray-500">
           {themes.length} tema{themes.length !== 1 ? 's' : ''} configurado{themes.length !== 1 ? 's' : ''}
         </div>
-        <button
-          onClick={openCreate}
-          className="flex items-center gap-2 bg-brand-primary text-white rounded-xl px-4 py-2 text-sm font-medium hover:bg-brand-dark transition-colors"
-        >
-          <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4" />
-          </svg>
-          Nuevo tema
-        </button>
+        <div className="flex items-center gap-2">
+          <label className="flex items-center gap-2 border border-gray-200 text-gray-700 rounded-xl px-4 py-2 text-sm font-medium hover:bg-gray-50 transition-colors cursor-pointer">
+            <Icon name="external" size={15} /> Importar plantilla
+            <input
+              type="file"
+              accept="application/json,.json"
+              className="hidden"
+              onChange={(e) => {
+                const f = e.target.files?.[0]
+                if (f) void handleImportFile(f)
+                e.target.value = ''
+              }}
+            />
+          </label>
+          <button
+            onClick={openCreate}
+            className="flex items-center gap-2 bg-brand-primary text-white rounded-xl px-4 py-2 text-sm font-medium hover:bg-brand-dark transition-colors"
+          >
+            <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4" />
+            </svg>
+            Nuevo tema
+          </button>
+        </div>
       </div>
 
       {/* Grid de temas */}

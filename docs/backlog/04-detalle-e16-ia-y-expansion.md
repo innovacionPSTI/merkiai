@@ -566,13 +566,13 @@
 
 **Estimación:** M (5 puntos)
 **Módulo:** export/import (extiende HU-123), admin Apariencia
-**Estado:** 🔲 Pendiente (roadmap v17) — se apoya en HU-121/122/123
+**Estado:** ✅ **Implementada (v1, plantilla).** Paquete JSON versionado del tema-plantilla (HU-121: paleta + tipografía + layout + claro/oscuro + color de precio) en `packages/database/template-package.ts`: `buildTemplatePackage` / `parseTemplatePackage` (puras, tolerantes: ignoran claves desconocidas, rellenan campos nuevos con defaults, rechazan versiones más nuevas, `nameOverride`) + `importTemplatePackage` (crea tema **inactivo**). Endpoints `GET /api/admin/themes/[id]/export` (descarga `.json`) y `POST /api/admin/themes/import`; en `/configuracion/temas`, botón "Exportar" por tema + "Importar plantilla" (file picker). Las **variantes de disposición por superficie** viajan dentro del layout de la plantilla (registro `templates`). 9 tests. *Nota:* el paquete que incluye también **contenido de ejemplo** y el resto de entidades se integrará con el manifiesto general de HU-123 cuando exista (este paquete ya es un ítem registrable ahí).
 
 | # | Escenario | Resultado esperado |
 |---|-----------|-------------------|
-| AC-1 | Exportar plantilla | Genera un paquete versionado con theme + variantes de disposición (± contenido de ejemplo) |
-| AC-2 | Importar plantilla | Crea la plantilla como borrador (no activa), lista para previsualizar (HU-128) |
-| AC-3 | Compatibilidad | Tolerante a versiones (reusa el esquema versionado de HU-123) |
+| AC-1 | Exportar plantilla | ✅ Paquete versionado con theme + layout (variantes incluidas en el layout) |
+| AC-2 | Importar plantilla | ✅ Crea la plantilla como tema **inactivo** (borrador), lista para previsualizar/activar |
+| AC-3 | Compatibilidad | ✅ Tolerante a versiones (defaults para campos nuevos; rechaza versiones futuras) |
 | AC-4 | Colisiones | No sobreescribe la plantilla activa; nombra/versiona la importada |
 
 ---
