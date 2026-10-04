@@ -1,5 +1,6 @@
 import { getWebHomeData } from '@merkiai/database'
 import { requireStoreContext } from '@/lib/store-context'
+import { getMachineDb } from '@/lib/machine-db'
 import { isPreviewMode } from '@/lib/preview'
 import { getHomeBlocks, getHomeLayout } from '@/components/blocks/home-blocks'
 import PreviewBanner from '@/components/PreviewBanner'
@@ -11,7 +12,11 @@ export default async function HomePage() {
   // HU-217: contexto de tienda (tenant/db/config/template) + datos del home.
   const ctx = await requireStoreContext()
   const preview = await isPreviewMode()
-  const data = await getWebHomeData(ctx.db, { preview })
+  // En preview se usa el cliente-máquina (is_admin) que SÍ ve filas deshabilitadas
+  // (las políticas RLS *_admin_all no filtran por `enabled`); fuera de preview, el
+  // cliente anon tenant-scoped (solo publicado). HU-128.
+  const db = preview ? getMachineDb(ctx.tenantId) : ctx.db
+  const data = await getWebHomeData(db, { preview })
 
   const template = ctx.config?.template ?? 'default'
   const blocks   = getHomeBlocks(template)
