@@ -2,7 +2,7 @@ import { redirect } from 'next/navigation'
 import type { Metadata } from 'next'
 import { getAdminUser } from '@/lib/auth'
 import { canAccess } from '@/lib/roles'
-import { getOnboardingOptions } from '@/lib/onboarding'
+import { getOnboardingOptions, getOnboardingProgress } from '@/lib/onboarding'
 import OnboardingWizard from './OnboardingWizard'
 
 export const metadata: Metadata = { title: 'Onboarding · Configura tu tienda' }
@@ -14,7 +14,10 @@ export default async function OnboardingPage() {
     redirect('/no-autorizado')
   }
 
-  const options = await getOnboardingOptions(adminUser.tenantId)
+  const [options, progress] = await Promise.all([
+    getOnboardingOptions(adminUser.tenantId),
+    getOnboardingProgress(adminUser.tenantId),
+  ])
 
   return (
     <div>
@@ -27,7 +30,7 @@ export default async function OnboardingPage() {
       </div>
 
       {options ? (
-        <OnboardingWizard options={options} />
+        <OnboardingWizard options={options} progress={progress} />
       ) : (
         <div className="bg-white rounded-2xl p-6 shadow-sm">
           <p className="font-brand text-sm text-brand-primary/60">

@@ -46,7 +46,33 @@ export type StoreConfig = {
   nav_show_auth: boolean
   /** Proveedor de email activo ('resend' por defecto). */
   email_provider: string
+  /** Estado del onboarding reanudable (HU-236 v2). null = sin empezar. */
+  onboarding_state: OnboardingState | null
   updated_at: string
+}
+
+/**
+ * Estado persistido del wizard de onboarding (HU-236 v2). Solo guarda lo que no
+ * se puede derivar de los datos reales de la tienda: qué preset se aplicó y si
+ * el comerciante dio por terminado u omitió el onboarding. El checklist de
+ * configuración (productos, tema, dominio, envíos) se calcula en vivo.
+ */
+export interface OnboardingState {
+  /** Key del preset aplicado, o null si aún no se aplicó ninguno. */
+  presetApplied: string | null
+  /** ISO de cuándo se aplicó el preset. */
+  appliedAt: string | null
+  /** El comerciante cerró el onboarding sin completarlo. */
+  dismissed: boolean
+  /** ISO de cuándo se marcó como completado. */
+  completedAt: string | null
+}
+
+export const EMPTY_ONBOARDING_STATE: OnboardingState = {
+  presetApplied: null,
+  appliedAt: null,
+  dismissed: false,
+  completedAt: null,
 }
 
 export type UpdateStoreConfigInput = Partial<Omit<StoreConfig, 'id' | 'updated_at'>>
@@ -84,6 +110,7 @@ const DEFAULT_CONFIG: StoreConfig = {
   nav_show_cart: true,
   nav_show_auth: true,
   email_provider: 'resend',
+  onboarding_state: null,
   updated_at: new Date().toISOString(),
 }
 
@@ -127,4 +154,36 @@ export async function updateStoreConfig(input: UpdateStoreConfigInput, db: Db, t
       ? ((data as any).trust_badges as TrustBadge[])
       : [],
   }
+}
+
+/** Lee el estado de onboarding del tenant (HU-236 v2). null = sin empezar. */
+export async function getOnboardingState(db: Db, tenantId: string): Promise<OnboardingState | null> {
+  const { data, error } = await db
+    .from('store_config')
+    .select('onboarding_state')
+    .eq('tenant_id', tenantId)
+    .maybeSingle()
+  if (error || !data) return null
+  const raw = (data as any).onboarding_state
+  return raw ? { ...EMPTY_ONBOARDING_STATE, ...(raw as Partial<OnboardingState>) } : null
+}
+
+/**
+ * Hace merge del estado de onboarding (HU-236 v2). Solo toca la columna
+ * `onboarding_state`; preserva lo demás. Usa upsert por tenant igual que
+ * updateStoreConfig.
+ */
+export async function setOnboardingState(
+  patch: Partial<OnboardingState>,
+  db: Db,
+  tenantId: string,
+): Promise<OnboardingState> {
+  const current = (await getOnboardingState(db, tenantId)) ?? EMPTY_ONBOARDING_STATE
+  const next: OnboardingState = { ...current, ...patch }
+  const { error } = await db
+    .from('store_config')
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    .upsert({ tenant_id: tenantId, onboarding_state: next as any, updated_at: new Date().toISOString() } as any, { onConflict: 'tenant_id' })
+  if (error) throw error
+  return next
 }

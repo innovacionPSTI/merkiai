@@ -3,7 +3,7 @@
 import { revalidatePath } from 'next/cache'
 import { getAdminUser } from '@/lib/auth'
 import { canAccess } from '@/lib/roles'
-import { applyOnboardingPreset } from '@/lib/onboarding'
+import { applyOnboardingPreset, completeOnboarding, dismissOnboarding, reopenOnboarding } from '@/lib/onboarding'
 
 export interface OnboardingActionState {
   ok: boolean
@@ -33,4 +33,18 @@ export async function applyPresetAction(
   revalidatePath('/onboarding')
   revalidatePath('/')
   return { ok: true, message: 'Preset aplicado. Revisa tu tienda y ajústala desde el panel.' }
+}
+
+/** HU-236 v2: marca el onboarding como completado u omitido, o lo reabre. */
+export async function setOnboardingDoneAction(formData: FormData): Promise<void> {
+  const adminUser = await getAdminUser()
+  if (!adminUser || !canAccess(adminUser.role, 'configuracion')) return
+
+  const intent = String(formData.get('intent') ?? '')
+  if (intent === 'complete') await completeOnboarding(adminUser.tenantId)
+  else if (intent === 'dismiss') await dismissOnboarding(adminUser.tenantId)
+  else if (intent === 'reopen') await reopenOnboarding(adminUser.tenantId)
+
+  revalidatePath('/onboarding')
+  revalidatePath('/')
 }

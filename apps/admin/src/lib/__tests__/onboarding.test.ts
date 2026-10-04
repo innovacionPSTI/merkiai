@@ -3,11 +3,18 @@
  *
  * Onboarding (HU-236): resolución de opciones + aplicación del preset con gating.
  */
-jest.mock('@merkiai/database', () => ({ applyPresetToStore: jest.fn() }))
+jest.mock('@merkiai/database', () => ({
+  applyPresetToStore: jest.fn(),
+  getOnboardingState: jest.fn().mockResolvedValue(null),
+  setOnboardingState: jest.fn().mockResolvedValue(undefined),
+  getStoreConfig: jest.fn(),
+  getThemes: jest.fn().mockResolvedValue([]),
+  getProducts: jest.fn().mockResolvedValue([]),
+}))
 jest.mock('../admin-db', () => ({ getAdminDb: jest.fn(() => ({})) }))
 
 import { applyPresetToStore } from '@merkiai/database'
-import { applyOnboardingPreset, getOnboardingOptions } from '../onboarding'
+import { applyOnboardingPreset, getOnboardingOptions, buildOnboardingProgress } from '../onboarding'
 
 const mockApply = applyPresetToStore as unknown as jest.Mock
 const T = '00000000-0000-0000-0000-000000000001'
@@ -78,5 +85,38 @@ describe('applyOnboardingPreset (gating HU-236)', () => {
     const res = await applyOnboardingPreset(T, 'moda-basico')
     expect(res.ok).toBe(false)
     expect(res.error).toMatch(/control plane/i)
+  })
+})
+
+describe('buildOnboardingProgress (HU-236 v2)', () => {
+  const ALL_FALSE = { presetApplied: false, hasGeneral: false, hasProducts: false, hasCustomTheme: false }
+
+  it('estado nulo + nada hecho = 0%', () => {
+    const p = buildOnboardingProgress(null, ALL_FALSE)
+    expect(p.percent).toBe(0)
+    expect(p.completedCount).toBe(0)
+    expect(p.totalCount).toBe(4)
+    expect(p.finished).toBe(false)
+  })
+
+  it('todas las señales en true = 100%', () => {
+    const p = buildOnboardingProgress(
+      { presetApplied: 'moda', appliedAt: 'x', dismissed: false, completedAt: null },
+      { presetApplied: true, hasGeneral: true, hasProducts: true, hasCustomTheme: true },
+    )
+    expect(p.percent).toBe(100)
+    expect(p.checklist.every((c) => c.done)).toBe(true)
+  })
+
+  it('progreso parcial se redondea (1/4 = 25%)', () => {
+    const p = buildOnboardingProgress(null, { ...ALL_FALSE, hasProducts: true })
+    expect(p.completedCount).toBe(1)
+    expect(p.percent).toBe(25)
+    expect(p.checklist.find((c) => c.key === 'products')?.done).toBe(true)
+  })
+
+  it('finished=true si completedAt o dismissed', () => {
+    expect(buildOnboardingProgress({ presetApplied: null, appliedAt: null, dismissed: true, completedAt: null }, ALL_FALSE).finished).toBe(true)
+    expect(buildOnboardingProgress({ presetApplied: null, appliedAt: null, dismissed: false, completedAt: 'x' }, ALL_FALSE).finished).toBe(true)
   })
 })

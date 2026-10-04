@@ -6,8 +6,20 @@
  * Los límites son regla de negocio (fail-open): si el control plane no responde,
  * `getOnboardingOptions` devuelve null y el onboarding muestra un aviso, no rompe.
  */
-import { applyPresetToStore, type PresetPayload, type ApplyPresetResult } from '@merkiai/database'
+import {
+  applyPresetToStore,
+  getOnboardingState,
+  setOnboardingState,
+  getStoreConfig,
+  getThemes,
+  getProducts,
+  type PresetPayload,
+  type ApplyPresetResult,
+  type OnboardingState,
+} from '@merkiai/database'
 import { getAdminDb } from './admin-db'
+
+export type { OnboardingState }
 
 export interface OnboardingPreset {
   key: string
@@ -84,6 +96,7 @@ export async function applyOnboardingPreset(
   const payload = toPayload(preset)
   if (inventoryOverride) payload.inventory_model = inventoryOverride
 
+  const db = getAdminDb(tenantId)
   try {
     const res = await applyPresetToStore(
       tenantId,
@@ -92,10 +105,107 @@ export async function applyOnboardingPreset(
         limits: { categories: opts.limits.categories ?? undefined, products: opts.limits.products ?? undefined },
         allowMultiLocation: opts.allowMultiLocation,
       },
-      getAdminDb(tenantId),
+      db,
     )
+    // HU-236 v2: deja constancia de qué preset se aplicó para reanudar el wizard.
+    try {
+      await setOnboardingState({ presetApplied: presetKey, appliedAt: new Date().toISOString() }, db, tenantId)
+    } catch { /* no bloquear el onboarding si falla la persistencia del estado */ }
     return { ok: true, result: res.results }
   } catch (e) {
     return { ok: false, error: e instanceof Error ? e.message : String(e) }
   }
+}
+
+// ─── HU-236 v2 · Onboarding reanudable con estado ────────────────────────────
+
+export interface OnboardingChecklistItem {
+  key: string
+  label: string
+  href: string
+  done: boolean
+}
+
+export interface OnboardingProgress {
+  state: OnboardingState
+  /** Pasos contabilizados para el progreso (incluye preset + señales reales). */
+  checklist: OnboardingChecklistItem[]
+  completedCount: number
+  totalCount: number
+  percent: number
+  /** El comerciante lo completó o lo omitió explícitamente. */
+  finished: boolean
+}
+
+/** Señales derivadas de los datos reales de la tienda (plano store). */
+export interface OnboardingSignals {
+  presetApplied: boolean
+  hasGeneral: boolean
+  hasProducts: boolean
+  hasCustomTheme: boolean
+}
+
+/**
+ * Pura: arma el progreso del onboarding a partir del estado persistido + las
+ * señales reales de la tienda. No consulta nada (testeable). El checklist
+ * "duro" se deriva de datos, no se guarda, así nunca queda desincronizado.
+ */
+export function buildOnboardingProgress(
+  state: OnboardingState | null,
+  signals: OnboardingSignals,
+): OnboardingProgress {
+  const st: OnboardingState = state ?? {
+    presetApplied: null, appliedAt: null, dismissed: false, completedAt: null,
+  }
+  const checklist: OnboardingChecklistItem[] = [
+    { key: 'preset', label: 'Aplicar un punto de partida (preset)', href: '/onboarding', done: signals.presetApplied },
+    { key: 'general', label: 'Datos generales y contacto', href: '/configuracion/general', done: signals.hasGeneral },
+    { key: 'products', label: 'Cargar tus productos', href: '/productos', done: signals.hasProducts },
+    { key: 'theme', label: 'Personalizar apariencia y tema', href: '/configuracion/temas', done: signals.hasCustomTheme },
+  ]
+  const completedCount = checklist.filter((c) => c.done).length
+  const totalCount = checklist.length
+  return {
+    state: st,
+    checklist,
+    completedCount,
+    totalCount,
+    percent: Math.round((completedCount / totalCount) * 100),
+    finished: st.completedAt != null || st.dismissed,
+  }
+}
+
+/** Reúne las señales reales de la tienda y arma el progreso (HU-236 v2). */
+export async function getOnboardingProgress(tenantId: string): Promise<OnboardingProgress> {
+  const db = getAdminDb(tenantId)
+  const [state, config, themes, products] = await Promise.all([
+    getOnboardingState(db, tenantId).catch(() => null),
+    getStoreConfig(db, tenantId).catch(() => null),
+    getThemes(db).catch(() => []),
+    getProducts({}, db).catch(() => [] as unknown[]),
+  ])
+  const hasGeneral = !!config && config.store_name.trim() !== '' && config.store_name !== 'Mi Tienda' && !!config.store_email
+  const signals: OnboardingSignals = {
+    presetApplied: !!state?.presetApplied,
+    hasGeneral,
+    hasProducts: products.length > 0,
+    // Tema personalizado: existe algún tema que no sea el predeterminado sembrado.
+    hasCustomTheme: themes.some((t) => !t.is_default),
+  }
+  return buildOnboardingProgress(state, signals)
+}
+
+/** Marca el onboarding como completado (HU-236 v2). */
+export async function completeOnboarding(tenantId: string): Promise<void> {
+  await setOnboardingState({ completedAt: new Date().toISOString() }, getAdminDb(tenantId), tenantId)
+}
+
+/** El comerciante omite el onboarding (HU-236 v2). */
+export async function dismissOnboarding(tenantId: string): Promise<void> {
+  await setOnboardingState({ dismissed: true }, getAdminDb(tenantId), tenantId)
+}
+
+/** Reabre el onboarding (limpia completado/omitido) (HU-236 v2). */
+export async function reopenOnboarding(tenantId: string): Promise<void> {
+  await setOnboardingState({ dismissed: false, completedAt: null }, getAdminDb(tenantId), tenantId)
 }

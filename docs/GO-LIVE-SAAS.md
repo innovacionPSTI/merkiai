@@ -20,6 +20,7 @@
 - [ ] **`e17/12_config_pk_por_tenant.sql`** ⭐ **NUEVO/OBLIGATORIO** — sin esto, crear config de un tenant nuevo falla (colisión del `id=1`); el admin da error al guardar y el seed no crea las 4 config. (Encontrado en la prueba del punto 5.)
 - [ ] Verificar: `select conname from pg_constraint where conname like '%_tenant_pk';` lista `store_config_tenant_pk`, etc.
 - [ ] **`e17/13_inventory_model.sql`** ⭐ **NUEVO** (HU-237) — columna `store_config.inventory_model` (`single`|`multi_location`, default `single`). Sin esto, aplicar un preset con modelo de inventario o el onboarding multi-ubicación fallan.
+- [ ] **`e17/14_onboarding_state.sql`** ⭐ **NUEVO** (HU-236 v2) — columna `store_config.onboarding_state` (JSONB, nullable). Sin esto, el onboarding no persiste el progreso (preset aplicado / completado / omitido) y no es reanudable. No rompe lo demás si falta (fail-soft), pero el wizard siempre arranca de cero.
 
 **Proyecto de PLATAFORMA (consola):**
 - [ ] `platform/01_platform_schema.sql` + `03_plans.sql`.
