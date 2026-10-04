@@ -462,15 +462,16 @@
 > Como administrador, quiero exportar e importar toda la configuración y el contenido del sitio en un paquete versionado que incluya los cambios actuales y tolere futuras adiciones, para clonar, respaldar o migrar una instancia.
 
 **Estimación:** L (8 puntos)
-**Módulo:** `packages/database` (export/import), admin, esquema de paquete con versión
-**Estado:** 🔲 Pendiente (roadmap v17) — evoluciona el export/import actual
+**Módulo:** `packages/database` (`site-package.ts`), admin (`/api/admin/site-export`), esquema de paquete con versión
+**Estado:** 🔶 **v1 (export/backup).** `buildSitePackage`/`exportSite` empaquetan el sitio del tenant en un JSON versionado (`kind: 'merkiai.site'`, v1): **Tema** (paquete de HU-129), **config NO sensible** (allowlist `safeStoreConfig` — nunca `resend_api_key` ni columnas internas/secretas; las credenciales de pago viven en otra tabla y no se tocan), **nav** y **todas las páginas** (paquetes de HU-255). Botón "Backup del sitio" en el Constructor → `GET /api/admin/site-export` (descarga). 4 tests (foco en el stripping de secretos). **Pendiente v2:** importador de sitio completo con **remapeo de colisiones** (`key`/`slug`/`nav_key`) + extensión a productos/categorías/variantes; hoy las piezas ya se importan por separado (Tema HU-129, páginas HU-255).
 
 | # | Escenario | Resultado esperado |
 |---|-----------|-------------------|
-| AC-1 | Exportar | Genera un paquete con páginas, secciones, ítems, nav, **plantillas de diseño (HU-121/122)**, productos, categorías, variantes y configuración; con número de versión de esquema |
-| AC-2 | Importar una versión anterior | Migración tolerante: campos nuevos toman valores por defecto; no falla por claves desconocidas |
-| AC-3 | Colisiones | Estrategia clara (omitir/actualizar) por clave estable (`key`/`slug`/`nav_key`) |
-| AC-4 | Extensibilidad | Añadir una entidad futura al export solo requiere registrarla en el manifiesto, sin reescribir el importador |
+| AC-1 | Exportar | ✅ v1: Tema + config (segura) + nav + páginas/secciones/ítems, con versión de esquema. *(Productos/categorías/variantes → v2.)* |
+| AC-2 | Importar una versión anterior | ⏳ v2 (los parsers de HU-129/255 ya son tolerantes a versiones) |
+| AC-3 | Colisiones | ⏳ v2 (estrategia omitir/actualizar por `key`/`slug`/`nav_key`) |
+| AC-4 | Extensibilidad | ✅ El manifiesto compone paquetes por entidad (Tema, página…); añadir uno nuevo no reescribe el resto |
+| AC-5 | Seguridad | ✅ El export **nunca** incluye secretos (allowlist de config; sin credenciales de pago) |
 
 ---
 

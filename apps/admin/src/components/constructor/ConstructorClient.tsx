@@ -215,6 +215,13 @@ export default function ConstructorClient({ pages, initialPageKey, initialTempla
             >
               Exportar como preset
             </a>
+            <a
+              href="/api/admin/site-export"
+              className="rounded-lg border border-slate-300 px-3 py-2 text-sm text-slate-700 hover:bg-slate-50"
+              title="Backup del sitio completo (Tema + config + nav + páginas), sin secretos"
+            >
+              Backup del sitio
+            </a>
             <label className="rounded-lg border border-slate-300 px-3 py-2 text-sm text-slate-700 hover:bg-slate-50 cursor-pointer">
               Importar página
               <input
