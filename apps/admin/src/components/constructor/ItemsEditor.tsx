@@ -17,12 +17,20 @@ interface ItemRow {
   enabled: boolean
   order_index: number
   metadata?: unknown
+  /** HU-128 v2: overlay de borrador (invisible al público). */
+  draft?: unknown
   [k: string]: unknown
 }
 
 const api = '/api/admin/cms/items'
+const draftApi = '/api/admin/cms/draft'
 
-export default function ItemsEditor({ sectionId, sectionType, onChange }: { sectionId: number; sectionType: string; onChange?: () => void }) {
+/** Overlay de borrador del ítem como objeto (o null). */
+function itemDraft(it: ItemRow): Record<string, unknown> | null {
+  return it.draft && typeof it.draft === 'object' ? (it.draft as Record<string, unknown>) : null
+}
+
+export default function ItemsEditor({ sectionId, sectionType, published = false, onChange }: { sectionId: number; sectionType: string; published?: boolean; onChange?: () => void }) {
   const schema = getBlockSchema(sectionType)
   const itemType = itemTypeOf(sectionType)
   const fieldDefs = schema?.items ? Object.entries(schema.items.fields) : []
@@ -39,7 +47,11 @@ export default function ItemsEditor({ sectionId, sectionType, onChange }: { sect
       const data: ItemRow[] = res.ok ? await res.json() : []
       const sorted = [...data].sort((a, b) => a.order_index - b.order_index)
       setItems(sorted)
-      setDraft(Object.fromEntries(sorted.map((it) => [it.id, resolveItemFields(sectionType, it)])))
+      // HU-128 v2: si hay overlay de borrador, el formulario arranca mostrándolo.
+      setDraft(Object.fromEntries(sorted.map((it) => {
+        const d = itemDraft(it)
+        return [it.id, resolveItemFields(sectionType, d ? { ...it, ...d } : it)]
+      })))
     } finally {
       setLoading(false)
     }
@@ -53,10 +65,12 @@ export default function ItemsEditor({ sectionId, sectionType, onChange }: { sect
   async function addItem() {
     if (!itemType) return
     const nextOrder = items.length ? Math.max(...items.map((i) => i.order_index)) + 1 : 0
+    // HU-128 v2: en una sección publicada, el ítem nuevo nace oculto (enabled=false)
+    // para no exponerlo; se ve en la vista previa y se publica al activarlo.
     await fetch(api, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ section_id: sectionId, item_type: itemType, order_index: nextOrder, enabled: true }),
+      body: JSON.stringify({ section_id: sectionId, item_type: itemType, order_index: nextOrder, enabled: !published }),
     })
     await load()
   }
@@ -65,13 +79,35 @@ export default function ItemsEditor({ sectionId, sectionType, onChange }: { sect
     const values = draft[it.id] ?? {}
     const prevMeta = (it.metadata ?? {}) as Record<string, unknown>
     const { columns, metadata } = splitItemFields(sectionType, values, prevMeta)
-    const res = await fetch(api, {
-      method: 'PATCH',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ id: it.id, ...columns, metadata }),
-    })
-    const text = res.ok ? 'Guardado ✓' : `Error: ${(await res.json().catch(() => ({}))).error ?? ''}`
+    let res: Response
+    if (published && it.enabled) {
+      // Editar en caliente → al borrador (invisible para el público).
+      res = await fetch(draftApi, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ resource: 'items', id: it.id, action: 'save', patch: { ...columns, metadata } }),
+      })
+    } else {
+      // Ítem oculto o sección no publicada → se escribe en vivo (no es visible).
+      res = await fetch(api, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ id: it.id, ...columns, metadata }),
+      })
+    }
+    const ok = res.ok
+    const text = ok ? (published && it.enabled ? 'Guardado en borrador ✓' : 'Guardado ✓') : `Error: ${(await res.json().catch(() => ({}))).error ?? ''}`
     setMsg((m) => ({ ...m, [it.id]: text }))
+    if (ok) await load()
+  }
+
+  async function draftAction(it: ItemRow, action: 'publish' | 'discard') {
+    const res = await fetch(draftApi, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ resource: 'items', id: it.id, action }),
+    })
+    setMsg((m) => ({ ...m, [it.id]: res.ok ? (action === 'publish' ? 'Publicado ✓' : 'Descartado') : 'Error' }))
     if (res.ok) await load()
   }
 
@@ -142,8 +178,17 @@ export default function ItemsEditor({ sectionId, sectionType, onChange }: { sect
                 ))}
               </div>
 
-              <div className="mt-3 flex items-center gap-3">
-                <button onClick={() => saveItem(it)} className="rounded-lg bg-indigo-600 px-3 py-1.5 text-xs font-medium text-white hover:bg-indigo-700">Guardar</button>
+              <div className="mt-3 flex flex-wrap items-center gap-3">
+                <button onClick={() => saveItem(it)} className="rounded-lg bg-indigo-600 px-3 py-1.5 text-xs font-medium text-white hover:bg-indigo-700">
+                  {published && it.enabled ? 'Guardar borrador' : 'Guardar'}
+                </button>
+                {itemDraft(it) && (
+                  <>
+                    <button onClick={() => draftAction(it, 'publish')} className="rounded-lg bg-green-600 px-3 py-1.5 text-xs font-medium text-white hover:bg-green-700">Publicar cambios</button>
+                    <button onClick={() => draftAction(it, 'discard')} className="rounded-lg border border-slate-300 px-3 py-1.5 text-xs text-slate-600 hover:bg-slate-100">Descartar</button>
+                    <span className="rounded-full bg-amber-100 px-2 py-0.5 text-[11px] font-medium text-amber-700">Borrador sin publicar</span>
+                  </>
+                )}
                 {msg[it.id] && <span className={`text-xs ${msg[it.id].startsWith('Error') ? 'text-red-600' : 'text-green-600'}`}>{msg[it.id]}</span>}
               </div>
             </li>

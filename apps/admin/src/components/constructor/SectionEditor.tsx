@@ -149,7 +149,7 @@ export default function SectionEditor({ section, onSaved, onChange }: SectionEdi
         </div>
       )}
 
-      {hasItems && <ItemsEditor sectionId={section.id} sectionType={section.section_type} onChange={onChange} />}
+      {hasItems && <ItemsEditor sectionId={section.id} sectionType={section.section_type} published={published} onChange={onChange} />}
 
       {fields.length === 0 && !hasItems && (
         <p className="text-sm text-slate-500">Este bloque no tiene campos configurables.</p>
