@@ -397,7 +397,7 @@
 
 **Estimación:** L (8 puntos)
 **Módulo:** `packages/database` (`layouts` / extensión de `themes`), admin `/sistema/apariencia`, capa de resolución de plantilla activa
-**Estado:** 🔲 Pendiente (roadmap v17) — *base del sistema; el render por componente va en HU-122*
+**Estado:** 🔶 **Parcial** — **hecho:** (a) **color+tipografía** vía tabla `themes` + editor `/configuracion/temas` (crear/activar, `getActiveTheme`, inyección de CSS vars en `layout.tsx`) + **verificación de contraste WCAG** (HU-247); (b) **plantillas de layout del home** vía registro `templates` en `blocks/schema.ts` (`default`/`esencial`: orden de bloques + `blockDefaults`), elegidas por `store_config.template` (HU-217) y renderizadas con `getTemplateHomeLayout` (HU-218.5/220), con selector en admin. **Pendiente:** unificar paleta+tipografía+layout como una sola "plantilla" y las **variantes de disposición por superficie** (eso es HU-122).
 > **Nota de independencia:** este es el theming del **storefront** (tokens `--brand-*`/`--theme-*`, por-tenant, editable por el comerciante) — **independiente** del design system de paneles (HU-210, `--mk-*`). En E17 pasa a fila-por-tenant vía **HU-207**. No debe acoplarse al preset de panel (HU-213).
 
 | # | Escenario | Resultado esperado |
@@ -419,7 +419,7 @@
 
 **Estimación:** L (8 puntos)
 **Módulo:** `apps/web` (registro de variantes por superficie), `packages/ui`, render por plantilla activa
-**Estado:** 🔲 Pendiente (roadmap v17) — depende de HU-121
+**Estado:** 🔲 Pendiente — **existe solo la costura**: el registro `templates` ya varía el **orden de bloques del home** por plantilla (`getTemplateHomeLayout`, HU-218.5). **Falta el framework de variantes de *disposición* por superficie** (≥2 opciones seleccionables de navbar y home) y su resolución por plantilla activa. Depende de HU-121.
 
 | # | Escenario | Resultado esperado |
 |---|-----------|-------------------|
