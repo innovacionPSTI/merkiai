@@ -3,6 +3,7 @@ import { requireStoreContext } from '@/lib/store-context'
 import { getMachineDb } from '@/lib/machine-db'
 import { isPreviewMode } from '@/lib/preview'
 import { getHomeBlocks, getHomeLayout } from '@/components/blocks/home-blocks'
+import SectionShell from '@/components/sections/SectionShell'
 import PreviewBanner from '@/components/PreviewBanner'
 
 // E17/HU-157: la home lee datos del tenant resuelto por Host → render dinámico.
@@ -38,7 +39,9 @@ export default async function HomePage() {
         if (!Block) return null
         return (
           <div key={type} style={hidden ? { opacity: 0.55, outline: '2px dashed #d97706', outlineOffset: -2 } : undefined}>
-            <Block section={section} data={data} template={template} />
+            <SectionShell settings={section?.settings}>
+              <Block section={section} data={data} template={template} />
+            </SectionShell>
           </div>
         )
       })}

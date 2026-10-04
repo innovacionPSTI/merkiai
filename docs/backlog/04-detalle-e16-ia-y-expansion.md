@@ -636,15 +636,15 @@
 > Como comerciante, quiero controles de estilo consistentes en cualquier sección (fondo, espaciado, ancho, alineación), para dar personalidad sin romper la coherencia del tema.
 
 **Estimación:** M (5 puntos) · **Track:** esquema + renderer + editor
-**Módulo:** `blocks/schema.ts` (grupo `style` en `settings`), renderer (`apps/web`) aplica tokens, editor (`apps/admin`) panel de estilo
-**Estado:** 🔲 Pendiente (go-live)
+**Módulo:** `blocks/section-style.ts` (claves `style_*` en `settings` + `resolveSectionStyle` puro), renderer `SectionShell` (`apps/web`), panel "Estilo" en `SectionEditor` (`apps/admin`)
+**Estado:** ✅ **Implementada.** `STYLE_FIELDS` (fondo por **token del tema** `style_bg` + imagen `style_bg_image` + espaciado superior/inferior por escala `style_pad_*`) persistidos en `settings`; `resolveSectionStyle` (puro, tolerante, defaults "sin efecto" → cero regresión). `SectionShell` envuelve **todas** las secciones en los dos caminos de render (CMS + home) aplicando fondo/espaciado; `SectionEditor` muestra un `<details>` "Estilo de la sección" que fusiona en `settings` (validación ignora claves `style_*`). Safelist en Tailwind de web para las clases dinámicas. 7 tests. *Nota:* ancho de contenedor y alineación quedan dentro de los bloques que lo soportan (p. ej. `columns`/`content_section`), no en el shell, para no chocar con el layout propio de cada sección.
 
 | # | Escenario | Resultado esperado |
 |---|-----------|-------------------|
-| AC-1 | Fondo | Color (de la paleta del tema) o imagen por sección |
-| AC-2 | Espaciado/ancho | Padding superior/inferior por **escala** + ancho de contenedor (completo/contenido) |
-| AC-3 | Alineación | Alineación de contenido; coherente con los tokens `--brand-*` (no colores sueltos) |
-| AC-4 | Transversal | El grupo de estilo aplica a **todos** los bloques, incluidos los genéricos (HU-252) |
+| AC-1 | Fondo | ✅ Color (token de la paleta del tema) o imagen por sección |
+| AC-2 | Espaciado | ✅ Padding superior/inferior por **escala** (none/small/medium/large) |
+| AC-3 | Coherencia | ✅ Fondo limitado a tokens `--brand-*` (no colores sueltos); alineación dentro de los bloques que la ofrecen |
+| AC-4 | Transversal | ✅ Aplica a **todos** los bloques vía `SectionShell`, incluidos los genéricos (HU-252) |
 
 ### HU-254 — Renderer + Constructor agnósticos al tipo de página · E3
 

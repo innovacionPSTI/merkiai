@@ -26,6 +26,7 @@ import ContentSection      from './ContentSection'
 import ColumnsSection      from './ColumnsSection'
 import MediaBanner         from './MediaBanner'
 import SpacerSection       from './SpacerSection'
+import SectionShell        from './SectionShell'
 
 interface Props {
   section: PageSection & { items: SectionItem[] }
@@ -33,9 +34,17 @@ interface Props {
   whatsappNumber?: string | null
 }
 
-export default function SectionRenderer({ section, pageKey: _pageKey, whatsappNumber }: Props) {
+export default function SectionRenderer({ section, pageKey, whatsappNumber }: Props) {
   if (!section.enabled) return null
+  // HU-253 · estilo compartido (fondo/espaciado) desde settings.style_*.
+  return <SectionShell settings={section.settings}>{renderSection(section, pageKey, whatsappNumber)}</SectionShell>
+}
 
+function renderSection(
+  section: PageSection & { items: SectionItem[] },
+  _pageKey: string,
+  whatsappNumber?: string | null,
+) {
   switch (section.section_type) {
     case 'hero':
       return <HeroSection section={section} />

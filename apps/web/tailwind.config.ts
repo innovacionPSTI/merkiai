@@ -18,6 +18,12 @@ const config: Config = {
     './src/**/*.{js,ts,jsx,tsx,mdx}',
     '../../packages/ui/src/**/*.{js,ts,jsx,tsx}',
   ],
+  // HU-253 · clases aplicadas dinámicamente por SectionShell (fondo/espaciado),
+  // definidas en @merkiai/database (fuera del content scan) → safelist explícito.
+  safelist: [
+    'bg-brand-cream', 'bg-brand-cream-warm', 'bg-brand-yellow-pale', 'bg-brand-primary', 'bg-brand-dark',
+    'pt-8', 'pb-8', 'pt-16', 'pb-16', 'pt-28', 'pb-28',
+  ],
   theme: {
     ...baseConfig.theme,
     extend: {

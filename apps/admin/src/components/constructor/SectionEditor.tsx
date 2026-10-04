@@ -7,10 +7,19 @@
  * (`PATCH /api/admin/cms/sections`). Ningún formulario hardcodeado por tipo.
  */
 import { useState } from 'react'
-import { getBlockSchema, resolveBlockFields } from '@merkiai/database'
+import { getBlockSchema, resolveBlockFields, STYLE_FIELDS } from '@merkiai/database'
 import { splitSectionFields } from '@/lib/section-fields'
 import FieldInput from './FieldInput'
 import ItemsEditor from './ItemsEditor'
+
+// HU-253 · claves de estilo compartido + sus defaults.
+const STYLE_KEYS = Object.keys(STYLE_FIELDS)
+function initStyle(settings: unknown): Record<string, unknown> {
+  const s = (settings && typeof settings === 'object') ? settings as Record<string, unknown> : {}
+  const out: Record<string, unknown> = {}
+  for (const [k, f] of Object.entries(STYLE_FIELDS)) out[k] = k in s ? s[k] : (f.default ?? '')
+  return out
+}
 
 interface SectionRow {
   id: number
@@ -41,6 +50,10 @@ export default function SectionEditor({ section, onSaved, onChange }: SectionEdi
   const [status, setStatus] = useState<'idle' | 'saving' | 'saved' | 'error'>('idle')
   const [errorMsg, setErrorMsg] = useState('')
   const [hasDraft, setHasDraft] = useState(!!draftObj)
+  // HU-253 · estilo compartido (fondo/espaciado). Se persiste en settings.
+  const [styleValues, setStyleValues] = useState<Record<string, unknown>>(
+    () => initStyle(draftObj ? { ...(section.settings as object), ...draftObj } : section.settings),
+  )
 
   if (!schema) {
     return <p className="text-sm text-slate-500">Tipo de bloque sin contrato: <code>{section.section_type}</code></p>
@@ -52,7 +65,10 @@ export default function SectionEditor({ section, onSaved, onChange }: SectionEdi
   async function save() {
     setStatus('saving'); setErrorMsg('')
     const prevSettings = (section.settings ?? {}) as Record<string, unknown>
-    const { columns, settings } = splitSectionFields(section.section_type, values, prevSettings)
+    const split = splitSectionFields(section.section_type, values, prevSettings)
+    const columns = split.columns
+    // HU-253 · fusiona el estilo compartido en settings.
+    const settings = { ...split.settings, ...styleValues }
     try {
       if (published) {
         // Editar en caliente → al borrador (invisible para el público).
@@ -99,8 +115,7 @@ export default function SectionEditor({ section, onSaved, onChange }: SectionEdi
 
   return (
     <div className="space-y-6">
-      {fields.length > 0 && (
-        <div className="space-y-4">
+      <div className="space-y-4">
           {fields.map(([key, field]) => (
             <div key={key} className={field.type === 'boolean' ? 'flex items-center gap-2' : ''}>
               <label htmlFor={key} className="block text-xs font-medium text-slate-600 mb-1">{field.label}</label>
@@ -108,6 +123,22 @@ export default function SectionEditor({ section, onSaved, onChange }: SectionEdi
               {field.help && <p className="text-[11px] text-slate-400 mt-1">{field.help}</p>}
             </div>
           ))}
+
+          {/* HU-253 · Estilo compartido (fondo / espaciado) */}
+          <details className="rounded-lg border border-slate-200 bg-slate-50/50">
+            <summary className="cursor-pointer px-3 py-2 text-xs font-semibold text-slate-600 select-none">Estilo de la sección</summary>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 p-3 pt-1">
+              {STYLE_KEYS.map((key) => {
+                const field = STYLE_FIELDS[key]
+                return (
+                  <div key={key}>
+                    <label className="block text-[11px] font-medium text-slate-600 mb-1">{field.label}</label>
+                    <FieldInput name={key} field={field} value={styleValues[key]} onChange={(v) => setStyleValues((s) => ({ ...s, [key]: v }))} />
+                  </div>
+                )
+              })}
+            </div>
+          </details>
 
           <div className="flex flex-wrap items-center gap-3 pt-1">
             <button
@@ -146,14 +177,9 @@ export default function SectionEditor({ section, onSaved, onChange }: SectionEdi
                 : 'Esta sección está publicada: tus ediciones se guardan como borrador (editar en caliente) y solo se ven en la vista previa hasta publicarlas.'}
             </p>
           )}
-        </div>
-      )}
+      </div>
 
       {hasItems && <ItemsEditor sectionId={section.id} sectionType={section.section_type} published={published} onChange={onChange} />}
-
-      {fields.length === 0 && !hasItems && (
-        <p className="text-sm text-slate-500">Este bloque no tiene campos configurables.</p>
-      )}
     </div>
   )
 }
