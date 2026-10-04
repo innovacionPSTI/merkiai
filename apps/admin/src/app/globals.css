@@ -55,4 +55,13 @@
   body {
     @apply bg-gray-50 text-brand-text font-brand antialiased;
   }
+
+  /* HU-248 · accesibilidad: anillo de foco visible garantizado por teclado.
+     Rescata los controles con `focus:outline-none` sin reemplazo. Solo aplica a
+     navegación por teclado (:focus-visible), no al click de ratón. */
+  :focus-visible {
+    outline: 2px solid rgb(var(--brand-primary));
+    outline-offset: 2px;
+    border-radius: 2px;
+  }
 }

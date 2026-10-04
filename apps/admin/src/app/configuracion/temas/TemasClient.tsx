@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useTransition } from 'react'
+import { useState, useTransition, useEffect, useRef } from 'react'
 import { useRouter } from 'next/navigation'
 import { Icon, contrastRatio, contrastLevel, type ContrastLevel } from '@merkiai/ui'
 import { listTemplates, type Theme } from '@merkiai/database'
@@ -306,6 +306,7 @@ function ThemeCard({
           href={`/api/admin/themes/${theme.id}/export`}
           className="py-1.5 px-2 text-xs font-medium text-gray-600 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors inline-flex items-center"
           title="Exportar plantilla (.json)"
+          aria-label={`Exportar plantilla ${theme.name}`}
         >
           <Icon name="external" size={14} />
         </a>
@@ -324,8 +325,9 @@ function ThemeCard({
             disabled={isPending}
             className="p-1.5 text-red-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors"
             title="Eliminar tema"
+            aria-label={`Eliminar tema ${theme.name}`}
           >
-            <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
+            <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24" aria-hidden="true">
               <path strokeLinecap="round" strokeLinejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
             </svg>
           </button>
@@ -355,17 +357,28 @@ function ThemeModal({
     setForm({ ...form, [key]: value })
   }
 
+  // HU-248 a11y: cerrar con Escape y enfocar el primer campo al abrir.
+  const firstFieldRef = useRef<HTMLInputElement>(null)
+  useEffect(() => {
+    firstFieldRef.current?.focus()
+    const onKey = (e: KeyboardEvent) => { if (e.key === 'Escape') onClose() }
+    document.addEventListener('keydown', onKey)
+    return () => document.removeEventListener('keydown', onKey)
+  }, [onClose])
+
+  const titleId = 'theme-modal-title'
+
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-      <div className="absolute inset-0 bg-black/40" onClick={onClose} />
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4" role="dialog" aria-modal="true" aria-labelledby={titleId}>
+      <div className="absolute inset-0 bg-black/40" onClick={onClose} aria-hidden="true" />
       <div className="relative bg-white rounded-2xl shadow-2xl w-full max-w-3xl max-h-[90vh] overflow-y-auto">
         {/* Header */}
         <div className="flex items-center justify-between px-6 py-4 border-b border-gray-100 sticky top-0 bg-white rounded-t-2xl">
-          <h2 className="font-semibold text-gray-900">
+          <h2 id={titleId} className="font-semibold text-gray-900">
             {editing ? 'Editar tema' : 'Nuevo tema'}
           </h2>
-          <button onClick={onClose} className="text-gray-400 hover:text-gray-600">
-            <svg className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
+          <button onClick={onClose} className="text-gray-400 hover:text-gray-600" aria-label="Cerrar">
+            <svg className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24" aria-hidden="true">
               <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
             </svg>
           </button>
@@ -378,6 +391,7 @@ function ThemeModal({
             <div>
               <label className="block text-xs font-medium text-gray-700 mb-1">Nombre del tema</label>
               <input
+                ref={firstFieldRef}
                 type="text"
                 value={form.name}
                 onChange={(e) => update('name', e.target.value)}

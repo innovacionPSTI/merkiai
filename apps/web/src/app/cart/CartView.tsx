@@ -105,12 +105,13 @@ export default function CartView({ density = 'comfortable' }: Props) {
                     <div className="flex items-center gap-3">
                       <div className="flex flex-col items-end">
                         <div className="flex items-center gap-2 border border-brand-primary/20 rounded-full px-3 py-1">
-                          <button onClick={() => updateQty(item.variantId, item.qty - 1)} className="text-brand-primary font-bold">−</button>
-                          <span className="font-brand text-sm w-5 text-center">{item.qty}</span>
+                          <button onClick={() => updateQty(item.variantId, item.qty - 1)} className="text-brand-primary font-bold" aria-label={`Quitar una unidad de ${item.productName}`}>−</button>
+                          <span className="font-brand text-sm w-5 text-center" aria-live="polite">{item.qty}</span>
                           <button
                             onClick={() => updateQty(item.variantId, item.qty + 1)}
                             disabled={!item.allowBackorder && item.stock != null && item.qty >= item.stock}
                             className="text-brand-primary font-bold disabled:opacity-30 disabled:cursor-not-allowed"
+                            aria-label={`Agregar una unidad de ${item.productName}`}
                           >
                             +
                           </button>
@@ -119,8 +120,8 @@ export default function CartView({ density = 'comfortable' }: Props) {
                           <span className="font-brand text-[11px] text-amber-600 mt-1">Máximo {item.stock} disponibles</span>
                         )}
                       </div>
-                      <button onClick={() => removeItem(item.variantId)} className="text-brand-primary/30 hover:text-red-500 transition-colors">
-                        <svg className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
+                      <button onClick={() => removeItem(item.variantId)} className="text-brand-primary/30 hover:text-red-500 transition-colors" aria-label={`Eliminar ${item.productName} del carrito`}>
+                        <svg className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24" aria-hidden="true">
                           <path strokeLinecap="round" strokeLinejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
                         </svg>
                       </button>

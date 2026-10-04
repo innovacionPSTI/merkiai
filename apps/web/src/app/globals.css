@@ -59,6 +59,14 @@
   h1, h2, h3, h4, h5, h6 {
     @apply font-display;
   }
+
+  /* HU-248 · accesibilidad: anillo de foco visible por teclado (rescata los
+     controles con `focus:outline-none`). Solo navegación por teclado. */
+  :focus-visible {
+    outline: 2px solid rgb(var(--brand-primary));
+    outline-offset: 2px;
+    border-radius: 2px;
+  }
 }
 
 /* ─── Utilidades ─────────────────────────────────────────────────────────── */
