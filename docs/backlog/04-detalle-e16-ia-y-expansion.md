@@ -419,7 +419,7 @@
 
 **Estimación:** L (8 puntos)
 **Módulo:** `apps/web` (registro de variantes por superficie), `packages/ui`, render por plantilla activa
-**Estado:** 🔲 Pendiente — **existe solo la costura**: el registro `templates` ya varía el **orden de bloques del home** por plantilla (`getTemplateHomeLayout`, HU-218.5). **Falta el framework de variantes de *disposición* por superficie** (≥2 opciones seleccionables de navbar y home) y su resolución por plantilla activa. Depende de HU-121.
+**Estado:** 🔶 **Parcial (POC)** — **hecho:** framework de variantes por superficie en el registro `templates` (`Template.variants`, catálogo `SURFACE_VARIANTS`, resolver `getTemplateVariant` con fallback + validación, 5 tests) y **1 superficie cableada end-to-end**: densidad de la grilla de tienda (`product_grid`: comfortable 3-col / compact 4-col), resuelta por la plantilla activa en `/shop` (`esencial` → compacta). **Pendiente:** más superficies (navbar, PDP, carrito), selección de variante **independiente del template** (campo por tenant) y el selector dedicado en Apariencia. Depende de HU-121.
 
 | # | Escenario | Resultado esperado |
 |---|-----------|-------------------|

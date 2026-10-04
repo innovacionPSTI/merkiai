@@ -12,6 +12,8 @@ import {
   listTemplates,
   listBlockTypes,
   resolveBlockFields,
+  getTemplateVariant,
+  SURFACE_VARIANTS,
 } from '../schema'
 
 // Los 13 section_type permitidos por el CHECK de page_sections.
@@ -117,5 +119,31 @@ describe('templates', () => {
   it('TEMPLATE_HOME_LAYOUTS se deriva de templates', () => {
     expect(TEMPLATE_HOME_LAYOUTS.esencial).toEqual(templates.esencial.layout)
     expect(getTemplateHomeLayout('esencial')).toEqual(templates.esencial.layout)
+  })
+})
+
+describe('variantes de disposición por superficie (HU-122a)', () => {
+  it('default cuando el template no declara variante', () => {
+    expect(getTemplateVariant('default', 'product_grid')).toBe('comfortable')
+  })
+
+  it('usa la variante declarada por el template', () => {
+    expect(getTemplateVariant('esencial', 'product_grid')).toBe('compact')
+  })
+
+  it('template desconocido → default de la superficie', () => {
+    expect(getTemplateVariant('inexistente', 'product_grid')).toBe(SURFACE_VARIANTS.product_grid.default)
+  })
+
+  it('superficie desconocida → cadena vacía (sin crash)', () => {
+    expect(getTemplateVariant('default', 'no_existe')).toBe('')
+  })
+
+  it('toda variante declarada existe en el catálogo', () => {
+    for (const t of listTemplates()) {
+      for (const [surface, value] of Object.entries(t.variants ?? {})) {
+        expect(SURFACE_VARIANTS[surface]?.options.some((o) => o.value === value)).toBe(true)
+      }
+    }
   })
 })

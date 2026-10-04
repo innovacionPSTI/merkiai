@@ -18,6 +18,14 @@ const SORTS = [
 interface Props {
   products: ProductWithVariants[]
   searchParams: Record<string, string | string[] | undefined>
+  /** Densidad de grilla por plantilla activa (HU-122a): 'comfortable' | 'compact'. */
+  gridVariant?: string
+}
+
+/** Clases de la grilla de productos según la variante de disposición. */
+const GRID_CLASSES: Record<string, string> = {
+  comfortable: 'grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-6',
+  compact: 'grid grid-cols-2 sm:grid-cols-3 xl:grid-cols-4 gap-4',
 }
 
 // ── Sidebar filter panel ──────────────────────────────────────────────────────
@@ -144,7 +152,7 @@ function FilterRow({ label, active, onClick }: { label: string; active: boolean;
 
 // ── Main component ────────────────────────────────────────────────────────────
 
-export default function ShopClient({ products, searchParams }: Props) {
+export default function ShopClient({ products, searchParams, gridVariant = 'comfortable' }: Props) {
   const [selectedCategory, setSelectedCategory] = useState<number | null>(
     searchParams.categoria ? Number(searchParams.categoria) : null
   )
@@ -304,7 +312,7 @@ export default function ShopClient({ products, searchParams }: Props) {
                 </button>
               </div>
             ) : (
-              <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-6">
+              <div className={GRID_CLASSES[gridVariant] ?? GRID_CLASSES.comfortable}>
                 {filtered.map((product) => (
                   <ProductCard key={product.id} product={product} fmt={fmt} addItem={addItem} />
                 ))}

@@ -344,6 +344,12 @@ export interface Template {
   layout: readonly string[]
   /** Defaults por tipo de bloque: `{ [section_type]: { [campo]: valor } }`. */
   blockDefaults?: Record<string, Record<string, unknown>>
+  /**
+   * Variantes de disposición por superficie (HU-122a): `{ [surface]: variant }`.
+   * p. ej. `{ product_grid: 'compact' }`. Lo no declarado cae al default de
+   * `SURFACE_VARIANTS`. Es solo presentación; no cambia datos ni lógica.
+   */
+  variants?: Record<string, string>
 }
 
 export const templates: Record<string, Template> = {
@@ -361,7 +367,43 @@ export const templates: Record<string, Template> = {
     blockDefaults: {
       featured_products: { title: 'Lo nuevo' },
     },
+    variants: { product_grid: 'compact' },
   },
+}
+
+// ── Variantes de disposición por superficie (HU-122a) ─────────────────────────
+export interface SurfaceVariant {
+  /** Clave de superficie, p. ej. 'product_grid'. */
+  surface: string
+  label: string
+  options: { value: string; label: string }[]
+  default: string
+}
+
+/**
+ * Catálogo de superficies con variantes de disposición seleccionables por
+ * plantilla. Añadir una superficie = registrarla aquí + que el componente la
+ * resuelva con `getTemplateVariant`. Es la fuente del selector del admin.
+ */
+export const SURFACE_VARIANTS: Record<string, SurfaceVariant> = {
+  product_grid: {
+    surface: 'product_grid',
+    label: 'Densidad de la grilla de tienda',
+    options: [
+      { value: 'comfortable', label: 'Cómoda (3 columnas)' },
+      { value: 'compact', label: 'Compacta (4 columnas)' },
+    ],
+    default: 'comfortable',
+  },
+}
+
+/** Variante de disposición resuelta para una superficie (fallback al default). */
+export function getTemplateVariant(template: string | undefined, surface: string): string {
+  const def = SURFACE_VARIANTS[surface]?.default ?? ''
+  const chosen = (template ? templates[template]?.variants?.[surface] : undefined) ?? def
+  // Valida que la variante exista en el catálogo; si no, cae al default.
+  const valid = SURFACE_VARIANTS[surface]?.options.some((o) => o.value === chosen)
+  return valid ? chosen : def
 }
 
 /** Presets de layout por template (derivado de `templates`; compat). */
