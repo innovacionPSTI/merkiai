@@ -1,6 +1,7 @@
 import { getBlogPostBySlug, getBlogPostBySlugAny, getBlogPosts } from '@merkiai/database'
 import { Icon } from '@merkiai/ui'
 import { getStoreContext } from '@/lib/store-context'
+import { getMachineDb } from '@/lib/machine-db'
 import { notFound } from 'next/navigation'
 import { cookies } from 'next/headers'
 import Link from 'next/link'
@@ -23,7 +24,9 @@ async function isDraftMode(): Promise<boolean> {
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { slug } = await params
-  const post = await getBlogPostBySlug(slug).catch(() => null)
+  const ctx = await getStoreContext().catch(() => null)
+  if (!ctx) return {}
+  const post = await getBlogPostBySlug(slug, ctx.db).catch(() => null)
   if (!post) return {}
 
   const title       = post.seo_title ?? post.title
@@ -49,31 +52,31 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   }
 }
 
-export async function generateStaticParams() {
-  const posts = await getBlogPosts().catch(() => [])
-  return posts.map((p) => ({ slug: p.slug }))
-}
-
-export const revalidate = 60
+// Multi-tenant: la tienda se resuelve por Host en cada petición. No se
+// pre-generan rutas estáticas (serían ambiguas entre tenants) ni se cachea por
+// path (evita cache cruzado entre tenants con el mismo slug).
+export const dynamic = 'force-dynamic'
 
 export default async function BlogPostPage({ params, searchParams }: Props) {
   const { slug } = await params
   const { draft } = await searchParams
   const draftMode = (await isDraftMode()) || draft === '1'
 
-  // Draft mode: load any post regardless of published status
-  const [rawPost, storeConfig] = await Promise.all([
-    (draftMode
-      ? getBlogPostBySlugAny(slug)
-      : getBlogPostBySlug(slug)
-    ).catch(() => null),
-    getStoreContext().then((c) => c.config).catch(() => null),
-  ])
+  const ctx = await getStoreContext().catch(() => null)
+  if (!ctx) notFound()
 
-  const post = rawPost
+  // Draft: cliente-máquina del tenant (puede leer no-publicados). Publicado:
+  // cliente tenant-scoped RLS (anon) del contexto. Ambos acotados al tenant.
+  const post = await (
+    draftMode
+      ? getBlogPostBySlugAny(slug, getMachineDb(ctx.tenantId))
+      : getBlogPostBySlug(slug, ctx.db)
+  ).catch(() => null)
+
+  const storeConfig = ctx.config
   if (!post) notFound()
 
-  const related = await getBlogPosts({ category: post.category ?? undefined, limit: 3 })
+  const related = await getBlogPosts({ category: post.category ?? undefined, limit: 3 }, ctx.db)
     .then((posts) => posts.filter((p) => p.id !== post.id).slice(0, 2))
     .catch(() => [])
 

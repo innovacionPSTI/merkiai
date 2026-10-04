@@ -1,4 +1,5 @@
 import { getBlogPosts } from '@merkiai/database'
+import { getStoreContext } from '@/lib/store-context'
 import Link from 'next/link'
 import type { Metadata } from 'next'
 
@@ -7,7 +8,8 @@ export const metadata: Metadata = {
   description: 'Novedades, tutoriales y contenido de interés para nuestra comunidad.',
 }
 
-export const revalidate = 60
+// Multi-tenant: la tienda se resuelve por Host; render dinámico (sin cache por path).
+export const dynamic = 'force-dynamic'
 
 const CATEGORIES = ['Novedades', 'Tutoriales', 'Cultura', 'Empresa']
 
@@ -17,7 +19,8 @@ export default async function BlogPage({
   searchParams: Promise<Record<string, string | undefined>>
 }) {
   const { categoria: category } = await searchParams
-  const posts = await getBlogPosts({ category, limit: 20 }).catch(() => [])
+  const ctx = await getStoreContext().catch(() => null)
+  const posts = ctx ? await getBlogPosts({ category, limit: 20 }, ctx.db).catch(() => []) : []
   const featured = posts[0]
   const rest = posts.slice(1)
 

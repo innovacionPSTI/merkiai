@@ -32,8 +32,10 @@ export async function GET(req: NextRequest) {
     path: '/',
   })
 
-  const siteUrl = (process.env.NEXT_PUBLIC_SITE_URL ?? 'http://localhost:3000').replace(/\/$/, '')
-  return NextResponse.redirect(`${siteUrl}/blog/${slug}?draft=1`)
+  // Multi-tenant: redirigir al MISMO host de la petición (el dominio/subdominio
+  // del tenant), no a un NEXT_PUBLIC_SITE_URL fijo — así se conserva el tenant y
+  // la cookie de borrador (host-scoped) aplica en el destino.
+  return NextResponse.redirect(new URL(`/blog/${slug}?draft=1`, req.url))
 }
 
 /**
