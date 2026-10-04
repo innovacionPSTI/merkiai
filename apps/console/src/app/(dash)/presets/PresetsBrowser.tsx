@@ -5,6 +5,9 @@ import { FilterBar, ResourceCard, CardGrid, DataTable, StatusBadge, Chip, EmptyS
 import type { PresetRow } from '@/lib/presets'
 import { deletePreset } from '../../actions'
 
+const INVENTORY_LABEL: Record<string, string> = { single: 'Stock único', multi_location: 'Multi-ubicación' }
+const inv = (m: string) => INVENTORY_LABEL[m] ?? m
+
 function DeleteButton({ keyName }: { keyName: string }) {
   return (
     <form action={deletePreset}>
@@ -52,7 +55,7 @@ export default function PresetsBrowser({ presets }: { presets: PresetRow[] }) {
               badge={<StatusBadge tone={p.active ? 'success' : 'neutral'}>{p.active ? 'activo' : 'inactivo'}</StatusBadge>}
               chips={<><Chip>{p.niche}</Chip><Chip variant="neutral">{p.template}</Chip></>}
               metrics={[
-                { label: 'Inventario', value: p.inventory_model },
+                { label: 'Inventario', value: inv(p.inventory_model) },
                 { label: 'Planes', value: p.available_in_plans.length ? p.available_in_plans.join(', ') : 'todos' },
                 { label: 'Key', value: <code>{p.key}</code> },
               ]}
@@ -71,7 +74,7 @@ export default function PresetsBrowser({ presets }: { presets: PresetRow[] }) {
                 <td style={{ fontWeight: 600 }}>{p.name}</td>
                 <td><Chip>{p.niche}</Chip></td>
                 <td><code>{p.template}</code></td>
-                <td>{p.inventory_model}</td>
+                <td>{inv(p.inventory_model)}</td>
                 <td>{p.available_in_plans.length ? p.available_in_plans.join(', ') : 'todos'}</td>
                 <td><StatusBadge tone={p.active ? 'success' : 'neutral'}>{p.active ? 'activo' : 'inactivo'}</StatusBadge></td>
                 <td><DeleteButton keyName={p.key} /></td>

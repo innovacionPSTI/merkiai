@@ -2,7 +2,7 @@
 
 import { useState } from 'react'
 import { ENTITLEMENTS_CATALOG } from '@merkiai/tenancy'
-import { input, btn, mono } from '@/lib/styles'
+import { input, btn } from '@/lib/styles'
 import type { PlanRow } from '@/lib/plans'
 import { savePlan } from '../../actions'
 
@@ -88,8 +88,8 @@ export default function PlanForm({ plans }: { plans: PlanRow[] }) {
         <button type="submit" style={btn}>{selectedKey ? 'Guardar cambios' : 'Crear plan'}</button>
       </form>
 
-      <p style={{ ...mono, fontSize: 11, color: '#666', marginTop: 8 }}>
-        Las claves de features/límites salen del catálogo canónico (@merkiai/tenancy).
+      <p style={{ fontSize: 12, color: 'var(--ui-muted)', marginTop: 8 }}>
+        Marca las funcionalidades incluidas y define los límites del plan. Dejar un límite en blanco = ilimitado.
       </p>
     </div>
   )

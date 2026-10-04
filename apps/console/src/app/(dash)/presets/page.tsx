@@ -20,7 +20,7 @@ export default async function PresetsPage() {
       </PanelCard>
 
       <PanelCard title="Crear / editar preset">
-        <p style={{ margin: '0 0 12px', color: 'var(--ui-muted)', fontSize: 13 }}>Usa una key existente para sobrescribir. Los campos JSON aceptan objeto/array.</p>
+        <p style={{ margin: '0 0 12px', color: 'var(--ui-muted)', fontSize: 13 }}>Usa una key existente para sobrescribir un preset.</p>
         <PresetForm />
       </PanelCard>
     </>
