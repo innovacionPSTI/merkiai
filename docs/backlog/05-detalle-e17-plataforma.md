@@ -384,7 +384,7 @@
 
 **Estimación:** XL (13+ puntos)
 **Módulo:** gestión de dominios + máquina de estados; integración con CDN/host para certificado + propagación
-**Estado:** 🔲 Pendiente (roadmap) — extiende HU-157
+**Estado:** 🔶 **v1 iniciada** — **núcleo de verificación de propiedad** puro y testeable en `apps/console/src/lib/domain-verification.ts` (`normalizeDomain`, `isValidDomain` [rechaza `*.merkiai.com`], `makeVerifyToken`, `expectedTxtName`/`expectedTxtValue`, `verifyTxt`; 8 tests) + máquina de estados `DomainStatus` (`none|pending|verified|active`). **Pendiente:** persistencia (`tenants.domain_status`/`domain_verify_token` en plataforma), lookup DNS TXT real + endpoint `verify`, **gating** del `PATCH primaryDomain` por estado `verified` (hoy fija el dominio sin verificar), sync de Trusted Domains vía control plane (paso (f) de HU-214), cert/CDN del host, y UI en el admin. Extiende HU-157.
 
 | # | Escenario | Resultado esperado |
 |---|-----------|-------------------|
