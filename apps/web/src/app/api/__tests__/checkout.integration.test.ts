@@ -213,7 +213,7 @@ describe('POST /api/checkout — sin pasarela activa (manual)', () => {
 
     await POST(makeRequest(validBody))
 
-    expect(mockCreateOrder).toHaveBeenCalledWith(expect.objectContaining({ payment_method: 'manual' }))
+    expect(mockCreateOrder).toHaveBeenCalledWith(expect.objectContaining({ payment_method: 'manual' }), expect.anything())
   })
 
   it('NO invoca ninguna pasarela de pago', async () => {
@@ -246,7 +246,7 @@ describe('POST /api/checkout — happy path', () => {
 
     await POST(makeRequest(validBody))
 
-    expect(mockCreateOrder).toHaveBeenCalledWith(expect.objectContaining({ payment_method: 'wompi' }))
+    expect(mockCreateOrder).toHaveBeenCalledWith(expect.objectContaining({ payment_method: 'wompi' }), expect.anything())
     expect(mockGetPaymentGateway).toHaveBeenCalledWith('wompi', expect.objectContaining({ active_provider: 'wompi' }))
   })
 
@@ -255,7 +255,7 @@ describe('POST /api/checkout — happy path', () => {
 
     await POST(makeRequest({ ...validBody, shipping_cost: undefined }))
 
-    expect(mockCreateOrder).toHaveBeenCalledWith(expect.objectContaining({ shipping_cost: 0 }))
+    expect(mockCreateOrder).toHaveBeenCalledWith(expect.objectContaining({ shipping_cost: 0 }), expect.anything())
   })
 
   it('devuelve una URL sandbox de MercadoPago cuando es la pasarela activa', async () => {
@@ -267,7 +267,7 @@ describe('POST /api/checkout — happy path', () => {
 
     expect(res.status).toBe(200)
     expect(data.payment_url).toContain('sandbox.mercadopago')
-    expect(mockCreateOrder).toHaveBeenCalledWith(expect.objectContaining({ payment_method: 'mercadopago' }))
+    expect(mockCreateOrder).toHaveBeenCalledWith(expect.objectContaining({ payment_method: 'mercadopago' }), expect.anything())
   })
 
   it('usa Bold cuando es la pasarela activa (payment_method = bold)', async () => {
@@ -280,7 +280,7 @@ describe('POST /api/checkout — happy path', () => {
     expect(res.status).toBe(200)
     expect(data.payment_url).toBeTruthy()
     expect(mockGetPaymentGateway).toHaveBeenCalledWith('bold', expect.objectContaining({ active_provider: 'bold' }))
-    expect(mockCreateOrder).toHaveBeenCalledWith(expect.objectContaining({ payment_method: 'bold' }))
+    expect(mockCreateOrder).toHaveBeenCalledWith(expect.objectContaining({ payment_method: 'bold' }), expect.anything())
   })
 })
 
@@ -297,7 +297,7 @@ describe('POST /api/checkout — seguridad (no bypass de pasarela)', () => {
 
     // Se usa wompi (activo en el servidor), NO mercadopago (enviado por el cliente)
     expect(mockGetPaymentGateway).toHaveBeenCalledWith('wompi', expect.anything())
-    expect(mockCreateOrder).toHaveBeenCalledWith(expect.objectContaining({ payment_method: 'wompi' }))
+    expect(mockCreateOrder).toHaveBeenCalledWith(expect.objectContaining({ payment_method: 'wompi' }), expect.anything())
   })
 
   it('con active_provider="none" ignora payment_method="wompi" del cliente y crea pedido manual', async () => {
@@ -309,7 +309,7 @@ describe('POST /api/checkout — seguridad (no bypass de pasarela)', () => {
 
     expect(data.manual).toBe(true)
     expect(mockGetPaymentGateway).not.toHaveBeenCalled()
-    expect(mockCreateOrder).toHaveBeenCalledWith(expect.objectContaining({ payment_method: 'manual' }))
+    expect(mockCreateOrder).toHaveBeenCalledWith(expect.objectContaining({ payment_method: 'manual' }), expect.anything())
   })
 })
 
@@ -326,7 +326,8 @@ describe('POST /api/checkout — shipping_rate', () => {
     }))
 
     expect(mockCreateOrder).toHaveBeenCalledWith(
-      expect.objectContaining({ skydropx_rate_id: 'rate-abc123', carrier_name: 'Servientrega' })
+      expect.objectContaining({ skydropx_rate_id: 'rate-abc123', carrier_name: 'Servientrega' }),
+      expect.anything()
     )
   })
 
@@ -336,7 +337,8 @@ describe('POST /api/checkout — shipping_rate', () => {
     await POST(makeRequest({ ...validBody, shipping_rate: null }))
 
     expect(mockCreateOrder).toHaveBeenCalledWith(
-      expect.objectContaining({ skydropx_rate_id: null, carrier_name: null })
+      expect.objectContaining({ skydropx_rate_id: null, carrier_name: null }),
+      expect.anything()
     )
   })
 })

@@ -1,4 +1,4 @@
-import { createServerClient, type Db } from '../client'
+import type { Db } from '../client'
 import type { Order, OrderItem, ShippingAddress } from '../types'
 
 export interface CreateOrderInput {
@@ -20,7 +20,7 @@ export interface CreateOrderInput {
   coupon_code?: string | null
 }
 
-export async function createOrder(input: CreateOrderInput, db: Db = createServerClient()): Promise<Order> {
+export async function createOrder(input: CreateOrderInput, db: Db): Promise<Order> {
   const supabase = db
 
   // Número de orden atómico: RPC con secuencia + prefijo configurable
@@ -47,7 +47,7 @@ export async function createOrder(input: CreateOrderInput, db: Db = createServer
   return data as unknown as Order
 }
 
-export async function getOrdersByCustomer(customerId: string, db: Db = createServerClient()): Promise<Order[]> {
+export async function getOrdersByCustomer(customerId: string, db: Db): Promise<Order[]> {
   const supabase = db
   const { data, error } = await supabase
     .from('orders')
@@ -64,7 +64,7 @@ export async function getOrdersByCustomer(customerId: string, db: Db = createSer
  * Usado desde /account/orders cuando el usuario está autenticado con Stack Auth
  * y sus órdenes históricas se vincularon por email (no por ID de Stack).
  */
-export async function getOrdersByCustomerEmail(email: string, db: Db = createServerClient()): Promise<Order[]> {
+export async function getOrdersByCustomerEmail(email: string, db: Db): Promise<Order[]> {
   const supabase = db
   const { data, error } = await supabase
     .from('orders')
@@ -76,7 +76,7 @@ export async function getOrdersByCustomerEmail(email: string, db: Db = createSer
   return (data ?? []) as unknown as Order[]
 }
 
-export async function getOrderById(id: number, db: Db = createServerClient()) {
+export async function getOrderById(id: number, db: Db) {
   const supabase = db
   const { data, error } = await supabase
     .from('orders')
@@ -91,7 +91,7 @@ export async function getOrderById(id: number, db: Db = createServerClient()) {
 export async function updateOrderStatus(
   id: number,
   status: Order['status'],
-  extra?: Partial<Omit<Order, 'id' | 'created_at'>>, db: Db = createServerClient()
+  extra: Partial<Omit<Order, 'id' | 'created_at'>> = {}, db: Db
 ) {
   const supabase = db
   const { data, error } = await supabase

@@ -1,4 +1,4 @@
-import { createServerClient, type Db } from '../client'
+import type { Db } from '../client'
 import type { Coupon } from '../types'
 
 export type { Coupon }
@@ -17,7 +17,7 @@ export type UpdateCouponInput = Partial<CreateCouponInput>
 
 // ─── Read ─────────────────────────────────────────────────────────────────────
 
-export async function getCoupons(db: Db = createServerClient()): Promise<Coupon[]> {
+export async function getCoupons(db: Db): Promise<Coupon[]> {
   const supabase = db
   const { data, error } = await supabase
     .from('coupons')
@@ -27,7 +27,7 @@ export async function getCoupons(db: Db = createServerClient()): Promise<Coupon[
   return data as Coupon[]
 }
 
-export async function getCouponByCode(code: string, db: Db = createServerClient()): Promise<Coupon | null> {
+export async function getCouponByCode(code: string, db: Db): Promise<Coupon | null> {
   const supabase = db
   const { data, error } = await supabase
     .from('coupons')
@@ -87,7 +87,7 @@ export async function createCoupon(
   return data as Coupon
 }
 
-export async function updateCoupon(id: number, input: UpdateCouponInput, db: Db = createServerClient()): Promise<Coupon> {
+export async function updateCoupon(id: number, input: UpdateCouponInput, db: Db): Promise<Coupon> {
   const supabase = db
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const update: any = { ...input }
@@ -102,14 +102,14 @@ export async function updateCoupon(id: number, input: UpdateCouponInput, db: Db 
   return data as Coupon
 }
 
-export async function deleteCoupon(id: number, db: Db = createServerClient()): Promise<void> {
+export async function deleteCoupon(id: number, db: Db): Promise<void> {
   const supabase = db
   const { error } = await supabase.from('coupons').delete().eq('id', id)
   if (error) throw error
 }
 
 /** Incrementa el contador de usos de un cupón tras un pedido exitoso */
-export async function incrementCouponUsage(code: string, db: Db = createServerClient()): Promise<void> {
+export async function incrementCouponUsage(code: string, db: Db): Promise<void> {
   const supabase = db
   await supabase.rpc('increment_coupon_usage', { coupon_code: code }).throwOnError()
 }

@@ -1,4 +1,4 @@
-import { createServerClient, type Db } from '../client'
+import type { Db } from '../client'
 import type { Category, ProductWithVariants } from '../types'
 
 /**
@@ -9,14 +9,14 @@ import type { Category, ProductWithVariants } from '../types'
  */
 
 export async function getProducts(
-  filters?: {
+  filters: {
     roast?: string
     weight?: string
     brew_method?: string
     featured?: boolean
     category_slug?: string
-  },
-  db: Db = createServerClient(),
+  } = {},
+  db: Db,
 ) {
   const supabase = db
   let query = supabase
@@ -41,7 +41,7 @@ export async function getProducts(
   return data as unknown as ProductWithVariants[]
 }
 
-export async function getProductBySlug(slug: string, db: Db = createServerClient()) {
+export async function getProductBySlug(slug: string, db: Db) {
   const supabase = db
   const { data, error } = await supabase
     .from('products')
@@ -60,7 +60,7 @@ export async function getProductBySlug(slug: string, db: Db = createServerClient
   return data as unknown as ProductWithVariants
 }
 
-export async function getFeaturedProducts(limit = 3, db: Db = createServerClient()) {
+export async function getFeaturedProducts(limit = 3, db: Db) {
   return getProducts({ featured: true }, db)
     .then((products) => products.slice(0, limit))
 }
@@ -79,7 +79,7 @@ export interface BestSellingProduct {
  */
 export async function getBestSellingProducts(
   limit = 4,
-  db: Db = createServerClient(),
+  db: Db,
 ): Promise<BestSellingProduct[]> {
   const supabase = db
 
@@ -161,7 +161,7 @@ export async function getBestSellingProducts(
  * Devuelve todas las categorías activas ordenadas por order_index.
  * Usado en la home para los links de la sección "Tienda".
  */
-export async function getCategories(db: Db = createServerClient()): Promise<Category[]> {
+export async function getCategories(db: Db): Promise<Category[]> {
   const supabase = db
   const { data, error } = await supabase
     .from('categories')

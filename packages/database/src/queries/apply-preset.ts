@@ -22,7 +22,7 @@
  * Corre con service-role (control plane / admin autorizado); `tenant_id` se fija
  * explícitamente en cada escritura porque el service-role no pasa por RLS.
  */
-import { createServerClient, type Db } from '../client'
+import type { Db } from '../client'
 import { seedHomeSections, type StarterSection } from './seed'
 
 export interface SampleCategory {
@@ -107,7 +107,7 @@ export async function applyPresetToStore(
   tenantId: string,
   preset: PresetPayload,
   opts: ApplyPresetOptions = {},
-  db: Db = createServerClient(),
+  db: Db,
 ): Promise<ApplyPresetResult> {
   if (!tenantId) throw new Error('[apply-preset] tenantId requerido')
   // eslint-disable-next-line @typescript-eslint/no-explicit-any

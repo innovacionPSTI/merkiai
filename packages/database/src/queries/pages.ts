@@ -1,4 +1,4 @@
-import { createServerClient, type Db } from '../client'
+import type { Db } from '../client'
 import type { Page, PageItem } from '../types'
 
 export type { Page, PageItem }
@@ -11,7 +11,7 @@ export type UpsertPageItemInput = Omit<PageItem, 'id' | 'created_at'>
 export type CreatePageItemInput = UpsertPageItemInput
 
 /** Devuelve todas las páginas ordenadas por order_index. */
-export async function getPages(db: Db = createServerClient()): Promise<Page[]> {
+export async function getPages(db: Db): Promise<Page[]> {
   const supabase = db
   const { data, error } = await supabase
     .from('pages')
@@ -22,7 +22,7 @@ export async function getPages(db: Db = createServerClient()): Promise<Page[]> {
 }
 
 /** Devuelve las páginas visibles en el footer. */
-export async function getFooterPages(db: Db = createServerClient()): Promise<Page[]> {
+export async function getFooterPages(db: Db): Promise<Page[]> {
   const supabase = db
   const { data, error } = await supabase
     .from('pages')
@@ -35,7 +35,7 @@ export async function getFooterPages(db: Db = createServerClient()): Promise<Pag
 }
 
 /** Devuelve una página por su key. */
-export async function getPage(key: string, db: Db = createServerClient()): Promise<Page | null> {
+export async function getPage(key: string, db: Db): Promise<Page | null> {
   const supabase = db
   const { data, error } = await supabase
     .from('pages')
@@ -47,7 +47,7 @@ export async function getPage(key: string, db: Db = createServerClient()): Promi
 }
 
 /** Actualiza campos de una página. */
-export async function updatePage(key: string, input: UpdatePageInput, db: Db = createServerClient()): Promise<Page> {
+export async function updatePage(key: string, input: UpdatePageInput, db: Db): Promise<Page> {
   const supabase = db
   const { data, error } = await supabase
     .from('pages')
@@ -63,7 +63,7 @@ export async function updatePage(key: string, input: UpdatePageInput, db: Db = c
 export async function getPageItems(
   pageKey: string,
   itemType?: string,
-  onlyEnabled = true, db: Db = createServerClient()
+  onlyEnabled = true, db: Db
 ): Promise<PageItem[]> {
   const supabase = db
   let query = supabase
@@ -81,7 +81,7 @@ export async function getPageItems(
 }
 
 /** Crea un ítem en una página. */
-export async function createPageItem(input: CreatePageItemInput, db: Db = createServerClient()): Promise<PageItem> {
+export async function createPageItem(input: CreatePageItemInput, db: Db): Promise<PageItem> {
   const supabase = db
   const { data, error } = await supabase
     .from('page_items')
@@ -95,7 +95,7 @@ export async function createPageItem(input: CreatePageItemInput, db: Db = create
 /** Actualiza un ítem de página. */
 export async function updatePageItem(
   id: number,
-  input: Partial<UpsertPageItemInput>, db: Db = createServerClient()
+  input: Partial<UpsertPageItemInput>, db: Db
 ): Promise<PageItem> {
   const supabase = db
   const { data, error } = await supabase
@@ -109,7 +109,7 @@ export async function updatePageItem(
 }
 
 /** Elimina un ítem de página. */
-export async function deletePageItem(id: number, db: Db = createServerClient()): Promise<void> {
+export async function deletePageItem(id: number, db: Db): Promise<void> {
   const supabase = db
   const { error } = await supabase.from('page_items').delete().eq('id', id)
   if (error) throw error

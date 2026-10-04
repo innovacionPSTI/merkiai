@@ -4,6 +4,8 @@
  */
 import { NextRequest, NextResponse } from 'next/server'
 import { getCouponByCode, validateCoupon } from '@merkiai/database'
+import { resolveTenant } from '@/lib/tenant-context'
+import { getMachineDb } from '@/lib/machine-db'
 
 export async function POST(req: NextRequest) {
   try {
@@ -13,7 +15,9 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'Se requiere code y subtotal' }, { status: 400 })
     }
 
-    const coupon = await getCouponByCode(code.trim())
+    // Tenant-scoped: el cupón pertenece al tenant resuelto por Host (no cross-tenant).
+    const { tenantId } = await resolveTenant()
+    const coupon = await getCouponByCode(code.trim(), getMachineDb(tenantId))
     if (!coupon) {
       return NextResponse.json({ error: 'Cupón no encontrado' }, { status: 404 })
     }

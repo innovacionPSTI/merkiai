@@ -77,7 +77,7 @@ describe('getThemes', () => {
     }
     mockFrom.mockReturnValue(c)
 
-    const result = await getThemes()
+    const result = await getThemes({ from: mockFrom } as never)
     expect(result).toHaveLength(1)
     expect(result[0].name).toBe('Merkiai')
   })
@@ -89,7 +89,7 @@ describe('getThemes', () => {
     }
     mockFrom.mockReturnValue(c)
 
-    const result = await getThemes()
+    const result = await getThemes({ from: mockFrom } as never)
     expect(result).toEqual([])
   })
 
@@ -100,7 +100,7 @@ describe('getThemes', () => {
     }
     mockFrom.mockReturnValue(c)
 
-    await expect(getThemes()).rejects.toThrow('DB error')
+    await expect(getThemes({ from: mockFrom } as never)).rejects.toThrow('DB error')
   })
 })
 
@@ -115,7 +115,7 @@ describe('getActiveTheme', () => {
     }
     mockFrom.mockReturnValue(c)
 
-    const result = await getActiveTheme()
+    const result = await getActiveTheme({ from: mockFrom } as never)
     expect(result).not.toBeNull()
     expect(result?.is_active).toBe(true)
   })
@@ -128,7 +128,7 @@ describe('getActiveTheme', () => {
     }
     mockFrom.mockReturnValue(c)
 
-    const result = await getActiveTheme()
+    const result = await getActiveTheme({ from: mockFrom } as never)
     expect(result).toBeNull()
   })
 })
@@ -158,7 +158,7 @@ describe('createTheme', () => {
       color_text: '#333333',
       font_display: 'playfair',
       font_body: 'inter',
-    })
+    }, { from: mockFrom } as never)
 
     // El insert fue llamado con is_active: false, sin importar lo que se pasó
     expect(insertMock).toHaveBeenCalledWith(expect.objectContaining({ is_active: false }))
@@ -178,7 +178,7 @@ describe('createTheme', () => {
       color_primary: '#000', color_dark: '#000', color_cream: '#FFF',
       color_cream_warm: '#FFF', color_yellow: '#FF0', color_yellow_pale: '#FF0',
       color_text: '#000', font_display: 'cormorant', font_body: 'dm-sans',
-    })).rejects.toThrow('insert failed')
+    }, { from: mockFrom } as never)).rejects.toThrow('insert failed')
   })
 })
 
@@ -195,7 +195,7 @@ describe('updateTheme', () => {
     }
     mockFrom.mockReturnValue(c)
 
-    const result = await updateTheme(1, { name: 'Renombrado' })
+    const result = await updateTheme(1, { name: 'Renombrado' }, { from: mockFrom } as never)
     expect(result.name).toBe('Renombrado')
   })
 })
@@ -214,7 +214,7 @@ describe('setActiveTheme', () => {
       .mockReturnValueOnce(deactivateChain)  // primera llamada: desactivar activo
       .mockReturnValueOnce(activateChain)    // segunda llamada: activar el elegido
 
-    await setActiveTheme(2)
+    await setActiveTheme(2, { from: mockFrom } as never)
 
     expect(mockFrom).toHaveBeenCalledTimes(2)
     expect(deactivateChain.update).toHaveBeenCalledWith({ is_active: false })
@@ -230,7 +230,7 @@ describe('setActiveTheme', () => {
       .mockReturnValueOnce(deactivateChain)
       .mockReturnValueOnce(activateChain)
 
-    await expect(setActiveTheme(99)).rejects.toThrow('activate failed')
+    await expect(setActiveTheme(99, { from: mockFrom } as never)).rejects.toThrow('activate failed')
   })
 })
 
@@ -245,7 +245,7 @@ describe('deleteTheme', () => {
     }
     mockFrom.mockReturnValue(selectChain)
 
-    await expect(deleteTheme(1)).rejects.toThrow('No se puede eliminar el tema activo')
+    await expect(deleteTheme(1, { from: mockFrom } as never)).rejects.toThrow('No se puede eliminar el tema activo')
   })
 
   it('lanza error si el tema es el predeterminado', async () => {
@@ -256,7 +256,7 @@ describe('deleteTheme', () => {
     }
     mockFrom.mockReturnValue(selectChain)
 
-    await expect(deleteTheme(1)).rejects.toThrow('No se puede eliminar el tema por defecto')
+    await expect(deleteTheme(1, { from: mockFrom } as never)).rejects.toThrow('No se puede eliminar el tema por defecto')
   })
 
   it('lanza error si el tema no existe', async () => {
@@ -267,7 +267,7 @@ describe('deleteTheme', () => {
     }
     mockFrom.mockReturnValue(selectChain)
 
-    await expect(deleteTheme(999)).rejects.toThrow('Tema no encontrado')
+    await expect(deleteTheme(999, { from: mockFrom } as never)).rejects.toThrow('Tema no encontrado')
   })
 
   it('elimina el tema si no es activo ni predeterminado', async () => {
@@ -284,7 +284,7 @@ describe('deleteTheme', () => {
       .mockReturnValueOnce(selectChain)
       .mockReturnValueOnce(deleteChain)
 
-    await expect(deleteTheme(2)).resolves.toBeUndefined()
+    await expect(deleteTheme(2, { from: mockFrom } as never)).resolves.toBeUndefined()
     expect(deleteChain.delete).toHaveBeenCalled()
   })
 })

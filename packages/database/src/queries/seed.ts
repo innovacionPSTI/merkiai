@@ -19,7 +19,7 @@
  * que exista sesión del dueño. Como el service-role NO pasa por RLS, todas las
  * escrituras y lecturas fijan `tenant_id` explícitamente.
  */
-import { createServerClient, type Db } from '../client'
+import type { Db } from '../client'
 
 /** Ítem de arranque de una sección (hero slide, card, etc.). */
 export interface StarterSectionItem {
@@ -90,7 +90,7 @@ export interface SeedTenantConfigResult {
 export async function seedTenantConfig(
   tenantId: string,
   input: SeedTenantConfigInput = {},
-  db: Db = createServerClient(),
+  db: Db,
 ): Promise<SeedTenantConfigResult> {
   if (!tenantId) throw new Error('[seed] tenantId requerido')
   const supabase = db

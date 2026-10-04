@@ -97,7 +97,7 @@ describe('seedTenantConfig (HU-207)', () => {
   })
 
   it('lanza sin tenantId', async () => {
-    await expect(seedTenantConfig('')).rejects.toThrow(/tenantId/)
+    await expect(seedTenantConfig('', {}, {} as never)).rejects.toThrow(/tenantId/)
   })
 })
 

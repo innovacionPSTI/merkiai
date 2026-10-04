@@ -41,7 +41,7 @@ beforeEach(() => jest.clearAllMocks())
 describe('replaceCart', () => {
   it('deduplica por variant_id sumando cantidades antes del upsert', async () => {
     const { upsert } = setupMock()
-    await replaceCart('cust-1', [row(7, 1), row(7, 2), row(9, 1)])
+    await replaceCart('cust-1', [row(7, 1), row(7, 2), row(9, 1)], mockCreateServerClient())
 
     expect(upsert).toHaveBeenCalledTimes(1)
     const [rows, opts] = upsert.mock.calls[0]
@@ -53,14 +53,14 @@ describe('replaceCart', () => {
 
   it('borra el carrito actual antes de insertar', async () => {
     const { from, deleteEq } = setupMock()
-    await replaceCart('cust-1', [row(1, 1)])
+    await replaceCart('cust-1', [row(1, 1)], mockCreateServerClient())
     expect(from).toHaveBeenCalledWith('cart_items')
     expect(deleteEq).toHaveBeenCalledWith('customer_id', 'cust-1')
   })
 
   it('con carrito vacío borra pero no hace upsert', async () => {
     const { upsert, deleteEq } = setupMock()
-    await replaceCart('cust-1', [])
+    await replaceCart('cust-1', [], mockCreateServerClient())
     expect(deleteEq).toHaveBeenCalled()
     expect(upsert).not.toHaveBeenCalled()
   })
@@ -71,6 +71,6 @@ describe('replaceCart', () => {
     mockCreateServerClient.mockReturnValue({
       from: jest.fn(() => ({ delete: jest.fn(() => ({ eq: deleteEq })), upsert })),
     } as never)
-    await expect(replaceCart('cust-1', [row(1, 1)])).rejects.toThrow('upsert failed')
+    await expect(replaceCart('cust-1', [row(1, 1)], mockCreateServerClient())).rejects.toThrow('upsert failed')
   })
 })

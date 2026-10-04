@@ -76,7 +76,7 @@ describe('createOrder', () => {
     const expectedOrder = buildOrderMock({ order_number: 'ORD-0042' })
     const { rpcMock, insertMock } = setupMock(expectedOrder)
 
-    const order = await createOrder(baseInput)
+    const order = await createOrder(baseInput, mockCreateServerClient())
     expect(rpcMock).toHaveBeenCalledWith('generate_order_number')
     // El número devuelto por el RPC se usa como order_number del insert
     expect(insertMock).toHaveBeenCalledWith(
@@ -88,12 +88,12 @@ describe('createOrder', () => {
   it('lanza error si el RPC no devuelve número', async () => {
     const rpcMock = jest.fn().mockResolvedValue({ data: null, error: new Error('seq failed') })
     mockCreateServerClient.mockReturnValue({ rpc: rpcMock, from: jest.fn() } as never)
-    await expect(createOrder(baseInput)).rejects.toThrow('seq failed')
+    await expect(createOrder(baseInput, mockCreateServerClient())).rejects.toThrow('seq failed')
   })
 
   it('asigna status "pending" y payment_status "pending" por defecto', async () => {
     setupMock(buildOrderMock())
-    const order = await createOrder(baseInput)
+    const order = await createOrder(baseInput, mockCreateServerClient())
     expect(order.status).toBe('pending')
     expect(order.payment_status).toBe('pending')
   })
@@ -102,14 +102,14 @@ describe('createOrder', () => {
     const inputSinDescuento = { ...baseInput }
     delete (inputSinDescuento as CreateOrderInput & { discount?: number }).discount
     setupMock(buildOrderMock({ discount: 0 }))
-    const order = await createOrder(inputSinDescuento)
+    const order = await createOrder(inputSinDescuento, mockCreateServerClient())
     expect(order.discount).toBe(0)
   })
 
   it('aplica el descuento si se proporciona', async () => {
     const inputConDescuento = { ...baseInput, discount: 5000, total: 93000 }
     setupMock(buildOrderMock({ discount: 5000, total: 93000 }))
-    const order = await createOrder(inputConDescuento)
+    const order = await createOrder(inputConDescuento, mockCreateServerClient())
     expect(order.discount).toBe(5000)
   })
 
@@ -126,7 +126,7 @@ describe('createOrder', () => {
       })),
     }
     mockCreateServerClient.mockReturnValue(supabase as never)
-    await expect(createOrder(baseInput)).rejects.toThrow('Insert failed')
+    await expect(createOrder(baseInput, mockCreateServerClient())).rejects.toThrow('Insert failed')
   })
 })
 
@@ -148,7 +148,7 @@ describe('updateOrderStatus', () => {
     }
     mockCreateServerClient.mockReturnValue(mockSupabase as never)
 
-    const order = await updateOrderStatus(1, 'shipped')
+    const order = await updateOrderStatus(1, 'shipped', undefined, mockCreateServerClient())
     expect(order.status).toBe('shipped')
   })
 
@@ -173,7 +173,7 @@ describe('updateOrderStatus', () => {
     await updateOrderStatus(1, 'shipped', {
       tracking_number: 'TRK123456',
       label_url: 'https://cdn.skydropx.com/label.pdf',
-    } as never)
+    } as never, mockCreateServerClient())
 
     expect(updateMock).toHaveBeenCalledWith(
       expect.objectContaining({
@@ -201,7 +201,7 @@ describe('updateOrderStatus', () => {
     }
     mockCreateServerClient.mockReturnValue(mockSupabase as never)
 
-    await expect(updateOrderStatus(9999, 'shipped')).rejects.toMatchObject({
+    await expect(updateOrderStatus(9999, 'shipped', undefined, mockCreateServerClient())).rejects.toMatchObject({
       code: 'PGRST116',
     })
   })
@@ -226,7 +226,7 @@ describe('getOrdersByCustomer', () => {
     }
     mockCreateServerClient.mockReturnValue(mockSupabase as never)
 
-    const result = await getOrdersByCustomer('user-abc')
+    const result = await getOrdersByCustomer('user-abc', mockCreateServerClient())
     expect(result).toHaveLength(2)
     expect(result[0].order_number).toBe('ORD-0002')
     expect(orderMock).toHaveBeenCalledWith('created_at', { ascending: false })
@@ -244,7 +244,7 @@ describe('getOrdersByCustomer', () => {
     }
     mockCreateServerClient.mockReturnValue(mockSupabase as never)
 
-    const result = await getOrdersByCustomer('user-sin-pedidos')
+    const result = await getOrdersByCustomer('user-sin-pedidos', mockCreateServerClient())
     expect(result).toHaveLength(0)
   })
 })
@@ -266,7 +266,7 @@ describe('getOrdersByCustomerEmail', () => {
     }
     mockCreateServerClient.mockReturnValue(mockSupabase as never)
 
-    const result = await getOrdersByCustomerEmail('Carlos@Example.com')
+    const result = await getOrdersByCustomerEmail('Carlos@Example.com', mockCreateServerClient())
 
     // Email normalizado a minúsculas (los pedidos históricos se vinculan por email)
     expect(eqMock).toHaveBeenCalledWith('customer_email', 'carlos@example.com')
@@ -287,7 +287,7 @@ describe('getOrdersByCustomerEmail', () => {
     }
     mockCreateServerClient.mockReturnValue(mockSupabase as never)
 
-    expect(await getOrdersByCustomerEmail('nadie@example.com')).toHaveLength(0)
+    expect(await getOrdersByCustomerEmail('nadie@example.com', mockCreateServerClient())).toHaveLength(0)
   })
 })
 
@@ -307,7 +307,7 @@ describe('getOrderById', () => {
     }
     mockCreateServerClient.mockReturnValue(mockSupabase as never)
 
-    const order = await getOrderById(5)
+    const order = await getOrderById(5, mockCreateServerClient())
     expect(order.id).toBe(5)
     expect(order.order_number).toBe('ORD-0005')
   })
@@ -327,6 +327,6 @@ describe('getOrderById', () => {
     }
     mockCreateServerClient.mockReturnValue(mockSupabase as never)
 
-    await expect(getOrderById(9999)).rejects.toMatchObject({ code: 'PGRST116' })
+    await expect(getOrderById(9999, mockCreateServerClient())).rejects.toMatchObject({ code: 'PGRST116' })
   })
 })

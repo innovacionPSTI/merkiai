@@ -57,7 +57,7 @@ describe('getProducts', () => {
     const chain = buildChain({ data: [mockProduct], error: null })
     mockCreateServerClient.mockReturnValue({ from: jest.fn(() => chain) } as never)
 
-    const products = await getProducts()
+    const products = await getProducts(undefined, mockCreateServerClient())
     expect(products).toHaveLength(1)
     expect(products[0].slug).toBe('cafe-huila')
   })
@@ -66,7 +66,7 @@ describe('getProducts', () => {
     const chain = buildChain({ data: [mockProduct], error: null })
     mockCreateServerClient.mockReturnValue({ from: jest.fn(() => chain) } as never)
 
-    await getProducts({ featured: true })
+    await getProducts({ featured: true }, mockCreateServerClient())
     expect(chain.eq).toHaveBeenCalledWith('featured', true)
   })
 
@@ -74,7 +74,7 @@ describe('getProducts', () => {
     const chain = buildChain({ data: null, error: new Error('DB error') })
     mockCreateServerClient.mockReturnValue({ from: jest.fn(() => chain) } as never)
 
-    await expect(getProducts()).rejects.toThrow('DB error')
+    await expect(getProducts(undefined, mockCreateServerClient())).rejects.toThrow('DB error')
   })
 })
 
@@ -86,7 +86,7 @@ describe('getProductBySlug', () => {
     const chain = buildChain({ data: mockProduct, error: null })
     mockCreateServerClient.mockReturnValue({ from: jest.fn(() => chain) } as never)
 
-    const product = await getProductBySlug('cafe-huila')
+    const product = await getProductBySlug('cafe-huila', mockCreateServerClient())
     expect(product.slug).toBe('cafe-huila')
   })
 
@@ -95,7 +95,7 @@ describe('getProductBySlug', () => {
     const chain = buildChain({ data: null, error: notFoundError })
     mockCreateServerClient.mockReturnValue({ from: jest.fn(() => chain) } as never)
 
-    await expect(getProductBySlug('inexistente')).rejects.toMatchObject({ code: 'PGRST116' })
+    await expect(getProductBySlug('inexistente', mockCreateServerClient())).rejects.toMatchObject({ code: 'PGRST116' })
   })
 })
 
@@ -114,7 +114,7 @@ describe('getFeaturedProducts', () => {
     const chain = buildChain({ data: fiveProducts, error: null })
     mockCreateServerClient.mockReturnValue({ from: jest.fn(() => chain) } as never)
 
-    const products = await getFeaturedProducts(3)
+    const products = await getFeaturedProducts(3, mockCreateServerClient())
     expect(products).toHaveLength(3)
   })
 
@@ -126,7 +126,7 @@ describe('getFeaturedProducts', () => {
     const chain = buildChain({ data: tenProducts, error: null })
     mockCreateServerClient.mockReturnValue({ from: jest.fn(() => chain) } as never)
 
-    const products = await getFeaturedProducts()
+    const products = await getFeaturedProducts(undefined, mockCreateServerClient())
     expect(products).toHaveLength(3)
   })
 })

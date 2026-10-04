@@ -10,7 +10,7 @@
  * cargando en paralelo desde sus propios módulos.
  */
 
-import { createServerClient, type Db } from '../client'
+import type { Db } from '../client'
 import { getFeaturedProducts, getBestSellingProducts, getCategories } from './products'
 import { getBlogPosts } from './blog'
 import type { PageSection, SectionItem } from '../types'
@@ -32,7 +32,7 @@ export interface WebHomeData {
  * page_sections + section_items con page_key = 'home'.
  * El resto de queries corre en paralelo — fallo individual no rompe el render.
  */
-export async function getWebHomeData(db: Db = createServerClient()): Promise<WebHomeData> {
+export async function getWebHomeData(db: Db): Promise<WebHomeData> {
   const supabase = db
 
   async function fetchHomeSections(): Promise<HomeSection[]> {

@@ -247,7 +247,7 @@ export async function POST(req: NextRequest) {
         payment_method: 'manual',
         skydropx_rate_id,
         carrier_name,
-      })
+      }, getMachineDb(tenantId))
       await autoSaveAddress()
       return NextResponse.json({
         order_number: order.order_number,
@@ -284,7 +284,7 @@ export async function POST(req: NextRequest) {
         customer_name: name, customer_email: email, customer_phone: phone ?? null,
         shipping_addr: address, items, subtotal, shipping_cost: shipping_cost ?? 0, total,
         payment_method: 'tucompra', skydropx_rate_id, carrier_name,
-      })
+      }, getMachineDb(tenantId))
       await autoSaveAddress()
 
       const gw = new TuCompraGateway({
@@ -416,7 +416,7 @@ export async function POST(req: NextRequest) {
       payment_method: activeProvider,
       skydropx_rate_id,
       carrier_name,
-    })
+    }, getMachineDb(tenantId))
 
     await autoSaveAddress()
 

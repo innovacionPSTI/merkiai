@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { stackServerApp } from '@/stack'
 import { getShippingProfile, upsertShippingProfile } from '@merkiai/database'
+import { resolveTenant } from '@/lib/tenant-context'
+import { getMachineDb } from '@/lib/machine-db'
 
 export async function GET() {
   let user = null
@@ -9,7 +11,8 @@ export async function GET() {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
   }
 
-  const profile = await getShippingProfile(user.primaryEmail).catch(() => null)
+  const { tenantId } = await resolveTenant()
+  const profile = await getShippingProfile(user.primaryEmail, getMachineDb(tenantId)).catch(() => null)
   return NextResponse.json(profile ?? null)
 }
 
@@ -21,6 +24,7 @@ export async function PUT(request: NextRequest) {
   }
 
   const body = await request.json()
+  const { tenantId } = await resolveTenant()
   const profile = await upsertShippingProfile({
     email: user.primaryEmail,
     first_name: body.first_name ?? null,
@@ -30,7 +34,7 @@ export async function PUT(request: NextRequest) {
     city: body.city ?? null,
     department: body.department ?? null,
     postal_code: body.postal_code ?? null,
-  })
+  }, getMachineDb(tenantId))
 
   return NextResponse.json(profile)
 }

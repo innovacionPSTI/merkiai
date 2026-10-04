@@ -1,7 +1,7 @@
 /**
  * Unit tests — packages/database/src/queries/home.ts
  *
- * Verifica que getWebHomeData() consolida las queries paralelas
+ * Verifica que getWebHomeData(mockCreateServerClient()) consolida las queries paralelas
  * y devuelve el shape correcto, con fail-open por query.
  *
  * Tras migración 19 (CMS unificado), el home usa page_sections +
@@ -72,9 +72,9 @@ beforeEach(() => {
 // ─────────────────────────────────────────────
 // Shape y datos
 // ─────────────────────────────────────────────
-describe('getWebHomeData()', () => {
+describe('getWebHomeData(mockCreateServerClient())', () => {
   it('devuelve las 5 propiedades esperadas', async () => {
-    const data = await getWebHomeData()
+    const data = await getWebHomeData(mockCreateServerClient())
     expect(data).toHaveProperty('homeSections')
     expect(data).toHaveProperty('featuredProducts')
     expect(data).toHaveProperty('blogPosts')
@@ -83,7 +83,7 @@ describe('getWebHomeData()', () => {
   })
 
   it('las secciones incluyen sus items anidados', async () => {
-    const data = await getWebHomeData()
+    const data = await getWebHomeData(mockCreateServerClient())
     expect(data.homeSections).toHaveLength(1)
     expect(data.homeSections[0].section_type).toBe('hero')
     expect(data.homeSections[0].items).toHaveLength(1)
@@ -91,7 +91,7 @@ describe('getWebHomeData()', () => {
   })
 
   it('datos dinámicos corresponden a los mocks', async () => {
-    const data = await getWebHomeData()
+    const data = await getWebHomeData(mockCreateServerClient())
     expect(data.featuredProducts).toEqual([fakeProduct])
     expect(data.blogPosts).toEqual([fakePost])
     expect(data.bestSellers).toEqual([fakeBestSeller])
@@ -100,7 +100,7 @@ describe('getWebHomeData()', () => {
 
   it('sección sin items devuelve items = []', async () => {
     mockCreateServerClient.mockReturnValue(makeSupabaseMock([fakeSection], []) as any)
-    const data = await getWebHomeData()
+    const data = await getWebHomeData(mockCreateServerClient())
     expect(data.homeSections[0].items).toEqual([])
   })
 })
@@ -108,10 +108,10 @@ describe('getWebHomeData()', () => {
 // ─────────────────────────────────────────────
 // Fail-open (query individual falla → valor vacío)
 // ─────────────────────────────────────────────
-describe('getWebHomeData() — fail-open por query', () => {
+describe('getWebHomeData(mockCreateServerClient()) — fail-open por query', () => {
   it('devuelve [] en homeSections si la query de page_sections falla', async () => {
     mockCreateServerClient.mockReturnValue(makeSupabaseMock([], []) as any)
-    const data = await getWebHomeData()
+    const data = await getWebHomeData(mockCreateServerClient())
     expect(data.homeSections).toEqual([])
     // Resto sigue
     expect(data.featuredProducts).toEqual([fakeProduct])
@@ -119,26 +119,26 @@ describe('getWebHomeData() — fail-open por query', () => {
 
   it('devuelve [] en featuredProducts si getFeaturedProducts lanza error', async () => {
     mockGetFeaturedProducts.mockRejectedValue(new Error('DB error'))
-    const data = await getWebHomeData()
+    const data = await getWebHomeData(mockCreateServerClient())
     expect(data.featuredProducts).toEqual([])
     expect(data.homeSections).toHaveLength(1)
   })
 
   it('devuelve [] en blogPosts si getBlogPosts lanza error', async () => {
     mockGetBlogPosts.mockRejectedValue(new Error('timeout'))
-    const data = await getWebHomeData()
+    const data = await getWebHomeData(mockCreateServerClient())
     expect(data.blogPosts).toEqual([])
   })
 
   it('devuelve [] en bestSellers si getBestSellingProducts lanza error', async () => {
     mockGetBestSellingProducts.mockRejectedValue(new Error('timeout'))
-    const data = await getWebHomeData()
+    const data = await getWebHomeData(mockCreateServerClient())
     expect(data.bestSellers).toEqual([])
   })
 
   it('devuelve [] en categories si getCategories lanza error', async () => {
     mockGetCategories.mockRejectedValue(new Error('timeout'))
-    const data = await getWebHomeData()
+    const data = await getWebHomeData(mockCreateServerClient())
     expect(data.categories).toEqual([])
   })
 
@@ -148,7 +148,7 @@ describe('getWebHomeData() — fail-open por query', () => {
     mockGetBlogPosts.mockRejectedValue(new Error('fail'))
     mockGetCategories.mockRejectedValue(new Error('fail'))
 
-    const data = await getWebHomeData()
+    const data = await getWebHomeData(mockCreateServerClient())
     expect(data.featuredProducts).toEqual([])
     expect(data.blogPosts).toEqual([])
     expect(data.bestSellers).toEqual([])

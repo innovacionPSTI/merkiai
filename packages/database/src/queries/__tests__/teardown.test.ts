@@ -49,7 +49,7 @@ describe('purgeTenantData (HU-209 · borrado)', () => {
   })
 
   it('exige tenantId; el default es una tienda más (HU-232: sin trato especial)', async () => {
-    await expect(purgeTenantData('')).rejects.toThrow(/tenantId/)
+    await expect(purgeTenantData('', {} as never)).rejects.toThrow(/tenantId/)
     // El tenant por defecto se purga como cualquier otro (sin guard dedicado).
     const db = fakeDb()
     // eslint-disable-next-line @typescript-eslint/no-explicit-any

@@ -18,6 +18,9 @@ jest.mock('@merkiai/database', () => ({
   getCouponByCode: (...args: unknown[]) => mockGetCouponByCode(...args),
   validateCoupon: (...args: unknown[]) => mockValidateCoupon(...args),
 }))
+// HU-174/hardening: la ruta resuelve el tenant y usa un cliente tenant-scoped.
+jest.mock('@/lib/tenant-context', () => ({ resolveTenant: jest.fn(async () => ({ tenantId: 't1' })) }))
+jest.mock('@/lib/machine-db', () => ({ getMachineDb: jest.fn(() => ({})) }))
 
 function makeReq(body: Record<string, unknown>) {
   return new NextRequest('http://localhost/api/checkout/coupon', {
@@ -71,6 +74,6 @@ describe('POST /api/checkout/coupon', () => {
     await POST(makeReq({ code: '  vps20  ', subtotal: 50_000 }))
 
     // El route hace code.trim(); la normalización de mayúsculas la resuelve ilike en getCouponByCode
-    expect(mockGetCouponByCode).toHaveBeenCalledWith('vps20')
+    expect(mockGetCouponByCode).toHaveBeenCalledWith('vps20', expect.anything())
   })
 })

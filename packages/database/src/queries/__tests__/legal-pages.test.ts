@@ -94,7 +94,7 @@ describe('getPageBySlug (páginas legales)', () => {
     mockCreateServerClient.mockReturnValue(
       buildMock(privacidadPage) as unknown as ReturnType<typeof createServerClient>
     )
-    const page = await getPageBySlug('privacidad')
+    const page = await getPageBySlug('privacidad', mockCreateServerClient())
     expect(page).not.toBeNull()
     expect(page?.slug).toBe('privacidad')
     expect(page?.key).toBe('privacidad')
@@ -104,7 +104,7 @@ describe('getPageBySlug (páginas legales)', () => {
     mockCreateServerClient.mockReturnValue(
       buildMock(null) as unknown as ReturnType<typeof createServerClient>
     )
-    const page = await getPageBySlug('slug-inexistente')
+    const page = await getPageBySlug('slug-inexistente', mockCreateServerClient())
     expect(page).toBeNull()
   })
 
@@ -113,7 +113,7 @@ describe('getPageBySlug (páginas legales)', () => {
     mockCreateServerClient.mockReturnValue(
       buildMock(terminosPage) as unknown as ReturnType<typeof createServerClient>
     )
-    const page = await getPageBySlug('terminos')
+    const page = await getPageBySlug('terminos', mockCreateServerClient())
     expect(page?.slug).toBe('terminos')
   })
 })
@@ -126,7 +126,7 @@ describe('getPageWithSections (páginas legales)', () => {
     mockCreateServerClient.mockReturnValue(
       buildMock(privacidadPage, [privacidadSection]) as unknown as ReturnType<typeof createServerClient>
     )
-    const result = await getPageWithSections('privacidad')
+    const result = await getPageWithSections('privacidad', undefined, mockCreateServerClient())
     expect(result).not.toBeNull()
     expect(result?.slug).toBe('privacidad')
     expect(result?.sections).toHaveLength(1)
@@ -138,7 +138,7 @@ describe('getPageWithSections (páginas legales)', () => {
     mockCreateServerClient.mockReturnValue(
       buildMock(privacidadPage, [privacidadSection]) as unknown as ReturnType<typeof createServerClient>
     )
-    const result = await getPageWithSections('privacidad')
+    const result = await getPageWithSections('privacidad', undefined, mockCreateServerClient())
     const textSection = result?.sections.find((s) => s.section_type === 'text')
     expect(textSection?.body).toBeTruthy()
     expect(typeof textSection?.body).toBe('string')
@@ -148,7 +148,7 @@ describe('getPageWithSections (páginas legales)', () => {
     mockCreateServerClient.mockReturnValue(
       buildMock(null) as unknown as ReturnType<typeof createServerClient>
     )
-    const result = await getPageWithSections('pagina-inexistente')
+    const result = await getPageWithSections('pagina-inexistente', undefined, mockCreateServerClient())
     expect(result).toBeNull()
   })
 
@@ -156,7 +156,7 @@ describe('getPageWithSections (páginas legales)', () => {
     mockCreateServerClient.mockReturnValue(
       buildMock(privacidadPage, []) as unknown as ReturnType<typeof createServerClient>
     )
-    const result = await getPageWithSections('privacidad')
+    const result = await getPageWithSections('privacidad', undefined, mockCreateServerClient())
     expect(result?.sections).toEqual([])
   })
 })

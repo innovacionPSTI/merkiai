@@ -73,7 +73,7 @@ const PRESET: PresetPayload = {
 
 describe('applyPresetToStore (HU-235)', () => {
   it('lanza sin tenantId', async () => {
-    await expect(applyPresetToStore('', PRESET)).rejects.toThrow(/tenantId/)
+    await expect(applyPresetToStore('', PRESET, {}, {} as never)).rejects.toThrow(/tenantId/)
   })
 
   it('aplica tema (inserta), template, home, categorías y productos', async () => {

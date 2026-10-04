@@ -9,7 +9,7 @@
  * Orden **hijos → padres** para no violar FKs aunque no todas tengan cascade.
  * La fila de plataforma (`tenants`) y el Team de Stack Auth los borra la consola.
  */
-import { createServerClient, type Db } from '../client'
+import type { Db } from '../client'
 
 /** Tablas del plano de tienda con `tenant_id`, en orden seguro de borrado. */
 const PURGE_ORDER = [
@@ -50,7 +50,7 @@ export interface PurgeTenantResult {
  */
 export async function purgeTenantData(
   tenantId: string,
-  db: Db = createServerClient(),
+  db: Db,
 ): Promise<PurgeTenantResult> {
   if (!tenantId) throw new Error('[teardown] tenantId requerido')
   // Sin trato especial al tenant por defecto (HU-232): es una tienda más.

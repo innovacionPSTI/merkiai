@@ -1,4 +1,4 @@
-import { createServerClient, type Db } from '../client'
+import type { Db } from '../client'
 import type { Database, VariantType } from '../types'
 
 function toVariantType(row: Record<string, unknown>): VariantType {
@@ -9,7 +9,7 @@ function toVariantType(row: Record<string, unknown>): VariantType {
 }
 
 /** Lista todos los tipos de variante, ordenados por order_index */
-export async function getVariantTypes(activeOnly = false, db: Db = createServerClient()): Promise<VariantType[]> {
+export async function getVariantTypes(activeOnly = false, db: Db): Promise<VariantType[]> {
   const supabase = db
   let query = supabase
     .from('variant_types')
@@ -25,7 +25,7 @@ export async function getVariantTypes(activeOnly = false, db: Db = createServerC
 }
 
 /** Obtiene un tipo de variante por ID */
-export async function getVariantTypeById(id: number, db: Db = createServerClient()): Promise<VariantType | null> {
+export async function getVariantTypeById(id: number, db: Db): Promise<VariantType | null> {
   const supabase = db
   const { data, error } = await supabase
     .from('variant_types')
@@ -74,7 +74,7 @@ export interface UpdateVariantTypeInput {
 }
 
 /** Actualiza un tipo de variante existente */
-export async function updateVariantType(id: number, input: UpdateVariantTypeInput, db: Db = createServerClient()): Promise<VariantType> {
+export async function updateVariantType(id: number, input: UpdateVariantTypeInput, db: Db): Promise<VariantType> {
   const supabase = db
 
   // Build a typed update object (only include defined fields)
@@ -97,7 +97,7 @@ export async function updateVariantType(id: number, input: UpdateVariantTypeInpu
 }
 
 /** Elimina un tipo de variante */
-export async function deleteVariantType(id: number, db: Db = createServerClient()): Promise<void> {
+export async function deleteVariantType(id: number, db: Db): Promise<void> {
   const supabase = db
   const { error } = await supabase.from('variant_types').delete().eq('id', id)
   if (error) throw new Error(error.message)

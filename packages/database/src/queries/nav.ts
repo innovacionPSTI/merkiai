@@ -1,4 +1,4 @@
-import { createServerClient, type Db } from '../client'
+import type { Db } from '../client'
 import type { NavItem } from '../types'
 
 export type { NavItem }
@@ -25,7 +25,7 @@ export type UpdateNavItemInput = Partial<CreateNavItemInput>
  * - Cada ítem top-level tiene children[] con sus hijos en orden
  * Solo incluye ítems enabled = true.
  */
-export async function getNavTree(db: Db = createServerClient()): Promise<NavItemWithChildren[]> {
+export async function getNavTree(db: Db): Promise<NavItemWithChildren[]> {
   const supabase = db
   const { data, error } = await supabase
     .from('nav_items')
@@ -48,7 +48,7 @@ export async function getNavTree(db: Db = createServerClient()): Promise<NavItem
  * Devuelve TODOS los ítems (habilitados y deshabilitados) para el admin.
  * Retorna como árbol para facilitar la gestión.
  */
-export async function getAllNavItems(db: Db = createServerClient()): Promise<NavItemWithChildren[]> {
+export async function getAllNavItems(db: Db): Promise<NavItemWithChildren[]> {
   const supabase = db
   const { data, error } = await supabase
     .from('nav_items')
@@ -66,7 +66,7 @@ export async function getAllNavItems(db: Db = createServerClient()): Promise<Nav
 }
 
 /** Crea un ítem de nav. */
-export async function createNavItem(input: CreateNavItemInput, db: Db = createServerClient()): Promise<NavItem> {
+export async function createNavItem(input: CreateNavItemInput, db: Db): Promise<NavItem> {
   const supabase = db
   const { data, error } = await supabase
     .from('nav_items')
@@ -78,7 +78,7 @@ export async function createNavItem(input: CreateNavItemInput, db: Db = createSe
 }
 
 /** Actualiza un ítem de nav. */
-export async function updateNavItem(id: number, input: UpdateNavItemInput, db: Db = createServerClient()): Promise<NavItem> {
+export async function updateNavItem(id: number, input: UpdateNavItemInput, db: Db): Promise<NavItem> {
   const supabase = db
   const { data, error } = await supabase
     .from('nav_items')
@@ -91,7 +91,7 @@ export async function updateNavItem(id: number, input: UpdateNavItemInput, db: D
 }
 
 /** Elimina un ítem de nav (y sus hijos por CASCADE). */
-export async function deleteNavItem(id: number, db: Db = createServerClient()): Promise<void> {
+export async function deleteNavItem(id: number, db: Db): Promise<void> {
   const supabase = db
   const { error } = await supabase.from('nav_items').delete().eq('id', id)
   if (error) throw error
