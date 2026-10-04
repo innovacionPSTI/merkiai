@@ -577,6 +577,146 @@
 
 ---
 
+## Clúster — Page Builder MVP (go-live) · E3
+
+> **Objetivo:** que un cliente construya las páginas de su tienda, las guarde/exporte, y que al **seleccionar/aplicar** una plantilla o preset se "vista" la web; sirviendo también para construir templates/presets. Lo más **generalizado** posible **sobre el frame CMS robusto ya existente** (schema-driven: `pages` → `page_sections` → `section_items`, validación por contrato, borrador en caliente HU-128 v2/v2b, preview por token, variantes HU-122, temas/tokens HU-247, plantilla unificada HU-121, export/import de plantilla HU-129). El plan **no reescribe el motor**: es front + adiciones medidas al catálogo + un empaquetado de página espejo de HU-129.
+>
+> **Análisis de referencia (Foxify):** builder de *lienzo libre a nivel de elemento*; Merkiai es *schema-driven a nivel de sección*. Se rescata la **galería de plantillas con filtros + preview + aplicar**, el **selector por tipo de página**, la **barra inline por elemento** y el **preview por dispositivo**. **No** se adopta el canvas freeform, Shape/Hotspot/G-map/Code, edición total de PDP/Collection (las variantes bastan) ni el marketplace de extensiones.
+>
+> **Olas:** **1 (MVP core, bloquea go-live):** HU-252, HU-253, HU-254, HU-250. **2 (guardar/exportar + productividad):** HU-255, HU-251, HU-257. **3 (cerrar bucle + pulido):** HU-256, HU-258.
+
+### HU-250 — Galería de plantillas/presets + "Aplicar" · E3
+
+> Como comerciante, quiero una galería de plantillas/presets con filtros, vista previa y un botón para aplicarla, para vestir mi tienda sin construir desde cero.
+
+**Estimación:** M (5 puntos) · **Track:** solo-front
+**Módulo:** `apps/admin` (nueva pantalla de galería), reusa `templates`/`presets`/preview(HU-128)/`applyPresetToStore`(HU-235)/export(HU-129)
+**Estado:** 🔲 Pendiente (go-live) — depende de HU-257 (miniaturas); se beneficia de HU-252/253
+**Reutiliza:** motor de "seleccionar → aplicar → se viste la web" ya funcional (el onboarding ya lo hace).
+
+| # | Escenario | Resultado esperado |
+|---|-----------|-------------------|
+| AC-1 | Filtros | Rejilla filtrable por **Page type** (home, landing, colección, producto, blog) y **Industry/nicho** |
+| AC-2 | Preview | Vista previa en vivo con toggles **desktop/tablet/móvil** (reusa el token de preview HU-128) |
+| AC-3 | Aplicar | Botón "Aplicar a mi tienda" ejecuta el orquestador (Tema+layout+contenido), respetando límites de plan (HU-235/239) |
+| AC-4 | Importar | Permite cargar una plantilla externa (paquete HU-129) a la galería como borrador |
+
+### HU-251 — Constructor UX: DnD, duplicar y controles inline · E3
+
+> Como comerciante, quiero reordenar arrastrando, duplicar y operar los bloques desde una barra inline, para construir más rápido.
+
+**Estimación:** M (5 puntos) · **Track:** front (+API mínima de clonado)
+**Módulo:** `apps/admin` Constructor (`ConstructorClient`/`SectionEditor`/`ItemsEditor`), endpoint de duplicado en el CMS API
+**Estado:** 🔲 Pendiente (go-live) — reusa el CRUD + borrador (HU-128 v2/v2b) + validación (HU-218)
+
+| # | Escenario | Resultado esperado |
+|---|-----------|-------------------|
+| AC-1 | Reordenar | Drag-and-drop (dnd-kit) de secciones e ítems, accesible por teclado |
+| AC-2 | Duplicar | Clona una sección (con sus ítems) o un ítem, preservando campos/estilo |
+| AC-3 | Inline | Barra sobre el preview: mover/ocultar/duplicar/eliminar sin abrir el panel |
+| AC-4 | Dispositivo | Toggle desktop/tablet/móvil en el preview del Constructor |
+
+### HU-252 — Bloques genéricos de layout · E3
+
+> Como comerciante, quiero bloques de composición libres (sección de contenido, columnas/grid, banner, separador), para armar secciones a medida sin estar atado al catálogo fijo.
+
+**Estimación:** L (8 puntos) · **Track:** esquema + renderer — **base del "no limitar el diseño"**
+**Módulo:** `packages/database/blocks/schema.ts` (nuevos `blockSchemas`) + componentes React en `apps/web`
+**Estado:** 🔲 Pendiente (go-live) — prerequisito real de HU-250 (para que la galería tenga de qué componer)
+
+| # | Escenario | Resultado esperado |
+|---|-----------|-------------------|
+| AC-1 | Sección de contenido | Encabezado + texto rico + imagen + botón + disposición (imagen izq/der/arriba) + fondo |
+| AC-2 | Columnas/Grid | N columnas configurables con ítems {icono/imagen, título, texto, enlace}; generaliza `cards`/`services` |
+| AC-3 | Banner/Media | Imagen/video full-bleed + overlay de texto + CTA |
+| AC-4 | Utilidades | Spacer/Divider; todos reusan el contrato de bloque (validación + editor auto-generado) |
+
+### HU-253 — Grupo de estilo compartido por sección · E3
+
+> Como comerciante, quiero controles de estilo consistentes en cualquier sección (fondo, espaciado, ancho, alineación), para dar personalidad sin romper la coherencia del tema.
+
+**Estimación:** M (5 puntos) · **Track:** esquema + renderer + editor
+**Módulo:** `blocks/schema.ts` (grupo `style` en `settings`), renderer (`apps/web`) aplica tokens, editor (`apps/admin`) panel de estilo
+**Estado:** 🔲 Pendiente (go-live)
+
+| # | Escenario | Resultado esperado |
+|---|-----------|-------------------|
+| AC-1 | Fondo | Color (de la paleta del tema) o imagen por sección |
+| AC-2 | Espaciado/ancho | Padding superior/inferior por **escala** + ancho de contenedor (completo/contenido) |
+| AC-3 | Alineación | Alineación de contenido; coherente con los tokens `--brand-*` (no colores sueltos) |
+| AC-4 | Transversal | El grupo de estilo aplica a **todos** los bloques, incluidos los genéricos (HU-252) |
+
+### HU-254 — Renderer + Constructor agnósticos al tipo de página · E3
+
+> Como comerciante, quiero construir con los mismos bloques en home, landings y páginas CMS, para no depender de plantillas fijas por tipo.
+
+**Estimación:** M (5 puntos) · **Track:** renderer
+**Módulo:** `apps/web` (camino de render/preview/draft) + `pages` (tipo "landing"), Constructor
+**Estado:** 🔲 Pendiente (go-live) — generaliza `getPageWithSections`/preview/draft ya existentes
+
+| # | Escenario | Resultado esperado |
+|---|-----------|-------------------|
+| AC-1 | Multi-tipo | Los bloques genéricos (HU-252) renderizan igual en home, páginas CMS y "landing" |
+| AC-2 | Landing | Nuevo tipo de página "landing" construible desde el Constructor |
+| AC-3 | Paridad | Preview, borrador (HU-128 v2) y publicación funcionan en cualquier `page_key` |
+
+### HU-255 — Paquete de página export/import · E3
+
+> Como comerciante, quiero exportar/guardar una página completa y volver a importarla, para reutilizarla o moverla entre tiendas.
+
+**Estimación:** M (5 puntos) · **Track:** packaging — **espejo de HU-129**
+**Módulo:** `packages/database` (`page-package.ts`: `buildPagePackage`/`parsePagePackage`), endpoints + botones en el Constructor
+**Estado:** 🔲 Pendiente (go-live) — reusa el patrón versionado/tolerante de `template-package.ts`
+
+| # | Escenario | Resultado esperado |
+|---|-----------|-------------------|
+| AC-1 | Exportar | Paquete JSON versionado con `page_sections`+`section_items` (y su estilo) |
+| AC-2 | Importar | Crea una página nueva/borrador; tolerante a versiones (defaults, ignora claves desconocidas, rechaza versiones futuras) |
+| AC-3 | Base de templates | El paquete alimenta la construcción de templates/presets (HU-256) |
+
+### HU-256 — "Guardar como preset/plantilla" desde una tienda construida · E3
+
+> Como operador, quiero empaquetar el estado actual de una tienda (tema + layout + contenido de ejemplo) como preset, para ofrecerlo en la galería.
+
+**Estimación:** M/L (8 puntos) · **Track:** packaging + consola
+**Módulo:** consola (`presets`) + orquestador inverso (tienda → `PresetPayload`)
+**Estado:** 🔲 Pendiente (go-live/post) — depende de HU-252/253/255; cierra el bucle "construir → guardar como template/preset"
+
+| # | Escenario | Resultado esperado |
+|---|-----------|-------------------|
+| AC-1 | Capturar | Toma tema + layout + secciones/ítems de ejemplo de una tienda y arma un `PresetPayload` |
+| AC-2 | Publicar | Lo guarda como preset en la consola (HU-233), disponible en la galería (HU-250) |
+| AC-3 | Idempotente | Reusa el patrón de empaquetado de HU-129/255 (versionado + tolerante) |
+
+### HU-257 — Miniaturas/preview de plantillas y presets · E3
+
+> Como comerciante, quiero ver miniaturas representativas en la galería, para elegir con criterio.
+
+**Estimación:** S/M (3 puntos) · **Track:** front/infra
+**Módulo:** assets de preset/plantilla + galería (HU-250)
+**Estado:** 🔲 Pendiente (go-live) — **decisión:** imagen curada por preset (MVP, recomendado) vs. screenshot automatizado del preview (post)
+
+| # | Escenario | Resultado esperado |
+|---|-----------|-------------------|
+| AC-1 | Miniatura | Cada plantilla/preset expone una imagen representativa en la galería |
+| AC-2 | Enfoque | MVP con imagen curada; queda documentado el camino a screenshots automáticos |
+
+### HU-258 — Accesibilidad v2 del Constructor/galería · E3
+
+> Como usuario de teclado/lector de pantalla, quiero operar el builder con foco atrapado y anuncios claros, para construir sin barreras.
+
+**Estimación:** S/M (3 puntos) · **Track:** front — **cierra HU-248**
+**Módulo:** `apps/admin` Constructor/galería/modales
+**Estado:** 🔲 Pendiente (go-live/post) — sobre la base a11y v1 (HU-248)
+
+| # | Escenario | Resultado esperado |
+|---|-----------|-------------------|
+| AC-1 | Modales | Focus trap + retorno de foco; cierre con Escape (ya hay precedente en Temas) |
+| AC-2 | Reorden | Reordenar por teclado accesible (anuncios de posición) |
+| AC-3 | Feedback | `aria-live` al aplicar/guardar/publicar |
+
+---
+
 ### HU-130 — Exportar productos a CSV · E13
 
 > Como operador, quiero exportar el catálogo (o una selección filtrada) a `.CSV`, como contraparte de la carga masiva, para editar en hoja de cálculo y reimportar.
