@@ -1,6 +1,7 @@
 'use client'
 
 import { useActionState, useState } from 'react'
+import { Icon } from '@merkiai/ui'
 import { applyPresetAction, type OnboardingActionState } from './actions'
 import type { OnboardingOptions } from '@/lib/onboarding'
 
@@ -121,9 +122,20 @@ export default function OnboardingWizard({ options }: { options: OnboardingOptio
         <h2 className="font-display text-brand-primary text-xl mb-1">Completa tu tienda</h2>
         <p className="font-brand text-sm text-brand-primary/50 mb-4">Pasos que se configuran desde su propia sección:</p>
         <ul className="font-brand text-sm text-brand-primary space-y-2">
-          <li><a className="underline" href="/configuracion/general">Datos generales y contacto →</a></li>
-          <li><a className="underline" href="/configuracion">Pagos y envíos →</a></li>
-          <li><a className="underline" href="/apariencia">Apariencia y tema →</a></li>
+          {[
+            { href: '/configuracion/general', label: 'Datos generales y contacto' },
+            { href: '/productos', label: 'Cargar tus productos' },
+            { href: '/configuracion/temas', label: 'Apariencia y tema (colores, tipografía)' },
+            { href: '/constructor', label: 'Diseñar las páginas (Constructor)' },
+            { href: '/configuracion/dominio', label: 'Conectar tu dominio propio' },
+            { href: '/configuracion/envios', label: 'Envíos' },
+          ].map((it) => (
+            <li key={it.href}>
+              <a className="inline-flex items-center gap-1.5 hover:underline" href={it.href}>
+                {it.label} <Icon name="chevron-right" size={14} />
+              </a>
+            </li>
+          ))}
         </ul>
       </section>
     </form>
