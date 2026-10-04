@@ -13,6 +13,7 @@
 import type { Db } from '../client'
 import { getFeaturedProducts, getBestSellingProducts, getCategories } from './products'
 import { getBlogPosts } from './blog'
+import { applySectionDraft, applyItemDraft } from './content-draft'
 import type { PageSection, SectionItem } from '../types'
 import type { BestSellingProduct } from './products'
 
@@ -53,13 +54,18 @@ export async function getWebHomeData(db: Db, opts: { preview?: boolean } = {}): 
     if (!opts.preview) itemsQuery = itemsQuery.eq('enabled', true)
     const { data: items } = await itemsQuery.order('order_index')
 
+    // HU-128 v2: en preview fusiona el overlay `draft` (editar en caliente).
     const bySection = (items ?? []).reduce<Record<number, SectionItem[]>>((acc, item) => {
-      if (!acc[item.section_id]) acc[item.section_id] = []
-      acc[item.section_id].push(item as SectionItem)
+      const it = opts.preview ? applyItemDraft(item as SectionItem) : (item as SectionItem)
+      if (!acc[it.section_id]) acc[it.section_id] = []
+      acc[it.section_id].push(it)
       return acc
     }, {})
 
-    return sections.map((s) => ({ ...s, items: bySection[s.id] ?? [] } as HomeSection))
+    return sections.map((s) => {
+      const section = opts.preview ? applySectionDraft(s as PageSection) : (s as PageSection)
+      return { ...section, items: bySection[s.id] ?? [] } as HomeSection
+    })
   }
 
   // HU-207: propagar el cliente tenant-scoped a TODAS las sub-queries (antes

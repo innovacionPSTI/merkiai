@@ -702,6 +702,7 @@ export type Database = {
           enabled: boolean
           order_index: number
           settings: Json
+          draft: Json | null
           created_at: string
           updated_at: string
         }
@@ -720,6 +721,7 @@ export type Database = {
           enabled?: boolean
           order_index?: number
           settings?: Json
+          draft?: Json | null
           created_at?: string
           updated_at?: string
         }
@@ -738,6 +740,7 @@ export type Database = {
           enabled?: boolean
           order_index?: number
           settings?: Json
+          draft?: Json | null
           updated_at?: string
         }
         Relationships: [
@@ -767,6 +770,7 @@ export type Database = {
           metadata: Json
           enabled: boolean
           order_index: number
+          draft: Json | null
           created_at: string
           updated_at: string
         }
@@ -787,6 +791,7 @@ export type Database = {
           metadata?: Json
           enabled?: boolean
           order_index?: number
+          draft?: Json | null
           created_at?: string
           updated_at?: string
         }
@@ -807,6 +812,7 @@ export type Database = {
           metadata?: Json
           enabled?: boolean
           order_index?: number
+          draft?: Json | null
           updated_at?: string
         }
         Relationships: [

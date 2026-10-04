@@ -9,6 +9,7 @@
  */
 import type { Db } from '../client'
 import type { Json, Page, PageSection, SectionItem, PageWithSections } from '../types'
+import { applySectionDraft, applyItemDraft } from './content-draft'
 
 export type { Page, PageSection, SectionItem, PageWithSections }
 
@@ -165,12 +166,20 @@ export async function getPageWithSections(
     return acc
   }, {})
 
+  // HU-128 v2: en vista previa (!onlyEnabled) fusiona el overlay `draft` sobre
+  // secciones e ítems, para que el comerciante vea los cambios "en caliente"
+  // sin que el público los vea (el público lee con onlyEnabled=true, sin draft).
+  const preview = !onlyEnabled
   return {
     ...page,
-    sections: sections.map((s) => ({
-      ...s,
-      items: itemsBySection[s.id] ?? [],
-    })),
+    sections: sections.map((s) => {
+      const section = preview ? applySectionDraft(s) : s
+      const its = itemsBySection[s.id] ?? []
+      return {
+        ...section,
+        items: preview ? its.map((it) => applyItemDraft(it)) : its,
+      }
+    }),
   }
 }
 
