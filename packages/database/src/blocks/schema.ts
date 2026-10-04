@@ -367,7 +367,7 @@ export const templates: Record<string, Template> = {
     blockDefaults: {
       featured_products: { title: 'Lo nuevo' },
     },
-    variants: { product_grid: 'compact' },
+    variants: { product_grid: 'compact', product_detail: 'gallery-top', cart: 'compact' },
   },
 }
 
@@ -392,6 +392,26 @@ export const SURFACE_VARIANTS: Record<string, SurfaceVariant> = {
     options: [
       { value: 'comfortable', label: 'Cómoda (3 columnas)' },
       { value: 'compact', label: 'Compacta (4 columnas)' },
+    ],
+    default: 'comfortable',
+  },
+  // HU-122b
+  product_detail: {
+    surface: 'product_detail',
+    label: 'Disposición de la página de producto',
+    options: [
+      { value: 'gallery-left', label: 'Galería a la izquierda' },
+      { value: 'gallery-top', label: 'Galería arriba' },
+    ],
+    default: 'gallery-left',
+  },
+  // HU-122c
+  cart: {
+    surface: 'cart',
+    label: 'Densidad del carrito',
+    options: [
+      { value: 'comfortable', label: 'Cómoda' },
+      { value: 'compact', label: 'Compacta' },
     ],
     default: 'comfortable',
   },

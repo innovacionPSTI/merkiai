@@ -147,3 +147,20 @@ describe('variantes de disposición por superficie (HU-122a)', () => {
     }
   })
 })
+
+describe('variantes de PDP y carrito (HU-122b/c)', () => {
+  it('PDP: default gallery-left, esencial gallery-top', () => {
+    expect(getTemplateVariant('default', 'product_detail')).toBe('gallery-left')
+    expect(getTemplateVariant('esencial', 'product_detail')).toBe('gallery-top')
+  })
+
+  it('carrito: default comfortable, esencial compact', () => {
+    expect(getTemplateVariant('default', 'cart')).toBe('comfortable')
+    expect(getTemplateVariant('esencial', 'cart')).toBe('compact')
+  })
+
+  it('las superficies product_detail y cart están registradas', () => {
+    expect(SURFACE_VARIANTS.product_detail.options.map((o) => o.value)).toEqual(['gallery-left', 'gallery-top'])
+    expect(SURFACE_VARIANTS.cart.options.map((o) => o.value)).toEqual(['comfortable', 'compact'])
+  })
+})

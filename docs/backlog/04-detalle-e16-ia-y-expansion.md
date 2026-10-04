@@ -434,13 +434,13 @@
 
 **Estimación:** L (8 puntos)
 **Módulo:** `apps/web` (shop grid, PDP), sobre el framework de HU-122a
-**Estado:** 🔲 Pendiente (roadmap v17) — depende de HU-122a
+**Estado:** ✅ Implementada. Grid de tienda ya variaba por `product_grid` (122a). PDP: nueva superficie `product_detail` en `SURFACE_VARIANTS` con `gallery-left` (default, galería+info a 2 columnas) y `gallery-top` (apilado, ancho acotado); `ProductDetail` recibe `layoutVariant` y ramifica la grilla principal; la página PDP resuelve la variante con `getTemplateVariant(config.template, 'product_detail')`. `esencial` → `gallery-top`.
 
 | # | Escenario | Resultado esperado |
 |---|-----------|-------------------|
-| AC-1 | Grid de tienda | ≥2 variantes (p. ej. columnas/densidad/tarjeta) seleccionables por plantilla |
-| AC-2 | PDP | ≥2 variantes de layout de producto |
-| AC-3 | Consistencia | Reusa el framework y el fallback de HU-122a |
+| AC-1 | Grid de tienda | ✅ `product_grid` comfortable/compact por plantilla (122a) |
+| AC-2 | PDP | ✅ `product_detail` gallery-left/gallery-top por plantilla |
+| AC-3 | Consistencia | ✅ Reusa `getTemplateVariant` y el fallback de HU-122a |
 
 #### HU-122c — Variante de carrito · E3
 
@@ -448,12 +448,12 @@
 
 **Estimación:** M (5 puntos)
 **Módulo:** `apps/web` (carrito/drawer), sobre el framework de HU-122a
-**Estado:** 🔲 Pendiente (roadmap v17) — depende de HU-122a
+**Estado:** ✅ Implementada. Nueva superficie `cart` con `comfortable` (default) y `compact` (tarjetas, padding, thumbnails y gaps reducidos). `cart/page.tsx` pasa a wrapper server que resuelve `getTemplateVariant(config.template, 'cart')`; la UI client se movió a `CartView` con prop `density`, preservando la lógica de envío/cupón/stock. `esencial` → `compact`.
 
 | # | Escenario | Resultado esperado |
 |---|-----------|-------------------|
-| AC-1 | Carrito | ≥2 variantes de disposición seleccionables por plantilla |
-| AC-2 | Consistencia | Reusa framework/fallback de HU-122a; respeta la lógica de carrito existente |
+| AC-1 | Carrito | ✅ `cart` comfortable/compact seleccionable por plantilla |
+| AC-2 | Consistencia | ✅ Reusa framework/fallback de HU-122a; conserva la lógica de carrito existente |
 
 ---
 

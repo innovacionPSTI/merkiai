@@ -11,9 +11,11 @@ interface Props {
   related: ProductWithVariants[]
   /** Badges de confianza configurados en admin → Configuración → General. Solo se pasan los activos. */
   trustBadges?: TrustBadge[]
+  /** HU-122b: disposición de la PDP resuelta desde la plantilla ('gallery-left' | 'gallery-top'). */
+  layoutVariant?: string
 }
 
-export default function ProductDetail({ product, related, trustBadges = [] }: Props) {
+export default function ProductDetail({ product, related, trustBadges = [], layoutVariant = 'gallery-left' }: Props) {
   const variantOpts = getProductOptions(product)
   const activeVariants = product.variants.filter((v) => v.active)
 
@@ -206,7 +208,9 @@ export default function ProductDetail({ product, related, trustBadges = [] }: Pr
 
       {/* Main */}
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 lg:gap-16">
+        <div className={layoutVariant === 'gallery-top'
+          ? 'grid grid-cols-1 gap-10 max-w-3xl mx-auto'
+          : 'grid grid-cols-1 lg:grid-cols-2 gap-12 lg:gap-16'}>
 
           {/* ── Galería ─────────────────────────────────────────── */}
           <div>
