@@ -622,14 +622,14 @@
 
 **Estimación:** L (8 puntos) · **Track:** esquema + renderer — **base del "no limitar el diseño"**
 **Módulo:** `packages/database/blocks/schema.ts` (nuevos `blockSchemas`) + componentes React en `apps/web`
-**Estado:** 🔲 Pendiente (go-live) — prerequisito real de HU-250 (para que la galería tenga de qué componer)
+**Estado:** ✅ **Implementada.** 4 tipos nuevos en `blockSchemas` (migración `e17/18` amplía el CHECK de `section_type`): `content_section` (encabezado+texto+imagen+botón, disposición imagen-izq/der/arriba/solo-texto), `columns` (2/3/4 columnas + alineación, ítem `column` {icono/imagen,título,texto,enlace}), `media_banner` (imagen/video full-bleed + overlay + altura + CTA), `spacer` (tamaño + divisor). Componentes `ContentSection`/`ColumnsSection`/`MediaBanner`/`SpacerSection` registrados en **ambos** caminos de render: `SectionRenderer` (páginas CMS) y el registry de `home-blocks`. Reusan el contrato de bloque (validación + editor auto-generado) y aparecen solos en "Agregar bloque" del Constructor. 5 tests nuevos. *Nota:* en home el render sigue siendo por layout de plantilla (un bloque por tipo); en páginas CMS/landing se listan en orden libre (HU-254 generaliza el home si hace falta).
 
 | # | Escenario | Resultado esperado |
 |---|-----------|-------------------|
-| AC-1 | Sección de contenido | Encabezado + texto rico + imagen + botón + disposición (imagen izq/der/arriba) + fondo |
-| AC-2 | Columnas/Grid | N columnas configurables con ítems {icono/imagen, título, texto, enlace}; generaliza `cards`/`services` |
-| AC-3 | Banner/Media | Imagen/video full-bleed + overlay de texto + CTA |
-| AC-4 | Utilidades | Spacer/Divider; todos reusan el contrato de bloque (validación + editor auto-generado) |
+| AC-1 | Sección de contenido | ✅ Encabezado + texto rico + imagen + botón + disposición (imagen izq/der/arriba/solo texto) |
+| AC-2 | Columnas/Grid | ✅ 2/3/4 columnas + alineación con ítems {icono/imagen, título, texto, enlace}; generaliza `cards`/`services` |
+| AC-3 | Banner/Media | ✅ Imagen/video full-bleed + overlay + altura + CTA |
+| AC-4 | Utilidades | ✅ Spacer/Divider; todos reusan el contrato de bloque (validación + editor auto-generado) |
 
 ### HU-253 — Grupo de estilo compartido por sección · E3
 

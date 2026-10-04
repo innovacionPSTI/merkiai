@@ -16,11 +16,13 @@ import {
   SURFACE_VARIANTS,
 } from '../schema'
 
-// Los 13 section_type permitidos por el CHECK de page_sections.
+// section_type permitidos por el CHECK de page_sections (13 base + 4 genéricos HU-252).
 const ALLOWED_TYPES = [
   'hero', 'text', 'cards', 'faq', 'cta', 'testimonials', 'whatsapp',
   'services', 'featured_products', 'best_sellers', 'historia',
   'blog_preview', 'newsletter',
+  // HU-252 · bloques genéricos de layout
+  'content_section', 'columns', 'media_banner', 'spacer',
 ]
 
 describe('blockSchemas', () => {
@@ -145,6 +147,34 @@ describe('variantes de disposición por superficie (HU-122a)', () => {
         expect(SURFACE_VARIANTS[surface]?.options.some((o) => o.value === value)).toBe(true)
       }
     }
+  })
+})
+
+describe('bloques genéricos de layout (HU-252)', () => {
+  it('registra los 4 bloques genéricos', () => {
+    for (const t of ['content_section', 'columns', 'media_banner', 'spacer']) {
+      expect(getBlockSchema(t)).toBeTruthy()
+    }
+  })
+
+  it('content_section expone el select de disposición con opciones válidas', () => {
+    const layout = blockSchemas.content_section.fields.layout
+    expect(layout.type).toBe('select')
+    expect(layout.options?.map((o) => o.value)).toEqual(['image-right', 'image-left', 'image-top', 'text-only'])
+    expect(layout.default).toBe('image-right')
+  })
+
+  it('columns tiene ítems de tipo column y selects de columnas/alineación', () => {
+    expect(blockSchemas.columns.items?.itemType).toBe('column')
+    expect(blockSchemas.columns.fields.columns.options?.map((o) => o.value)).toEqual(['2', '3', '4'])
+    expect(blockSchemas.columns.fields.align.options?.map((o) => o.value)).toEqual(['left', 'center'])
+  })
+
+  it('media_banner tiene altura y overlay; spacer tiene tamaño y divisor', () => {
+    expect(blockSchemas.media_banner.fields.height.options?.map((o) => o.value)).toEqual(['small', 'medium', 'large', 'full'])
+    expect(blockSchemas.media_banner.fields.overlay.type).toBe('boolean')
+    expect(blockSchemas.spacer.fields.size.options?.map((o) => o.value)).toEqual(['small', 'medium', 'large'])
+    expect(blockSchemas.spacer.fields.divider.type).toBe('boolean')
   })
 })
 

@@ -158,6 +158,21 @@ const FAQ_ITEM: BlockItemSchema = {
   },
 }
 
+// HU-252 · columna genérica para el bloque de Columnas/Grid.
+const COLUMN_ITEM: BlockItemSchema = {
+  itemType: 'column',
+  label: 'Columna',
+  labelPlural: 'Columnas',
+  fields: {
+    icon:        { label: 'Ícono',       type: 'icon',     storage: 'column' },
+    image_url:   { label: 'Imagen',      type: 'image',    storage: 'column' },
+    title:       { label: 'Título',      type: 'text',     storage: 'column' },
+    description: { label: 'Texto',       type: 'textarea', storage: 'column' },
+    cta_text:    { label: 'Texto del enlace', type: 'text', storage: 'column' },
+    link_url:    { label: 'Enlace',      type: 'url',      storage: 'column' },
+  },
+}
+
 // ── Registro de esquemas por tipo de sección ─────────────────────────────────
 // Cubre los 13 `section_type` permitidos por el CHECK de page_sections.
 
@@ -302,6 +317,126 @@ export const blockSchemas: Record<string, BlockSchema> = {
         image_url:   { label: 'Foto',     type: 'image',    storage: 'column' },
         rating:      { label: 'Calificación (1-5)', type: 'number', storage: 'metadata', default: 5 },
         role:        { label: 'Rol/Cargo', type: 'text',    storage: 'metadata' },
+      },
+    },
+  },
+
+  // ── Bloques genéricos de layout (HU-252) ───────────────────────────────────
+  content_section: {
+    type: 'content_section',
+    label: 'Sección de contenido',
+    description: 'Encabezado + texto + imagen + botón, con disposición configurable.',
+    category: 'content',
+    fields: {
+      title:     F.title(),
+      subtitle:  F.subtitle(),
+      body:      F.body(),
+      image_url: F.image(),
+      cta_label: F.ctaLabel(),
+      cta_url:   F.ctaUrl(),
+      layout: {
+        label: 'Disposición',
+        type: 'select',
+        storage: 'settings',
+        default: 'image-right',
+        options: [
+          { value: 'image-right', label: 'Imagen a la derecha' },
+          { value: 'image-left',  label: 'Imagen a la izquierda' },
+          { value: 'image-top',   label: 'Imagen arriba' },
+          { value: 'text-only',   label: 'Solo texto' },
+        ],
+      },
+    },
+  },
+
+  columns: {
+    type: 'columns',
+    label: 'Columnas',
+    description: 'Rejilla de columnas con ícono/imagen, título, texto y enlace.',
+    category: 'content',
+    fields: {
+      title:    F.title('Título de la sección'),
+      subtitle: F.subtitle(),
+      columns: {
+        label: 'Columnas por fila',
+        type: 'select',
+        storage: 'settings',
+        default: '3',
+        options: [
+          { value: '2', label: '2 columnas' },
+          { value: '3', label: '3 columnas' },
+          { value: '4', label: '4 columnas' },
+        ],
+      },
+      align: {
+        label: 'Alineación',
+        type: 'select',
+        storage: 'settings',
+        default: 'center',
+        options: [
+          { value: 'left',   label: 'Izquierda' },
+          { value: 'center', label: 'Centro' },
+        ],
+      },
+    },
+    items: COLUMN_ITEM,
+  },
+
+  media_banner: {
+    type: 'media_banner',
+    label: 'Banner de medios',
+    description: 'Imagen o video a pantalla completa con texto superpuesto y botón.',
+    category: 'content',
+    fields: {
+      image_url: F.image('Imagen de fondo'),
+      video_url: { label: 'Video de fondo (URL .mp4)', type: 'url', storage: 'settings' },
+      title:     F.title(),
+      subtitle:  F.subtitle(),
+      cta_label: F.ctaLabel(),
+      cta_url:   F.ctaUrl(),
+      height: {
+        label: 'Altura',
+        type: 'select',
+        storage: 'settings',
+        default: 'medium',
+        options: [
+          { value: 'small',  label: 'Baja' },
+          { value: 'medium', label: 'Media' },
+          { value: 'large',  label: 'Alta' },
+          { value: 'full',   label: 'Pantalla completa' },
+        ],
+      },
+      overlay: {
+        label: 'Oscurecer fondo (overlay)',
+        type: 'boolean',
+        storage: 'settings',
+        default: true,
+      },
+    },
+  },
+
+  spacer: {
+    type: 'spacer',
+    label: 'Espaciador / Separador',
+    description: 'Espacio en blanco con línea divisoria opcional.',
+    category: 'content',
+    fields: {
+      size: {
+        label: 'Tamaño',
+        type: 'select',
+        storage: 'settings',
+        default: 'medium',
+        options: [
+          { value: 'small',  label: 'Pequeño' },
+          { value: 'medium', label: 'Medio' },
+          { value: 'large',  label: 'Grande' },
+        ],
+      },
+      divider: {
+        label: 'Mostrar línea divisoria',
+        type: 'boolean',
+        storage: 'settings',
+        default: false,
       },
     },
   },

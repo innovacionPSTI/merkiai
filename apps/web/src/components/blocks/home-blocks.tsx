@@ -18,6 +18,10 @@ import HeroCarousel from '@/components/home/HeroCarousel'
 import FeaturedProducts from '@/components/home/FeaturedProducts'
 import ServicesSection from '@/components/home/ServicesSection'
 import NewsletterSection from '@/components/home/NewsletterSection'
+import ContentSection from '@/components/sections/ContentSection'
+import ColumnsSection from '@/components/sections/ColumnsSection'
+import MediaBanner from '@/components/sections/MediaBanner'
+import SpacerSection from '@/components/sections/SpacerSection'
 
 export type HomeData = Awaited<ReturnType<typeof getWebHomeData>>
 export type HomeSection = HomeData['homeSections'][number]
@@ -155,6 +159,20 @@ function NewsletterBlock({ section, template }: BlockProps) {
   )
 }
 
+// HU-252 · bloques genéricos — reusan los componentes de sección (CMS/home).
+function ContentSectionBlock({ section }: BlockProps) {
+  return section ? <ContentSection section={section} /> : null
+}
+function ColumnsBlock({ section }: BlockProps) {
+  return section ? <ColumnsSection section={section} items={section.items ?? []} /> : null
+}
+function MediaBannerBlock({ section }: BlockProps) {
+  return section ? <MediaBanner section={section} /> : null
+}
+function SpacerBlock({ section }: BlockProps) {
+  return section ? <SpacerSection section={section} /> : null
+}
+
 // ── Registry + preset ────────────────────────────────────────────────────────
 
 const DEFAULT_BLOCKS: Record<string, HomeBlock> = {
@@ -165,6 +183,11 @@ const DEFAULT_BLOCKS: Record<string, HomeBlock> = {
   historia:          HistoriaBlock,
   blog_preview:      BlogPreviewBlock,
   newsletter:        NewsletterBlock,
+  // HU-252 · bloques genéricos de layout
+  content_section:   ContentSectionBlock,
+  columns:           ColumnsBlock,
+  media_banner:      MediaBannerBlock,
+  spacer:            SpacerBlock,
 }
 
 /** Registry de bloques para un template (hoy solo 'default'). */

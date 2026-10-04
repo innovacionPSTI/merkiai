@@ -22,6 +22,10 @@ import FaqSection          from './FaqSection'
 import CtaSection          from './CtaSection'
 import TestimonialsSection from './TestimonialsSection'
 import WhatsAppSection     from './WhatsAppSection'
+import ContentSection      from './ContentSection'
+import ColumnsSection      from './ColumnsSection'
+import MediaBanner         from './MediaBanner'
+import SpacerSection       from './SpacerSection'
 
 interface Props {
   section: PageSection & { items: SectionItem[] }
@@ -54,6 +58,19 @@ export default function SectionRenderer({ section, pageKey: _pageKey, whatsappNu
 
     case 'whatsapp':
       return <WhatsAppSection section={section} whatsappNumber={whatsappNumber} />
+
+    // HU-252 · bloques genéricos de layout
+    case 'content_section':
+      return <ContentSection section={section} />
+
+    case 'columns':
+      return <ColumnsSection section={section} items={section.items} />
+
+    case 'media_banner':
+      return <MediaBanner section={section} />
+
+    case 'spacer':
+      return <SpacerSection section={section} />
 
     default:
       // Tipo desconocido: renderizar como texto plano para no perder contenido
