@@ -1,12 +1,10 @@
 /**
- * Unit tests for blog query helpers.
+ * Unit tests for blog query helpers. `db` es obligatorio (tenant-scoped): se
+ * inyecta el supabase simulado directamente (sin default a service-role).
  */
 
-import { getBlogPosts, getBlogPostBySlug, getFeaturedPost } from '../blog'
-import { createServerClient } from '../../client'
-
-jest.mock('../../client')
-const mockCreateServerClient = createServerClient as jest.MockedFunction<typeof createServerClient>
+import { getBlogPosts, getBlogPostBySlug, getBlogPostBySlugAny } from '../blog'
+import type { Db } from '../../client'
 
 const mockPost = {
   id: 1,
@@ -20,6 +18,8 @@ const mockPost = {
   cover_image: '/blog/catacion.jpg',
 }
 
+const asDb = (o: unknown) => o as unknown as Db
+
 beforeEach(() => jest.clearAllMocks())
 
 // ─────────────────────────────────────────────
@@ -32,16 +32,9 @@ describe('getBlogPosts', () => {
       { ...mockPost, id: 1, slug: 'guia-catacion-cafe', published_at: '2026-06-01T00:00:00Z' },
     ]
     const orderMock = jest.fn().mockResolvedValue({ data: posts, error: null })
-    const mockSupabase = {
-      from: jest.fn().mockReturnValue({
-        select: jest.fn().mockReturnValue({
-          eq: jest.fn().mockReturnValue({ order: orderMock }),
-        }),
-      }),
-    }
-    mockCreateServerClient.mockReturnValue(mockSupabase as never)
+    const db = { from: jest.fn().mockReturnValue({ select: jest.fn().mockReturnValue({ eq: jest.fn().mockReturnValue({ order: orderMock }) }) }) }
 
-    const result = await getBlogPosts()
+    const result = await getBlogPosts(undefined, asDb(db))
     expect(result).toHaveLength(2)
     expect(orderMock).toHaveBeenCalledWith('published_at', { ascending: false })
   })
@@ -51,14 +44,9 @@ describe('getBlogPosts', () => {
     const limitMock = jest.fn().mockReturnValue({ then: undefined })
     const orderMock = jest.fn().mockReturnValue({ eq: categoryEqMock, limit: limitMock })
     const publishedEqMock = jest.fn().mockReturnValue({ order: orderMock })
-    const mockSupabase = {
-      from: jest.fn().mockReturnValue({
-        select: jest.fn().mockReturnValue({ eq: publishedEqMock }),
-      }),
-    }
-    mockCreateServerClient.mockReturnValue(mockSupabase as never)
+    const db = { from: jest.fn().mockReturnValue({ select: jest.fn().mockReturnValue({ eq: publishedEqMock }) }) }
 
-    await getBlogPosts({ category: 'Cultura' })
+    await getBlogPosts({ category: 'Cultura' }, asDb(db))
     expect(categoryEqMock).toHaveBeenCalledWith('category', 'Cultura')
   })
 
@@ -66,29 +54,17 @@ describe('getBlogPosts', () => {
     const limitMock = jest.fn().mockResolvedValue({ data: [mockPost], error: null })
     const orderMock = jest.fn().mockReturnValue({ limit: limitMock })
     const publishedEqMock = jest.fn().mockReturnValue({ order: orderMock })
-    const mockSupabase = {
-      from: jest.fn().mockReturnValue({
-        select: jest.fn().mockReturnValue({ eq: publishedEqMock }),
-      }),
-    }
-    mockCreateServerClient.mockReturnValue(mockSupabase as never)
+    const db = { from: jest.fn().mockReturnValue({ select: jest.fn().mockReturnValue({ eq: publishedEqMock }) }) }
 
-    await getBlogPosts({ limit: 5 })
+    await getBlogPosts({ limit: 5 }, asDb(db))
     expect(limitMock).toHaveBeenCalledWith(5)
   })
 
   it('lanza error si Supabase falla', async () => {
     const orderMock = jest.fn().mockResolvedValue({ data: null, error: new Error('DB error') })
-    const mockSupabase = {
-      from: jest.fn().mockReturnValue({
-        select: jest.fn().mockReturnValue({
-          eq: jest.fn().mockReturnValue({ order: orderMock }),
-        }),
-      }),
-    }
-    mockCreateServerClient.mockReturnValue(mockSupabase as never)
+    const db = { from: jest.fn().mockReturnValue({ select: jest.fn().mockReturnValue({ eq: jest.fn().mockReturnValue({ order: orderMock }) }) }) }
 
-    await expect(getBlogPosts()).rejects.toThrow('DB error')
+    await expect(getBlogPosts(undefined, asDb(db))).rejects.toThrow('DB error')
   })
 })
 
@@ -98,83 +74,30 @@ describe('getBlogPosts', () => {
 describe('getBlogPostBySlug', () => {
   it('retorna el post con el slug indicado', async () => {
     const singleMock = jest.fn().mockResolvedValue({ data: mockPost, error: null })
-    const mockSupabase = {
-      from: jest.fn().mockReturnValue({
-        select: jest.fn().mockReturnValue({
-          eq: jest.fn().mockReturnValue({
-            eq: jest.fn().mockReturnValue({ single: singleMock }),
-          }),
-        }),
-      }),
-    }
-    mockCreateServerClient.mockReturnValue(mockSupabase as never)
+    const db = { from: jest.fn().mockReturnValue({ select: jest.fn().mockReturnValue({ eq: jest.fn().mockReturnValue({ eq: jest.fn().mockReturnValue({ single: singleMock }) }) }) }) }
 
-    const post = await getBlogPostBySlug('guia-catacion-cafe')
+    const post = await getBlogPostBySlug('guia-catacion-cafe', asDb(db))
     expect(post.slug).toBe('guia-catacion-cafe')
   })
 
   it('lanza error si el post no existe', async () => {
-    const singleMock = jest.fn().mockResolvedValue({
-      data: null,
-      error: { code: 'PGRST116', message: 'Row not found' },
-    })
-    const mockSupabase = {
-      from: jest.fn().mockReturnValue({
-        select: jest.fn().mockReturnValue({
-          eq: jest.fn().mockReturnValue({
-            eq: jest.fn().mockReturnValue({ single: singleMock }),
-          }),
-        }),
-      }),
-    }
-    mockCreateServerClient.mockReturnValue(mockSupabase as never)
+    const singleMock = jest.fn().mockResolvedValue({ data: null, error: { code: 'PGRST116', message: 'Row not found' } })
+    const db = { from: jest.fn().mockReturnValue({ select: jest.fn().mockReturnValue({ eq: jest.fn().mockReturnValue({ eq: jest.fn().mockReturnValue({ single: singleMock }) }) }) }) }
 
-    await expect(getBlogPostBySlug('no-existe')).rejects.toMatchObject({ code: 'PGRST116' })
+    await expect(getBlogPostBySlug('no-existe', asDb(db))).rejects.toMatchObject({ code: 'PGRST116' })
   })
 })
 
 // ─────────────────────────────────────────────
-// getFeaturedPost
+// getBlogPostBySlugAny (draft)
 // ─────────────────────────────────────────────
-describe('getFeaturedPost', () => {
-  it('retorna el post más reciente publicado', async () => {
-    const singleMock = jest.fn().mockResolvedValue({ data: mockPost, error: null })
-    const mockSupabase = {
-      from: jest.fn().mockReturnValue({
-        select: jest.fn().mockReturnValue({
-          eq: jest.fn().mockReturnValue({
-            order: jest.fn().mockReturnValue({
-              limit: jest.fn().mockReturnValue({ single: singleMock }),
-            }),
-          }),
-        }),
-      }),
-    }
-    mockCreateServerClient.mockReturnValue(mockSupabase as never)
+describe('getBlogPostBySlugAny', () => {
+  it('retorna el post sin filtrar por published (para borrador)', async () => {
+    const singleMock = jest.fn().mockResolvedValue({ data: { ...mockPost, published: false }, error: null })
+    const db = { from: jest.fn().mockReturnValue({ select: jest.fn().mockReturnValue({ eq: jest.fn().mockReturnValue({ single: singleMock }) }) }) }
 
-    const post = await getFeaturedPost()
-    expect(post?.slug).toBe('guia-catacion-cafe')
-  })
-
-  it('retorna null si no hay posts publicados (no lanza)', async () => {
-    const singleMock = jest.fn().mockResolvedValue({
-      data: null,
-      error: { code: 'PGRST116', message: 'Row not found' },
-    })
-    const mockSupabase = {
-      from: jest.fn().mockReturnValue({
-        select: jest.fn().mockReturnValue({
-          eq: jest.fn().mockReturnValue({
-            order: jest.fn().mockReturnValue({
-              limit: jest.fn().mockReturnValue({ single: singleMock }),
-            }),
-          }),
-        }),
-      }),
-    }
-    mockCreateServerClient.mockReturnValue(mockSupabase as never)
-
-    const post = await getFeaturedPost()
-    expect(post).toBeNull()
+    const post = await getBlogPostBySlugAny('guia-catacion-cafe', asDb(db))
+    expect(post.slug).toBe('guia-catacion-cafe')
+    expect(post.published).toBe(false)
   })
 })

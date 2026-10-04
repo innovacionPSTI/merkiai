@@ -1,7 +1,12 @@
-import { createServerClient, type Db } from '../client'
+import type { Db } from '../client'
 import type { BlogPost } from '../types'
 
-export async function getBlogPosts(options?: { category?: string; limit?: number }, db: Db = createServerClient()) {
+/**
+ * Lecturas de blog. `db` es **obligatorio** (tenant-scoped): nunca default a
+ * service-role — así ningún caller lee cross-tenant por descuido (HU-232).
+ * Para borrador (no-publicados) pásese un cliente que pueda verlos (machine/admin).
+ */
+export async function getBlogPosts(options: { category?: string; limit?: number } | undefined, db: Db) {
   const supabase = db
   let query = supabase
     .from('blog_posts')
@@ -17,7 +22,7 @@ export async function getBlogPosts(options?: { category?: string; limit?: number
   return data as BlogPost[]
 }
 
-export async function getBlogPostBySlug(slug: string, db: Db = createServerClient()) {
+export async function getBlogPostBySlug(slug: string, db: Db) {
   const supabase = db
   const { data, error } = await supabase
     .from('blog_posts')
@@ -30,8 +35,8 @@ export async function getBlogPostBySlug(slug: string, db: Db = createServerClien
   return data as BlogPost
 }
 
-/** Draft mode: fetch post regardless of published status (for preview) */
-export async function getBlogPostBySlugAny(slug: string, db: Db = createServerClient()) {
+/** Draft mode: fetch post regardless of published status (for preview). */
+export async function getBlogPostBySlugAny(slug: string, db: Db) {
   const supabase = db
   const { data, error } = await supabase
     .from('blog_posts')
@@ -40,19 +45,5 @@ export async function getBlogPostBySlugAny(slug: string, db: Db = createServerCl
     .single()
 
   if (error) throw error
-  return data as BlogPost
-}
-
-export async function getFeaturedPost(db: Db = createServerClient()) {
-  const supabase = db
-  const { data, error } = await supabase
-    .from('blog_posts')
-    .select('*')
-    .eq('published', true)
-    .order('published_at', { ascending: false })
-    .limit(1)
-    .single()
-
-  if (error) return null
   return data as BlogPost
 }

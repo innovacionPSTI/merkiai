@@ -1,9 +1,23 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { cookies } from 'next/headers'
+import { timingSafeEqual } from 'node:crypto'
 
-const DRAFT_SECRET = process.env.DRAFT_SECRET ?? 'vps-draft-preview'
 const COOKIE_NAME  = '__merkiai_draft'
 const COOKIE_MAX_AGE = 60 * 60 // 1 hour
+
+/**
+ * Compara el secret recibido con `DRAFT_SECRET` (obligatorio por entorno) en
+ * tiempo constante. Sin la variable configurada, la vista previa queda
+ * deshabilitada (no hay default — un default conocido permitiría a cualquiera
+ * previsualizar borradores). HU-128 / seguridad.
+ */
+function secretOk(provided: string | null): boolean {
+  const expected = process.env.DRAFT_SECRET
+  if (!expected || !provided) return false
+  const a = Buffer.from(provided)
+  const b = Buffer.from(expected)
+  return a.length === b.length && timingSafeEqual(a, b)
+}
 
 /**
  * GET /api/draft/enable?slug=<slug>&secret=<DRAFT_SECRET>
@@ -17,7 +31,7 @@ export async function GET(req: NextRequest) {
   const secret = searchParams.get('secret')
   const slug   = searchParams.get('slug')
 
-  if (secret !== DRAFT_SECRET) {
+  if (!secretOk(secret)) {
     return NextResponse.json({ error: 'Invalid secret' }, { status: 401 })
   }
   if (!slug) {

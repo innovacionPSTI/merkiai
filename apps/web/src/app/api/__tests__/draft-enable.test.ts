@@ -24,7 +24,7 @@ jest.mock('next/headers', () => ({
 import { NextRequest } from 'next/server'
 import { GET, DELETE } from '../draft/enable/route'
 
-const VALID_SECRET = 'vps-draft-preview' // matches DRAFT_SECRET env default
+const VALID_SECRET = 'test-draft-secret'
 
 function makeRequest(params: Record<string, string> = {}) {
   const url = new URL('http://localhost:3000/api/draft/enable')
@@ -32,6 +32,10 @@ function makeRequest(params: Record<string, string> = {}) {
   return new NextRequest(url.toString())
 }
 
+// DRAFT_SECRET es obligatorio por entorno (sin default inseguro).
+const OLD = process.env.DRAFT_SECRET
+beforeAll(() => { process.env.DRAFT_SECRET = VALID_SECRET })
+afterAll(() => { process.env.DRAFT_SECRET = OLD })
 beforeEach(() => jest.clearAllMocks())
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -67,6 +71,16 @@ describe('GET /api/draft/enable — cookie y redirección', () => {
     const location = res.headers.get('location') ?? ''
     expect(location).toContain('/blog/mi-articulo')
     expect(location).toContain('draft=1')
+  })
+})
+
+describe('GET /api/draft/enable — sin DRAFT_SECRET configurado', () => {
+  it('rechaza (401) aunque se envíe un secret', async () => {
+    const prev = process.env.DRAFT_SECRET
+    delete process.env.DRAFT_SECRET
+    const res = await GET(makeRequest({ secret: 'cualquiera', slug: 'x' }))
+    expect(res.status).toBe(401)
+    process.env.DRAFT_SECRET = prev
   })
 })
 

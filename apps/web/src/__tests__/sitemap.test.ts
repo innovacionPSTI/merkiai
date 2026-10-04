@@ -8,10 +8,15 @@
  * and published blog posts only — and handles DB failures gracefully.
  */
 
-// sitemap.ts lee NEXT_PUBLIC_SITE_URL al importarse; debe estar seteado antes del import
-process.env.NEXT_PUBLIC_SITE_URL = 'https://shop.example.com'
-
 // ── Mocks ────────────────────────────────────────────────────────────────────
+// Multi-tenant: la base URL sale del Host de la petición; el catálogo/blog del
+// tenant resuelto (getStoreContext). Se simulan ambos.
+jest.mock('next/headers', () => ({
+  headers: jest.fn(async () => new Map([['host', 'shop.example.com'], ['x-forwarded-proto', 'https']])),
+}))
+jest.mock('@/lib/store-context', () => ({
+  getStoreContext: jest.fn(async () => ({ db: {}, tenantId: 't1', config: null })),
+}))
 jest.mock('@merkiai/database', () => ({
   getProducts:  jest.fn(),
   getBlogPosts: jest.fn(),
