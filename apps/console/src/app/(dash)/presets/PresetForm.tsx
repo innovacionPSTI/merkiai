@@ -70,6 +70,7 @@ export default function PresetForm() {
         <label><span style={lbl}>Nicho</span><input style={{ ...input, width: '100%' }} name="niche" placeholder="cafe" required /></label>
         <label><span style={lbl}>Template (layout)</span><input style={{ ...input, width: '100%' }} name="template" defaultValue="default" /></label>
         <label style={{ gridColumn: '1 / span 2' }}><span style={lbl}>Descripción</span><textarea style={{ ...input, width: '100%', minHeight: 44 }} name="description" placeholder="Para qué sirve este preset" /></label>
+        <label style={{ gridColumn: '1 / span 2' }}><span style={lbl}>Miniatura (URL de imagen)</span><input style={{ ...input, width: '100%' }} name="thumbnail_url" placeholder="https://… (opcional; si falta, la galería usa un placeholder)" /></label>
         <label><span style={lbl}>Modelo de inventario</span>
           <select style={{ ...input, width: '100%' }} name="inventory_model" defaultValue="single">
             <option value="single">Stock único</option>

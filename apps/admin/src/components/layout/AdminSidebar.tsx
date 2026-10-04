@@ -113,6 +113,7 @@ const NAV: NavNode[] = [
     label: 'Apariencia',
     sections: ['apariencia', 'media'],
     children: [
+      { kind: 'leaf', href: '/plantillas',          icon: <Icon name="grid" />,    label: 'Plantillas', section: 'apariencia' },
       { kind: 'leaf', href: '/configuracion/temas', icon: <Icon name="palette" />, label: 'Temas',    section: 'apariencia' },
       { kind: 'leaf', href: '/media',               icon: <Icon name="media" />,   label: 'Archivos', section: 'media' },
     ],

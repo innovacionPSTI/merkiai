@@ -20,6 +20,8 @@ export interface PresetInput {
   inventory_model: InventoryModel
   available_in_plans: string[]
   active: boolean
+  /** HU-257 · URL de la miniatura (null = placeholder en la galería). */
+  thumbnail_url: string | null
 }
 
 /** '' → {}. null si no es objeto JSON. */
@@ -65,6 +67,7 @@ export interface PresetFormFields {
   inventory_model?: string
   available_in_plans?: string
   active?: string
+  thumbnail_url?: string
 }
 
 export function parsePresetForm(
@@ -107,6 +110,7 @@ export function parsePresetForm(
       inventory_model,
       available_in_plans: parsePlanList(f.available_in_plans),
       active: f.active !== 'false',
+      thumbnail_url: (f.thumbnail_url ?? '').trim() || null,
     },
   }
 }

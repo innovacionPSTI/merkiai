@@ -33,6 +33,8 @@ export interface OnboardingPreset {
   sample_products: unknown[]
   inventory_model: 'single' | 'multi_location'
   available_in_plans: string[]
+  /** HU-257 · miniatura curada (null = placeholder en la galería). */
+  thumbnail_url?: string | null
 }
 
 export interface OnboardingOptions {

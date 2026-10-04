@@ -282,6 +282,7 @@ export async function savePreset(
     inventory_model:    String(formData.get('inventory_model') ?? 'single'),
     available_in_plans: String(formData.get('available_in_plans') ?? ''),
     active:             String(formData.get('active') ?? 'true'),
+    thumbnail_url:      String(formData.get('thumbnail_url') ?? ''),
   })
   if (!parsed.ok) return { ok: false, error: parsed.error }
 

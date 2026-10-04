@@ -590,16 +590,15 @@
 > Como comerciante, quiero una galería de plantillas/presets con filtros, vista previa y un botón para aplicarla, para vestir mi tienda sin construir desde cero.
 
 **Estimación:** M (5 puntos) · **Track:** solo-front
-**Módulo:** `apps/admin` (nueva pantalla de galería), reusa `templates`/`presets`/preview(HU-128)/`applyPresetToStore`(HU-235)/export(HU-129)
-**Estado:** 🔲 Pendiente (go-live) — depende de HU-257 (miniaturas); se beneficia de HU-252/253
-**Reutiliza:** motor de "seleccionar → aplicar → se viste la web" ya funcional (el onboarding ya lo hace).
+**Módulo:** `apps/admin` `/plantillas` (`PlantillasGallery`), reusa `getOnboardingOptions` (control plane) + `applyPresetAction`/`applyPresetToStore` (HU-235)
+**Estado:** ✅ **Implementada (MVP).** Pantalla `/plantillas` (enlace en el sidebar, bajo Apariencia): rejilla de presets del plan del tenant con **búsqueda** + **filtro por industria (nicho)**; **miniatura** curada o placeholder determinista por nicho (HU-257); botón **"Aplicar a mi tienda"** (confirmación + orquestador, respeta plan/topes) con feedback. Gated por rol (`configuracion`) + plan. **Decisión de diseño (acordada):** la **vista previa es la miniatura** (MVP); el contenido del preset no existe en la tienda hasta aplicarlo, así que el preview por dispositivo de un preset *sin aplicar* queda **fuera del MVP** (requeriría render en sandbox); tras aplicar, el comerciante previsualiza su tienda real con "Vista previa" del Constructor (HU-128).
 
 | # | Escenario | Resultado esperado |
 |---|-----------|-------------------|
-| AC-1 | Filtros | Rejilla filtrable por **Page type** (home, landing, colección, producto, blog) y **Industry/nicho** |
-| AC-2 | Preview | Vista previa en vivo con toggles **desktop/tablet/móvil** (reusa el token de preview HU-128) |
-| AC-3 | Aplicar | Botón "Aplicar a mi tienda" ejecuta el orquestador (Tema+layout+contenido), respetando límites de plan (HU-235/239) |
-| AC-4 | Importar | Permite cargar una plantilla externa (paquete HU-129) a la galería como borrador |
+| AC-1 | Filtros | ✅ Búsqueda + filtro por **industria/nicho**. *(Filtro por "page type" N/A: los presets son bundles de home, no plantillas por tipo de página.)* |
+| AC-2 | Preview | 🔶 **Miniatura como preview (MVP).** Preview en vivo por dispositivo de un preset sin aplicar = post-MVP (sandbox). |
+| AC-3 | Aplicar | ✅ "Aplicar a mi tienda" ejecuta el orquestador (Tema+layout+contenido), respetando límites de plan (HU-235/239) |
+| AC-4 | Importar | ⏳ Pendiente: cargar un paquete de plantilla (HU-129) a la galería; hoy el import está en Temas |
 
 ### HU-251 — Constructor UX: DnD, duplicar y controles inline · E3
 
@@ -693,13 +692,13 @@
 > Como comerciante, quiero ver miniaturas representativas en la galería, para elegir con criterio.
 
 **Estimación:** S/M (3 puntos) · **Track:** front/infra
-**Módulo:** assets de preset/plantilla + galería (HU-250)
-**Estado:** 🔲 Pendiente (go-live) — **decisión:** imagen curada por preset (MVP, recomendado) vs. screenshot automatizado del preview (post)
+**Módulo:** `presets.thumbnail_url` (plataforma) + consola (lib/form) + endpoint interno + admin (tipo + galería)
+**Estado:** ✅ **Implementada (imagen curada).** `presets.thumbnail_url` (migración plataforma `platform/06_preset_thumbnail.sql`); expuesto en `PresetRow`/`PresetInput` + input "Miniatura (URL)" en el `PresetForm` de la consola; fluye al admin por el endpoint interno de presets (`OnboardingPreset.thumbnail_url`). La galería (HU-250) usa la imagen curada si existe, o un **placeholder gradiente determinista por nicho** si falta. Screenshots automáticos quedan como camino futuro.
 
 | # | Escenario | Resultado esperado |
 |---|-----------|-------------------|
-| AC-1 | Miniatura | Cada plantilla/preset expone una imagen representativa en la galería |
-| AC-2 | Enfoque | MVP con imagen curada; queda documentado el camino a screenshots automáticos |
+| AC-1 | Miniatura | ✅ Cada preset expone `thumbnail_url` (opcional) en la galería |
+| AC-2 | Enfoque | ✅ MVP con imagen curada + placeholder por nicho; camino a screenshots documentado |
 
 ### HU-258 — Accesibilidad v2 del Constructor/galería · E3
 

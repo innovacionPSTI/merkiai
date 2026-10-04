@@ -19,10 +19,12 @@ export interface PresetRow {
   available_in_plans: string[]
   active: boolean
   version: number
+  /** HU-257 · miniatura curada para la galería (null = placeholder). */
+  thumbnail_url: string | null
 }
 
 const COLS =
-  'key, name, niche, description, theme, template, home_sections, sample_categories, sample_products, inventory_model, available_in_plans, active, version'
+  'key, name, niche, description, theme, template, home_sections, sample_categories, sample_products, inventory_model, available_in_plans, active, version, thumbnail_url'
 
 export async function getPresets(): Promise<PresetRow[]> {
   const { data } = await platformDb()

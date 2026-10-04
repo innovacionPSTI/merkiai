@@ -31,8 +31,9 @@ export async function applyPresetAction(
   if (!res.ok) return { ok: false, error: res.error ?? 'No se pudo aplicar el preset.' }
 
   revalidatePath('/onboarding')
+  revalidatePath('/plantillas')
   revalidatePath('/')
-  return { ok: true, message: 'Preset aplicado. Revisa tu tienda y ajústala desde el panel.' }
+  return { ok: true, message: 'Plantilla aplicada. Revisa tu tienda y ajústala desde el panel.' }
 }
 
 /** HU-236 v2: marca el onboarding como completado u omitido, o lo reabre. */
