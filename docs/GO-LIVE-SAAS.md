@@ -21,6 +21,7 @@
 - [ ] Verificar: `select conname from pg_constraint where conname like '%_tenant_pk';` lista `store_config_tenant_pk`, etc.
 - [ ] **`e17/13_inventory_model.sql`** ⭐ **NUEVO** (HU-237) — columna `store_config.inventory_model` (`single`|`multi_location`, default `single`). Sin esto, aplicar un preset con modelo de inventario o el onboarding multi-ubicación fallan.
 - [ ] **`e17/14_onboarding_state.sql`** ⭐ **NUEVO** (HU-236 v2) — columna `store_config.onboarding_state` (JSONB, nullable). Sin esto, el onboarding no persiste el progreso (preset aplicado / completado / omitido) y no es reanudable. No rompe lo demás si falta (fail-soft), pero el wizard siempre arranca de cero.
+- [ ] **`e17/15_theme_dark_and_product.sql`** ⭐ **NUEVO** (HU-247) — en `themes`: `color_scheme` (`light`/`auto`/`dark`, default `light`) + `dark_bg`/`dark_surface`/`dark_text` + `color_price` (todos nullable). Sin esto, guardar/leer un tema con modo oscuro o color de precio falla. Los temas existentes siguen en claro (default).
 
 **Proyecto de PLATAFORMA (consola):**
 - [ ] `platform/01_platform_schema.sql` + `03_plans.sql`.

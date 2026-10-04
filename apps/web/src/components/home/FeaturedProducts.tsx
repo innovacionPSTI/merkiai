@@ -137,7 +137,7 @@ export default function FeaturedProducts({ products, title = 'Productos Destacad
                       {hasMultiplePrices && (
                         <span className="font-brand text-[10px] text-brand-primary/40 block">Desde</span>
                       )}
-                      <span className="font-brand font-bold text-brand-primary text-lg">
+                      <span className="font-brand font-bold text-brand-price text-lg">
                         {defaultVariant ? fmt(minPrice) : '—'}
                       </span>
                     </div>

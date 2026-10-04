@@ -31,6 +31,7 @@ const config: Config = {
           yellow:       'rgb(var(--brand-yellow)       / <alpha-value>)',
           'yellow-pale':'rgb(var(--brand-yellow-pale)  / <alpha-value>)',
           text:         'rgb(var(--brand-text)         / <alpha-value>)',
+          price:        'rgb(var(--brand-price)        / <alpha-value>)',
         },
       },
       fontFamily: {

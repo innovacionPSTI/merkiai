@@ -1257,8 +1257,13 @@ export type Database = {
           color_yellow: string
           color_yellow_pale: string
           color_text: string
+          color_price: string | null
           font_display: string
           font_body: string
+          color_scheme: string
+          dark_bg: string | null
+          dark_surface: string | null
+          dark_text: string | null
           created_at: string
           updated_at: string
         }
@@ -1275,8 +1280,13 @@ export type Database = {
           color_yellow?: string
           color_yellow_pale?: string
           color_text?: string
+          color_price?: string | null
           font_display?: string
           font_body?: string
+          color_scheme?: string
+          dark_bg?: string | null
+          dark_surface?: string | null
+          dark_text?: string | null
           created_at?: string
           updated_at?: string
         }
@@ -1293,8 +1303,13 @@ export type Database = {
           color_yellow?: string
           color_yellow_pale?: string
           color_text?: string
+          color_price?: string | null
           font_display?: string
           font_body?: string
+          color_scheme?: string
+          dark_bg?: string | null
+          dark_surface?: string | null
+          dark_text?: string | null
           created_at?: string
           updated_at?: string
         }

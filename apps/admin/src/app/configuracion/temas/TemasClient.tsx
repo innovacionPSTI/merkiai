@@ -28,6 +28,20 @@ const COLOR_FIELDS: { key: keyof ThemeFormData; label: string; description: stri
   { key: 'color_yellow',      label: 'Amarillo',         description: 'Acentos cálidos y tarjetas destacadas' },
   { key: 'color_yellow_pale', label: 'Amarillo pálido',  description: 'Fondos de secciones secundarias' },
   { key: 'color_text',        label: 'Texto',            description: 'Color base del cuerpo de texto' },
+  { key: 'color_price',       label: 'Precio',           description: 'Color del precio en las vistas de producto (HU-247)' },
+]
+
+// HU-247 · campos de la paleta oscura (solo visibles en modo auto/oscuro).
+const DARK_FIELDS: { key: keyof ThemeFormData; label: string; description: string }[] = [
+  { key: 'dark_bg',      label: 'Fondo oscuro',      description: 'Fondo principal en modo oscuro' },
+  { key: 'dark_surface', label: 'Superficie oscura', description: 'Fondo de tarjetas y secciones en modo oscuro' },
+  { key: 'dark_text',    label: 'Texto oscuro',      description: 'Color del texto en modo oscuro' },
+]
+
+const SCHEME_OPTIONS = [
+  { value: 'light', label: 'Solo claro',  description: 'Siempre con la paleta clara' },
+  { value: 'auto',  label: 'Automático',  description: 'Sigue el modo del sistema del visitante' },
+  { value: 'dark',  label: 'Solo oscuro', description: 'Siempre con la paleta oscura' },
 ]
 
 // ── Tipos ─────────────────────────────────────────────────────────────────────
@@ -41,8 +55,13 @@ interface ThemeFormData {
   color_yellow: string
   color_yellow_pale: string
   color_text: string
+  color_price: string
   font_display: string
   font_body: string
+  color_scheme: string
+  dark_bg: string
+  dark_surface: string
+  dark_text: string
 }
 
 const DEFAULT_FORM: ThemeFormData = {
@@ -54,8 +73,13 @@ const DEFAULT_FORM: ThemeFormData = {
   color_yellow:      '#FFF6B8',
   color_yellow_pale: '#FDF8B9',
   color_text:        '#2D1A0A',
+  color_price:       '#614A2A',
   font_display:      'cormorant',
   font_body:         'dm-sans',
+  color_scheme:      'light',
+  dark_bg:           '#1A1510',
+  dark_surface:      '#241D15',
+  dark_text:         '#F5EDE0',
 }
 
 function themeToForm(t: Theme): ThemeFormData {
@@ -68,8 +92,13 @@ function themeToForm(t: Theme): ThemeFormData {
     color_yellow:      t.color_yellow,
     color_yellow_pale: t.color_yellow_pale,
     color_text:        t.color_text,
+    color_price:       t.color_price ?? t.color_primary,
     font_display:      t.font_display,
     font_body:         t.font_body,
+    color_scheme:      t.color_scheme ?? 'light',
+    dark_bg:           t.dark_bg ?? DEFAULT_FORM.dark_bg,
+    dark_surface:      t.dark_surface ?? DEFAULT_FORM.dark_surface,
+    dark_text:         t.dark_text ?? DEFAULT_FORM.dark_text,
   }
 }
 
@@ -405,6 +434,48 @@ function ThemeModal({
                   </div>
                 </div>
               </div>
+            </div>
+
+            {/* Modo de color (HU-247) */}
+            <div>
+              <div className="text-xs font-medium text-gray-700 mb-2">Modo de color</div>
+              <div className="grid grid-cols-3 gap-2">
+                {SCHEME_OPTIONS.map((s) => (
+                  <button
+                    key={s.value}
+                    onClick={() => update('color_scheme', s.value)}
+                    className={`p-2.5 rounded-lg border text-left transition-all ${
+                      form.color_scheme === s.value
+                        ? 'border-brand-primary bg-brand-primary/5'
+                        : 'border-gray-200 hover:border-gray-300'
+                    }`}
+                  >
+                    <div className="text-sm font-semibold text-gray-800">{s.label}</div>
+                    <div className="text-[11px] text-gray-400 leading-tight">{s.description}</div>
+                  </button>
+                ))}
+              </div>
+
+              {form.color_scheme !== 'light' && (
+                <div className="mt-3 space-y-2">
+                  <div className="text-xs text-gray-500">Paleta oscura</div>
+                  {DARK_FIELDS.map(({ key, label, description }) => (
+                    <div key={key} className="flex items-center gap-3">
+                      <input
+                        type="color"
+                        value={form[key] as string}
+                        onChange={(e) => update(key, e.target.value)}
+                        className="w-9 h-9 rounded-lg cursor-pointer border border-gray-200 p-0.5 flex-shrink-0"
+                      />
+                      <div className="flex-1 min-w-0">
+                        <div className="text-xs font-medium text-gray-800">{label}</div>
+                        <div className="text-xs text-gray-400 truncate">{description}</div>
+                      </div>
+                      <span className="text-xs font-mono text-gray-400">{(form[key] as string).toUpperCase()}</span>
+                    </div>
+                  ))}
+                </div>
+              )}
             </div>
           </div>
 

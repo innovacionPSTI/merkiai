@@ -44,13 +44,21 @@ export async function PATCH(req: NextRequest, { params }: Params) {
   const allowed = [
     'name',
     'color_primary', 'color_dark', 'color_cream', 'color_cream_warm',
-    'color_yellow', 'color_yellow_pale', 'color_text',
+    'color_yellow', 'color_yellow_pale', 'color_text', 'color_price',
     'font_display', 'font_body',
+    // HU-247 · modo claro/oscuro
+    'color_scheme', 'dark_bg', 'dark_surface', 'dark_text',
   ]
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const updates: any = {}
   for (const key of allowed) {
     if (key in body) updates[key] = body[key]
+  }
+  // Si se vuelve a modo claro, limpia la paleta oscura para no dejar residuos.
+  if (updates.color_scheme === 'light') {
+    updates.dark_bg = null
+    updates.dark_surface = null
+    updates.dark_text = null
   }
 
   if (!Object.keys(updates).length) {

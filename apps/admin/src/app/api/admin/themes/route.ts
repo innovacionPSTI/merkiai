@@ -35,11 +35,14 @@ export async function POST(req: NextRequest) {
   const {
     name,
     color_primary, color_dark, color_cream, color_cream_warm,
-    color_yellow, color_yellow_pale, color_text,
+    color_yellow, color_yellow_pale, color_text, color_price,
     font_display, font_body,
+    color_scheme, dark_bg, dark_surface, dark_text,
   } = body
 
   if (!name) return NextResponse.json({ error: 'El nombre es requerido' }, { status: 400 })
+
+  const scheme = ['light', 'auto', 'dark'].includes(color_scheme) ? color_scheme : 'light'
 
   const supabase = getAdminDb(user!.tenantId)
   const { data, error: dbError } = await supabase
@@ -55,8 +58,14 @@ export async function POST(req: NextRequest) {
       color_yellow:      color_yellow      ?? '#FFF6B8',
       color_yellow_pale: color_yellow_pale ?? '#FDF8B9',
       color_text:        color_text        ?? '#2D1A0A',
+      color_price:       color_price       ?? null,
       font_display:      font_display      ?? 'cormorant',
       font_body:         font_body         ?? 'dm-sans',
+      // HU-247 · modo claro/oscuro
+      color_scheme:      scheme,
+      dark_bg:           scheme === 'light' ? null : (dark_bg      ?? null),
+      dark_surface:      scheme === 'light' ? null : (dark_surface ?? null),
+      dark_text:         scheme === 'light' ? null : (dark_text    ?? null),
     })
     .select()
     .single()

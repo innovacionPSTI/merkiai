@@ -456,7 +456,7 @@ function ProductCard({ product, fmt, addItem }: {
             {hasMultiplePrices && (
               <span className="font-brand text-[10px] text-brand-primary/40">Desde</span>
             )}
-            <p className="font-brand font-bold text-brand-primary leading-tight">
+            <p className="font-brand font-bold text-brand-price leading-tight">
               {defaultVariant ? fmt(minPrice) : '—'}
             </p>
           </div>

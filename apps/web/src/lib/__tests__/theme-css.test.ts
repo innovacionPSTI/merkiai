@@ -52,3 +52,33 @@ describe('buildThemeCSS — fuentes de tema (HU-081)', () => {
     expect(css).toContain('--brand-yellow:      255 204 0;')
   })
 })
+
+describe('buildThemeCSS — modo claro/oscuro + precio (HU-247)', () => {
+  it('precio usa color_price si está, si no cae al primario', () => {
+    expect(buildThemeCSS(baseTheme)).toContain('--brand-price:       17 34 51;') // = primario
+    expect(buildThemeCSS({ ...baseTheme, color_price: '#ffcc00' })).toContain('--brand-price:       255 204 0;')
+  })
+
+  it("'light' (o ausente) no emite bloque oscuro", () => {
+    expect(buildThemeCSS(baseTheme)).not.toContain('prefers-color-scheme')
+    expect(buildThemeCSS({ ...baseTheme, color_scheme: 'light' })).not.toContain('prefers-color-scheme')
+  })
+
+  it("'auto' emite un bloque @media prefers-color-scheme: dark", () => {
+    const css = buildThemeCSS({ ...baseTheme, color_scheme: 'auto', dark_bg: '#000000', dark_surface: '#111111', dark_text: '#eeeeee' })
+    expect(css).toContain('@media (prefers-color-scheme: dark)')
+    expect(css).toContain('--brand-cream:       0 0 0;')
+    expect(css).toContain('--brand-text:        238 238 238;')
+  })
+
+  it("'dark' fuerza la paleta oscura en :root sin media query", () => {
+    const css = buildThemeCSS({ ...baseTheme, color_scheme: 'dark', dark_bg: '#010203' })
+    expect(css).not.toContain('prefers-color-scheme')
+    expect(css).toContain('--brand-cream:       1 2 3;')
+  })
+
+  it('usa defaults oscuros cálidos cuando faltan los dark_*', () => {
+    const css = buildThemeCSS({ ...baseTheme, color_scheme: 'dark' })
+    expect(css).toContain(`--brand-cream:       ${hexToRgb('#1A1510')};`)
+  })
+})

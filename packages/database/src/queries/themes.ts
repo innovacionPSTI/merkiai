@@ -18,11 +18,24 @@ export interface Theme {
   font_display: string
   /** Identificador de fuente body: 'dm-sans' | 'inter' */
   font_body: string
+  /** HU-247 · modo de color: 'light' (default) | 'auto' (sigue el SO) | 'dark'. */
+  color_scheme: string
+  /** HU-247 · paleta oscura (override). NULL = defaults cálidos. */
+  dark_bg: string | null
+  dark_surface: string | null
+  dark_text: string | null
+  /** HU-247 · color del precio en vistas de producto. NULL = usa el primario. */
+  color_price: string | null
   created_at: string
   updated_at: string
 }
 
-export type ThemeInput = Omit<Theme, 'id' | 'is_default' | 'created_at' | 'updated_at'>
+// Los campos de HU-247 (modo oscuro + color de precio) son opcionales al crear:
+// la BD aplica defaults ('light' / NULL), así los callers existentes no cambian.
+export type ThemeInput = Omit<
+  Theme,
+  'id' | 'is_default' | 'created_at' | 'updated_at' | 'color_scheme' | 'dark_bg' | 'dark_surface' | 'dark_text' | 'color_price'
+> & Partial<Pick<Theme, 'color_scheme' | 'dark_bg' | 'dark_surface' | 'dark_text' | 'color_price'>>
 
 // ── Queries ───────────────────────────────────────────────────────────────────
 

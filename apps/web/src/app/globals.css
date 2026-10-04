@@ -23,6 +23,7 @@
   --brand-yellow:      255 246 184; /* #FFF6B8 */
   --brand-yellow-pale: 253 248 185; /* #FDF8B9 */
   --brand-text:        45 26 10;    /* #2D1A0A */
+  --brand-price:       97 74 42;    /* HU-247 · por defecto = primario */
 
   /* Tipografía (resuelta por el tema activo en layout.tsx) */
   --font-display: var(--font-ahsing), Georgia, serif;

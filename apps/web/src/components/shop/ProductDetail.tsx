@@ -375,8 +375,8 @@ export default function ProductDetail({ product, related, trustBadges = [], layo
 
             <hr className="border-brand-primary/10 mb-6" />
 
-            {/* Precio */}
-            <p className="font-brand font-bold text-brand-primary text-3xl mb-1">
+            {/* Precio (HU-247 · color de producto themeable) */}
+            <p className="font-brand font-bold text-brand-price text-3xl mb-1">
               {priceDisplay}
             </p>
             {stockWarning && (
