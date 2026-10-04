@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useRef, useEffect, useId } from 'react'
+import { Icon } from '@merkiai/ui'
 
 interface Props {
   label: string
@@ -187,7 +188,7 @@ export default function SearchableSelect({
             >
               {option}
               {option === value && (
-                <span className="ml-2 text-brand-primary">✓</span>
+                <span className="ml-2 text-brand-primary inline-flex"><Icon name="check" size={15} /></span>
               )}
             </li>
           ))}

@@ -2,6 +2,7 @@
 
 import { useState, useMemo } from 'react'
 import Link from 'next/link'
+import { Icon } from '@merkiai/ui'
 import { useCartStore } from '@/store/cart'
 import type { CartItem } from '@/store/cart'
 import type { ProductWithVariants } from '@merkiai/database'
@@ -327,9 +328,10 @@ export default function ShopClient({ products, searchParams }: Props) {
               <h2 className="font-brand font-semibold text-brand-primary">Filtros</h2>
               <button
                 onClick={() => setMobileFiltersOpen(false)}
-                className="font-brand text-sm text-brand-primary/40 hover:text-brand-primary"
+                aria-label="Cerrar filtros"
+                className="font-brand text-sm text-brand-primary/40 hover:text-brand-primary inline-flex"
               >
-                ✕
+                <Icon name="close" size={18} />
               </button>
             </div>
             <div className="p-5">

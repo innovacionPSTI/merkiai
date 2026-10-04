@@ -420,7 +420,7 @@ export default function ProductDetail({ product, related, trustBadges = [] }: Pr
                 }`}
               >
                 {addedFeedback
-                  ? '✓ Agregado al carrito'
+                  ? 'Agregado al carrito'
                   : isOutOfStock
                     ? 'Sin stock'
                     : !isFullySelected

@@ -1,4 +1,5 @@
 import { getBlogPostBySlug, getBlogPostBySlugAny, getBlogPosts } from '@merkiai/database'
+import { Icon } from '@merkiai/ui'
 import { getStoreContext } from '@/lib/store-context'
 import { notFound } from 'next/navigation'
 import { cookies } from 'next/headers'
@@ -98,8 +99,8 @@ export default async function BlogPostPage({ params, searchParams }: Props) {
     <div className="bg-brand-cream min-h-screen pt-16">
       {/* Draft mode banner */}
       {draftMode && !post.published && (
-        <div className="bg-amber-400 text-amber-900 text-center py-2.5 px-4 font-brand text-sm font-semibold">
-          ⚠️ Modo borrador — Este artículo no está publicado. Solo tú puedes verlo.
+        <div className="bg-amber-400 text-amber-900 text-center py-2.5 px-4 font-brand text-sm font-semibold inline-flex items-center justify-center gap-2 w-full">
+          <Icon name="alert" size={15} /> Modo borrador — Este artículo no está publicado. Solo tú puedes verlo.
         </div>
       )}
 

@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react'
 import Link from 'next/link'
+import { Icon } from '@merkiai/ui'
 import { useCartStore } from '@/store/cart'
 
 interface ShippingPublicConfig {
@@ -196,7 +197,7 @@ export default function CarritoPage() {
             </Link>
 
             <div className="mt-4 flex flex-col gap-1">
-              <p className="font-brand text-xs text-brand-primary/40 text-center">🔒 Pago seguro</p>
+              <p className="font-brand text-xs text-brand-primary/40 text-center inline-flex items-center justify-center gap-1.5"><Icon name="lock" size={13} /> Pago seguro</p>
               <div className="flex justify-center gap-3 mt-1">
                 <span className="font-brand text-xs text-brand-primary/40">Wompi</span>
                 <span className="font-brand text-xs text-brand-primary/40">·</span>

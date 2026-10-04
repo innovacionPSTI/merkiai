@@ -11,7 +11,7 @@ export type IconName =
   | 'dashboard' | 'rocket' | 'search' | 'filter' | 'plus' | 'edit' | 'trash'
   | 'more' | 'bell' | 'external' | 'check' | 'alert' | 'clock' | 'settings'
   | 'chart' | 'calendar' | 'refresh' | 'truck' | 'ban' | 'money'
-  | 'chevron-left' | 'chevron-right' | 'close' | 'grid' | 'list'
+  | 'chevron-left' | 'chevron-right' | 'close' | 'grid' | 'list' | 'lock' | 'star'
   // admin · objetos
   | 'catalog' | 'product' | 'category' | 'variant' | 'sales' | 'order'
   | 'customer' | 'users' | 'coupon' | 'content' | 'builder' | 'blog'
@@ -67,6 +67,8 @@ const P: Record<IconName, ReactNode> = {
   close: (<path d="M6 6l12 12M18 6L6 18" />),
   grid: (<><rect x="3" y="3" width="7" height="7" rx="1.5" /><rect x="14" y="3" width="7" height="7" rx="1.5" /><rect x="3" y="14" width="7" height="7" rx="1.5" /><rect x="14" y="14" width="7" height="7" rx="1.5" /></>),
   list: (<path d="M8 6h13M8 12h13M8 18h13M3 6h.01M3 12h.01M3 18h.01" />),
+  lock: (<><rect x="4" y="11" width="16" height="10" rx="2" /><path d="M8 11V7a4 4 0 018 0v4" /></>),
+  star: (<path d="M12 3l2.9 6 6.6.9-4.8 4.6 1.2 6.5L12 18l-5.9 3 1.2-6.5L2.5 9.9 9 9z" />),
 }
 
 export function Icon({ name, size = 18, ...rest }: { name: IconName; size?: number } & Omit<SVGProps<SVGSVGElement>, 'name'>) {
