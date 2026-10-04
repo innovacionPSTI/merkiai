@@ -3,7 +3,7 @@
 import { useActionState, useState } from 'react'
 import { Icon, StatusBadge, type BadgeTone } from '@merkiai/ui'
 import type { DomainState } from '@/lib/domains'
-import { requestDomainAction, verifyDomainAction, activateDomainAction, type DomainActionState } from './actions'
+import { requestDomainAction, verifyDomainAction, activateDomainAction, removeDomainAction, type DomainActionState } from './actions'
 
 const init: DomainActionState = { ok: false }
 
@@ -37,6 +37,7 @@ export default function DominioClient({ state: initial }: { state: DomainState |
   const [reqState, reqAction] = useActionState(requestDomainAction, init)
   const [verState, verAction] = useActionState(verifyDomainAction, init)
   const [actState, actAction] = useActionState(activateDomainAction, init)
+  const [rmState, rmAction] = useActionState(removeDomainAction, init)
 
   if (!initial) {
     return (
@@ -126,6 +127,16 @@ export default function DominioClient({ state: initial }: { state: DomainState |
           )}
           <Msg s={actState} />
         </div>
+      )}
+
+      {/* Quitar dominio */}
+      {initial.domain_status !== 'none' && (
+        <form action={rmAction}>
+          <button type="submit" className="font-brand text-sm text-red-500 hover:text-red-600 inline-flex items-center gap-1.5">
+            <Icon name="trash" size={15} /> Quitar dominio propio
+          </button>
+          <Msg s={rmState} />
+        </form>
       )}
     </div>
   )

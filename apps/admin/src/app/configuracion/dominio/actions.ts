@@ -3,7 +3,7 @@
 import { revalidatePath } from 'next/cache'
 import { getAdminUser } from '@/lib/auth'
 import { canAccess } from '@/lib/roles'
-import { requestDomain, verifyDomain, activateDomain, type DomainInstructions } from '@/lib/domains'
+import { requestDomain, verifyDomain, activateDomain, removeDomain, type DomainInstructions } from '@/lib/domains'
 
 export interface DomainActionState {
   ok: boolean
@@ -49,4 +49,14 @@ export async function activateDomainAction(_prev: DomainActionState, formData: F
   revalidatePath('/configuracion/dominio')
   if (!res.ok) return { ok: false, error: res.error ?? 'No se pudo activar el dominio.' }
   return { ok: true, message: 'Dominio activado. Tu tienda ya responde en tu dominio propio.' }
+}
+
+/** Quita el dominio propio: la tienda vuelve a su subdominio *.merkiai.com. */
+export async function removeDomainAction(_prev: DomainActionState): Promise<DomainActionState> {
+  const u = await guard()
+  if (!u) return { ok: false, error: 'No autorizado.' }
+  const res = await removeDomain(u.tenantId)
+  revalidatePath('/configuracion/dominio')
+  if (!res.ok) return { ok: false, error: res.error ?? 'No se pudo quitar el dominio.' }
+  return { ok: true, message: 'Dominio quitado. Tu tienda responde en tu subdominio *.merkiai.com.' }
 }

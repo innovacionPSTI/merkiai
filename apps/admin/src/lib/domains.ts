@@ -66,11 +66,20 @@ export async function verifyDomain(tenantId: string): Promise<{ ok: boolean; sta
 
 /** Activa el dominio verificado (PATCH primaryDomain; el control plane lo gatea por estado). */
 export async function activateDomain(tenantId: string, domain: string): Promise<{ ok: boolean; error?: string }> {
+  return patchPrimaryDomain(tenantId, domain)
+}
+
+/** Quita el dominio propio: vuelve al subdominio *.merkiai.com (primary_domain=null). */
+export async function removeDomain(tenantId: string): Promise<{ ok: boolean; error?: string }> {
+  return patchPrimaryDomain(tenantId, null)
+}
+
+async function patchPrimaryDomain(tenantId: string, primaryDomain: string | null): Promise<{ ok: boolean; error?: string }> {
   const b = base(); const h = headers()
   if (!b || !h) return { ok: false, error: 'Control plane no configurado.' }
   try {
     const res = await fetch(`${b}/api/internal/tenants/${tenantId}`, {
-      method: 'PATCH', headers: h, cache: 'no-store', body: JSON.stringify({ primaryDomain: domain }),
+      method: 'PATCH', headers: h, cache: 'no-store', body: JSON.stringify({ primaryDomain }),
     })
     if (!res.ok) {
       const d = await res.json().catch(() => ({}))
