@@ -8,9 +8,16 @@ import { getProductOptions, getVariantAttrs, getVariantLabel, COLOR_HEX } from '
 interface FeaturedProductsProps {
   products: ProductWithVariants[]
   title?: string
+  /** Densidad de la grilla por plantilla activa (HU-122a). */
+  density?: string
 }
 
-export default function FeaturedProducts({ products, title = 'Productos Destacados' }: FeaturedProductsProps) {
+const DENSITY_GRID: Record<string, string> = {
+  comfortable: 'grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8',
+  compact: 'grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-5',
+}
+
+export default function FeaturedProducts({ products, title = 'Productos Destacados', density = 'comfortable' }: FeaturedProductsProps) {
   const addItem = useCartStore((s) => s.addItem)
 
   const fmt = (n: number) =>
@@ -34,7 +41,7 @@ export default function FeaturedProducts({ products, title = 'Productos Destacad
           </Link>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+        <div className={DENSITY_GRID[density] ?? DENSITY_GRID.comfortable}>
           {products.map((product) => {
             const activeVariants = product.variants.filter((v) => v.active)
             const defaultVariant = activeVariants[0] ?? product.variants[0]

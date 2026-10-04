@@ -13,7 +13,7 @@ import type { ComponentType } from 'react'
 import Link from 'next/link'
 import Image from 'next/image'
 import type { getWebHomeData } from '@merkiai/database'
-import { getTemplateHomeLayout, resolveBlockFields } from '@merkiai/database'
+import { getTemplateHomeLayout, resolveBlockFields, getTemplateVariant } from '@merkiai/database'
 import HeroCarousel from '@/components/home/HeroCarousel'
 import FeaturedProducts from '@/components/home/FeaturedProducts'
 import ServicesSection from '@/components/home/ServicesSection'
@@ -41,7 +41,8 @@ function HeroBlock({ section }: BlockProps) {
 
 function FeaturedBlock({ section, data, template }: BlockProps) {
   const f = resolveBlockFields('featured_products', section, template)
-  return <FeaturedProducts products={data.featuredProducts} title={f.title as string | undefined} />
+  const density = getTemplateVariant(template, 'product_grid')
+  return <FeaturedProducts products={data.featuredProducts} title={f.title as string | undefined} density={density} />
 }
 
 function ServicesBlock({ section }: BlockProps) {
