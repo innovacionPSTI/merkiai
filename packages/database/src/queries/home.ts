@@ -32,7 +32,7 @@ export interface WebHomeData {
  * page_sections + section_items con page_key = 'home'.
  * El resto de queries corre en paralelo — fallo individual no rompe el render.
  */
-export async function getWebHomeData(db: Db): Promise<WebHomeData> {
+export async function getWebHomeData(db: Db, opts: { preview?: boolean } = {}): Promise<WebHomeData> {
   const supabase = db
 
   async function fetchHomeSections(): Promise<HomeSection[]> {
@@ -44,12 +44,14 @@ export async function getWebHomeData(db: Db): Promise<WebHomeData> {
     if (sErr || !sections?.length) return []
 
     const sectionIds = sections.map((s) => s.id)
-    const { data: items } = await supabase
+    // En vista previa (HU-128) se incluyen los ítems deshabilitados para que el
+    // comerciante vea el contenido en borrador antes de publicarlo.
+    let itemsQuery = supabase
       .from('section_items')
       .select('*')
       .in('section_id', sectionIds)
-      .eq('enabled', true)
-      .order('order_index')
+    if (!opts.preview) itemsQuery = itemsQuery.eq('enabled', true)
+    const { data: items } = await itemsQuery.order('order_index')
 
     const bySection = (items ?? []).reduce<Record<number, SectionItem[]>>((acc, item) => {
       if (!acc[item.section_id]) acc[item.section_id] = []

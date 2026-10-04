@@ -1,4 +1,5 @@
 import { getAdminUser } from '@/lib/auth'
+import PreviewButton from './PreviewButton'
 import { redirect, notFound } from 'next/navigation'
 import { requireAdminDb } from '@/lib/admin-context'
 import { FEATURES } from '@/lib/features'
@@ -30,14 +31,17 @@ export default async function ConstructorPage() {
 
   return (
     <div className="h-[calc(100vh-4rem)] flex flex-col">
-      <div className="px-6 py-4 border-b border-gray-100">
-        <div className="flex items-center gap-2">
-          <h1 className="font-display text-xl text-brand-primary">Constructor de páginas</h1>
-          <span className="rounded-full bg-indigo-100 text-indigo-700 text-[10px] font-semibold px-2 py-0.5">beta</span>
+      <div className="px-6 py-4 border-b border-gray-100 flex items-start justify-between gap-4">
+        <div>
+          <div className="flex items-center gap-2">
+            <h1 className="font-display text-xl text-brand-primary">Constructor de páginas</h1>
+            <span className="rounded-full bg-indigo-100 text-indigo-700 text-[10px] font-semibold px-2 py-0.5">beta</span>
+          </div>
+          <p className="font-brand text-xs text-brand-primary/50 mt-0.5">
+            Compón cualquier página con bloques. Base de los Templates que visten la Web.
+          </p>
         </div>
-        <p className="font-brand text-xs text-brand-primary/50 mt-0.5">
-          Compón cualquier página con bloques. Base de los Templates que visten la Web.
-        </p>
+        <PreviewButton />
       </div>
       <div className="flex-1 overflow-y-auto px-6 py-6 bg-slate-50">
         <div className="max-w-6xl mx-auto">
