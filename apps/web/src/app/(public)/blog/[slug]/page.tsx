@@ -2,24 +2,17 @@ import { getBlogPostBySlug, getBlogPostBySlugAny, getBlogPosts } from '@merkiai/
 import { Icon } from '@merkiai/ui'
 import { getStoreContext } from '@/lib/store-context'
 import { getMachineDb } from '@/lib/machine-db'
+import { isPreviewMode } from '@/lib/preview'
 import { notFound } from 'next/navigation'
-import { cookies } from 'next/headers'
 import Link from 'next/link'
 import type { Metadata } from 'next'
 import ShareWhatsApp from '@/components/blog/ShareWhatsApp'
 import { markdownToHtml } from '@/lib/markdown'
 import { buildArticleJsonLd } from '@/lib/json-ld'
 
-const DRAFT_COOKIE = '__merkiai_draft'
-
 interface Props {
   params:      Promise<{ slug: string }>
-  searchParams: Promise<{ draft?: string }>
-}
-
-async function isDraftMode(): Promise<boolean> {
-  const cookieStore = await cookies()
-  return cookieStore.get(DRAFT_COOKIE)?.value === '1'
+  searchParams: Promise<{ preview?: string }>
 }
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
@@ -59,8 +52,8 @@ export const dynamic = 'force-dynamic'
 
 export default async function BlogPostPage({ params, searchParams }: Props) {
   const { slug } = await params
-  const { draft } = await searchParams
-  const draftMode = (await isDraftMode()) || draft === '1'
+  const { preview } = await searchParams
+  const draftMode = (await isPreviewMode()) || preview === '1'
 
   const ctx = await getStoreContext().catch(() => null)
   if (!ctx) notFound()
