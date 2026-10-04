@@ -25,6 +25,7 @@
 - [ ] `platform/01_platform_schema.sql` + `03_plans.sql`.
 - [ ] **`platform/04_owner_email.sql`** ⭐ **NUEVO** — columna `owner_email` para mostrar el dueño en el listado de la consola.
 - [ ] **`platform/05_presets.sql`** ⭐ **NUEVO** (HU-233) — tabla `presets` (bundles curados por nicho que se aplican al crear tiendas).
+- [ ] **`platform/06_custom_domains.sql`** ⭐ **NUEVO** (HU-174) — `tenants.domain_status`/`domain_verify_token`/`domain_requested` para la verificación de dominio propio.
 
 ## 2. Variables de entorno por app **[OPS]**
 

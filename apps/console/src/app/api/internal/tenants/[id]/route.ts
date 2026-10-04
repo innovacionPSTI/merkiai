@@ -64,7 +64,21 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
   }
   if (body.dbRef !== undefined) patch.db_ref = body.dbRef === null ? null : String(body.dbRef)
   if (body.primaryDomain !== undefined) {
-    patch.primary_domain = body.primaryDomain === null ? null : String(body.primaryDomain).trim().toLowerCase()
+    if (body.primaryDomain === null) {
+      patch.primary_domain = null
+      patch.domain_status = 'none'
+    } else {
+      // HU-174: gating anti-hijack — solo se activa un dominio propio ya VERIFICADO.
+      const domain = String(body.primaryDomain).trim().toLowerCase()
+      const { data: t } = await platformDb()
+        .from('tenants').select('domain_status, domain_requested').eq('id', id).maybeSingle()
+      const verified = t?.domain_status === 'verified' || t?.domain_status === 'active'
+      if (!verified || t?.domain_requested !== domain) {
+        return NextResponse.json({ error: 'domain_not_verified', detail: 'El dominio debe verificarse (TXT) antes de activarse.' }, { status: 409 })
+      }
+      patch.primary_domain = domain
+      patch.domain_status = 'active'
+    }
   }
   if (Object.keys(patch).length === 0) {
     return NextResponse.json({ error: 'nada que actualizar' }, { status: 400 })
