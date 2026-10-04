@@ -26,7 +26,11 @@ export const getStoreContext = cache(async () => {
     getNavTree(db).catch(() => []),
     getActiveTheme(db).catch(() => null),
   ])
-  return { tenantId, db, config, navItems, footerPages, theme, entitlements }
+  // HU-121: la "plantilla" = tema (paleta) + su layout. El layout efectivo lo
+  // manda el tema activo; si no declara uno, cae al legacy de store_config y
+  // finalmente a 'default'.
+  const template = theme?.template || config?.template || 'default'
+  return { tenantId, db, config, navItems, footerPages, theme, template, entitlements }
 })
 
 export type StoreContext = Awaited<ReturnType<typeof getStoreContext>>

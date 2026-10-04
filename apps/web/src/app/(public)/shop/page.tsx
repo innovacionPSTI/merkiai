@@ -24,7 +24,7 @@ export default async function TiendaPage({
     searchParams,
     requireStoreContext().catch(() => null),
   ])
-  // HU-122a: densidad de la grilla según la plantilla activa de la tienda.
-  const gridVariant = getTemplateVariant(ctx?.config?.template, 'product_grid')
+  // HU-122a: densidad de la grilla según la plantilla activa (HU-121: tema→layout).
+  const gridVariant = getTemplateVariant(ctx?.template, 'product_grid')
   return <ShopClient products={products} searchParams={sp} gridVariant={gridVariant} />
 }

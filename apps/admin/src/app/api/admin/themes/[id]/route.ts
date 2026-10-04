@@ -46,8 +46,8 @@ export async function PATCH(req: NextRequest, { params }: Params) {
     'color_primary', 'color_dark', 'color_cream', 'color_cream_warm',
     'color_yellow', 'color_yellow_pale', 'color_text', 'color_price',
     'font_display', 'font_body',
-    // HU-247 · modo claro/oscuro
-    'color_scheme', 'dark_bg', 'dark_surface', 'dark_text',
+    // HU-247 · modo claro/oscuro · HU-121 · layout de la plantilla
+    'color_scheme', 'dark_bg', 'dark_surface', 'dark_text', 'template',
   ]
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const updates: any = {}

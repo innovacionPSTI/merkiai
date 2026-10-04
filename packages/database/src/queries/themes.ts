@@ -26,6 +26,8 @@ export interface Theme {
   dark_text: string | null
   /** HU-247 · color del precio en vistas de producto. NULL = usa el primario. */
   color_price: string | null
+  /** HU-121 · layout del home de esta plantilla. NULL = hereda de store_config. */
+  template: string | null
   created_at: string
   updated_at: string
 }
@@ -34,8 +36,8 @@ export interface Theme {
 // la BD aplica defaults ('light' / NULL), así los callers existentes no cambian.
 export type ThemeInput = Omit<
   Theme,
-  'id' | 'is_default' | 'created_at' | 'updated_at' | 'color_scheme' | 'dark_bg' | 'dark_surface' | 'dark_text' | 'color_price'
-> & Partial<Pick<Theme, 'color_scheme' | 'dark_bg' | 'dark_surface' | 'dark_text' | 'color_price'>>
+  'id' | 'is_default' | 'created_at' | 'updated_at' | 'color_scheme' | 'dark_bg' | 'dark_surface' | 'dark_text' | 'color_price' | 'template'
+> & Partial<Pick<Theme, 'color_scheme' | 'dark_bg' | 'dark_surface' | 'dark_text' | 'color_price' | 'template'>>
 
 // ── Queries ───────────────────────────────────────────────────────────────────
 
@@ -71,6 +73,16 @@ export async function createTheme(input: Omit<ThemeInput, 'is_active'>, db: Db):
     .single()
   if (error) throw error
   return data
+}
+
+/**
+ * HU-121 · Fija el layout del tema ACTIVO (la "plantilla" activa). Lo usa el
+ * Constructor para mantener en sync el layout cuando se cambia desde ahí, de
+ * modo que el tema (fuente de verdad del layout) y store_config.template no
+ * diverjan. No falla si no hay tema activo.
+ */
+export async function setActiveThemeTemplate(template: string, db: Db): Promise<void> {
+  await db.from('themes').update({ template }).eq('is_active', true)
 }
 
 /** Actualiza los campos de un tema existente */

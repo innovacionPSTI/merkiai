@@ -84,8 +84,15 @@ const THEME_COLS = new Set([
   'color_yellow',
   'color_yellow_pale',
   'color_text',
+  'color_price',
   'font_display',
   'font_body',
+  // HU-247 · modo claro/oscuro · HU-121 · layout de la plantilla
+  'color_scheme',
+  'dark_bg',
+  'dark_surface',
+  'dark_text',
+  'template',
 ])
 
 function slugify(s: string): string {
@@ -114,7 +121,9 @@ export async function applyPresetToStore(
   const supabase = db as any
   const results: Record<string, 'ok' | string> = {}
 
-  results.theme = await applyTheme(supabase, tenantId, preset.theme)
+  // HU-121: la plantilla (tema) lleva su propio layout; el template va tanto al
+  // tema (fuente de verdad) como a store_config.template (fallback legacy).
+  results.theme = await applyTheme(supabase, tenantId, preset.theme, preset.template)
   results.template = await applyTemplate(supabase, tenantId, preset.template)
   results.inventory_model = await applyInventoryModel(
     supabase, tenantId, preset.inventory_model, !!opts.allowMultiLocation,
@@ -133,10 +142,12 @@ export async function applyPresetToStore(
 /** Tema: (sobre)escribe el tema del tenant. Update-in-place para no violar el
  *  índice de tema activo por tenant; si no hay tema, inserta uno activo. */
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
-async function applyTheme(supabase: any, tenantId: string, theme?: Record<string, unknown>): Promise<'ok' | string> {
+async function applyTheme(supabase: any, tenantId: string, theme?: Record<string, unknown>, template?: string): Promise<'ok' | string> {
   if (!theme || Object.keys(theme).length === 0) return 'skipped (sin tema)'
   const row: Record<string, unknown> = { tenant_id: tenantId, is_active: true }
   for (const [k, v] of Object.entries(theme)) if (THEME_COLS.has(k)) row[k] = v
+  // HU-121: el layout de la plantilla vive en el tema (si el preset no lo trae en theme).
+  if (template && template.trim() && row.template == null) row.template = template.trim()
   if (!row.name) row.name = 'Preset'
   try {
     const { data: existing, error: selErr } = await supabase

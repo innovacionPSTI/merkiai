@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { getStoreConfig, updateStoreConfig } from '@merkiai/database'
+import { getStoreConfig, updateStoreConfig, setActiveThemeTemplate } from '@merkiai/database'
 import type { UpdateStoreConfigInput } from '@merkiai/database'
 import { getAdminUser } from '@/lib/auth'
 import { getAdminDb } from '@/lib/admin-db'
@@ -45,7 +45,13 @@ export async function PATCH(req: NextRequest) {
       body.whatsapp_number = digits
     }
 
-    const updated = await updateStoreConfig(body, getAdminDb(adminUser.tenantId), adminUser.tenantId)
+    const db = getAdminDb(adminUser.tenantId)
+    const updated = await updateStoreConfig(body, db, adminUser.tenantId)
+    // HU-121: si se cambia el template desde el Constructor, propágalo al tema
+    // activo (fuente de verdad del layout) para que no diverjan.
+    if (typeof body.template === 'string' && body.template.trim()) {
+      await setActiveThemeTemplate(body.template.trim(), db).catch(() => {})
+    }
     return NextResponse.json({
       ...updated,
       resend_api_key: maskSecret(updated.resend_api_key),

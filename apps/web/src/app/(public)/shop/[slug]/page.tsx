@@ -46,18 +46,19 @@ export default async function ProductPage({ params }: Props) {
   // resuelto desde el Host. getStoreConfig sigue en service-role hasta convertir
   // los singletons a fila-por-tenant (cola de HU-156).
   const db = await getRequestCatalogDb()
-  const [product, storeConfig] = await Promise.all([
+  const [product, ctx] = await Promise.all([
     getProductBySlug(slug, db).catch(() => null),
-    getStoreContext().then((c) => c.config).catch(() => null),
+    getStoreContext().catch(() => null),
   ])
   if (!product) notFound()
+  const storeConfig = ctx?.config ?? null
 
   const related = await getProducts(undefined, db)
     .then((all) => all.filter((p) => p.id !== product.id && p.category_id === product.category_id).slice(0, 3))
     .catch(() => [])
 
   const trustBadges = (storeConfig?.trust_badges ?? []).filter((b) => b.enabled)
-  const pdpVariant = getTemplateVariant(storeConfig?.template, 'product_detail')
+  const pdpVariant = getTemplateVariant(ctx?.template, 'product_detail')
 
   // JSON-LD — Product schema (lógica pura en @/lib/json-ld)
   const jsonLd = buildProductJsonLd({

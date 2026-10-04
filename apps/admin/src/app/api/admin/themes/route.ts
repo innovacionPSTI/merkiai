@@ -38,6 +38,7 @@ export async function POST(req: NextRequest) {
     color_yellow, color_yellow_pale, color_text, color_price,
     font_display, font_body,
     color_scheme, dark_bg, dark_surface, dark_text,
+    template,
   } = body
 
   if (!name) return NextResponse.json({ error: 'El nombre es requerido' }, { status: 400 })
@@ -61,6 +62,8 @@ export async function POST(req: NextRequest) {
       color_price:       color_price       ?? null,
       font_display:      font_display      ?? 'cormorant',
       font_body:         font_body         ?? 'dm-sans',
+      // HU-121 · layout de la plantilla
+      template:          (typeof template === 'string' && template.trim()) ? template.trim() : null,
       // HU-247 · modo claro/oscuro
       color_scheme:      scheme,
       dark_bg:           scheme === 'light' ? null : (dark_bg      ?? null),

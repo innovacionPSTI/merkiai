@@ -1264,6 +1264,7 @@ export type Database = {
           dark_bg: string | null
           dark_surface: string | null
           dark_text: string | null
+          template: string | null
           created_at: string
           updated_at: string
         }
@@ -1287,6 +1288,7 @@ export type Database = {
           dark_bg?: string | null
           dark_surface?: string | null
           dark_text?: string | null
+          template?: string | null
           created_at?: string
           updated_at?: string
         }
@@ -1310,6 +1312,7 @@ export type Database = {
           dark_bg?: string | null
           dark_surface?: string | null
           dark_text?: string | null
+          template?: string | null
           created_at?: string
           updated_at?: string
         }

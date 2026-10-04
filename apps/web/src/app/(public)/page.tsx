@@ -18,7 +18,7 @@ export default async function HomePage() {
   const db = preview ? getMachineDb(ctx.tenantId) : ctx.db
   const data = await getWebHomeData(db, { preview })
 
-  const template = ctx.config?.template ?? 'default'
+  const template = ctx.template // HU-121: plantilla activa (tema) → layout
   const blocks   = getHomeBlocks(template)
   const layout   = getHomeLayout(template)
   const sectionsByType = new Map(data.homeSections.map((s) => [s.section_type, s]))

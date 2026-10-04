@@ -3,7 +3,14 @@
 import { useState, useTransition } from 'react'
 import { useRouter } from 'next/navigation'
 import { Icon, contrastRatio, contrastLevel, type ContrastLevel } from '@merkiai/ui'
-import type { Theme } from '@merkiai/database'
+import { listTemplates, type Theme } from '@merkiai/database'
+
+// HU-121 · opciones de layout de la plantilla (del registro de templates).
+const LAYOUT_OPTIONS = listTemplates().map((t) => ({
+  value: t.name,
+  label: t.label,
+  description: t.description ?? '',
+}))
 
 // ── Constantes ────────────────────────────────────────────────────────────────
 
@@ -62,6 +69,7 @@ interface ThemeFormData {
   dark_bg: string
   dark_surface: string
   dark_text: string
+  template: string
 }
 
 const DEFAULT_FORM: ThemeFormData = {
@@ -80,6 +88,7 @@ const DEFAULT_FORM: ThemeFormData = {
   dark_bg:           '#1A1510',
   dark_surface:      '#241D15',
   dark_text:         '#F5EDE0',
+  template:          'default',
 }
 
 function themeToForm(t: Theme): ThemeFormData {
@@ -99,6 +108,7 @@ function themeToForm(t: Theme): ThemeFormData {
     dark_bg:           t.dark_bg ?? DEFAULT_FORM.dark_bg,
     dark_surface:      t.dark_surface ?? DEFAULT_FORM.dark_surface,
     dark_text:         t.dark_text ?? DEFAULT_FORM.dark_text,
+    template:          t.template ?? 'default',
   }
 }
 
@@ -433,6 +443,28 @@ function ThemeModal({
                     ))}
                   </div>
                 </div>
+              </div>
+            </div>
+
+            {/* Layout de la plantilla (HU-121) */}
+            <div>
+              <div className="text-xs font-medium text-gray-700 mb-2">Disposición del inicio</div>
+              <p className="text-[11px] text-gray-400 mb-2 leading-tight">La plantilla define paleta, tipografía y la disposición del home juntas.</p>
+              <div className="grid grid-cols-2 gap-2">
+                {LAYOUT_OPTIONS.map((l) => (
+                  <button
+                    key={l.value}
+                    onClick={() => update('template', l.value)}
+                    className={`p-2.5 rounded-lg border text-left transition-all ${
+                      form.template === l.value
+                        ? 'border-brand-primary bg-brand-primary/5'
+                        : 'border-gray-200 hover:border-gray-300'
+                    }`}
+                  >
+                    <div className="text-sm font-semibold text-gray-800">{l.label}</div>
+                    {l.description && <div className="text-[11px] text-gray-400 leading-tight">{l.description}</div>}
+                  </button>
+                ))}
               </div>
             </div>
 
