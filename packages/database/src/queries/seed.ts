@@ -40,6 +40,11 @@ export interface StarterSection {
   title?: string
   subtitle?: string
   body?: string
+  /** HU-256 · columnas de los bloques genéricos (content_section/media_banner/cta). */
+  image_url?: string
+  cta_label?: string
+  cta_url?: string
+  enabled?: boolean
   order_index?: number
   settings?: Record<string, unknown>
   items?: StarterSectionItem[]
@@ -162,7 +167,10 @@ export async function seedHomeSections(
           title: sec.title ?? null,
           subtitle: sec.subtitle ?? null,
           body: sec.body ?? null,
-          enabled: true,
+          image_url: sec.image_url ?? null,
+          cta_label: sec.cta_label ?? null,
+          cta_url: sec.cta_url ?? null,
+          enabled: sec.enabled ?? true,
           order_index: sec.order_index ?? i * 10,
           settings: { ...(sec.settings ?? {}), sample: true },
         })

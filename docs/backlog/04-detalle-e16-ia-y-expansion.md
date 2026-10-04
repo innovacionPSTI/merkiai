@@ -678,14 +678,14 @@
 > Como operador, quiero empaquetar el estado actual de una tienda (tema + layout + contenido de ejemplo) como preset, para ofrecerlo en la galería.
 
 **Estimación:** M/L (8 puntos) · **Track:** packaging + consola
-**Módulo:** consola (`presets`) + orquestador inverso (tienda → `PresetPayload`)
-**Estado:** 🔲 Pendiente (go-live/post) — depende de HU-252/253/255; cierra el bucle "construir → guardar como template/preset"
+**Módulo:** `packages/database` (`store-to-preset.ts`: `buildStorePresetPayload` — orquestador inverso), admin (`/api/admin/preset-export`), consola (`PresetImport` → `savePreset`)
+**Estado:** ✅ **Implementada (MVP sin cross-plane write).** `buildStorePresetPayload` (puro) toma el **Tema activo** (solo los campos del preset, HU-121/247) + las **secciones del home** (ordenadas, con ítems y estilo en `settings`) + el modelo de inventario y produce un `PresetPayload` **re-aplicable** (catálogo de ejemplo vacío por defecto, para no arrastrar inventario real). `StarterSection` se extendió con `image_url/cta_label/cta_url/enabled` (+ `seedHomeSections`) para que los bloques genéricos viajen fieles. **Admin:** botón "Exportar como preset" en el Constructor → `GET /api/admin/preset-export` descarga el JSON (`kind: 'merkiai.preset-payload'`). **Consola:** `PresetImport` (operador) sube ese JSON, elige key/name/niche y **publica** el preset reutilizando `savePreset` + su validación → queda en la galería (HU-250). *Diseño:* el comerciante **no** escribe en el catálogo compartido; el operador cura (sin endpoint de escritura cross-plane desde el tenant). 4 tests.
 
 | # | Escenario | Resultado esperado |
 |---|-----------|-------------------|
-| AC-1 | Capturar | Toma tema + layout + secciones/ítems de ejemplo de una tienda y arma un `PresetPayload` |
-| AC-2 | Publicar | Lo guarda como preset en la consola (HU-233), disponible en la galería (HU-250) |
-| AC-3 | Idempotente | Reusa el patrón de empaquetado de HU-129/255 (versionado + tolerante) |
+| AC-1 | Capturar | ✅ Tema + layout + secciones/ítems del home → `PresetPayload` re-aplicable |
+| AC-2 | Publicar | ✅ El operador lo publica como preset (HU-233) desde la consola; aparece en la galería (HU-250) |
+| AC-3 | Fiel | ✅ Reusa el contrato de `applyPresetToStore`; `StarterSection` ampliado para no perder image/cta de los bloques genéricos |
 
 ### HU-257 — Miniaturas/preview de plantillas y presets · E3
 

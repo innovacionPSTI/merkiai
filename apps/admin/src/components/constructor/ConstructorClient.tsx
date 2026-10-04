@@ -208,6 +208,13 @@ export default function ConstructorClient({ pages, initialPageKey, initialTempla
             >
               Exportar página
             </a>
+            <a
+              href="/api/admin/preset-export"
+              className="rounded-lg border border-slate-300 px-3 py-2 text-sm text-slate-700 hover:bg-slate-50"
+              title="Empaqueta Tema + home como preset (JSON) para que el operador lo publique"
+            >
+              Exportar como preset
+            </a>
             <label className="rounded-lg border border-slate-300 px-3 py-2 text-sm text-slate-700 hover:bg-slate-50 cursor-pointer">
               Importar página
               <input
