@@ -651,14 +651,14 @@
 > Como comerciante, quiero construir con los mismos bloques en home, landings y páginas CMS, para no depender de plantillas fijas por tipo.
 
 **Estimación:** M (5 puntos) · **Track:** renderer
-**Módulo:** `apps/web` (camino de render/preview/draft) + `pages` (tipo "landing"), Constructor
-**Estado:** 🔲 Pendiente (go-live) — generaliza `getPageWithSections`/preview/draft ya existentes
+**Módulo:** `apps/web` (home) + `home-blocks` registry; `pages.page_type` ya admite 'landing' (sin CHECK)
+**Estado:** ✅ **Implementada.** El **home** pasa a render **agnóstico**: si la tienda tiene secciones propias las recorre **en orden** (`order_index`) permitiendo composición libre (varias secciones y de cualquier tipo); si no hay ninguna, cae al layout del template (fallback, cero regresión para tiendas nuevas). El registry del home se **completó** con los tipos que antes solo existían en CMS (`text`, `cards`, `faq`, `cta`, `testimonials`) además de los genéricos (HU-252), así cualquier `section_type` renderiza en el home. **Landing:** `pages.page_type='landing'` ya existía en el selector del gestor de contenido y las landings renderizan por la ruta `[slug]` (CMS) con bloques genéricos + estilo (HU-253) + preview/borrador (HU-128) — sin migración. `SectionShell` (HU-253) y el banner de preview aplican en ambos caminos.
 
 | # | Escenario | Resultado esperado |
 |---|-----------|-------------------|
-| AC-1 | Multi-tipo | Los bloques genéricos (HU-252) renderizan igual en home, páginas CMS y "landing" |
-| AC-2 | Landing | Nuevo tipo de página "landing" construible desde el Constructor |
-| AC-3 | Paridad | Preview, borrador (HU-128 v2) y publicación funcionan en cualquier `page_key` |
+| AC-1 | Multi-tipo | ✅ Los bloques genéricos (HU-252) y los CMS renderizan en home, páginas CMS y landing |
+| AC-2 | Landing | ✅ `page_type='landing'` construible desde el gestor de contenido; render por `[slug]` |
+| AC-3 | Paridad | ✅ Preview, borrador (HU-128 v2) y publicación funcionan en cualquier `page_key` |
 
 ### HU-255 — Paquete de página export/import · E3
 

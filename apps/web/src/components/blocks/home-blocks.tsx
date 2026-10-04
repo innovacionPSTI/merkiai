@@ -22,6 +22,11 @@ import ContentSection from '@/components/sections/ContentSection'
 import ColumnsSection from '@/components/sections/ColumnsSection'
 import MediaBanner from '@/components/sections/MediaBanner'
 import SpacerSection from '@/components/sections/SpacerSection'
+import TextSection from '@/components/sections/TextSection'
+import CardsSection from '@/components/sections/CardsSection'
+import FaqSection from '@/components/sections/FaqSection'
+import CtaSection from '@/components/sections/CtaSection'
+import TestimonialsSection from '@/components/sections/TestimonialsSection'
 
 export type HomeData = Awaited<ReturnType<typeof getWebHomeData>>
 export type HomeSection = HomeData['homeSections'][number]
@@ -173,6 +178,23 @@ function SpacerBlock({ section }: BlockProps) {
   return section ? <SpacerSection section={section} /> : null
 }
 
+// HU-254 · tipos "de página CMS" también disponibles en el home (orden libre).
+function TextBlock({ section }: BlockProps) {
+  return section ? <TextSection section={section} /> : null
+}
+function CardsBlock({ section }: BlockProps) {
+  return section ? <CardsSection section={section} items={section.items ?? []} /> : null
+}
+function FaqBlock({ section }: BlockProps) {
+  return section ? <FaqSection section={section} items={section.items ?? []} /> : null
+}
+function CtaBlock({ section }: BlockProps) {
+  return section ? <CtaSection section={section} /> : null
+}
+function TestimonialsBlock({ section }: BlockProps) {
+  return section ? <TestimonialsSection section={section} items={section.items ?? []} /> : null
+}
+
 // ── Registry + preset ────────────────────────────────────────────────────────
 
 const DEFAULT_BLOCKS: Record<string, HomeBlock> = {
@@ -188,6 +210,12 @@ const DEFAULT_BLOCKS: Record<string, HomeBlock> = {
   columns:           ColumnsBlock,
   media_banner:      MediaBannerBlock,
   spacer:            SpacerBlock,
+  // HU-254 · tipos CMS disponibles también en el home (orden libre)
+  text:              TextBlock,
+  cards:             CardsBlock,
+  faq:               FaqBlock,
+  cta:               CtaBlock,
+  testimonials:      TestimonialsBlock,
 }
 
 /** Registry de bloques para un template (hoy solo 'default'). */
