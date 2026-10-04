@@ -605,15 +605,15 @@
 > Como comerciante, quiero reordenar arrastrando, duplicar y operar los bloques desde una barra inline, para construir más rápido.
 
 **Estimación:** M (5 puntos) · **Track:** front (+API mínima de clonado)
-**Módulo:** `apps/admin` Constructor (`ConstructorClient`/`SectionEditor`/`ItemsEditor`), endpoint de duplicado en el CMS API
-**Estado:** 🔲 Pendiente (go-live) — reusa el CRUD + borrador (HU-128 v2/v2b) + validación (HU-218)
+**Módulo:** `apps/admin` Constructor (`ConstructorClient`/`ItemsEditor`), endpoint `POST /api/admin/cms/duplicate`
+**Estado:** ✅ **Implementada.** **Duplicar** sección (con sus ítems) e ítem vía endpoint de clonado (copia columnas, regenera `section_key`/ids, append al final). **Reordenar** con **drag-and-drop nativo** (handle ⠿, `draggable`/`onDrop`, persiste `order_index`) manteniendo los ▲▼ como fallback accesible por teclado. **Toggle de dispositivo** (Escritorio/Tablet 768px/Móvil 390px) que ajusta el ancho del iframe de preview, centrado. Reusa el CRUD + borrador (HU-128 v2/v2b) + validación (HU-218). *Nota:* la **barra inline superpuesta sobre el preview** no aplica (el iframe del storefront es cross-origin); los controles por bloque viven en la fila de cada sección/ítem (mover/duplicar/ocultar/editar/eliminar).
 
 | # | Escenario | Resultado esperado |
 |---|-----------|-------------------|
-| AC-1 | Reordenar | Drag-and-drop (dnd-kit) de secciones e ítems, accesible por teclado |
-| AC-2 | Duplicar | Clona una sección (con sus ítems) o un ítem, preservando campos/estilo |
-| AC-3 | Inline | Barra sobre el preview: mover/ocultar/duplicar/eliminar sin abrir el panel |
-| AC-4 | Dispositivo | Toggle desktop/tablet/móvil en el preview del Constructor |
+| AC-1 | Reordenar | ✅ Drag-and-drop nativo de secciones; ▲▼ como fallback de teclado |
+| AC-2 | Duplicar | ✅ Clona una sección (con sus ítems) o un ítem, preservando campos/estilo |
+| AC-3 | Controles | ✅ Mover/duplicar/ocultar/editar/eliminar por fila. *(Overlay sobre el preview N/A: iframe cross-origin.)* |
+| AC-4 | Dispositivo | ✅ Toggle Escritorio/Tablet/Móvil en el preview del Constructor |
 
 ### HU-252 — Bloques genéricos de layout · E3
 

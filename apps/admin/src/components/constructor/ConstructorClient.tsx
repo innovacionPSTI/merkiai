@@ -36,6 +36,8 @@ export default function ConstructorClient({ pages, initialPageKey, initialTempla
   const [expanded, setExpanded] = useState<number | null>(null)
   const [adding, setAdding] = useState('')
   const [previewKey, setPreviewKey] = useState(Date.now()) // HU-219: bump → refresca iframe
+  const [dragIdx, setDragIdx] = useState<number | null>(null) // HU-251 · DnD
+  const [device, setDevice] = useState<'desktop' | 'tablet' | 'mobile'>('desktop') // HU-251 · preview
 
   const bump = useCallback(() => setPreviewKey(Date.now()), [])
 
@@ -85,6 +87,32 @@ export default function ConstructorClient({ pages, initialPageKey, initialTempla
     if (!confirm(`¿Eliminar el bloque "${getBlockSchema(s.section_type)?.label ?? s.section_type}"?`)) return
     await fetch(`${api}?id=${s.id}`, { method: 'DELETE' })
     if (expanded === s.id) setExpanded(null)
+    await load(pageKey)
+  }
+
+  // HU-251 · duplicar una sección (con sus ítems).
+  async function duplicate(s: SectionRow) {
+    await fetch('/api/admin/cms/duplicate', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ resource: 'sections', id: s.id }),
+    })
+    await load(pageKey)
+  }
+
+  // HU-251 · reordenar por arrastre: persiste order_index = posición para los cambiados.
+  async function reorderTo(from: number, to: number) {
+    if (from === to || from < 0 || to < 0 || from >= sections.length || to >= sections.length) return
+    const next = [...sections]
+    const [moved] = next.splice(from, 1)
+    next.splice(to, 0, moved)
+    setSections(next) // optimista
+    await Promise.all(
+      next.map((s, i) => s.order_index === i
+        ? null
+        : fetch(api, { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ id: s.id, order_index: i }) }),
+      ).filter(Boolean),
+    )
     await load(pageKey)
   }
 
@@ -224,11 +252,24 @@ export default function ConstructorClient({ pages, initialPageKey, initialTempla
                 const schema = getBlockSchema(s.section_type)
                 const open = expanded === s.id
                 return (
-                  <li key={s.id} className="rounded-xl border border-slate-200 bg-white">
+                  <li
+                    key={s.id}
+                    className={`rounded-xl border bg-white ${dragIdx === i ? 'border-indigo-400 opacity-60' : 'border-slate-200'}`}
+                    onDragOver={(e) => e.preventDefault()}
+                    onDrop={(e) => { e.preventDefault(); if (dragIdx !== null) void reorderTo(dragIdx, i); setDragIdx(null) }}
+                  >
                     <div className="flex items-center gap-3 px-4 py-3">
+                      <div
+                        className="cursor-grab active:cursor-grabbing text-slate-300 hover:text-slate-600 select-none"
+                        draggable
+                        onDragStart={() => setDragIdx(i)}
+                        onDragEnd={() => setDragIdx(null)}
+                        title="Arrastra para reordenar"
+                        aria-label="Arrastrar para reordenar"
+                      >⠿</div>
                       <div className="flex flex-col">
-                        <button onClick={() => move(i, -1)} disabled={i === 0} className="text-slate-400 hover:text-slate-700 disabled:opacity-30 leading-none">▲</button>
-                        <button onClick={() => move(i, 1)} disabled={i === sections.length - 1} className="text-slate-400 hover:text-slate-700 disabled:opacity-30 leading-none">▼</button>
+                        <button onClick={() => move(i, -1)} disabled={i === 0} className="text-slate-400 hover:text-slate-700 disabled:opacity-30 leading-none" aria-label="Subir bloque">▲</button>
+                        <button onClick={() => move(i, 1)} disabled={i === sections.length - 1} className="text-slate-400 hover:text-slate-700 disabled:opacity-30 leading-none" aria-label="Bajar bloque">▼</button>
                       </div>
                       <div className="flex-1">
                         <p className="text-sm font-medium text-slate-800">{schema?.label ?? s.section_type}</p>
@@ -240,7 +281,8 @@ export default function ConstructorClient({ pages, initialPageKey, initialTempla
                       <button onClick={() => setExpanded(open ? null : s.id)} className="rounded-lg border border-slate-300 px-3 py-1 text-xs font-medium text-slate-700 hover:bg-slate-50">
                         {open ? 'Cerrar' : 'Editar'}
                       </button>
-                      <button onClick={() => remove(s)} className="text-slate-400 hover:text-red-600" title="Eliminar">✕</button>
+                      <button onClick={() => duplicate(s)} className="text-slate-400 hover:text-slate-700" title="Duplicar" aria-label="Duplicar bloque">⧉</button>
+                      <button onClick={() => remove(s)} className="text-slate-400 hover:text-red-600" title="Eliminar" aria-label="Eliminar bloque">✕</button>
                     </div>
                     {open && (
                       <div className="border-t border-slate-100 px-4 py-4">
@@ -258,15 +300,33 @@ export default function ConstructorClient({ pages, initialPageKey, initialTempla
         <div className="space-y-2">
           <div className="flex items-center justify-between">
             <h4 className="text-xs font-semibold uppercase tracking-wide text-slate-500">Vista previa</h4>
-            <button onClick={bump} className="rounded-lg border border-slate-300 px-3 py-1 text-xs font-medium text-slate-700 hover:bg-slate-50">Actualizar</button>
+            <div className="flex items-center gap-2">
+              {/* HU-251 · toggle de dispositivo */}
+              <div className="inline-flex rounded-lg border border-slate-300 overflow-hidden" role="group" aria-label="Dispositivo de vista previa">
+                {(['desktop', 'tablet', 'mobile'] as const).map((d) => (
+                  <button
+                    key={d}
+                    onClick={() => setDevice(d)}
+                    className={`px-2.5 py-1 text-xs font-medium ${device === d ? 'bg-slate-800 text-white' : 'text-slate-600 hover:bg-slate-50'}`}
+                    aria-pressed={device === d}
+                  >
+                    {d === 'desktop' ? 'Escritorio' : d === 'tablet' ? 'Tablet' : 'Móvil'}
+                  </button>
+                ))}
+              </div>
+              <button onClick={bump} className="rounded-lg border border-slate-300 px-3 py-1 text-xs font-medium text-slate-700 hover:bg-slate-50">Actualizar</button>
+            </div>
           </div>
           {previewSrc ? (
-            <iframe
-              key={previewKey}
-              src={previewSrc}
-              title="Vista previa de la tienda"
-              className="h-[70vh] w-full rounded-xl border border-slate-200 bg-white"
-            />
+            <div className="rounded-xl border border-slate-200 bg-slate-50 p-2 flex justify-center">
+              <iframe
+                key={previewKey}
+                src={previewSrc}
+                title="Vista previa de la tienda"
+                className="h-[70vh] bg-white rounded-lg transition-all"
+                style={{ width: device === 'desktop' ? '100%' : device === 'tablet' ? 768 : 390, maxWidth: '100%' }}
+              />
+            </div>
           ) : (
             <p className="rounded-xl border border-dashed border-slate-300 p-6 text-sm text-slate-400">
               Configura <code>NEXT_PUBLIC_SITE_URL</code> para ver la vista previa de la tienda.
