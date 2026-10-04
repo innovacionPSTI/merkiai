@@ -25,10 +25,11 @@ function req(params: Record<string, string>) {
 }
 
 describe('GET /api/preview (HU-128)', () => {
-  it('token válido del tenant → cookie + redirect al path (mismo host)', async () => {
+  it('token válido del tenant → cookie con el TOKEN + redirect al path (mismo host)', async () => {
     const token = makePreviewToken('tenant-A', SECRET)
     const res = await GET(req({ token, path: '/blog/mi-post' }))
-    expect(mockCookieSet).toHaveBeenCalledWith('__merkiai_preview', '1', expect.objectContaining({ httpOnly: true }))
+    // La cookie guarda el token (no '1') para re-verificarlo en cada request.
+    expect(mockCookieSet).toHaveBeenCalledWith('__merkiai_preview', token, expect.objectContaining({ httpOnly: true }))
     expect(res.status).toBe(307)
     expect(res.headers.get('location')).toBe('http://tienda-a.merkiai.com/blog/mi-post')
   })

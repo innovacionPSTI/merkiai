@@ -11,8 +11,7 @@ import { markdownToHtml } from '@/lib/markdown'
 import { buildArticleJsonLd } from '@/lib/json-ld'
 
 interface Props {
-  params:      Promise<{ slug: string }>
-  searchParams: Promise<{ preview?: string }>
+  params: Promise<{ slug: string }>
 }
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
@@ -50,10 +49,9 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 // path (evita cache cruzado entre tenants con el mismo slug).
 export const dynamic = 'force-dynamic'
 
-export default async function BlogPostPage({ params, searchParams }: Props) {
+export default async function BlogPostPage({ params }: Props) {
   const { slug } = await params
-  const { preview } = await searchParams
-  const draftMode = (await isPreviewMode()) || preview === '1'
+  const draftMode = await isPreviewMode()
 
   const ctx = await getStoreContext().catch(() => null)
   if (!ctx) notFound()

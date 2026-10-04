@@ -32,8 +32,10 @@ export async function GET(req: NextRequest) {
     return NextResponse.json({ error: 'Invalid preview token' }, { status: 401 })
   }
 
+  // La cookie guarda el TOKEN (no '1'): las páginas lo re-verifican en cada
+  // request contra el tenant del Host → una cookie forjada no activa el preview.
   const cookieStore = await cookies()
-  cookieStore.set(PREVIEW_COOKIE, '1', { httpOnly: true, sameSite: 'lax', maxAge: COOKIE_MAX_AGE, path: '/' })
+  cookieStore.set(PREVIEW_COOKIE, token!, { httpOnly: true, sameSite: 'lax', maxAge: COOKIE_MAX_AGE, path: '/' })
 
   // Mismo host de la petición (dominio/subdominio del tenant).
   return NextResponse.redirect(new URL(safePath(searchParams.get('path')), req.url))
