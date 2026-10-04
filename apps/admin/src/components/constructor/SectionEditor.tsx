@@ -166,8 +166,8 @@ export default function SectionEditor({ section, onSaved, onChange }: SectionEdi
                 </button>
               </>
             )}
-            {status === 'saved' && <span className="text-sm text-green-600">{published ? 'Guardado en borrador ✓' : 'Guardado ✓'}</span>}
-            {status === 'error' && <span className="text-sm text-red-600">{errorMsg}</span>}
+            <span role="status" aria-live="polite" className="text-sm text-green-600">{status === 'saved' ? (published ? 'Guardado en borrador ✓' : 'Guardado ✓') : ''}</span>
+            {status === 'error' && <span role="alert" className="text-sm text-red-600">{errorMsg}</span>}
           </div>
 
           {published && (

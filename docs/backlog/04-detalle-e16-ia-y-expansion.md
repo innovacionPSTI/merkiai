@@ -705,14 +705,14 @@
 > Como usuario de teclado/lector de pantalla, quiero operar el builder con foco atrapado y anuncios claros, para construir sin barreras.
 
 **Estimación:** S/M (3 puntos) · **Track:** front — **cierra HU-248**
-**Módulo:** `apps/admin` Constructor/galería/modales
-**Estado:** 🔲 Pendiente (go-live/post) — sobre la base a11y v1 (HU-248)
+**Módulo:** `apps/admin` Constructor/galería/editores
+**Estado:** ✅ **Implementada.** Regiones `role="status" aria-live="polite"` en el feedback del Constructor (tplMsg), la galería (aplicar), `SectionEditor` e `ItemsEditor` (guardado/borrador), con `role="alert"` en errores. El **reorden por teclado** (▲▼, ya accesible desde HU-251) y el **duplicar/mover** anuncian el resultado ("Bloque movido a la posición N de M", "…duplicado"). Sobre la base a11y v1 (HU-248: `:focus-visible` global, modal de Temas con dialog/Escape/foco, aria-labels en iconos).
 
 | # | Escenario | Resultado esperado |
 |---|-----------|-------------------|
-| AC-1 | Modales | Focus trap + retorno de foco; cierre con Escape (ya hay precedente en Temas) |
-| AC-2 | Reorden | Reordenar por teclado accesible (anuncios de posición) |
-| AC-3 | Feedback | `aria-live` al aplicar/guardar/publicar |
+| AC-1 | Modales | ✅ Cubierto en HU-248 (modal de Temas: dialog + Escape + foco). El Constructor/galería no usan modales. |
+| AC-2 | Reorden | ✅ Reorden por teclado (▲▼) + **anuncio aria-live** de la nueva posición |
+| AC-3 | Feedback | ✅ `aria-live` al aplicar/guardar/publicar/duplicar/mover |
 
 ---
 

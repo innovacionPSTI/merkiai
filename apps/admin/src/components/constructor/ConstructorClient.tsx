@@ -97,6 +97,7 @@ export default function ConstructorClient({ pages, initialPageKey, initialTempla
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ resource: 'sections', id: s.id }),
     })
+    setTplMsg(`Bloque "${getBlockSchema(s.section_type)?.label ?? s.section_type}" duplicado ✓`) // HU-258 · anuncio a11y
     await load(pageKey)
   }
 
@@ -113,6 +114,7 @@ export default function ConstructorClient({ pages, initialPageKey, initialTempla
         : fetch(api, { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ id: s.id, order_index: i }) }),
       ).filter(Boolean),
     )
+    setTplMsg(`Bloque movido a la posición ${to + 1} de ${next.length} ✓`) // HU-258 · anuncio a11y
     await load(pageKey)
   }
 
@@ -198,7 +200,7 @@ export default function ConstructorClient({ pages, initialPageKey, initialTempla
               Aplicar plantilla a esta página
             </button>
           )}
-          {tplMsg && <span className="text-sm text-green-600">{tplMsg}</span>}
+          <span role="status" aria-live="polite" className="text-sm text-green-600">{tplMsg}</span>
           <div className="ml-auto flex items-center gap-2">
             <a
               href={`/api/admin/cms/page-export?page_key=${encodeURIComponent(pageKey)}`}

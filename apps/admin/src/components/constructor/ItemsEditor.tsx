@@ -200,7 +200,7 @@ export default function ItemsEditor({ sectionId, sectionType, published = false,
                     <span className="rounded-full bg-amber-100 px-2 py-0.5 text-[11px] font-medium text-amber-700">Borrador sin publicar</span>
                   </>
                 )}
-                {msg[it.id] && <span className={`text-xs ${msg[it.id].startsWith('Error') ? 'text-red-600' : 'text-green-600'}`}>{msg[it.id]}</span>}
+                <span role="status" aria-live="polite" className={`text-xs ${msg[it.id]?.startsWith('Error') ? 'text-red-600' : 'text-green-600'}`}>{msg[it.id] ?? ''}</span>
               </div>
             </li>
           ))}

@@ -83,9 +83,11 @@ export default function PlantillasGallery({ options }: { options: OnboardingOpti
         <span className="font-brand text-sm text-brand-primary/50">{filtered.length} plantilla(s)</span>
       </div>
 
-      {/* Feedback de aplicar */}
-      {state.error && <p className="rounded-xl bg-red-50 border border-red-200 px-4 py-2 font-brand text-sm text-red-700">{state.error}</p>}
-      {state.ok && state.message && <p className="rounded-xl bg-green-50 border border-green-200 px-4 py-2 font-brand text-sm text-green-800">{state.message}</p>}
+      {/* Feedback de aplicar (HU-258 · anuncio a11y) */}
+      <div role="status" aria-live="polite">
+        {state.error && <p className="rounded-xl bg-red-50 border border-red-200 px-4 py-2 font-brand text-sm text-red-700">{state.error}</p>}
+        {state.ok && state.message && <p className="rounded-xl bg-green-50 border border-green-200 px-4 py-2 font-brand text-sm text-green-800">{state.message}</p>}
+      </div>
 
       {/* Rejilla */}
       <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
