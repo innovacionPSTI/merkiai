@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useCallback } from 'react'
+import { Icon } from '@merkiai/ui'
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 
@@ -77,19 +78,19 @@ const PAGE_TYPE_LABELS: Record<string, string> = {
 }
 
 const SECTION_TYPE_OPTIONS = [
-  { value: 'hero',              label: '🖼️ Hero (carrusel)' },
-  { value: 'text',              label: '📝 Texto' },
-  { value: 'cards',             label: '🃏 Tarjetas' },
-  { value: 'faq',               label: '❓ FAQ' },
-  { value: 'cta',               label: '📣 CTA' },
-  { value: 'testimonials',      label: '⭐ Testimonios' },
-  { value: 'services',          label: '🛠️ Servicios (carrusel)' },
-  { value: 'featured_products', label: '🌟 Productos destacados' },
-  { value: 'best_sellers',      label: '🏆 Más vendidos' },
-  { value: 'historia',          label: '📖 Historia / Banner' },
-  { value: 'blog_preview',      label: '📰 Blog preview' },
-  { value: 'newsletter',        label: '📨 Newsletter' },
-  { value: 'whatsapp',          label: '💬 WhatsApp' },
+  { value: 'hero',              label: 'Hero (carrusel)' },
+  { value: 'text',              label: 'Texto' },
+  { value: 'cards',             label: 'Tarjetas' },
+  { value: 'faq',               label: 'FAQ' },
+  { value: 'cta',               label: 'CTA' },
+  { value: 'testimonials',      label: 'Testimonios' },
+  { value: 'services',          label: 'Servicios (carrusel)' },
+  { value: 'featured_products', label: 'Productos destacados' },
+  { value: 'best_sellers',      label: 'Más vendidos' },
+  { value: 'historia',          label: 'Historia / Banner' },
+  { value: 'blog_preview',      label: 'Blog preview' },
+  { value: 'newsletter',        label: 'Newsletter' },
+  { value: 'whatsapp',          label: 'WhatsApp' },
 ]
 
 const SECTION_TYPE_LABELS: Record<string, string> = Object.fromEntries(
@@ -477,8 +478,9 @@ export default function ContenidoClient({
             <button
               onClick={() => onSave(local)}
               className="font-brand text-xs bg-brand-primary text-brand-cream px-3 py-1.5 rounded-lg hover:bg-brand-dark transition-colors flex-shrink-0"
+              title="Guardar"
             >
-              ✓
+              <Icon name="check" size={14} />
             </button>
           )}
         </div>
@@ -547,7 +549,7 @@ export default function ContenidoClient({
                       className="font-brand text-xs text-brand-primary/30 hover:text-brand-primary transition-colors flex-shrink-0"
                       title="Editar"
                     >
-                      ✏
+                      <Icon name="edit" size={14} />
                     </button>
                   </div>
 
@@ -659,7 +661,7 @@ export default function ContenidoClient({
                               }}
                               className="font-brand text-xs text-brand-primary/30 hover:text-brand-primary flex-shrink-0"
                             >
-                              ✏
+                              <Icon name="edit" size={13} />
                             </button>
                           </div>
                           {isChildExpanded && (
@@ -795,8 +797,9 @@ export default function ContenidoClient({
                 <button
                   onClick={() => setShowNewNav(false)}
                   className="font-brand text-xs text-brand-primary/40 hover:text-brand-primary"
+                  title="Cancelar"
                 >
-                  ✕
+                  <Icon name="close" size={14} />
                 </button>
               </div>
             </div>
@@ -871,8 +874,8 @@ export default function ContenidoClient({
                 >
                   {creatingPage ? 'Creando…' : 'Crear'}
                 </button>
-                <button onClick={() => setShowNewPage(false)} className="font-brand text-xs text-brand-primary/40 hover:text-brand-primary">
-                  ✕
+                <button onClick={() => setShowNewPage(false)} className="font-brand text-xs text-brand-primary/40 hover:text-brand-primary" title="Cancelar">
+                  <Icon name="close" size={14} />
                 </button>
               </div>
             </div>
@@ -885,7 +888,7 @@ export default function ContenidoClient({
         {error && (
           <div className="mx-6 mt-4 bg-red-50 border border-red-200 rounded-xl px-4 py-2 font-brand text-sm text-red-600">
             {error}
-            <button onClick={() => setError('')} className="ml-2 text-red-400 hover:text-red-600">✕</button>
+            <button onClick={() => setError('')} className="ml-2 text-red-400 hover:text-red-600" title="Cerrar" aria-label="Cerrar"><Icon name="close" size={13} className="inline" /></button>
           </div>
         )}
 
@@ -947,7 +950,7 @@ export default function ContenidoClient({
                 const linkedNavs = navItems.filter((n) => n.page_key === selectedPage.key)
                 return linkedNavs.length > 0 ? (
                   <p className="font-brand text-xs text-brand-primary/40 bg-brand-primary/5 rounded-lg px-3 py-2">
-                    🔗 Nav vinculado: {linkedNavs.map((n) => `"${n.label}" → ${n.href ?? '(sin ruta)'}`).join(', ')}
+                    <Icon name="external" size={12} className="inline align-[-1px] mr-1" />Nav vinculado: {linkedNavs.map((n) => `"${n.label}" → ${n.href ?? '(sin ruta)'}`).join(', ')}
                     {' · '}Cambia el slug arriba para actualizar la ruta automáticamente.
                   </p>
                 ) : null

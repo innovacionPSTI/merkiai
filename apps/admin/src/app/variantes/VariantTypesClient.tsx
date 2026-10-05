@@ -308,7 +308,7 @@ export default function VariantTypesClient({ variantTypes: initial }: Props) {
                         className="accent-brand-primary"
                       />
                       <span className="font-brand text-sm text-brand-primary">
-                        {dt === 'pill' ? 'Pastilla de texto' : 'Swatch de color'}
+                        {dt === 'pill' ? 'Pastilla de texto' : 'Muestra de color'}
                       </span>
                     </label>
                   ))}

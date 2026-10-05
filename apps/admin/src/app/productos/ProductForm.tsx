@@ -3,6 +3,7 @@
 import { useState, useEffect, useCallback } from 'react'
 import { useRouter } from 'next/navigation'
 import ImageUpload from '@/components/ImageUpload'
+import { Icon } from '@merkiai/ui'
 import type { VariantType } from '@merkiai/database'
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
@@ -315,7 +316,7 @@ export default function ProductForm({ product, categories, variantTypes }: Props
             onClick={() => router.push('/productos')}
             className="font-brand text-sm text-brand-primary/50 hover:text-brand-primary mb-2 flex items-center gap-1"
           >
-            ← Volver a productos
+            <Icon name="chevron-left" size={14} /> Volver a productos
           </button>
           <h1 className="font-display text-brand-primary text-2xl">
             {isEdit ? `Editar: ${product.name}` : 'Nuevo producto'}
@@ -400,9 +401,9 @@ export default function ProductForm({ product, categories, variantTypes }: Props
               <a
                 href="/variantes"
                 target="_blank"
-                className="font-brand text-xs text-brand-primary/50 hover:text-brand-primary transition-colors"
+                className="font-brand text-xs text-brand-primary/50 hover:text-brand-primary transition-colors inline-flex items-center gap-1"
               >
-                Gestionar tipos ↗
+                Gestionar tipos <Icon name="external" size={12} />
               </a>
             </div>
 
@@ -442,9 +443,9 @@ export default function ProductForm({ product, categories, variantTypes }: Props
                     <button
                       type="button"
                       onClick={generateMatrix}
-                      className="w-full font-brand text-sm bg-brand-cream text-brand-primary border-2 border-dashed border-brand-primary/30 px-4 py-3 rounded-xl hover:bg-brand-primary/5 hover:border-brand-primary/60 transition-all"
+                      className="w-full font-brand text-sm bg-brand-cream text-brand-primary border-2 border-dashed border-brand-primary/30 px-4 py-3 rounded-xl hover:bg-brand-primary/5 hover:border-brand-primary/60 transition-all inline-flex items-center justify-center gap-2"
                     >
-                      ✦ Generar combinaciones automáticamente
+                      <Icon name="refresh" size={15} /> Generar combinaciones automáticamente
                       <span className="ml-2 text-xs text-brand-primary/40">
                         ({selectedTypes.reduce((acc, t) => acc * t.values.length, 1)} combinaciones)
                       </span>
@@ -496,8 +497,9 @@ export default function ProductForm({ product, categories, variantTypes }: Props
                       type="button"
                       onClick={() => setForm((f) => ({ ...f, images: f.images.filter((_, i) => i !== idx) }))}
                       className="absolute top-6 right-1 font-brand text-xs text-red-400 hover:text-red-600"
+                      title="Quitar imagen" aria-label="Quitar imagen"
                     >
-                      ✕
+                      <Icon name="close" size={14} />
                     </button>
                   )}
                 </div>
@@ -580,9 +582,9 @@ export default function ProductForm({ product, categories, variantTypes }: Props
                               type="button"
                               onClick={() => removeVariant(idx)}
                               className="font-brand text-xs text-red-400 hover:text-red-600 transition-colors"
-                              title="Eliminar variante"
+                              title="Eliminar variante" aria-label="Eliminar variante"
                             >
-                              ✕
+                              <Icon name="trash" size={14} />
                             </button>
                           )}
                         </div>

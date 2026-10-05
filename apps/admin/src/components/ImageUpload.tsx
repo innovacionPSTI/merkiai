@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useRef } from 'react'
+import { Icon } from '@merkiai/ui'
 
 interface Props {
   value: string
@@ -123,7 +124,7 @@ export default function ImageUpload({
             </div>
           ) : (
             <div className="flex flex-col items-center gap-2 text-center px-4">
-              <span className="text-2xl">🖼️</span>
+              <Icon name="media" size={28} className="text-brand-primary/40" />
               <p className="font-brand text-sm text-brand-primary/50">
                 Arrastra una imagen o <span className="text-brand-primary underline">haz clic</span>
               </p>
