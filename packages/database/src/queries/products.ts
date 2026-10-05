@@ -168,3 +168,23 @@ export async function getCategories(db: Db): Promise<Category[]> {
   if (error) throw error
   return (data ?? []) as Category[]
 }
+
+export type CategoryWithChildren = Category & { children: CategoryWithChildren[] }
+
+/**
+ * HU-263 · Construye el árbol de categorías a partir de la lista plana
+ * (pura, testeable). Las raíces son las de `parent_id` nulo o cuyo padre no está
+ * en la lista (defensivo). Conserva el orden de entrada (ya viene por order_index).
+ */
+export function buildCategoryTree(categories: Category[]): CategoryWithChildren[] {
+  const byId = new Map<number, CategoryWithChildren>()
+  for (const c of categories) byId.set(c.id, { ...c, children: [] })
+  const roots: CategoryWithChildren[] = []
+  for (const c of categories) {
+    const node = byId.get(c.id)!
+    const parent = c.parent_id != null ? byId.get(c.parent_id) : undefined
+    if (parent) parent.children.push(node)
+    else roots.push(node)
+  }
+  return roots
+}

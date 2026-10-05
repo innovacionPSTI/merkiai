@@ -19,7 +19,7 @@ export async function POST(req: NextRequest) {
   if (!adminUser) return NextResponse.json({ error: 'No autorizado' }, { status: 401 })
 
   const body = await req.json()
-  const { name, slug, description, active = true } = body
+  const { name, slug, description, active = true, parent_id, meta_title, meta_description } = body
 
   if (!name?.trim() || !slug?.trim())
     return NextResponse.json({ error: 'Nombre y slug son requeridos' }, { status: 400 })
@@ -27,7 +27,13 @@ export async function POST(req: NextRequest) {
   const supabase = getAdminDb(adminUser.tenantId)
   const { data, error } = await supabase
     .from('categories')
-    .insert({ name: name.trim(), slug: slug.trim(), description: description ?? null, active, tenant_id: adminUser.tenantId })
+    .insert({
+      name: name.trim(), slug: slug.trim(), description: description ?? null, active,
+      parent_id: parent_id != null && parent_id !== '' ? Number(parent_id) : null,
+      meta_title: meta_title?.trim() || null,
+      meta_description: meta_description?.trim() || null,
+      tenant_id: adminUser.tenantId,
+    })
     .select()
     .single()
 

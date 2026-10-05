@@ -88,6 +88,7 @@ export default function CategoriasClient({ categories: initial }: { categories: 
       {modal.open && (
         <CategoryFormModal
           category={modal.category}
+          categories={categories.map((c) => ({ id: c.id, name: c.name }))}
           onClose={handleModalClose}
           onDelete={handleDeleted}
         />

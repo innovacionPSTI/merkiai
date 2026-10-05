@@ -45,6 +45,9 @@ export type Database = {
           slug: string
           description: string | null
           image_url: string | null
+          parent_id: number | null
+          meta_title: string | null
+          meta_description: string | null
           order_index: number
           active: boolean
           created_at: string
@@ -56,6 +59,9 @@ export type Database = {
           slug: string
           description?: string | null
           image_url?: string | null
+          parent_id?: number | null
+          meta_title?: string | null
+          meta_description?: string | null
           order_index?: number
           active?: boolean
           created_at?: string
@@ -67,6 +73,9 @@ export type Database = {
           slug?: string
           description?: string | null
           image_url?: string | null
+          parent_id?: number | null
+          meta_title?: string | null
+          meta_description?: string | null
           order_index?: number
           active?: boolean
           created_at?: string

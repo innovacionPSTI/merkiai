@@ -12,6 +12,9 @@ interface CategoryInput {
   image_url: string | null
   order_index: number
   active: boolean
+  parent_id?: number | null
+  meta_title?: string | null
+  meta_description?: string | null
 }
 
 /** Categoría devuelta por la API (id siempre presente) */
@@ -23,10 +26,15 @@ export interface SavedCategory {
   image_url: string | null
   order_index: number
   active: boolean
+  parent_id?: number | null
+  meta_title?: string | null
+  meta_description?: string | null
 }
 
 interface Props {
   category?: CategoryInput
+  /** HU-263 · lista para elegir categoría madre (jerarquía). */
+  categories?: { id: number; name: string }[]
   onClose: (updated?: SavedCategory) => void
   onDelete?: (id: number) => void
 }
@@ -40,7 +48,7 @@ function toSlug(str: string) {
     .replace(/(^-|-$)/g, '')
 }
 
-export default function CategoryFormModal({ category, onClose, onDelete }: Props) {
+export default function CategoryFormModal({ category, categories = [], onClose, onDelete }: Props) {
   const isEdit = !!category?.id
   // Ensure returned data is typed as SavedCategory (id always present from API)
 
@@ -50,6 +58,9 @@ export default function CategoryFormModal({ category, onClose, onDelete }: Props
     description: category?.description ?? '',
     image_url:   category?.image_url ?? '',
     active:      category?.active ?? true,
+    parent_id:   category?.parent_id != null ? String(category.parent_id) : '',
+    meta_title:       category?.meta_title ?? '',
+    meta_description: category?.meta_description ?? '',
   })
   const [slugTouched,       setSlugTouched]       = useState(isEdit)
   const [uploadsInProgress, setUploadsInProgress] = useState(0)
@@ -77,6 +88,9 @@ export default function CategoryFormModal({ category, onClose, onDelete }: Props
       description: form.description.trim() || null,
       image_url:   form.image_url || null,
       active:      form.active,
+      parent_id:   form.parent_id ? Number(form.parent_id) : null,
+      meta_title:       form.meta_title.trim() || null,
+      meta_description: form.meta_description.trim() || null,
     }
 
     const url    = isEdit ? `/api/admin/categories/${category!.id}` : '/api/admin/categories'
@@ -176,6 +190,43 @@ export default function CategoryFormModal({ category, onClose, onDelete }: Props
               onChange={(e) => setForm((f) => ({ ...f, description: e.target.value }))}
               className="w-full border border-gray-200 rounded-xl px-4 py-2.5 font-brand text-sm text-brand-primary focus:outline-none focus:border-brand-primary resize-none"
               placeholder="Descripción opcional..."
+            />
+          </div>
+
+          {/* HU-263 · Categoría madre (jerarquía) */}
+          <div>
+            <label className="font-brand text-xs text-brand-primary/50 block mb-1">Categoría madre <span className="text-brand-primary/30">(opcional)</span></label>
+            <select
+              value={form.parent_id}
+              onChange={(e) => setForm((f) => ({ ...f, parent_id: e.target.value }))}
+              className="w-full border border-gray-200 rounded-xl px-4 py-2.5 font-brand text-sm text-brand-primary focus:outline-none focus:border-brand-primary"
+            >
+              <option value="">— Categoría raíz —</option>
+              {categories.filter((c) => c.id !== category?.id).map((c) => (
+                <option key={c.id} value={c.id}>{c.name}</option>
+              ))}
+            </select>
+          </div>
+
+          {/* HU-263 · SEO */}
+          <div>
+            <label className="font-brand text-xs text-brand-primary/50 block mb-1">Meta título (SEO) <span className="text-brand-primary/30">(opcional)</span></label>
+            <input
+              type="text"
+              value={form.meta_title}
+              onChange={(e) => setForm((f) => ({ ...f, meta_title: e.target.value }))}
+              className="w-full border border-gray-200 rounded-xl px-4 py-2.5 font-brand text-sm text-brand-primary focus:outline-none focus:border-brand-primary"
+              placeholder="Título para buscadores"
+            />
+          </div>
+          <div>
+            <label className="font-brand text-xs text-brand-primary/50 block mb-1">Meta descripción (SEO) <span className="text-brand-primary/30">(opcional)</span></label>
+            <textarea
+              rows={2}
+              value={form.meta_description}
+              onChange={(e) => setForm((f) => ({ ...f, meta_description: e.target.value }))}
+              className="w-full border border-gray-200 rounded-xl px-4 py-2.5 font-brand text-sm text-brand-primary focus:outline-none focus:border-brand-primary resize-none"
+              placeholder="Descripción para buscadores"
             />
           </div>
 
