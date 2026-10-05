@@ -798,14 +798,14 @@
 > Como operador, quiero seleccionar varios registros y aplicar acciones en lote (cambiar precio, categoría, stock, publicar/despublicar), para administrar el catálogo con eficiencia.
 
 **Estimación:** M (5 puntos)
-**Módulo:** admin (listas con selección múltiple), endpoints de actualización por lote
-**Estado:** 🔲 Pendiente (roadmap v17)
+**Módulo:** `apps/admin` (`ProductsTable` cliente con selección), `POST /api/admin/products/batch`
+**Estado:** ✅ **Implementada (productos).** Listado `/productos` con **selección múltiple** (checkbox por fila + seleccionar todos) y **barra flotante** de acciones: Publicar/Despublicar (`active`), Destacar/Quitar destacado (`featured`), **Cambiar categoría** (menú con categorías + "sin categoría") y **Eliminar**. Endpoint `POST /api/admin/products/batch` acotado por tenant vía RLS (`.in('id', ids)` solo toca productos del tenant); `delete` elimina variantes primero (FK). Confirmación en el borrado. Tests: admin +7. **Pendiente:** extender el patrón a pedidos/clientes/categorías si se requiere; edición de precio/stock en lote (hoy a nivel producto: estado/destacado/categoría).
 
 | # | Escenario | Resultado esperado |
 |---|-----------|-------------------|
-| AC-1 | Selección múltiple en el listado | Barra de acciones masivas con las operaciones disponibles |
-| AC-2 | Aplicar cambio en lote | Actualiza todos los seleccionados en una operación; reporta resultado |
-| AC-3 | Seguridad y confirmación | Requiere confirmación en acciones destructivas; respeta permisos por rol |
+| AC-1 | Selección múltiple en el listado | ✅ Checkbox por fila + "seleccionar todos"; barra flotante con las acciones |
+| AC-2 | Aplicar cambio en lote | ✅ Una llamada `batch` actualiza/elimina todos los seleccionados; refresca el listado |
+| AC-3 | Seguridad y confirmación | ✅ Confirmación en Eliminar; RLS por tenant acota el alcance (no cruza tiendas) |
 
 ---
 
