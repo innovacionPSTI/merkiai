@@ -43,6 +43,7 @@ interface Variant {
   attributes: Record<string, string>  // { "Color": "Rojo", "Talla": "M" }
   price: string
   compare_at_price: string
+  image_url: string
   stock: string
   sku: string
   active: boolean
@@ -79,7 +80,7 @@ interface Props {
 // ── Estado vacío ──────────────────────────────────────────────────────────────
 
 function emptyVariant(attrs: Record<string, string> = {}): Variant {
-  return { attributes: attrs, price: '', compare_at_price: '', stock: '0', sku: '', active: true, weight_kg: '', length_cm: '', width_cm: '', height_cm: '' }
+  return { attributes: attrs, price: '', compare_at_price: '', image_url: '', stock: '0', sku: '', active: true, weight_kg: '', length_cm: '', width_cm: '', height_cm: '' }
 }
 
 function parseExistingTypeIds(product: any, variantTypes: VariantType[]): number[] {
@@ -95,6 +96,7 @@ function parseExistingVariants(product: any): Variant[] {
     attributes: v.attributes ?? {},
     price: v.price?.toString() ?? '',
     compare_at_price: v.compare_at_price?.toString() ?? '',
+    image_url: v.image_url ?? '',
     stock: v.stock?.toString() ?? '0',
     sku: v.sku ?? '',
     active: v.active ?? true,
@@ -619,6 +621,18 @@ export default function ProductForm({ product, categories, variantTypes }: Props
                                 title="Precio antes de la oferta (opcional)"
                               />
                             </div>
+                          </div>
+
+                          {/* HU-262 · Imagen de la variante (URL, opcional) */}
+                          <div className="w-32">
+                            <input
+                              type="url"
+                              value={variant.image_url}
+                              onChange={(e) => updateVariant(idx, 'image_url', e.target.value)}
+                              className="w-full px-2 py-1.5 border border-gray-200 rounded-lg font-brand text-xs text-brand-primary focus:outline-none focus:border-brand-primary"
+                              placeholder="Imagen (URL)"
+                              title="Imagen propia de la variante (p. ej. por color)"
+                            />
                           </div>
 
                           {/* Stock */}

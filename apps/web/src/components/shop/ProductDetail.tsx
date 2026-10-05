@@ -157,6 +157,10 @@ export default function ProductDetail({ product, related, trustBadges = [], layo
     ? selectedVariant.compare_at_price
     : null
 
+  // HU-262 · imagen principal: la de la variante seleccionada si la tiene,
+  // si no, la miniatura elegida de las imágenes del producto.
+  const heroImage = selectedVariant?.image_url || product.images[selectedImage]?.url || null
+
   const allowBackorder = !!product.allow_backorder
   const stockWarning =
     !allowBackorder && selectedVariant && selectedVariant.stock > 0 && selectedVariant.stock <= 5
@@ -220,10 +224,10 @@ export default function ProductDetail({ product, related, trustBadges = [], layo
           {/* ── Galería ─────────────────────────────────────────── */}
           <div>
             <div className="aspect-square rounded-3xl overflow-hidden bg-brand-cream-warm mb-4 shadow-card">
-              {product.images[selectedImage]?.url ? (
+              {heroImage ? (
                 <img
-                  src={product.images[selectedImage].url}
-                  alt={product.images[selectedImage].alt ?? product.name}
+                  src={heroImage}
+                  alt={product.images[selectedImage]?.alt ?? product.name}
                   className="w-full h-full object-cover"
                 />
               ) : (
