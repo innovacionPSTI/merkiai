@@ -9,6 +9,7 @@ export * from './lib/preview'
 export * from './lib/bold-reconcile'
 export * from './lib/tucompra-reconcile'
 export * from './lib/webhook-idempotency'
+export * from './lib/product-import'
 
 // ─── Provider abstractions ────────────────────────────────────────────────────
 export * from './providers/payment/index'

@@ -480,16 +480,17 @@
 > Como operador, quiero subir un archivo `.CSV` para crear o actualizar muchos productos y su inventario de una vez, en lugar de cargarlos uno por uno.
 
 **Estimación:** L (8 puntos)
-**Módulo:** admin (importador CSV), validación + mapeo de columnas, upsert de productos/variantes/stock
-**Estado:** 🔲 Pendiente (roadmap v17)
+**Módulo:** `packages/database` (`lib/product-import.ts`: `parseProductsCsv` + `parseCsv` puros), admin (`POST/GET /api/admin/products/import`, `ImportProductsModal`)
+**Estado:** ✅ **Implementada (MVP create).** **Parser puro y tolerante** (`parseProductsCsv`): una fila = una variante; las filas con el mismo `slug` se agrupan en un producto (la primera fija nombre/descr./categoría/imágenes/destacado y cada fila aporta una variante). Incluye un **CSV parser propio** (`parseCsv`, RFC4180 básico: comillas, comas y saltos dentro de comillas, CRLF, BOM), cabeceras con **sinónimos en español** (nombre, precio, inventario…), números en **formato latino o inglés** (miles `.`/`,`, decimal `,`/`.`), atributos `Color=Rojo;Talla=M` → `attributes` + `variant_options` (unión de claves). **Endpoint** acotado por tenant vía RLS (`getAdminDb`): resuelve **categoría por nombre→id**, respeta el **tope de productos del plan** (`resolveLimit`; importa hasta el remanente y omite el resto), **omite slugs existentes**, y revierte el producto si fallan sus variantes. Modo `preview` que valida sin escribir. **UI:** botón "Importar CSV" en `/productos` → modal que sube el archivo, **previsualiza** (a crear / omitidos / errores por fila) y confirma; **plantilla descargable** desde el `GET` del endpoint. Tests: database 10 (parser) + admin 5 (endpoint). **Pendiente v2:** upsert/actualización por `slug` (hoy solo crea; los existentes se omiten) — simétrico con HU-130 (export) para reimportar y editar en masa.
 
 | # | Escenario | Resultado esperado |
 |---|-----------|-------------------|
-| AC-1 | Subida de CSV + plantilla descargable | El admin mapea columnas a campos (nombre, slug, precio, categoría, stock, variantes…) |
-| AC-2 | Previsualización y validación | Muestra filas válidas/erróneas antes de confirmar; no importa nada si el usuario cancela |
-| AC-3 | Importación | Crea o actualiza (upsert por `slug`/SKU); reporta creados, actualizados y errores por fila |
-| AC-4 | Inventario | El stock de cada variante se establece/ajusta respetando el modelo de inventario existente |
-| AC-5 | Idempotencia | Reimportar el mismo archivo no duplica productos |
+| AC-1 | Subida de CSV + plantilla descargable | ✅ Plantilla desde `GET /api/admin/products/import`; columnas → campos (slug, name, price, category, stock, options, dimensiones…) |
+| AC-2 | Previsualización y validación | ✅ `preview` muestra filas a crear / omitidas / con error antes de confirmar; cancelar no escribe |
+| AC-3 | Importación | ✅ Crea producto + variantes agrupando por `slug`; reporta creados, omitidos y errores por fila. *Actualización (upsert) → v2* |
+| AC-4 | Inventario | ✅ El `stock` de cada variante se establece desde el CSV |
+| AC-5 | Idempotencia | ✅ Reimportar no duplica: los `slug` existentes se omiten con aviso |
+| AC-6 | Multi-tenant / plan | ✅ RLS por tenant; respeta el tope de productos del plan (importa hasta el remanente) |
 
 ---
 
