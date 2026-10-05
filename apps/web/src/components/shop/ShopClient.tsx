@@ -1,12 +1,13 @@
 'use client'
 
-import { useState, useMemo } from 'react'
+import { useState, useMemo, useEffect } from 'react'
 import Link from 'next/link'
 import { Icon } from '@merkiai/ui'
 import { useCartStore } from '@/store/cart'
 import type { CartItem } from '@/store/cart'
 import type { ProductWithVariants } from '@merkiai/database'
 import { getProductOptions, getVariantAttrs, getVariantLabel, isColorValue, swatchColor } from '@/lib/variant-utils'
+import { matchesQuery, paginate } from '@/lib/shop-filters'
 
 const SORTS = [
   { value: 'destacados', label: 'Destacados' },
@@ -14,6 +15,9 @@ const SORTS = [
   { value: 'precio-desc', label: 'Mayor precio' },
   { value: 'nombre',      label: 'A–Z' },
 ]
+
+/** Productos por página en la grilla de la tienda. */
+const PAGE_SIZE = 12
 
 interface Props {
   products: ProductWithVariants[]
@@ -161,6 +165,8 @@ export default function ShopClient({ products, searchParams, gridVariant = 'comf
   )
   const [selectedAttrs, setSelectedAttrs] = useState<Record<string, string>>({})
   const [sort, setSort] = useState('destacados')
+  const [query, setQuery] = useState(typeof searchParams.q === 'string' ? searchParams.q : '')
+  const [page, setPage] = useState(1)
   const [mobileFiltersOpen, setMobileFiltersOpen] = useState(false)
   const addItem = useCartStore((s) => s.addItem)
 
@@ -195,6 +201,8 @@ export default function ShopClient({ products, searchParams, gridVariant = 'comf
   const filtered = useMemo(() => {
     let list = products.filter((p) => {
       if (selectedCategory && p.category?.id !== selectedCategory) return false
+      // Búsqueda por texto: nombre, descripción, categoría o SKU de variante.
+      if (!matchesQuery(p, query)) return false
       const opts = getProductOptions(p)
       for (const [opt, val] of Object.entries(selectedAttrs)) {
         if (!val) continue
@@ -225,15 +233,23 @@ export default function ShopClient({ products, searchParams, gridVariant = 'comf
         list = [...list].sort((a, b) => (b.featured ? 1 : 0) - (a.featured ? 1 : 0))
     }
     return list
-  }, [products, selectedCategory, selectedAttrs, sort])
+  }, [products, selectedCategory, selectedAttrs, sort, query])
 
-  const hasFilters = selectedCategory !== null || Object.values(selectedAttrs).some(Boolean)
+  // Paginación: vuelve a la página 1 cuando cambian filtros/búsqueda/orden.
+  useEffect(() => { setPage(1) }, [selectedCategory, selectedAttrs, sort, query])
+  const { items: paged, pageCount, safePage } = useMemo(
+    () => paginate(filtered, page, PAGE_SIZE),
+    [filtered, page],
+  )
+
+  const hasFilters = selectedCategory !== null || Object.values(selectedAttrs).some(Boolean) || query.trim() !== ''
   const hasAnyFilters = categories.length > 1 || attrFilters.length > 0
   const activeFilterCount = (selectedCategory ? 1 : 0) + Object.values(selectedAttrs).filter(Boolean).length
 
   function clearFilters() {
     setSelectedCategory(null)
     setSelectedAttrs({})
+    setQuery('')
   }
 
   function toggleAttr(opt: string, val: string) {
@@ -267,6 +283,21 @@ export default function ShopClient({ products, searchParams, gridVariant = 'comf
           </div>
 
           <div className="flex items-center gap-3">
+            {/* Búsqueda por texto */}
+            <div className="relative">
+              <span className="absolute left-3 top-1/2 -translate-y-1/2 text-brand-primary/40 pointer-events-none">
+                <Icon name="search" size={16} />
+              </span>
+              <input
+                type="search"
+                value={query}
+                onChange={(e) => setQuery(e.target.value)}
+                placeholder="Buscar productos…"
+                aria-label="Buscar productos"
+                className="font-brand text-sm border border-brand-primary/20 rounded-full pl-9 pr-4 py-2 bg-white text-brand-primary focus:outline-none focus:border-brand-primary w-40 sm:w-56 transition-all"
+              />
+            </div>
+
             {/* Mobile: filtros button */}
             {hasAnyFilters && (
               <button
@@ -316,11 +347,19 @@ export default function ShopClient({ products, searchParams, gridVariant = 'comf
                 </button>
               </div>
             ) : (
-              <div className={GRID_CLASSES[gridVariant] ?? GRID_CLASSES.comfortable}>
-                {filtered.map((product) => (
-                  <ProductCard key={product.id} product={product} fmt={fmt} addItem={addItem} colorMap={colorMap} />
-                ))}
-              </div>
+              <>
+                <div className={GRID_CLASSES[gridVariant] ?? GRID_CLASSES.comfortable}>
+                  {paged.map((product) => (
+                    <ProductCard key={product.id} product={product} fmt={fmt} addItem={addItem} colorMap={colorMap} />
+                  ))}
+                </div>
+                {pageCount > 1 && (
+                  <Pager page={safePage} pageCount={pageCount} onPage={(p) => {
+                    setPage(p)
+                    if (typeof window !== 'undefined') window.scrollTo({ top: 0, behavior: 'smooth' })
+                  }} />
+                )}
+              </>
             )}
           </div>
         </div>
@@ -361,6 +400,49 @@ export default function ShopClient({ products, searchParams, gridVariant = 'comf
         </div>
       )}
     </div>
+  )
+}
+
+// ── Pager ─────────────────────────────────────────────────────────────────────
+
+function Pager({ page, pageCount, onPage }: { page: number; pageCount: number; onPage: (p: number) => void }) {
+  // Ventana compacta de páginas alrededor de la actual.
+  const pages: number[] = []
+  const from = Math.max(1, page - 2)
+  const to = Math.min(pageCount, page + 2)
+  for (let i = from; i <= to; i++) pages.push(i)
+
+  const btn = 'font-brand text-sm w-9 h-9 rounded-full flex items-center justify-center transition-colors disabled:opacity-40'
+
+  return (
+    <nav className="flex items-center justify-center gap-1.5 mt-10" aria-label="Paginación">
+      <button onClick={() => onPage(page - 1)} disabled={page <= 1} aria-label="Página anterior"
+        className={`${btn} border border-brand-primary/20 text-brand-primary hover:bg-brand-primary/5`}>
+        <Icon name="chevron-left" size={16} />
+      </button>
+      {from > 1 && (
+        <>
+          <button onClick={() => onPage(1)} className={`${btn} text-brand-primary hover:bg-brand-primary/5`}>1</button>
+          {from > 2 && <span className="font-brand text-brand-primary/30 px-1">…</span>}
+        </>
+      )}
+      {pages.map((p) => (
+        <button key={p} onClick={() => onPage(p)} aria-current={p === page ? 'page' : undefined}
+          className={`${btn} ${p === page ? 'bg-brand-primary text-brand-cream' : 'text-brand-primary hover:bg-brand-primary/5'}`}>
+          {p}
+        </button>
+      ))}
+      {to < pageCount && (
+        <>
+          {to < pageCount - 1 && <span className="font-brand text-brand-primary/30 px-1">…</span>}
+          <button onClick={() => onPage(pageCount)} className={`${btn} text-brand-primary hover:bg-brand-primary/5`}>{pageCount}</button>
+        </>
+      )}
+      <button onClick={() => onPage(page + 1)} disabled={page >= pageCount} aria-label="Página siguiente"
+        className={`${btn} border border-brand-primary/20 text-brand-primary hover:bg-brand-primary/5`}>
+        <Icon name="chevron-right" size={16} />
+      </button>
+    </nav>
   )
 }
 
