@@ -167,7 +167,7 @@ export default function ShippingConfigForm({ initialConfig }: Props) {
           Tarifa fija (COP)
         </label>
         <p className="font-brand text-xs text-brand-primary/40 mb-2">
-          Se usa cuando el proveedor es "Tarifa fija" o como respaldo si Skydropx no responde.
+          Se usa cuando el proveedor es "Tarifa fija" o como respaldo si el operador de envíos no responde.
         </p>
         <input
           type="number"
@@ -357,7 +357,7 @@ export default function ShippingConfigForm({ initialConfig }: Props) {
                   className="w-full border border-gray-200 rounded-xl px-4 py-2.5 font-brand text-sm focus:outline-none focus:border-brand-primary"
                 />
                 <p className="font-brand text-xs text-brand-primary/30 mt-1">
-                  Opcional. Skydropx usa departamento + ciudad para cotizar.
+                  Opcional. El operador de envíos usa departamento + ciudad para cotizar.
                 </p>
               </div>
             </div>

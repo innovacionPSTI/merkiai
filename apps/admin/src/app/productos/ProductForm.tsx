@@ -28,14 +28,6 @@ function cartesian(arrays: string[][]): string[][] {
   )
 }
 
-/**
- * Construye el label legible de una variante a partir de sus atributos.
- * ej: { Tueste: 'Claro', Peso: '250g' } → "Claro / 250g"
- */
-function buildLabel(attrs: Record<string, string>): string {
-  return Object.values(attrs).join(' / ')
-}
-
 // ── Tipos ─────────────────────────────────────────────────────────────────────
 
 interface Variant {
@@ -196,6 +188,15 @@ export default function ProductForm({ product, categories, variantTypes }: Props
     setForm((f) => {
       const variants = [...f.variants]
       variants[index] = { ...variants[index], [field]: value }
+      return { ...f, variants }
+    })
+  }
+
+  /** Fija el valor de un atributo (tipo de variante) de una variante concreta. */
+  function setVariantAttr(index: number, typeName: string, value: string) {
+    setForm((f) => {
+      const variants = [...f.variants]
+      variants[index] = { ...variants[index], attributes: { ...variants[index].attributes, [typeName]: value } }
       return { ...f, variants }
     })
   }
@@ -507,26 +508,26 @@ export default function ProductForm({ product, categories, variantTypes }: Props
           {/* Variantes */}
           <section className="bg-white rounded-2xl p-6 shadow-sm space-y-4">
             <div className="flex items-center justify-between">
-              <h2 className="font-brand font-semibold text-brand-primary">
-                Variantes
-                <span className="ml-2 text-xs text-brand-primary/40 font-normal">({visibleVariants.length})</span>
-              </h2>
-              <div className="flex items-center gap-3">
-                <button
-                  type="button"
-                  onClick={() => setShowDims((v) => !v)}
-                  className="font-brand text-xs text-brand-primary/40 hover:text-brand-primary transition-colors"
-                >
-                  {showDims ? 'Ocultar' : 'Mostrar'} dimensiones
-                </button>
+              <div>
+                <h2 className="font-brand font-semibold text-brand-primary">
+                  {selectedTypes.length > 0 ? 'Variantes' : 'Precio e inventario'}
+                  <span className="ml-2 text-xs text-brand-primary/40 font-normal">({visibleVariants.length})</span>
+                </h2>
+                <p className="font-brand text-xs text-brand-primary/40 mt-0.5">
+                  {selectedTypes.length > 0
+                    ? 'Define precio, stock e imagen para cada combinación.'
+                    : 'Este producto se vende sin variaciones. Define su precio y stock.'}
+                </p>
+              </div>
+              {selectedTypes.length > 0 && (
                 <button
                   type="button"
                   onClick={addManualVariant}
-                  className="font-brand text-xs text-brand-primary border border-brand-primary/20 px-3 py-1.5 rounded-lg hover:bg-brand-cream transition-colors"
+                  className="font-brand text-xs text-brand-primary border border-brand-primary/20 px-3 py-1.5 rounded-lg hover:bg-brand-cream transition-colors shrink-0"
                 >
                   + Agregar variante
                 </button>
-              </div>
+              )}
             </div>
 
             {visibleVariants.length === 0 ? (
@@ -534,164 +535,167 @@ export default function ProductForm({ product, categories, variantTypes }: Props
                 Usa "Generar combinaciones" o agrega una variante manualmente.
               </p>
             ) : (
-              <>
-                {/* Cabecera de la tabla */}
-                <div className={`grid gap-2 text-xs font-brand text-brand-primary/40 px-1 ${
-                  selectedTypes.length > 0
-                    ? `grid-cols-[1fr_repeat(${selectedTypes.length},100px)_80px_80px_80px_28px]`
-                    : 'grid-cols-[1fr_80px_80px_80px_28px]'
-                }`}>
-                  <span>Variante</span>
-                  {selectedTypes.map((t) => <span key={t.id}>{t.name}</span>)}
-                  <span>Precio*</span>
-                  <span>Stock</span>
-                  <span>SKU</span>
-                  <span />
-                </div>
+              <div className="space-y-3">
+                {form.variants.map((variant, idx) => {
+                  if (variant._delete) return null
 
-                <div className="space-y-2">
-                  {form.variants.map((variant, idx) => {
-                    if (variant._delete) return null
-                    const label = selectedTypes.length > 0
-                      ? buildLabel(variant.attributes)
-                      : `Variante ${idx + 1}`
-
-                    return (
-                      <div key={idx} className="border border-gray-100 rounded-xl p-3 space-y-3">
-                        {/* Fila principal: atributos + precio/stock/sku */}
-                        <div className="flex items-center gap-2 flex-wrap">
-                          {/* Etiqueta de la combinación */}
-                          <div className="flex-1 min-w-[120px]">
-                            {selectedTypes.length > 0 ? (
-                              <div className="flex flex-wrap gap-1">
-                                {selectedTypes.map((t) => (
-                                  <span key={t.id} className="font-brand text-xs bg-brand-cream text-brand-primary px-2 py-0.5 rounded-full">
-                                    {variant.attributes[t.name] || <span className="text-red-400">sin valor</span>}
-                                  </span>
-                                ))}
-                              </div>
-                            ) : (
-                              <span className="font-brand text-sm text-brand-primary/60">{label}</span>
-                            )}
-                          </div>
-
-                          {/* Si no hay tipos elegidos, mostrar inputs de atributos libres */}
-                          {selectedTypes.length === 0 && (
-                            <input
-                              type="text"
-                              value={variant.attributes['label'] ?? ''}
-                              onChange={(e) => updateVariant(idx, 'attributes', { label: e.target.value })}
-                              placeholder="ej: Talla M"
-                              className="w-28 border border-gray-200 rounded-lg px-2 py-1.5 font-brand text-xs text-brand-primary focus:outline-none focus:border-brand-primary"
-                            />
+                  return (
+                    <div key={idx} className="border border-gray-100 rounded-xl p-4 space-y-4">
+                      {/* Identidad de la variante + activa/eliminar */}
+                      <div className="flex items-start justify-between gap-3">
+                        <div className="flex-1 min-w-0">
+                          {selectedTypes.length > 0 ? (
+                            <div className="flex flex-wrap gap-3">
+                              {selectedTypes.map((t) => (
+                                <div key={t.id}>
+                                  <label className="font-brand text-[10px] text-brand-primary/50 block mb-1">{t.name}</label>
+                                  <select
+                                    value={variant.attributes[t.name] ?? ''}
+                                    onChange={(e) => setVariantAttr(idx, t.name, e.target.value)}
+                                    className="border border-gray-200 rounded-lg px-2 py-1.5 font-brand text-xs text-brand-primary bg-white focus:outline-none focus:border-brand-primary"
+                                  >
+                                    <option value="">Elegir {t.name.toLowerCase()}…</option>
+                                    {t.values.map((val) => <option key={val} value={val}>{val}</option>)}
+                                  </select>
+                                </div>
+                              ))}
+                            </div>
+                          ) : (
+                            <span className="font-brand text-sm font-semibold text-brand-primary">Variante única</span>
                           )}
+                        </div>
 
-                          {/* Precio */}
-                          <div className="w-24">
-                            <div className="relative">
-                              <span className="absolute left-2.5 top-1/2 -translate-y-1/2 font-brand text-xs text-brand-primary/30">$</span>
-                              <input
-                                type="number"
-                                required
-                                min={0}
-                                value={variant.price}
-                                onChange={(e) => updateVariant(idx, 'price', e.target.value)}
-                                className="w-full pl-6 pr-2 py-1.5 border border-gray-200 rounded-lg font-brand text-xs text-brand-primary focus:outline-none focus:border-brand-primary"
-                                placeholder="0"
-                              />
-                            </div>
-                            {variant.price && Number(variant.price) > 0 && (
-                              <p className="font-brand text-[10px] text-brand-primary/30 mt-0.5 text-right">
-                                ${fmt(variant.price)}
-                              </p>
-                            )}
-                          </div>
-
-                          {/* HU-261 · Precio antes (oferta) */}
-                          <div className="w-24">
-                            <div className="relative">
-                              <span className="absolute left-2.5 top-1/2 -translate-y-1/2 font-brand text-xs text-brand-primary/30">$</span>
-                              <input
-                                type="number"
-                                min={0}
-                                value={variant.compare_at_price}
-                                onChange={(e) => updateVariant(idx, 'compare_at_price', e.target.value)}
-                                className="w-full pl-6 pr-2 py-1.5 border border-gray-200 rounded-lg font-brand text-xs text-brand-primary/60 focus:outline-none focus:border-brand-primary"
-                                placeholder="Antes"
-                                title="Precio antes de la oferta (opcional)"
-                              />
-                            </div>
-                          </div>
-
-                          {/* HU-262 · Imagen de la variante (URL, opcional) */}
-                          <div className="w-32">
+                        <div className="flex items-center gap-3 shrink-0">
+                          <label className="flex items-center gap-1.5 cursor-pointer" title="Si se desactiva, esta variante no se puede comprar">
                             <input
-                              type="url"
-                              value={variant.image_url}
-                              onChange={(e) => updateVariant(idx, 'image_url', e.target.value)}
-                              className="w-full px-2 py-1.5 border border-gray-200 rounded-lg font-brand text-xs text-brand-primary focus:outline-none focus:border-brand-primary"
-                              placeholder="Imagen (URL)"
-                              title="Imagen propia de la variante (p. ej. por color)"
+                              type="checkbox"
+                              checked={variant.active}
+                              onChange={(e) => updateVariant(idx, 'active', e.target.checked)}
+                              className="w-3.5 h-3.5 accent-brand-primary"
+                            />
+                            <span className="font-brand text-xs text-brand-primary/50">A la venta</span>
+                          </label>
+                          {visibleVariants.length > 1 && (
+                            <button
+                              type="button"
+                              onClick={() => removeVariant(idx)}
+                              className="font-brand text-xs text-red-400 hover:text-red-600 transition-colors"
+                              title="Eliminar variante"
+                            >
+                              ✕
+                            </button>
+                          )}
+                        </div>
+                      </div>
+
+                      {/* Campos etiquetados */}
+                      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                        {/* Precio */}
+                        <div>
+                          <label className="font-brand text-[10px] text-brand-primary/50 block mb-1">Precio de venta *</label>
+                          <div className="relative">
+                            <span className="absolute left-2.5 top-1/2 -translate-y-1/2 font-brand text-xs text-brand-primary/30">$</span>
+                            <input
+                              type="number"
+                              required
+                              min={0}
+                              value={variant.price}
+                              onChange={(e) => updateVariant(idx, 'price', e.target.value)}
+                              className="w-full pl-6 pr-2 py-1.5 border border-gray-200 rounded-lg font-brand text-xs text-brand-primary focus:outline-none focus:border-brand-primary"
+                              placeholder="0"
                             />
                           </div>
+                          {variant.price && Number(variant.price) > 0 && (
+                            <p className="font-brand text-[10px] text-brand-primary/30 mt-0.5">${fmt(variant.price)}</p>
+                          )}
+                        </div>
 
-                          {/* Stock */}
+                        {/* HU-261 · Precio antes (oferta) */}
+                        <div>
+                          <label className="font-brand text-[10px] text-brand-primary/50 block mb-1">Precio normal (opcional)</label>
+                          <div className="relative">
+                            <span className="absolute left-2.5 top-1/2 -translate-y-1/2 font-brand text-xs text-brand-primary/30">$</span>
+                            <input
+                              type="number"
+                              min={0}
+                              value={variant.compare_at_price}
+                              onChange={(e) => updateVariant(idx, 'compare_at_price', e.target.value)}
+                              className="w-full pl-6 pr-2 py-1.5 border border-gray-200 rounded-lg font-brand text-xs text-brand-primary/60 focus:outline-none focus:border-brand-primary"
+                              placeholder="0"
+                              title="Precio antes del descuento. Se muestra tachado si es mayor al de venta."
+                            />
+                          </div>
+                        </div>
+
+                        {/* Stock */}
+                        <div>
+                          <label className="font-brand text-[10px] text-brand-primary/50 block mb-1">Stock (unidades)</label>
                           <input
                             type="number"
                             min={0}
                             value={variant.stock}
                             onChange={(e) => updateVariant(idx, 'stock', e.target.value)}
-                            className="w-16 border border-gray-200 rounded-lg px-2 py-1.5 font-brand text-xs text-brand-primary focus:outline-none focus:border-brand-primary"
+                            className="w-full border border-gray-200 rounded-lg px-2 py-1.5 font-brand text-xs text-brand-primary focus:outline-none focus:border-brand-primary"
                             placeholder="0"
                           />
+                        </div>
 
-                          {/* SKU */}
+                        {/* SKU */}
+                        <div>
+                          <label className="font-brand text-[10px] text-brand-primary/50 block mb-1">SKU (código interno)</label>
                           <input
                             type="text"
                             value={variant.sku}
                             onChange={(e) => updateVariant(idx, 'sku', e.target.value)}
-                            placeholder="SKU"
-                            className="w-24 border border-gray-200 rounded-lg px-2 py-1.5 font-brand text-xs text-brand-primary focus:outline-none focus:border-brand-primary"
+                            placeholder="Opcional"
+                            className="w-full border border-gray-200 rounded-lg px-2 py-1.5 font-brand text-xs text-brand-primary focus:outline-none focus:border-brand-primary"
                           />
-
-                          {/* Activo + eliminar */}
-                          <div className="flex items-center gap-2 ml-auto">
-                            <label className="flex items-center gap-1 cursor-pointer">
-                              <input
-                                type="checkbox"
-                                checked={variant.active}
-                                onChange={(e) => updateVariant(idx, 'active', e.target.checked)}
-                                className="w-3.5 h-3.5 accent-brand-primary"
-                              />
-                              <span className="font-brand text-[10px] text-brand-primary/40">Activa</span>
-                            </label>
-                            {visibleVariants.length > 1 && (
-                              <button
-                                type="button"
-                                onClick={() => removeVariant(idx)}
-                                className="font-brand text-xs text-red-400 hover:text-red-600 transition-colors"
-                              >
-                                ✕
-                              </button>
-                            )}
-                          </div>
                         </div>
+                      </div>
 
-                        {/* Dimensiones de envío (colapsables) */}
+                      {/* HU-262 · Imagen propia de la variante (solo con tipos) */}
+                      {selectedTypes.length > 0 && (
+                        <div>
+                          <label className="font-brand text-[10px] text-brand-primary/50 block mb-1">Imagen de la variante (opcional)</label>
+                          <div className="max-w-[12rem]">
+                            <ImageUpload
+                              value={variant.image_url}
+                              onChange={(url) => updateVariant(idx, 'image_url', url)}
+                              onUploadStateChange={handleUploadStateChange}
+                              bucket="products"
+                              label=""
+                              sizeClass="h-28"
+                            />
+                          </div>
+                          <p className="font-brand text-[10px] text-brand-primary/30 mt-1">
+                            Se muestra al elegir esta variante (p. ej. su color).
+                          </p>
+                        </div>
+                      )}
+
+                      {/* Dimensiones de envío (colapsables) */}
+                      <div className="pt-1 border-t border-gray-100">
+                        <button
+                          type="button"
+                          onClick={() => setShowDims((v) => !v)}
+                          className="font-brand text-[11px] text-brand-primary/50 hover:text-brand-primary transition-colors"
+                        >
+                          {showDims ? '− Ocultar' : '+ Mostrar'} dimensiones de envío
+                        </button>
                         {showDims && (
-                          <div className="pt-1 border-t border-gray-100">
+                          <div className="mt-2">
                             <p className="font-brand text-[10px] text-brand-primary/30 mb-2">
-                              Dimensiones para Skydropx (opcionales)
+                              Peso y medidas del paquete. Se usan para calcular el costo de envío.
                             </p>
                             <div className="grid grid-cols-4 gap-2">
                               {[
-                                { field: 'weight_kg', label: 'Peso kg', placeholder: '0.35' },
-                                { field: 'length_cm', label: 'Largo cm', placeholder: '20' },
-                                { field: 'width_cm',  label: 'Ancho cm', placeholder: '15' },
-                                { field: 'height_cm', label: 'Alto cm',  placeholder: '8'  },
+                                { field: 'weight_kg', label: 'Peso (kg)', placeholder: 'Ej. 0.5' },
+                                { field: 'length_cm', label: 'Largo (cm)', placeholder: 'Ej. 20' },
+                                { field: 'width_cm',  label: 'Ancho (cm)', placeholder: 'Ej. 15' },
+                                { field: 'height_cm', label: 'Alto (cm)',  placeholder: 'Ej. 8' },
                               ].map(({ field, label, placeholder }) => (
                                 <div key={field}>
-                                  <label className="font-brand text-[10px] text-brand-primary/30 block mb-1">{label}</label>
+                                  <label className="font-brand text-[10px] text-brand-primary/40 block mb-1">{label}</label>
                                   <input
                                     type="number"
                                     min={0}
@@ -707,10 +711,10 @@ export default function ProductForm({ product, categories, variantTypes }: Props
                           </div>
                         )}
                       </div>
-                    )
-                  })}
-                </div>
-              </>
+                    </div>
+                  )
+                })}
+              </div>
             )}
           </section>
 
