@@ -1,4 +1,4 @@
-import { getProductBySlug, getProducts, getTemplateVariant } from '@merkiai/database'
+import { getProductBySlug, getProducts, getTemplateVariant, getVariantTypes, buildSwatchColorMap } from '@merkiai/database'
 import { getStoreContext } from '@/lib/store-context'
 import { notFound } from 'next/navigation'
 import type { Metadata } from 'next'
@@ -59,6 +59,8 @@ export default async function ProductPage({ params }: Props) {
 
   const trustBadges = (storeConfig?.trust_badges ?? []).filter((b) => b.enabled)
   const pdpVariant = getTemplateVariant(ctx?.template, 'product_detail')
+  // HU-264: mapa de colores de swatch de la tienda.
+  const colorMap = buildSwatchColorMap(await getVariantTypes(true, db).catch(() => []))
 
   // JSON-LD — Product schema (lógica pura en @/lib/json-ld)
   const jsonLd = buildProductJsonLd({
@@ -77,7 +79,7 @@ export default async function ProductPage({ params }: Props) {
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
       />
-      <ProductDetail product={product} related={related} trustBadges={trustBadges} layoutVariant={pdpVariant} />
+      <ProductDetail product={product} related={related} trustBadges={trustBadges} layoutVariant={pdpVariant} colorMap={colorMap} />
     </>
   )
 }

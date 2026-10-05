@@ -4,7 +4,7 @@ import { useState, useMemo, useCallback, useEffect } from 'react'
 import Link from 'next/link'
 import { useCartStore } from '@/store/cart'
 import type { ProductWithVariants, TrustBadge } from '@merkiai/database'
-import { getProductOptions, getVariantAttrs, getVariantLabel, isColorValue, COLOR_HEX } from '@/lib/variant-utils'
+import { getProductOptions, getVariantAttrs, getVariantLabel, isColorValue, swatchColor } from '@/lib/variant-utils'
 
 interface Props {
   product: ProductWithVariants
@@ -13,9 +13,11 @@ interface Props {
   trustBadges?: TrustBadge[]
   /** HU-122b: disposición de la PDP resuelta desde la plantilla ('gallery-left' | 'gallery-top'). */
   layoutVariant?: string
+  /** HU-264: mapa de colores de swatch de la tienda (valor→hex). */
+  colorMap?: Record<string, string>
 }
 
-export default function ProductDetail({ product, related, trustBadges = [], layoutVariant = 'gallery-left' }: Props) {
+export default function ProductDetail({ product, related, trustBadges = [], layoutVariant = 'gallery-left', colorMap }: Props) {
   const variantOpts = getProductOptions(product)
   const activeVariants = product.variants.filter((v) => v.active)
 
@@ -311,7 +313,7 @@ export default function ProductDetail({ product, related, trustBadges = [], layo
                           const selected = currentVal === val
 
                           if (allColor) {
-                            const hex = COLOR_HEX[val.toLowerCase()] ?? val
+                            const hex = swatchColor(val, colorMap)
                             return (
                               <button
                                 key={val}

@@ -1205,6 +1205,7 @@ export type Database = {
           id: number
           name: string
           values: Json          // string[]
+          swatch_hex: Json      // { [value]: hex }
           display_type: 'pill' | 'swatch'
           active: boolean
           order_index: number
@@ -1215,6 +1216,7 @@ export type Database = {
           id?: number
           name: string
           values?: Json
+          swatch_hex?: Json
           display_type?: 'pill' | 'swatch'
           active?: boolean
           order_index?: number
@@ -1225,6 +1227,7 @@ export type Database = {
           id?: number
           name?: string
           values?: Json
+          swatch_hex?: Json
           display_type?: 'pill' | 'swatch'
           active?: boolean
           order_index?: number
@@ -1462,6 +1465,8 @@ export type PageWithSections = Page & {
   sections: (PageSection & { items: SectionItem[] })[]
 }
 
-export type VariantType = Omit<Database['public']['Tables']['variant_types']['Row'], 'values'> & {
+export type VariantType = Omit<Database['public']['Tables']['variant_types']['Row'], 'values' | 'swatch_hex'> & {
   values: string[]
+  /** HU-264 · mapa valor→hex para swatches (puede faltar en filas antiguas). */
+  swatch_hex: Record<string, string>
 }

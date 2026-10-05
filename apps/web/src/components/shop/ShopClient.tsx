@@ -6,7 +6,7 @@ import { Icon } from '@merkiai/ui'
 import { useCartStore } from '@/store/cart'
 import type { CartItem } from '@/store/cart'
 import type { ProductWithVariants } from '@merkiai/database'
-import { getProductOptions, getVariantAttrs, getVariantLabel, isColorValue, COLOR_HEX } from '@/lib/variant-utils'
+import { getProductOptions, getVariantAttrs, getVariantLabel, isColorValue, swatchColor } from '@/lib/variant-utils'
 
 const SORTS = [
   { value: 'destacados', label: 'Destacados' },
@@ -20,6 +20,8 @@ interface Props {
   searchParams: Record<string, string | string[] | undefined>
   /** Densidad de grilla por plantilla activa (HU-122a): 'comfortable' | 'compact'. */
   gridVariant?: string
+  /** HU-264: mapa de colores de swatch de la tienda (valor→hex). */
+  colorMap?: Record<string, string>
 }
 
 /** Clases de la grilla de productos según la variante de disposición. */
@@ -39,11 +41,12 @@ interface FilterPanelProps {
   onToggleAttr: (opt: string, val: string) => void
   onClearFilters: () => void
   hasFilters: boolean
+  colorMap?: Record<string, string>
 }
 
 function FilterPanel({
   categories, attrFilters, selectedCategory, selectedAttrs,
-  onSelectCategory, onToggleAttr, onClearFilters, hasFilters,
+  onSelectCategory, onToggleAttr, onClearFilters, hasFilters, colorMap,
 }: FilterPanelProps) {
   return (
     <div className="space-y-6">
@@ -103,7 +106,7 @@ function FilterPanel({
                       ? 'border-brand-primary scale-110 shadow-md'
                       : 'border-transparent hover:border-brand-primary/40'
                   }`}
-                  style={{ backgroundColor: COLOR_HEX[v.toLowerCase()] ?? v }}
+                  style={{ backgroundColor: swatchColor(v, colorMap) }}
                 />
               ))}
             </div>
@@ -152,7 +155,7 @@ function FilterRow({ label, active, onClick }: { label: string; active: boolean;
 
 // ── Main component ────────────────────────────────────────────────────────────
 
-export default function ShopClient({ products, searchParams, gridVariant = 'comfortable' }: Props) {
+export default function ShopClient({ products, searchParams, gridVariant = 'comfortable', colorMap }: Props) {
   const [selectedCategory, setSelectedCategory] = useState<number | null>(
     searchParams.categoria ? Number(searchParams.categoria) : null
   )
@@ -246,6 +249,7 @@ export default function ShopClient({ products, searchParams, gridVariant = 'comf
     onSelectCategory: setSelectedCategory,
     onToggleAttr: toggleAttr,
     onClearFilters: clearFilters,
+    colorMap,
   }
 
   return (
@@ -314,7 +318,7 @@ export default function ShopClient({ products, searchParams, gridVariant = 'comf
             ) : (
               <div className={GRID_CLASSES[gridVariant] ?? GRID_CLASSES.comfortable}>
                 {filtered.map((product) => (
-                  <ProductCard key={product.id} product={product} fmt={fmt} addItem={addItem} />
+                  <ProductCard key={product.id} product={product} fmt={fmt} addItem={addItem} colorMap={colorMap} />
                 ))}
               </div>
             )}
@@ -362,10 +366,11 @@ export default function ShopClient({ products, searchParams, gridVariant = 'comf
 
 // ── Product card ──────────────────────────────────────────────────────────────
 
-function ProductCard({ product, fmt, addItem }: {
+function ProductCard({ product, fmt, addItem, colorMap }: {
   product: ProductWithVariants
   fmt: (n: number) => string
   addItem: (item: CartItem) => void
+  colorMap?: Record<string, string>
 }) {
   const image = product.images[0]
   const activeVariants = product.variants.filter((v) => v.active)
@@ -429,7 +434,7 @@ function ProductCard({ product, fmt, addItem }: {
                 key={v}
                 title={v}
                 className="w-4 h-4 rounded-full border border-gray-200"
-                style={{ backgroundColor: COLOR_HEX[v.toLowerCase()] ?? v }}
+                style={{ backgroundColor: swatchColor(v, colorMap) }}
               />
             ))}
             {colorValues.length > 6 && (

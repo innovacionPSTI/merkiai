@@ -19,12 +19,13 @@ export async function PATCH(request: NextRequest, { params }: Params) {
   if (isNaN(numId)) return NextResponse.json({ error: 'ID inválido' }, { status: 400 })
 
   const body = await request.json()
-  const { name, values, display_type, active, order_index } = body as {
+  const { name, values, display_type, active, order_index, swatch_hex } = body as {
     name?: string
     values?: string[]
     display_type?: 'pill' | 'swatch'
     active?: boolean
     order_index?: number
+    swatch_hex?: Record<string, string>
   }
 
   try {
@@ -34,6 +35,7 @@ export async function PATCH(request: NextRequest, { params }: Params) {
       display_type,
       active,
       order_index,
+      swatch_hex: swatch_hex && typeof swatch_hex === 'object' ? swatch_hex : undefined,
     }, getAdminDb(adminUser.tenantId))
     return NextResponse.json(updated)
   } catch (err: unknown) {

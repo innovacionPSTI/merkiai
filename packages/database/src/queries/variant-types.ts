@@ -3,9 +3,27 @@ import type { Database, VariantType } from '../types'
 
 function toVariantType(row: Record<string, unknown>): VariantType {
   return {
-    ...(row as Omit<VariantType, 'values'>),
+    ...(row as Omit<VariantType, 'values' | 'swatch_hex'>),
     values: Array.isArray(row.values) ? (row.values as string[]) : [],
+    swatch_hex: row.swatch_hex && typeof row.swatch_hex === 'object' && !Array.isArray(row.swatch_hex)
+      ? (row.swatch_hex as Record<string, string>)
+      : {},
   }
+}
+
+/**
+ * HU-264 · Fusiona los `swatch_hex` de los tipos de variante en un único mapa
+ * valor(minúsculas)→hex para el storefront (pura, testeable). Es la fuente de
+ * color de los swatches, reemplazando el diccionario fijo `COLOR_HEX`.
+ */
+export function buildSwatchColorMap(variantTypes: VariantType[]): Record<string, string> {
+  const map: Record<string, string> = {}
+  for (const vt of variantTypes) {
+    for (const [value, hex] of Object.entries(vt.swatch_hex ?? {})) {
+      if (typeof hex === 'string' && hex.trim()) map[value.toLowerCase()] = hex
+    }
+  }
+  return map
 }
 
 /** Lista todos los tipos de variante, ordenados por order_index */
@@ -41,6 +59,8 @@ export interface CreateVariantTypeInput {
   values: string[]
   display_type?: 'pill' | 'swatch'
   order_index?: number
+  /** HU-264 · mapa valor→hex para swatches. */
+  swatch_hex?: Record<string, string>
 }
 
 /** Crea un nuevo tipo de variante */
@@ -55,6 +75,7 @@ export async function createVariantType(
     .insert({
       name: input.name.trim(),
       values: input.values,
+      swatch_hex: (input.swatch_hex ?? {}) as unknown as Database['public']['Tables']['variant_types']['Insert']['swatch_hex'],
       display_type: input.display_type ?? 'pill',
       order_index: input.order_index ?? 0,
       tenant_id: tenantId,
@@ -71,6 +92,8 @@ export interface UpdateVariantTypeInput {
   display_type?: 'pill' | 'swatch'
   active?: boolean
   order_index?: number
+  /** HU-264 · mapa valor→hex para swatches. */
+  swatch_hex?: Record<string, string>
 }
 
 /** Actualiza un tipo de variante existente */
@@ -82,6 +105,8 @@ export async function updateVariantType(id: number, input: UpdateVariantTypeInpu
   const patch: VariantTypeUpdate = {}
   if (input.name !== undefined) patch.name = input.name.trim()
   if (input.values !== undefined) patch.values = input.values
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  if (input.swatch_hex !== undefined) (patch as any).swatch_hex = input.swatch_hex
   if (input.display_type !== undefined) patch.display_type = input.display_type
   if (input.active !== undefined) patch.active = input.active
   if (input.order_index !== undefined) patch.order_index = input.order_index

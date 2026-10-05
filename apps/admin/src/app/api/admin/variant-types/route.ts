@@ -24,11 +24,12 @@ export async function POST(request: NextRequest) {
   }
 
   const body = await request.json()
-  const { name, values, display_type, order_index } = body as {
+  const { name, values, display_type, order_index, swatch_hex } = body as {
     name?: string
     values?: string[]
     display_type?: 'pill' | 'swatch'
     order_index?: number
+    swatch_hex?: Record<string, string>
   }
 
   if (!name?.trim()) {
@@ -44,6 +45,7 @@ export async function POST(request: NextRequest) {
       values: values.map((v) => String(v).trim()).filter(Boolean),
       display_type: display_type ?? 'pill',
       order_index: order_index ?? 0,
+      swatch_hex: swatch_hex && typeof swatch_hex === 'object' ? swatch_hex : {},
     }, getAdminDb(adminUser.tenantId), adminUser.tenantId)
     return NextResponse.json(vt, { status: 201 })
   } catch (err: unknown) {

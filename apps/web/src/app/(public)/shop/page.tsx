@@ -1,4 +1,4 @@
-import { getProducts, getTemplateVariant } from '@merkiai/database'
+import { getProducts, getTemplateVariant, getVariantTypes, buildSwatchColorMap } from '@merkiai/database'
 import ShopClient from '@/components/shop/ShopClient'
 import { getRequestCatalogDb } from '@/lib/tenant-db'
 import { requireStoreContext } from '@/lib/store-context'
@@ -17,14 +17,18 @@ export default async function TiendaPage({
 }: {
   searchParams: Promise<Record<string, string | string[] | undefined>>
 }) {
-  const [products, sp, ctx] = await Promise.all([
+  const db = await getRequestCatalogDb()
+  const [products, sp, ctx, variantTypes] = await Promise.all([
     // E17/HU-156+157: lectura tenant-scoped vía RLS (rol anon + JWT tenant_id),
     // con el tenant resuelto desde el Host de la petición.
-    getProducts(undefined, await getRequestCatalogDb()).catch(() => []),
+    getProducts(undefined, db).catch(() => []),
     searchParams,
     requireStoreContext().catch(() => null),
+    getVariantTypes(true, db).catch(() => []),
   ])
   // HU-122a: densidad de la grilla según la plantilla activa (HU-121: tema→layout).
   const gridVariant = getTemplateVariant(ctx?.template, 'product_grid')
-  return <ShopClient products={products} searchParams={sp} gridVariant={gridVariant} />
+  // HU-264: mapa de colores de swatch definido por la tienda.
+  const colorMap = buildSwatchColorMap(variantTypes)
+  return <ShopClient products={products} searchParams={sp} gridVariant={gridVariant} colorMap={colorMap} />
 }

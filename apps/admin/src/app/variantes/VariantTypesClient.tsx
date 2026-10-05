@@ -15,9 +15,10 @@ interface FormState {
   values: string        // newline-separated
   display_type: DisplayType
   active: boolean
+  swatch_hex: Record<string, string>  // HU-264 · valor→hex
 }
 
-const EMPTY_FORM: FormState = { name: '', values: '', display_type: 'pill', active: true }
+const EMPTY_FORM: FormState = { name: '', values: '', display_type: 'pill', active: true, swatch_hex: {} }
 
 export default function VariantTypesClient({ variantTypes: initial }: Props) {
   const [items, setItems] = useState<VariantType[]>(initial)
@@ -42,6 +43,7 @@ export default function VariantTypesClient({ variantTypes: initial }: Props) {
       values: vt.values.join('\n'),
       display_type: vt.display_type,
       active: vt.active,
+      swatch_hex: vt.swatch_hex ?? {},
     })
     setError('')
   }
@@ -64,11 +66,17 @@ export default function VariantTypesClient({ variantTypes: initial }: Props) {
     setSaving(true)
     setError('')
 
+    // HU-264 · conserva solo los hex de valores existentes y si es swatch.
+    const swatch_hex = form.display_type === 'swatch'
+      ? Object.fromEntries(values.flatMap((v) => form.swatch_hex[v] ? [[v, form.swatch_hex[v]]] : []))
+      : {}
+
     const payload = {
       name: form.name.trim(),
       values,
       display_type: form.display_type,
       active: form.active,
+      swatch_hex,
     }
 
     try {
@@ -259,6 +267,26 @@ export default function VariantTypesClient({ variantTypes: initial }: Props) {
                       <span key={v} className="font-brand text-xs bg-brand-cream text-brand-primary px-2.5 py-1 rounded-full">
                         {v}
                       </span>
+                    ))}
+                  </div>
+                )}
+
+                {/* HU-264 · color por valor cuando es swatch */}
+                {form.display_type === 'swatch' && parseValues(form.values).length > 0 && (
+                  <div className="mt-3 space-y-1.5">
+                    <p className="font-brand text-xs text-brand-primary/40">Color de cada valor (opcional)</p>
+                    {parseValues(form.values).map((v) => (
+                      <div key={v} className="flex items-center gap-2">
+                        <input
+                          type="color"
+                          value={form.swatch_hex[v] || '#cccccc'}
+                          onChange={(e) => setForm((f) => ({ ...f, swatch_hex: { ...f.swatch_hex, [v]: e.target.value } }))}
+                          className="w-8 h-8 rounded cursor-pointer border border-gray-200 p-0.5"
+                          aria-label={`Color de ${v}`}
+                        />
+                        <span className="font-brand text-xs text-brand-primary">{v}</span>
+                        <span className="font-mono text-[11px] text-brand-primary/40">{form.swatch_hex[v] ?? '—'}</span>
+                      </div>
                     ))}
                   </div>
                 )}

@@ -55,11 +55,21 @@ export function isColorValue(value: string): boolean {
   return colorNames.includes(value.toLowerCase())
 }
 
-/** Maps Spanish color names to approximate hex values for swatches */
+/** Maps Spanish color names to approximate hex values for swatches (fallback). */
 export const COLOR_HEX: Record<string, string> = {
   rojo: '#ef4444', azul: '#3b82f6', verde: '#22c55e', negro: '#111111',
   blanco: '#f9fafb', amarillo: '#eab308', naranja: '#f97316', morado: '#a855f7',
   violeta: '#7c3aed', gris: '#6b7280', rosa: '#ec4899', café: '#92400e',
   beige: '#d4b896', crema: '#fef3c7', dorado: '#d97706', plateado: '#9ca3af',
   turquesa: '#0891b2', coral: '#f43f5e', menta: '#34d399', lavanda: '#c4b5fd',
+}
+
+/**
+ * HU-264 · Color del swatch para un valor: primero el mapa de la tienda
+ * (`variant_types.swatch_hex`, vía `buildSwatchColorMap`), luego el diccionario
+ * fijo `COLOR_HEX`, y por último el valor crudo (sirve si ya es un hex).
+ */
+export function swatchColor(value: string, colorMap?: Record<string, string>): string {
+  const k = value.toLowerCase()
+  return colorMap?.[k] ?? COLOR_HEX[k] ?? value
 }

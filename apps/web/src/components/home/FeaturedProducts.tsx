@@ -3,7 +3,7 @@
 import Link from 'next/link'
 import { useCartStore } from '@/store/cart'
 import type { ProductWithVariants } from '@merkiai/database'
-import { getProductOptions, getVariantAttrs, getVariantLabel, COLOR_HEX } from '@/lib/variant-utils'
+import { getProductOptions, getVariantAttrs, getVariantLabel, swatchColor } from '@/lib/variant-utils'
 
 interface FeaturedProductsProps {
   products: ProductWithVariants[]
@@ -111,7 +111,7 @@ export default function FeaturedProducts({ products, title = 'Productos Destacad
                           key={v}
                           title={v}
                           className="w-4 h-4 rounded-full border border-gray-200"
-                          style={{ backgroundColor: COLOR_HEX[v.toLowerCase()] ?? v }}
+                          style={{ backgroundColor: swatchColor(v) }}
                         />
                       ))}
                       {colorValues.length > 6 && <span className="font-brand text-[10px] text-brand-primary/40">+{colorValues.length - 6}</span>}
