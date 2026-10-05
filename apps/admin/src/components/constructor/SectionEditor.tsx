@@ -7,7 +7,7 @@
  * (`PATCH /api/admin/cms/sections`). Ningún formulario hardcodeado por tipo.
  */
 import { useState } from 'react'
-import { getBlockSchema, resolveBlockFields, STYLE_FIELDS } from '@merkiai/database'
+import { getBlockSchema, resolveBlockFields, STYLE_FIELDS } from '@merkiai/database/blocks'
 import { splitSectionFields } from '@/lib/section-fields'
 import FieldInput from './FieldInput'
 import ItemsEditor from './ItemsEditor'

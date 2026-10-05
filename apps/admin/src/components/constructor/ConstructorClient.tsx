@@ -10,7 +10,7 @@
  * editor actual (`/contenido`) tras el flag `pageBuilder`.
  */
 import { useCallback, useEffect, useState } from 'react'
-import { listBlockTypes, getBlockSchema, listTemplates, getTemplateHomeLayout } from '@merkiai/database'
+import { listBlockTypes, getBlockSchema, listTemplates, getTemplateHomeLayout } from '@merkiai/database/blocks'
 import SectionEditor from './SectionEditor'
 
 interface PageOption { key: string; label: string; slug: string }

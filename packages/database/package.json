@@ -8,7 +8,8 @@
     ".": "./src/index.ts",
     "./types": "./src/types.ts",
     "./client": "./src/client.ts",
-    "./queries": "./src/queries/index.ts"
+    "./queries": "./src/queries/index.ts",
+    "./blocks": "./src/blocks/index.ts"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.43.0",

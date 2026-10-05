@@ -7,7 +7,7 @@
  * el CMS API genérico (`/api/admin/cms/items`), ya acotado por tenant vía RLS.
  */
 import { useCallback, useEffect, useState } from 'react'
-import { getBlockSchema } from '@merkiai/database'
+import { getBlockSchema } from '@merkiai/database/blocks'
 import { splitItemFields, resolveItemFields, itemTypeOf } from '@/lib/item-fields'
 import FieldInput from './FieldInput'
 

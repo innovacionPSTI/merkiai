@@ -3,7 +3,8 @@
 import { useState, useTransition, useEffect, useRef } from 'react'
 import { useRouter } from 'next/navigation'
 import { Icon, contrastRatio, contrastLevel, type ContrastLevel } from '@merkiai/ui'
-import { listTemplates, type Theme } from '@merkiai/database'
+import { listTemplates } from '@merkiai/database/blocks'
+import type { Theme } from '@merkiai/database'
 
 // HU-121 · opciones de layout de la plantilla (del registro de templates).
 const LAYOUT_OPTIONS = listTemplates().map((t) => ({
