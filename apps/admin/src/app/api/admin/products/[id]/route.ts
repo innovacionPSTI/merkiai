@@ -56,6 +56,7 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
         tenant_id: adminUser.tenantId,
         weight: (v.weight || null) as VariantUpsert['weight'],
         price: Number(v.price),
+        compare_at_price: v.compare_at_price != null && v.compare_at_price !== '' ? Number(v.compare_at_price) : null,
         stock: Number(v.stock ?? 0),
         sku: v.sku || null,
         active: v.active ?? true,

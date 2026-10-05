@@ -456,8 +456,11 @@ function ProductCard({ product, fmt, addItem }: {
             {hasMultiplePrices && (
               <span className="font-brand text-[10px] text-brand-primary/40">Desde</span>
             )}
-            <p className="font-brand font-bold text-brand-price leading-tight">
+            <p className="font-brand font-bold text-brand-price leading-tight flex items-baseline gap-2">
               {defaultVariant ? fmt(minPrice) : '—'}
+              {defaultVariant?.compare_at_price && defaultVariant.compare_at_price > defaultVariant.price && (
+                <span className="font-normal text-brand-primary/40 text-xs line-through">{fmt(defaultVariant.compare_at_price)}</span>
+              )}
             </p>
           </div>
           {canQuickAdd ? (

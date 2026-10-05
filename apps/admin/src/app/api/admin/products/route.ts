@@ -69,6 +69,7 @@ export async function POST(req: NextRequest) {
     tenant_id: tenantId,
     weight: (v.weight || null) as VariantInsert['weight'],
     price: Number(v.price),
+    compare_at_price: v.compare_at_price != null && v.compare_at_price !== '' ? Number(v.compare_at_price) : null,
     stock: Number(v.stock ?? 0),
     sku: v.sku || null,
     active: v.active ?? true,

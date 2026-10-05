@@ -40,8 +40,9 @@ function buildLabel(attrs: Record<string, string>): string {
 
 interface Variant {
   id?: number
-  attributes: Record<string, string>  // { "Tueste": "Claro", "Peso": "250g" }
+  attributes: Record<string, string>  // { "Color": "Rojo", "Talla": "M" }
   price: string
+  compare_at_price: string
   stock: string
   sku: string
   active: boolean
@@ -78,7 +79,7 @@ interface Props {
 // ── Estado vacío ──────────────────────────────────────────────────────────────
 
 function emptyVariant(attrs: Record<string, string> = {}): Variant {
-  return { attributes: attrs, price: '', stock: '0', sku: '', active: true, weight_kg: '', length_cm: '', width_cm: '', height_cm: '' }
+  return { attributes: attrs, price: '', compare_at_price: '', stock: '0', sku: '', active: true, weight_kg: '', length_cm: '', width_cm: '', height_cm: '' }
 }
 
 function parseExistingTypeIds(product: any, variantTypes: VariantType[]): number[] {
@@ -93,6 +94,7 @@ function parseExistingVariants(product: any): Variant[] {
     id: v.id,
     attributes: v.attributes ?? {},
     price: v.price?.toString() ?? '',
+    compare_at_price: v.compare_at_price?.toString() ?? '',
     stock: v.stock?.toString() ?? '0',
     sku: v.sku ?? '',
     active: v.active ?? true,
@@ -244,6 +246,7 @@ export default function ProductForm({ product, categories, variantTypes }: Props
       variants: form.variants.map((v) => ({
         ...v,
         price:     Number(v.price),
+        compare_at_price: v.compare_at_price ? Number(v.compare_at_price) : null,
         stock:     Number(v.stock),
         weight_kg: v.weight_kg ? Number(v.weight_kg) : null,
         length_cm: v.length_cm ? Number(v.length_cm) : null,
@@ -600,6 +603,22 @@ export default function ProductForm({ product, categories, variantTypes }: Props
                                 ${fmt(variant.price)}
                               </p>
                             )}
+                          </div>
+
+                          {/* HU-261 · Precio antes (oferta) */}
+                          <div className="w-24">
+                            <div className="relative">
+                              <span className="absolute left-2.5 top-1/2 -translate-y-1/2 font-brand text-xs text-brand-primary/30">$</span>
+                              <input
+                                type="number"
+                                min={0}
+                                value={variant.compare_at_price}
+                                onChange={(e) => updateVariant(idx, 'compare_at_price', e.target.value)}
+                                className="w-full pl-6 pr-2 py-1.5 border border-gray-200 rounded-lg font-brand text-xs text-brand-primary/60 focus:outline-none focus:border-brand-primary"
+                                placeholder="Antes"
+                                title="Precio antes de la oferta (opcional)"
+                              />
+                            </div>
                           </div>
 
                           {/* Stock */}

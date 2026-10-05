@@ -152,6 +152,11 @@ export default function ProductDetail({ product, related, trustBadges = [], layo
     return min === max ? fmt(min) : `Desde ${fmt(min)}`
   }, [selectedVariant, activeVariants])
 
+  // HU-261 · precio "antes" (oferta) de la variante seleccionada.
+  const compareAt = selectedVariant && selectedVariant.compare_at_price && selectedVariant.compare_at_price > selectedVariant.price
+    ? selectedVariant.compare_at_price
+    : null
+
   const allowBackorder = !!product.allow_backorder
   const stockWarning =
     !allowBackorder && selectedVariant && selectedVariant.stock > 0 && selectedVariant.stock <= 5
@@ -375,9 +380,12 @@ export default function ProductDetail({ product, related, trustBadges = [], layo
 
             <hr className="border-brand-primary/10 mb-6" />
 
-            {/* Precio (HU-247 · color de producto themeable) */}
-            <p className="font-brand font-bold text-brand-price text-3xl mb-1">
+            {/* Precio (HU-247 · color themeable · HU-261 · oferta) */}
+            <p className="font-brand font-bold text-brand-price text-3xl mb-1 flex items-baseline gap-3">
               {priceDisplay}
+              {compareAt && (
+                <span className="font-brand font-normal text-brand-primary/40 text-xl line-through">{fmt(compareAt)}</span>
+              )}
             </p>
             {stockWarning && (
               <p className="font-brand text-xs text-amber-600 mb-4">{stockWarning}</p>

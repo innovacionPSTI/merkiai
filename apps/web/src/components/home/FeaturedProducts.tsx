@@ -137,8 +137,11 @@ export default function FeaturedProducts({ products, title = 'Productos Destacad
                       {hasMultiplePrices && (
                         <span className="font-brand text-[10px] text-brand-primary/40 block">Desde</span>
                       )}
-                      <span className="font-brand font-bold text-brand-price text-lg">
+                      <span className="font-brand font-bold text-brand-price text-lg inline-flex items-baseline gap-2">
                         {defaultVariant ? fmt(minPrice) : '—'}
+                        {defaultVariant?.compare_at_price && defaultVariant.compare_at_price > defaultVariant.price && (
+                          <span className="font-normal text-brand-primary/40 text-xs line-through">{fmt(defaultVariant.compare_at_price)}</span>
+                        )}
                       </span>
                     </div>
                     {canQuickAdd ? (

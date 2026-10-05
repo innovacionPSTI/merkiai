@@ -138,6 +138,7 @@ export type Database = {
           product_id: number
           weight: string | null
           price: number
+          compare_at_price: number | null
           stock: number
           sku: string | null
           active: boolean
@@ -153,6 +154,7 @@ export type Database = {
           product_id: number
           weight?: string | null
           price: number
+          compare_at_price?: number | null
           stock?: number
           sku?: string | null
           active?: boolean
@@ -168,6 +170,7 @@ export type Database = {
           product_id?: number
           weight?: string | null
           price?: number
+          compare_at_price?: number | null
           stock?: number
           sku?: string | null
           active?: boolean
