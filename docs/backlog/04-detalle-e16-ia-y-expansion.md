@@ -715,6 +715,63 @@
 | AC-2 | Reorden | ✅ Reorden por teclado (▲▼) + **anuncio aria-live** de la nueva posición |
 | AC-3 | Feedback | ✅ `aria-live` al aplicar/guardar/publicar/duplicar/mover |
 
+## Clúster — Usabilidad del Constructor (usuarios finales) · E3
+
+> Objetivo: que el Constructor sea **intuitivo y fácil de usar por no-técnicos** — nada de URLs/códigos crudos, jerarquía clara entre "bloque" y "contenido", y un catálogo visual para agregar.
+
+### HU-265 — Campos de imagen con subida real · E3
+
+> Como comerciante, quiero subir una imagen directamente desde el editor de un bloque, para no pegar URLs a mano.
+
+**Estimación:** S (2 puntos) · **Track:** front Constructor
+**Módulo:** `apps/admin` `FieldInput` (reusa `ImageUpload` + `/api/admin/upload`)
+**Estado:** ✅ **Implementada.** El tipo de campo `image` del contrato de bloques ahora renderiza el widget `ImageUpload` (arrastrar/soltar, preview, cambiar/eliminar; bucket `content`) en vez de un `<input type=text>` con URL cruda. Comparten editor sección e ítems (Hero/Tarjetas/Servicios).
+
+| # | Escenario | Resultado esperado |
+|---|-----------|-------------------|
+| AC-1 | Subir | ✅ Arrastrar/seleccionar archivo → sube y muestra preview |
+| AC-2 | Reemplazar/quitar | ✅ Botones Cambiar/Eliminar sobre el preview |
+
+### HU-266 — Selectores visuales de color e icono · E3
+
+> Como comerciante, quiero elegir color con una paleta y un icono de una lista, en vez de escribir hex o nombres.
+
+**Estimación:** S (2 puntos) · **Track:** front Constructor
+**Módulo:** `apps/admin` `FieldInput`; `packages/ui/src/icon.tsx` (`ICON_NAMES` exportado)
+**Estado:** ✅ **Implementada.** Campo `color` → `<input type=color>` nativo + hex editable (sincronizados). Campo `icon` → **picker visual** desplegable con toda la familia de iconos del panel (`ICON_NAMES`), con opción "sin icono" y resaltado del seleccionado.
+
+| # | Escenario | Resultado esperado |
+|---|-----------|-------------------|
+| AC-1 | Color | ✅ Selector nativo + hex; swatch refleja el valor |
+| AC-2 | Icono | ✅ Rejilla visual de iconos; clic elige, no hay que teclear nombres |
+
+### HU-267 — Jerarquía Sección → Contenido clara · E3
+
+> Como comerciante, quiero distinguir de un vistazo los ajustes del bloque de sus elementos de contenido, para no confundirme entre formularios iguales.
+
+**Estimación:** S/M (3 puntos) · **Track:** front Constructor
+**Módulo:** `apps/admin` `SectionEditor`/`ItemsEditor`/`ConstructorClient`
+**Estado:** ✅ **Implementada.** `SectionEditor` separa "Ajustes del bloque" (encabezado con icono) del "Contenido" (ítems tras un divisor punteado). `ItemsEditor` rotula el grupo como "Contenido · {plural}" con contador, y cada ítem es una **tarjeta blanca con cabecera "{singular} #n"** (ya no un formulario anidado plano). Los glifos unicode (▲▼⧉✕⠿) se reemplazan por iconos de la familia del panel en el Constructor y el editor de ítems.
+
+| # | Escenario | Resultado esperado |
+|---|-----------|-------------------|
+| AC-1 | Distinción | ✅ Ajustes del bloque vs. contenido/ítems visualmente separados |
+| AC-2 | Vocabulario | ✅ "Bloque", "Ajustes", "Contenido", "{singular} #n" consistentes |
+| AC-3 | Tarjetas | ✅ Cada ítem con cabecera e identidad propia, no un form plano |
+
+### HU-268 — Catálogo visual "Agregar bloque" · E3
+
+> Como comerciante, quiero ver qué es cada bloque antes de agregarlo, para elegir con criterio.
+
+**Estimación:** S (2 puntos) · **Track:** front Constructor
+**Módulo:** `apps/admin` `AddBlockCatalog` (reemplaza el `<select>`)
+**Estado:** ✅ **Implementada.** Botón "Agregar bloque" que abre una **galería desplegable** con icono + nombre + descripción de cada bloque, **agrupada por categoría** (Contenido/Comercio/Interacción). Cierra al clic fuera; un clic en la tarjeta agrega el bloque.
+
+| # | Escenario | Resultado esperado |
+|---|-----------|-------------------|
+| AC-1 | Catálogo | ✅ Galería con icono/descr. por bloque, agrupada por categoría |
+| AC-2 | Agregar | ✅ Un clic agrega; reemplaza el `<select>` opaco |
+
 ---
 
 ### HU-130 — Exportar productos a CSV · E13

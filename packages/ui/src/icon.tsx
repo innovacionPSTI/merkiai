@@ -82,3 +82,6 @@ export function Icon({ name, size = 18, ...rest }: { name: IconName; size?: numb
     </svg>
   )
 }
+
+/** Lista de todos los nombres de icono disponibles (para pickers visuales). */
+export const ICON_NAMES = Object.keys(P) as IconName[]

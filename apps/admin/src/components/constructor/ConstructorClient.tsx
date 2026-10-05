@@ -10,8 +10,10 @@
  * editor actual (`/contenido`) tras el flag `pageBuilder`.
  */
 import { useCallback, useEffect, useState } from 'react'
-import { listBlockTypes, getBlockSchema, listTemplates, getTemplateHomeLayout } from '@merkiai/database/blocks'
+import { getBlockSchema, listTemplates, getTemplateHomeLayout } from '@merkiai/database/blocks'
+import { Icon } from '@merkiai/ui'
 import SectionEditor from './SectionEditor'
+import AddBlockCatalog from './AddBlockCatalog'
 import { getPreviewUrlAction } from '@/app/constructor/preview-action'
 
 interface PageOption { key: string; label: string; slug: string }
@@ -34,7 +36,6 @@ export default function ConstructorClient({ pages, initialPageKey, initialTempla
   const [sections, setSections] = useState<SectionRow[]>([])
   const [loading, setLoading] = useState(true)
   const [expanded, setExpanded] = useState<number | null>(null)
-  const [adding, setAdding] = useState('')
   const [previewKey, setPreviewKey] = useState(Date.now()) // HU-219: bump → refresca iframe
   const [dragIdx, setDragIdx] = useState<number | null>(null) // HU-251 · DnD
   const [device, setDevice] = useState<'desktop' | 'tablet' | 'mobile'>('desktop') // HU-251 · preview
@@ -79,7 +80,6 @@ export default function ConstructorClient({ pages, initialPageKey, initialTempla
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ page_key: pageKey, section_type: type, order_index: nextOrder, enabled: true }),
     })
-    setAdding('')
     await load(pageKey)
   }
 
@@ -260,14 +260,8 @@ export default function ConstructorClient({ pages, initialPageKey, initialTempla
               {pages.map((p) => <option key={p.key} value={p.key}>{p.label}</option>)}
             </select>
 
-            <div className="ml-auto flex items-center gap-2">
-              <select className="rounded-lg border border-slate-300 px-3 py-2 text-sm" value={adding} onChange={(e) => setAdding(e.target.value)}>
-                <option value="">Agregar bloque…</option>
-                {listBlockTypes().map((b) => <option key={b.type} value={b.type}>{b.label}</option>)}
-              </select>
-              <button onClick={() => addBlock(adding)} disabled={!adding} className="rounded-lg bg-slate-800 px-4 py-2 text-sm font-medium text-white hover:bg-slate-900 disabled:opacity-50">
-                Agregar
-              </button>
+            <div className="ml-auto">
+              <AddBlockCatalog onAdd={addBlock} />
             </div>
           </div>
 
@@ -295,10 +289,10 @@ export default function ConstructorClient({ pages, initialPageKey, initialTempla
                         onDragEnd={() => setDragIdx(null)}
                         title="Arrastra para reordenar"
                         aria-label="Arrastrar para reordenar"
-                      >⠿</div>
+                      ><Icon name="grid" size={16} /></div>
                       <div className="flex flex-col">
-                        <button onClick={() => move(i, -1)} disabled={i === 0} className="text-slate-400 hover:text-slate-700 disabled:opacity-30 leading-none" aria-label="Subir bloque">▲</button>
-                        <button onClick={() => move(i, 1)} disabled={i === sections.length - 1} className="text-slate-400 hover:text-slate-700 disabled:opacity-30 leading-none" aria-label="Bajar bloque">▼</button>
+                        <button onClick={() => move(i, -1)} disabled={i === 0} className="text-slate-400 hover:text-slate-700 disabled:opacity-30 leading-none" aria-label="Subir bloque"><Icon name="chevron-right" size={14} className="-rotate-90" /></button>
+                        <button onClick={() => move(i, 1)} disabled={i === sections.length - 1} className="text-slate-400 hover:text-slate-700 disabled:opacity-30 leading-none" aria-label="Bajar bloque"><Icon name="chevron-right" size={14} className="rotate-90" /></button>
                       </div>
                       <div className="flex-1">
                         <p className="text-sm font-medium text-slate-800">{schema?.label ?? s.section_type}</p>
@@ -310,8 +304,8 @@ export default function ConstructorClient({ pages, initialPageKey, initialTempla
                       <button onClick={() => setExpanded(open ? null : s.id)} className="rounded-lg border border-slate-300 px-3 py-1 text-xs font-medium text-slate-700 hover:bg-slate-50">
                         {open ? 'Cerrar' : 'Editar'}
                       </button>
-                      <button onClick={() => duplicate(s)} className="text-slate-400 hover:text-slate-700" title="Duplicar" aria-label="Duplicar bloque">⧉</button>
-                      <button onClick={() => remove(s)} className="text-slate-400 hover:text-red-600" title="Eliminar" aria-label="Eliminar bloque">✕</button>
+                      <button onClick={() => duplicate(s)} className="text-slate-400 hover:text-slate-700" title="Duplicar" aria-label="Duplicar bloque"><Icon name="grid" size={15} /></button>
+                      <button onClick={() => remove(s)} className="text-slate-400 hover:text-red-600" title="Eliminar" aria-label="Eliminar bloque"><Icon name="trash" size={15} /></button>
                     </div>
                     {open && (
                       <div className="border-t border-slate-100 px-4 py-4">

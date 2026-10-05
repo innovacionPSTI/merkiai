@@ -8,6 +8,7 @@
  */
 import { useState } from 'react'
 import { getBlockSchema, resolveBlockFields, STYLE_FIELDS } from '@merkiai/database/blocks'
+import { Icon } from '@merkiai/ui'
 import { splitSectionFields } from '@/lib/section-fields'
 import FieldInput from './FieldInput'
 import ItemsEditor from './ItemsEditor'
@@ -116,6 +117,10 @@ export default function SectionEditor({ section, onSaved, onChange }: SectionEdi
   return (
     <div className="space-y-6">
       <div className="space-y-4">
+          {/* HU-267 · encabezado del grupo de ajustes del bloque */}
+          <div className="flex items-center gap-1.5 text-[11px] font-semibold uppercase tracking-wide text-slate-500">
+            <Icon name="settings" size={13} /> Ajustes del bloque
+          </div>
           {fields.map(([key, field]) => (
             <div key={key} className={field.type === 'boolean' ? 'flex items-center gap-2' : ''}>
               <label htmlFor={key} className="block text-xs font-medium text-slate-600 mb-1">{field.label}</label>
@@ -179,7 +184,11 @@ export default function SectionEditor({ section, onSaved, onChange }: SectionEdi
           )}
       </div>
 
-      {hasItems && <ItemsEditor sectionId={section.id} sectionType={section.section_type} published={published} onChange={onChange} />}
+      {hasItems && (
+        <div className="border-t border-dashed border-slate-200 pt-5">
+          <ItemsEditor sectionId={section.id} sectionType={section.section_type} published={published} onChange={onChange} />
+        </div>
+      )}
     </div>
   )
 }

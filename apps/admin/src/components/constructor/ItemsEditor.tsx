@@ -8,6 +8,7 @@
  */
 import { useCallback, useEffect, useState } from 'react'
 import { getBlockSchema } from '@merkiai/database/blocks'
+import { Icon } from '@merkiai/ui'
 import { splitItemFields, resolveItemFields, itemTypeOf } from '@/lib/item-fields'
 import FieldInput from './FieldInput'
 
@@ -144,12 +145,18 @@ export default function ItemsEditor({ sectionId, sectionType, published = false,
   }
 
   const label = schema?.items?.labelPlural ?? 'Ítems'
+  const labelOne = schema?.items?.label ?? 'Ítem'
 
   return (
     <div className="space-y-3">
       <div className="flex items-center justify-between">
-        <h4 className="text-xs font-semibold uppercase tracking-wide text-slate-500">{label}</h4>
-        <button onClick={addItem} className="rounded-lg border border-slate-300 px-3 py-1 text-xs font-medium text-slate-700 hover:bg-slate-50">+ Agregar</button>
+        <h4 className="flex items-center gap-1.5 text-[11px] font-semibold uppercase tracking-wide text-slate-500">
+          <Icon name="list" size={13} /> Contenido · {label}
+          {items.length > 0 && <span className="rounded-full bg-slate-100 px-1.5 text-[10px] font-medium text-slate-500">{items.length}</span>}
+        </h4>
+        <button onClick={addItem} className="flex items-center gap-1 rounded-lg border border-slate-300 px-3 py-1 text-xs font-medium text-slate-700 hover:bg-slate-50">
+          <Icon name="plus" size={13} /> Agregar {labelOne.toLowerCase()}
+        </button>
       </div>
 
       {loading ? (
@@ -159,23 +166,27 @@ export default function ItemsEditor({ sectionId, sectionType, published = false,
       ) : (
         <ul className="space-y-3">
           {items.map((it, i) => (
-            <li key={it.id} className="rounded-lg border border-slate-200 bg-slate-50 p-3">
-              <div className="mb-2 flex items-center gap-2">
+            <li key={it.id} className="overflow-hidden rounded-lg border border-slate-200 bg-white shadow-sm">
+              <div className="flex items-center gap-2 border-b border-slate-100 bg-slate-50 px-3 py-2">
                 <div className="flex flex-col">
-                  <button onClick={() => move(i, -1)} disabled={i === 0} className="text-slate-400 hover:text-slate-700 disabled:opacity-30 leading-none">▲</button>
-                  <button onClick={() => move(i, 1)} disabled={i === items.length - 1} className="text-slate-400 hover:text-slate-700 disabled:opacity-30 leading-none">▼</button>
+                  <button onClick={() => move(i, -1)} disabled={i === 0} className="text-slate-400 hover:text-slate-700 disabled:opacity-30 leading-none" aria-label="Subir">
+                    <Icon name="chevron-right" size={13} className="-rotate-90" />
+                  </button>
+                  <button onClick={() => move(i, 1)} disabled={i === items.length - 1} className="text-slate-400 hover:text-slate-700 disabled:opacity-30 leading-none" aria-label="Bajar">
+                    <Icon name="chevron-right" size={13} className="rotate-90" />
+                  </button>
                 </div>
-                <span className="text-xs font-medium text-slate-500">#{i + 1}</span>
+                <span className="text-xs font-semibold text-slate-600">{labelOne} #{i + 1}</span>
                 <div className="ml-auto flex items-center gap-2">
                   <button onClick={() => toggle(it)} className={`rounded-full px-2.5 py-0.5 text-[11px] font-medium ${it.enabled ? 'bg-green-100 text-green-700' : 'bg-slate-200 text-slate-500'}`}>
                     {it.enabled ? 'Visible' : 'Oculto'}
                   </button>
-                  <button onClick={() => duplicate(it)} className="text-slate-400 hover:text-slate-700" title="Duplicar" aria-label="Duplicar ítem">⧉</button>
-                  <button onClick={() => remove(it)} className="text-slate-400 hover:text-red-600" title="Eliminar" aria-label="Eliminar ítem">✕</button>
+                  <button onClick={() => duplicate(it)} className="text-slate-400 hover:text-slate-700" title="Duplicar" aria-label="Duplicar ítem"><Icon name="grid" size={14} /></button>
+                  <button onClick={() => remove(it)} className="text-slate-400 hover:text-red-600" title="Eliminar" aria-label="Eliminar ítem"><Icon name="trash" size={14} /></button>
                 </div>
               </div>
 
-              <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+              <div className="grid grid-cols-1 gap-3 p-3 sm:grid-cols-2">
                 {fieldDefs.map(([key, field]) => (
                   <div key={key} className={field.type === 'textarea' || field.type === 'richtext' ? 'sm:col-span-2' : ''}>
                     <label className="block text-[11px] font-medium text-slate-600 mb-1">{field.label}</label>
@@ -189,7 +200,7 @@ export default function ItemsEditor({ sectionId, sectionType, published = false,
                 ))}
               </div>
 
-              <div className="mt-3 flex flex-wrap items-center gap-3">
+              <div className="flex flex-wrap items-center gap-3 px-3 pb-3">
                 <button onClick={() => saveItem(it)} className="rounded-lg bg-indigo-600 px-3 py-1.5 text-xs font-medium text-white hover:bg-indigo-700">
                   {published && it.enabled ? 'Guardar borrador' : 'Guardar'}
                 </button>
