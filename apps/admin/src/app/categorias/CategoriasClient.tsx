@@ -101,6 +101,9 @@ export default function CategoriasClient({ categories: initial }: { categories: 
           description={`${categories.length} categorías · Arrastra para reordenar.`}
           action={
             <div className="flex items-center gap-3">
+              <a href="/api/admin/categories/export" className="border border-brand-primary/20 text-brand-primary rounded-xl px-4 py-2 font-brand text-sm hover:bg-brand-cream transition-colors inline-flex items-center gap-2">
+                <Icon name="external" size={16} /> Exportar CSV
+              </a>
               <CsvImportModal
                 endpoint="/api/admin/categories/import"
                 entityLabel="categorías"

@@ -102,6 +102,9 @@ export default function CuponesClient({ initialCoupons }: Props) {
     <div className="space-y-6">
       {/* Toolbar */}
       <div className="flex justify-end items-center gap-3">
+        <a href="/api/admin/coupons/export" className="border border-brand-primary/20 text-brand-primary rounded-full px-5 py-2 font-brand text-sm hover:bg-brand-cream transition-colors">
+          Exportar CSV
+        </a>
         <CsvImportModal
           endpoint="/api/admin/coupons/import"
           entityLabel="cupones"

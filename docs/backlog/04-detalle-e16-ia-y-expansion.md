@@ -832,14 +832,14 @@
 
 **Estimación:** L (8 puntos)
 **Módulo:** `packages/database` (restore), tarea programada, admin
-**Estado:** 🔲 Pendiente (roadmap v17) — extiende HU-125
+**Estado:** 🔶 **Restauración manual cubierta (vía export↔import).** Cada entidad importable (productos, categorías, cupones, clientes, blog) tiene **export CSV simétrico** con el mismo header que su importador, así un respaldo CSV se **restaura reimportándolo con "Actualizar existentes"** (upsert por clave estable), con previsualización. **Pendiente (roadmap v17):** restauración de respaldos **JSON** (HU-125) con validación de versión, estrategia de colisión transaccional, y **respaldos programados** (diario/semanal + retención) — requiere infra de cron/almacenamiento.
 
 | # | Escenario | Resultado esperado |
 |---|-----------|-------------------|
-| AC-1 | Cargar un respaldo (HU-125) | Previsualiza el contenido y valida versión/integridad antes de restaurar |
-| AC-2 | Restaurar | Aplica el respaldo (con estrategia clara de colisión) de forma transaccional |
-| AC-3 | Programación | Respaldos automáticos periódicos (diario/semanal) con retención configurable |
-| AC-4 | Seguridad | Solo `super_admin`; operación auditada (compatible con HU-117/134) |
+| AC-1 | Cargar un respaldo (HU-125) | 🔶 CSV: previsualización + reimport (upsert). JSON con validación de versión → v2 |
+| AC-2 | Restaurar | 🔶 Vía reimport con upsert por clave estable (previsualizado). Transaccional → v2 |
+| AC-3 | Programación | ◻️ Respaldos automáticos periódicos + retención → v2 (infra cron/almacenamiento) |
+| AC-4 | Seguridad | ✅ Gating por rol + RLS por tenant; auditoría → con HU-117/134 |
 
 ---
 

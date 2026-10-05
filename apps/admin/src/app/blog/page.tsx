@@ -22,6 +22,9 @@ export default async function BlogAdminPage() {
           description="Publica y administra los artículos de tu tienda."
           action={
             <div className="flex items-center gap-3">
+              <a href="/api/admin/blog/export" className="border border-brand-primary/20 text-brand-primary rounded-xl px-4 py-2 font-brand text-sm hover:bg-brand-cream transition-colors inline-flex items-center gap-2">
+                <Icon name="external" size={16} /> Exportar CSV
+              </a>
               <CsvImportModal endpoint="/api/admin/blog/import" entityLabel="artículos" />
               <Link
                 href="/blog/nuevo"
