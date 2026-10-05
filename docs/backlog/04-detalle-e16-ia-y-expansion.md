@@ -814,15 +814,15 @@
 > Como operador, quiero importar por CSV también clientes, cupones, categorías y posts del blog, con el mismo flujo de la carga de productos.
 
 **Estimación:** M (5 puntos)
-**Módulo:** admin (importador genérico reutilizable), validación/mapeo por entidad
-**Estado:** 🔲 Pendiente (roadmap v17) — generaliza HU-124
+**Módulo:** `packages/database` (`parseCategoriesCsv`), admin (`/api/admin/categories/import`, `CsvImportModal` genérico)
+**Estado:** 🔶 **v1 (categorías).** Motor compartido con HU-124: `parseCsv` + `CsvImportModal` genérico (cualquier endpoint que acepte `{csv,mode,preview}`). **Categorías ✅:** `parseCategoriesCsv` (jerarquía por `parent_slug`, sinónimos ES) + `POST/GET /api/admin/categories/import` (preview, upsert por slug, resolución madre→id en 2ª pasada) + modal en `/categorias`. Tests: database +6, admin +4. **Pendiente:** aplicar el mismo patrón a **clientes, cupones y posts del blog** (parser por entidad + endpoint; la UI ya es reutilizable).
 
 | # | Escenario | Resultado esperado |
 |---|-----------|-------------------|
-| AC-1 | Selección de entidad + CSV + plantilla | Mapeo de columnas por entidad (clientes, cupones, categorías, posts) |
-| AC-2 | Validación previa | Previsualización con filas válidas/erróneas antes de confirmar |
-| AC-3 | Upsert e informe | Crea/actualiza por clave estable y reporta creados/actualizados/errores |
-| AC-4 | Reutilización | Comparte el motor de importación con HU-124 (una sola base) |
+| AC-1 | Selección de entidad + CSV + plantilla | 🔶 Categorías: plantilla `GET` + mapeo de columnas. Otras entidades pendientes |
+| AC-2 | Validación previa | ✅ `CsvImportModal` previsualiza válidas/omitidas/errores antes de confirmar |
+| AC-3 | Upsert e informe | ✅ `mode create\|upsert` por `slug`; informa creadas/actualizadas/errores |
+| AC-4 | Reutilización | ✅ Comparte motor (`parseCsv`) + UI (`CsvImportModal`) con HU-124 |
 
 ---
 

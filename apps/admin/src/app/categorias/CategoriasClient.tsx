@@ -3,6 +3,7 @@
 import { useState, useRef } from 'react'
 import { PageHeader, Icon } from '@merkiai/ui'
 import CategoryFormModal, { type SavedCategory } from './CategoryFormModal'
+import CsvImportModal from '@/components/CsvImportModal'
 
 type Category = SavedCategory
 
@@ -99,12 +100,19 @@ export default function CategoriasClient({ categories: initial }: { categories: 
           title="Categorías"
           description={`${categories.length} categorías · Arrastra para reordenar.`}
           action={
-            <button
-              onClick={() => setModal({ open: true })}
-              className="font-brand text-sm bg-brand-primary text-brand-cream px-4 py-2 rounded-xl hover:bg-brand-dark transition-colors inline-flex items-center gap-2"
-            >
-              <Icon name="plus" size={16} /> Nueva categoría
-            </button>
+            <div className="flex items-center gap-3">
+              <CsvImportModal
+                endpoint="/api/admin/categories/import"
+                entityLabel="categorías"
+                onDone={() => { if (typeof window !== 'undefined') window.location.reload() }}
+              />
+              <button
+                onClick={() => setModal({ open: true })}
+                className="font-brand text-sm bg-brand-primary text-brand-cream px-4 py-2 rounded-xl hover:bg-brand-dark transition-colors inline-flex items-center gap-2"
+              >
+                <Icon name="plus" size={16} /> Nueva categoría
+              </button>
+            </div>
           }
         />
 
