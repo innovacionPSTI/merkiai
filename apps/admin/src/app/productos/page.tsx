@@ -45,6 +45,12 @@ export default async function ProductosPage({
           description="Administra el catálogo de productos de tu tienda."
           action={
             <div className="flex items-center gap-3">
+              <a
+                href="/api/admin/products/export"
+                className="border border-brand-primary/20 text-brand-primary rounded-full px-5 py-2 font-brand text-sm hover:bg-brand-cream transition-colors inline-flex items-center gap-2"
+              >
+                <Icon name="external" size={16} /> Exportar CSV
+              </a>
               <ImportProductsModal />
               <Link
                 href="/productos/nuevo"

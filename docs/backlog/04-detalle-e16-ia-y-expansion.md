@@ -780,14 +780,14 @@
 > Como operador, quiero exportar el catálogo (o una selección filtrada) a `.CSV`, como contraparte de la carga masiva, para editar en hoja de cálculo y reimportar.
 
 **Estimación:** S (3 puntos)
-**Módulo:** admin (listado de productos), exportador CSV
-**Estado:** 🔲 Pendiente (roadmap v17) — simétrico de HU-124
+**Módulo:** `packages/database` (`productsToCsv` en `lib/product-import.ts`), admin (`GET /api/admin/products/export`, botón en `/productos`)
+**Estado:** ✅ **Implementada.** `productsToCsv` (puro) serializa el catálogo a CSV **con el mismo header que el importador** (HU-124): una fila por variante, agrupadas por `slug`, con los campos de producto solo en la primera fila; `options` se reconstruye en el orden de `variant_options`, `images` con `|`, celdas escapadas RFC4180. **Endpoint** `GET /api/admin/products/export` acotado por tenant (RLS) lee productos + variantes + nombre de categoría y descarga `productos-YYYY-MM-DD.csv`. Botón "Exportar CSV" en `/productos`. Tests: database +3 (incluye **ida y vuelta** export→import sin pérdida). **Ciclo redondo garantizado** con HU-124.
 
 | # | Escenario | Resultado esperado |
 |---|-----------|-------------------|
-| AC-1 | Exportar desde el listado | Descarga CSV con columnas compatibles con el importador (HU-124) |
-| AC-2 | Respeta filtros | Exporta solo lo filtrado/seleccionado si aplica |
-| AC-3 | Ciclo redondo | El CSV exportado puede reimportarse sin transformación manual |
+| AC-1 | Exportar desde el listado | ✅ Descarga CSV con columnas idénticas al importador (HU-124) |
+| AC-2 | Respeta filtros | ◻️ v1 exporta todo el catálogo del tenant (filtros/selección → v2) |
+| AC-3 | Ciclo redondo | ✅ Test de ida y vuelta: el CSV exportado se reimporta sin transformación manual |
 
 ---
 

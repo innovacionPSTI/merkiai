@@ -1,6 +1,7 @@
 import {
   parseProductsCsv,
   parseCsv,
+  productsToCsv,
   PRODUCT_IMPORT_TEMPLATE,
 } from '../product-import'
 
@@ -99,5 +100,56 @@ describe('parseProductsCsv', () => {
     expect(errors).toHaveLength(0)
     expect(products).toHaveLength(1)
     expect(products[0].variants).toHaveLength(2)
+  })
+})
+
+describe('productsToCsv (HU-130)', () => {
+  it('serializa producto con varias variantes; campos de producto solo en la 1ª fila', () => {
+    const csv = productsToCsv([{
+      slug: 'cam', name: 'Camiseta', description: 'Algodón', category: 'Ropa',
+      featured: true, active: true, images: [{ url: 'http://a.jpg' }, 'http://b.jpg'],
+      variant_options: ['Color', 'Talla'],
+      variants: [
+        { price: 59900, compare_at_price: 79900, stock: 10, sku: 'CAM-M', active: true, attributes: { Color: 'Negro', Talla: 'M' }, weight_kg: 0.3 },
+        { price: 59900, stock: 8, sku: 'CAM-L', active: true, attributes: { Color: 'Negro', Talla: 'L' } },
+      ],
+    }])
+    const rows = parseCsv(csv)
+    expect(rows[0][0]).toBe('slug')           // header
+    expect(rows).toHaveLength(3)              // header + 2 variantes
+    expect(rows[1][1]).toBe('Camiseta')       // name en 1ª fila
+    expect(rows[2][1]).toBe('')               // name vacío en 2ª
+    // options reconstruidas en orden de variant_options
+    const optIdx = rows[0].indexOf('options')
+    expect(rows[1][optIdx]).toBe('Color=Negro;Talla=M')
+  })
+
+  it('escapa celdas con comas/comillas', () => {
+    const csv = productsToCsv([{
+      slug: 's', name: 'Café "especial", lote 1',
+      variants: [{ price: 1000 }],
+    }])
+    const rows = parseCsv(csv)
+    expect(rows[1][1]).toBe('Café "especial", lote 1')
+  })
+
+  it('ida y vuelta: export → import conserva los datos', () => {
+    const original = [{
+      slug: 'cam', name: 'Camiseta', description: 'Algodón', category: 'Ropa',
+      featured: true, active: true, images: ['http://a.jpg'],
+      variant_options: ['Color'],
+      variants: [
+        { price: 59900, compare_at_price: 79900, stock: 10, sku: 'CAM-N', active: true, attributes: { Color: 'Negro' }, weight_kg: 0.3, length_cm: 30, width_cm: 25, height_cm: 3 },
+        { price: 61900, stock: 4, sku: 'CAM-B', active: true, attributes: { Color: 'Blanco' } },
+      ],
+    }]
+    const { products, errors } = parseProductsCsv(productsToCsv(original))
+    expect(errors).toHaveLength(0)
+    expect(products).toHaveLength(1)
+    const p = products[0]
+    expect(p).toMatchObject({ slug: 'cam', name: 'Camiseta', category: 'Ropa', featured: true, images: ['http://a.jpg'], variant_options: ['Color'] })
+    expect(p.variants).toHaveLength(2)
+    expect(p.variants[0]).toMatchObject({ price: 59900, compare_at_price: 79900, stock: 10, sku: 'CAM-N', attributes: { Color: 'Negro' }, weight_kg: 0.3 })
+    expect(p.variants[1]).toMatchObject({ price: 61900, stock: 4, sku: 'CAM-B', attributes: { Color: 'Blanco' } })
   })
 })

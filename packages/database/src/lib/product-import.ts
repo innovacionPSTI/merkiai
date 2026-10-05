@@ -69,6 +69,103 @@ export const PRODUCT_IMPORT_TEMPLATE = [
   'camiseta-logo,,,,,,,,,Color=Negro;Talla=L,59900,,8,CAM-NEG-L,,true,0.3,32,25,3',
 ].join('\n')
 
+// ── Export (HU-130) · serializa productos a CSV compatible con el importador ──
+
+export interface ExportVariant {
+  price: number | null
+  compare_at_price?: number | null
+  stock?: number | null
+  sku?: string | null
+  image_url?: string | null
+  active?: boolean | null
+  attributes?: Record<string, string> | null
+  weight_kg?: number | null
+  length_cm?: number | null
+  width_cm?: number | null
+  height_cm?: number | null
+}
+
+export interface ExportProduct {
+  slug: string
+  name: string
+  description?: string | null
+  /** Nombre de la categoría (no el id). */
+  category?: string | null
+  featured?: boolean | null
+  active?: boolean | null
+  seo_title?: string | null
+  seo_desc?: string | null
+  images?: (string | { url?: string | null })[] | null
+  variant_options?: string[] | null
+  variants: ExportVariant[]
+}
+
+/** Escapa una celda CSV (comillas, comas, saltos) según RFC4180. */
+function csvCell(v: unknown): string {
+  const s = v == null ? '' : String(v)
+  return /[",\n\r]/.test(s) ? `"${s.replace(/"/g, '""')}"` : s
+}
+
+function imagesToField(images: ExportProduct['images']): string {
+  if (!Array.isArray(images)) return ''
+  return images
+    .map((im) => (typeof im === 'string' ? im : im?.url ?? ''))
+    .filter(Boolean)
+    .join('|')
+}
+
+function optionsToField(attrs: Record<string, string> | null | undefined, order: string[]): string {
+  if (!attrs) return ''
+  const keys = order.length > 0 ? order.filter((k) => k in attrs) : Object.keys(attrs)
+  // Incluye también claves presentes en attrs que no estén en el orden declarado.
+  for (const k of Object.keys(attrs)) if (!keys.includes(k)) keys.push(k)
+  return keys.map((k) => `${k}=${attrs[k]}`).join(';')
+}
+
+/**
+ * Serializa productos a CSV (una fila por variante). Los campos de producto
+ * van solo en la PRIMERA fila de cada producto (igual que espera el importador).
+ * El header coincide con `PRODUCT_IMPORT_TEMPLATE`.
+ */
+export function productsToCsv(products: ExportProduct[]): string {
+  const header = PRODUCT_IMPORT_COLUMNS as readonly string[]
+  const lines: string[] = [header.join(',')]
+
+  for (const p of products) {
+    const order = Array.isArray(p.variant_options) ? p.variant_options : []
+    const variants = p.variants.length > 0 ? p.variants : [{ price: null } as ExportVariant]
+
+    variants.forEach((v, i) => {
+      const first = i === 0
+      const cells: Record<string, unknown> = {
+        slug: p.slug,
+        name: first ? p.name : '',
+        description: first ? p.description ?? '' : '',
+        category: first ? p.category ?? '' : '',
+        featured: first ? (p.featured ? 'true' : 'false') : '',
+        active: first ? (p.active === false ? 'false' : 'true') : '',
+        seo_title: first ? p.seo_title ?? '' : '',
+        seo_desc: first ? p.seo_desc ?? '' : '',
+        images: first ? imagesToField(p.images) : '',
+        options: optionsToField(v.attributes, order),
+        price: v.price ?? '',
+        compare_at_price: v.compare_at_price ?? '',
+        stock: v.stock ?? 0,
+        sku: v.sku ?? '',
+        variant_image: v.image_url ?? '',
+        variant_active: v.active === false ? 'false' : 'true',
+        weight_kg: v.weight_kg ?? '',
+        length_cm: v.length_cm ?? '',
+        width_cm: v.width_cm ?? '',
+        height_cm: v.height_cm ?? '',
+      }
+      lines.push(header.map((h) => csvCell(cells[h])).join(','))
+    })
+  }
+
+  return lines.join('\n')
+}
+
 // ── CSV parser (RFC4180 básico: comillas, comas y saltos dentro de comillas) ──
 
 /** Divide un texto CSV en filas de celdas. Tolera comillas dobles y CRLF. */
