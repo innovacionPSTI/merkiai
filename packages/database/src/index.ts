@@ -11,6 +11,7 @@ export * from './lib/tucompra-reconcile'
 export * from './lib/webhook-idempotency'
 export * from './lib/product-import'
 export * from './lib/category-import'
+export * from './lib/coupon-import'
 
 // ─── Provider abstractions ────────────────────────────────────────────────────
 export * from './providers/payment/index'

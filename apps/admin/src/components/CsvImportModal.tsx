@@ -21,12 +21,13 @@ interface Summary {
 interface Props {
   endpoint: string
   entityLabel: string          // p. ej. "categorías"
+  idLabel?: string             // clave de identidad mostrada (default "slug")
   triggerLabel?: string        // texto del botón
   triggerClassName?: string
   onDone?: () => void          // tras una importación exitosa (no preview)
 }
 
-export default function CsvImportModal({ endpoint, entityLabel, triggerLabel = 'Importar CSV', triggerClassName, onDone }: Props) {
+export default function CsvImportModal({ endpoint, entityLabel, idLabel = 'slug', triggerLabel = 'Importar CSV', triggerClassName, onDone }: Props) {
   const [open, setOpen] = useState(false)
   const [csv, setCsv] = useState('')
   const [fileName, setFileName] = useState('')
@@ -102,7 +103,7 @@ export default function CsvImportModal({ endpoint, entityLabel, triggerLabel = '
                     <input type="checkbox" checked={upsert} onChange={(e) => { setUpsert(e.target.checked); void rePreview(e.target.checked ? 'upsert' : 'create') }} className="w-4 h-4 mt-0.5 accent-brand-primary" />
                     <span>
                       <span className="font-brand text-sm text-brand-primary block">Actualizar existentes</span>
-                      <span className="font-brand text-xs text-brand-primary/50">Si el <code className="text-[11px]">slug</code> ya existe, se actualiza en vez de omitirlo.</span>
+                      <span className="font-brand text-xs text-brand-primary/50">Si el <code className="text-[11px]">{idLabel}</code> ya existe, se actualiza en vez de omitirlo.</span>
                     </span>
                   </label>
                 </>

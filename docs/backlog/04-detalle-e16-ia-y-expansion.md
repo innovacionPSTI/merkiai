@@ -815,7 +815,7 @@
 
 **Estimación:** M (5 puntos)
 **Módulo:** `packages/database` (`parseCategoriesCsv`), admin (`/api/admin/categories/import`, `CsvImportModal` genérico)
-**Estado:** 🔶 **v1 (categorías).** Motor compartido con HU-124: `parseCsv` + `CsvImportModal` genérico (cualquier endpoint que acepte `{csv,mode,preview}`). **Categorías ✅:** `parseCategoriesCsv` (jerarquía por `parent_slug`, sinónimos ES) + `POST/GET /api/admin/categories/import` (preview, upsert por slug, resolución madre→id en 2ª pasada) + modal en `/categorias`. Tests: database +6, admin +4. **Pendiente:** aplicar el mismo patrón a **clientes, cupones y posts del blog** (parser por entidad + endpoint; la UI ya es reutilizable).
+**Estado:** 🔶 **v1 (categorías + cupones).** Motor compartido con HU-124: `parseCsv` + `CsvImportModal` genérico (cualquier endpoint que acepte `{csv,mode,preview}`; prop `idLabel`). **Categorías ✅:** `parseCategoriesCsv` (jerarquía por `parent_slug`, sinónimos ES) + `/api/admin/categories/import` (preview, upsert por slug, resolución madre→id en 2ª pasada). **Cupones ✅:** `parseCouponsCsv` (identidad por `code`, tipo percentage/fixed con sinónimos, %≤100) + `/api/admin/coupons/import` (preview, upsert reusando `createCoupon`/`updateCoupon`). Tests: database +12, admin +8. **Pendiente:** **clientes y posts del blog** (parser por entidad + endpoint; UI ya reutilizable).
 
 | # | Escenario | Resultado esperado |
 |---|-----------|-------------------|

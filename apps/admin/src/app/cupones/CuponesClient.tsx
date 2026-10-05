@@ -2,6 +2,7 @@
 
 import { useState } from 'react'
 import type { Coupon } from '@merkiai/database'
+import CsvImportModal from '@/components/CsvImportModal'
 
 const fmt = (n: number) =>
   new Intl.NumberFormat('es-CO', { style: 'currency', currency: 'COP', maximumFractionDigits: 0 }).format(n)
@@ -100,7 +101,14 @@ export default function CuponesClient({ initialCoupons }: Props) {
   return (
     <div className="space-y-6">
       {/* Toolbar */}
-      <div className="flex justify-end">
+      <div className="flex justify-end items-center gap-3">
+        <CsvImportModal
+          endpoint="/api/admin/coupons/import"
+          entityLabel="cupones"
+          idLabel="código"
+          triggerClassName="border border-brand-primary/20 text-brand-primary rounded-full px-5 py-2 font-brand text-sm hover:bg-brand-cream transition-colors inline-flex items-center gap-2"
+          onDone={() => { if (typeof window !== 'undefined') window.location.reload() }}
+        />
         <button
           onClick={openNew}
           className="bg-brand-primary text-brand-cream rounded-full px-5 py-2 font-brand text-sm hover:bg-brand-dark transition-colors"
