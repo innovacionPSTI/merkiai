@@ -12,12 +12,15 @@ import { Icon } from '@merkiai/ui'
 interface Preview {
   parsed: number
   toCreate: number
+  toUpdate: number
   skipped: { slug: string; reason: string }[]
   parseErrors: { row: number; message: string }[]
 }
 interface Result extends Preview {
   created: number
+  updated: number
   createErrors: { slug: string; message: string }[]
+  updateErrors: { slug: string; message: string }[]
 }
 
 const API = '/api/admin/products/import'
@@ -29,12 +32,15 @@ export default function ImportProductsModal() {
   const [fileName, setFileName] = useState('')
   const [preview, setPreview] = useState<Preview | null>(null)
   const [result, setResult] = useState<Result | null>(null)
+  const [upsert, setUpsert] = useState(false)
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState('')
   const fileRef = useRef<HTMLInputElement>(null)
 
+  const mode = upsert ? 'upsert' : 'create'
+
   function reset() {
-    setCsv(''); setFileName(''); setPreview(null); setResult(null); setError('')
+    setCsv(''); setFileName(''); setPreview(null); setResult(null); setError(''); setUpsert(false)
     if (fileRef.current) fileRef.current.value = ''
   }
   function close() { setOpen(false); reset() }
@@ -43,16 +49,16 @@ export default function ImportProductsModal() {
     setError(''); setPreview(null); setResult(null)
     const text = await file.text()
     setCsv(text); setFileName(file.name)
-    await runPreview(text)
+    await runPreview(text, mode)
   }
 
-  async function runPreview(text: string) {
+  async function runPreview(text: string, m: string) {
     setBusy(true); setError('')
     try {
       const res = await fetch(API, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ csv: text, preview: true }),
+        body: JSON.stringify({ csv: text, preview: true, mode: m }),
       })
       const data = await res.json()
       if (!res.ok) { setError(data.error ?? 'Error al leer el CSV'); return }
@@ -66,7 +72,7 @@ export default function ImportProductsModal() {
       const res = await fetch(API, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ csv }),
+        body: JSON.stringify({ csv, mode }),
       })
       const data = await res.json()
       if (!res.ok) { setError(data.error ?? 'Error al importar'); return }
@@ -121,6 +127,25 @@ export default function ImportProductsModal() {
                       {fileName ? <span className="text-brand-primary">{fileName}</span> : 'Selecciona un archivo CSV'}
                     </button>
                   </div>
+
+                  <label className="flex items-start gap-2.5 cursor-pointer">
+                    <input
+                      type="checkbox"
+                      checked={upsert}
+                      onChange={(e) => {
+                        const on = e.target.checked
+                        setUpsert(on)
+                        if (csv) void runPreview(csv, on ? 'upsert' : 'create')
+                      }}
+                      className="w-4 h-4 mt-0.5 accent-brand-primary"
+                    />
+                    <span>
+                      <span className="font-brand text-sm text-brand-primary block">Actualizar productos existentes</span>
+                      <span className="font-brand text-xs text-brand-primary/50">
+                        Si un <code className="text-[11px]">slug</code> ya existe, se actualiza (nombre, precio, stock, variantes) en vez de omitirlo.
+                      </span>
+                    </span>
+                  </label>
                 </>
               )}
 
@@ -129,8 +154,9 @@ export default function ImportProductsModal() {
               {/* Previsualización */}
               {preview && !result && (
                 <div className="space-y-3">
-                  <div className="flex gap-4 font-brand text-sm">
+                  <div className="flex flex-wrap gap-4 font-brand text-sm">
                     <span className="text-brand-primary"><strong>{preview.toCreate}</strong> se crearán</span>
+                    {preview.toUpdate > 0 && <span className="text-blue-600"><strong>{preview.toUpdate}</strong> se actualizan</span>}
                     {preview.skipped.length > 0 && <span className="text-amber-600"><strong>{preview.skipped.length}</strong> se omiten</span>}
                     {preview.parseErrors.length > 0 && <span className="text-red-500"><strong>{preview.parseErrors.length}</strong> con error</span>}
                   </div>
@@ -152,11 +178,12 @@ export default function ImportProductsModal() {
               {result && (
                 <div className="space-y-3">
                   <div className="flex items-center gap-2 font-brand text-sm text-green-700 bg-green-50 rounded-xl px-4 py-3">
-                    <Icon name="check" size={16} /> <strong>{result.created}</strong> producto(s) importado(s).
+                    <Icon name="check" size={16} />
+                    <span><strong>{result.created}</strong> creado(s){result.updated > 0 && <> · <strong>{result.updated}</strong> actualizado(s)</>}.</span>
                   </div>
-                  {result.createErrors.length > 0 && (
+                  {[...result.createErrors, ...result.updateErrors].length > 0 && (
                     <ul className="text-xs font-brand text-red-500 bg-red-50 rounded-lg p-3 space-y-0.5 max-h-28 overflow-y-auto">
-                      {result.createErrors.map((e, i) => <li key={i}>{e.slug}: {e.message}</li>)}
+                      {[...result.createErrors, ...result.updateErrors].map((e, i) => <li key={i}>{e.slug}: {e.message}</li>)}
                     </ul>
                   )}
                   {result.skipped.length > 0 && (
@@ -178,10 +205,10 @@ export default function ImportProductsModal() {
               {!result && (
                 <button
                   onClick={confirmImport}
-                  disabled={busy || !preview || preview.toCreate === 0}
+                  disabled={busy || !preview || (preview.toCreate + preview.toUpdate) === 0}
                   className="flex-1 font-brand text-sm bg-brand-primary text-brand-cream px-4 py-2.5 rounded-xl hover:bg-brand-dark transition-colors disabled:opacity-50"
                 >
-                  {busy ? 'Importando…' : preview ? `Importar ${preview.toCreate}` : 'Importar'}
+                  {busy ? 'Importando…' : preview ? `Importar ${preview.toCreate + preview.toUpdate}` : 'Importar'}
                 </button>
               )}
             </div>

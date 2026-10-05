@@ -10,10 +10,12 @@
 import { NextRequest } from 'next/server'
 
 // ── Mocks ──────────────────────────────────────────────────────────────────
-let existingSlugs: { slug: string }[] = []
+let existingSlugs: any[] = []
 let planLimit: number | null = null
 const insertedProducts: any[] = []
 const insertedVariants: any[] = []
+const updatedProducts: { id: number; row: any }[] = []
+const updatedVariants: { id: number; row: any }[] = []
 
 const productsTable = () => ({
   select: jest.fn(() => Promise.resolve({ data: existingSlugs })),
@@ -26,10 +28,12 @@ const productsTable = () => ({
       },
     }),
   })),
+  update: jest.fn((row: any) => ({ eq: (_c: string, id: number) => { updatedProducts.push({ id, row }); return Promise.resolve({ error: null }) } })),
   delete: jest.fn(() => ({ eq: () => Promise.resolve({ error: null }) })),
 })
 const variantsTable = () => ({
   insert: jest.fn((rows: any[]) => { insertedVariants.push(...rows); return Promise.resolve({ error: null }) }),
+  update: jest.fn((row: any) => ({ eq: (_c: string, id: number) => { updatedVariants.push({ id, row }); return Promise.resolve({ error: null }) } })),
 })
 const categoriesTable = () => ({
   select: jest.fn(() => Promise.resolve({ data: [{ id: 7, name: 'Ropa' }] })),
@@ -70,6 +74,7 @@ const CSV = [
 beforeEach(() => {
   existingSlugs = []; planLimit = null
   insertedProducts.length = 0; insertedVariants.length = 0
+  updatedProducts.length = 0; updatedVariants.length = 0
   jest.clearAllMocks()
 })
 
@@ -120,5 +125,39 @@ describe('POST /api/admin/products/import', () => {
   it('rechaza CSV vacío', async () => {
     const res = await post({ csv: '   ' })
     expect(res.status).toBe(400)
+  })
+
+  it('upsert: actualiza producto existente (variante por SKU) e inserta variante nueva', async () => {
+    existingSlugs = [{
+      id: 50, slug: 'cam',
+      variants: [{ id: 900, sku: 'CAM-M', attributes: { Color: 'Negro', Talla: 'M' } }],
+    }]
+    const csv = [
+      'slug,name,category,price,stock,sku,options',
+      'cam,Camiseta v2,Ropa,62000,3,CAM-M,Color=Negro;Talla=M',  // match por SKU → update
+      'cam,,,62000,7,CAM-L,Color=Negro;Talla=L',                 // sin match → insert
+    ].join('\n')
+
+    const res = await post({ csv, mode: 'upsert' })
+    const data = await res.json()
+    expect(res.status).toBe(201)
+    expect(data.updated).toBe(1)
+    expect(data.created).toBe(0)
+    // Producto actualizado por id
+    expect(updatedProducts).toHaveLength(1)
+    expect(updatedProducts[0]).toMatchObject({ id: 50, row: { name: 'Camiseta v2' } })
+    // Variante CAM-M actualizada; CAM-L insertada
+    expect(updatedVariants).toHaveLength(1)
+    expect(updatedVariants[0]).toMatchObject({ id: 900, row: { stock: 3, price: 62000 } })
+    expect(insertedVariants.filter((v) => v.sku === 'CAM-L')).toHaveLength(1)
+  })
+
+  it('en modo create (default) un slug existente se omite, no se actualiza', async () => {
+    existingSlugs = [{ id: 50, slug: 'cam', variants: [] }]
+    const res = await post({ csv: CSV }) // sin mode → create
+    const data = await res.json()
+    expect(data.updated).toBe(0)
+    expect(updatedProducts).toHaveLength(0)
+    expect(data.skipped.some((s: any) => s.slug === 'cam')).toBe(true)
   })
 })

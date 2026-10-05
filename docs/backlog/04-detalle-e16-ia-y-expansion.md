@@ -487,10 +487,12 @@
 |---|-----------|-------------------|
 | AC-1 | Subida de CSV + plantilla descargable | ✅ Plantilla desde `GET /api/admin/products/import`; columnas → campos (slug, name, price, category, stock, options, dimensiones…) |
 | AC-2 | Previsualización y validación | ✅ `preview` muestra filas a crear / omitidas / con error antes de confirmar; cancelar no escribe |
-| AC-3 | Importación | ✅ Crea producto + variantes agrupando por `slug`; reporta creados, omitidos y errores por fila. *Actualización (upsert) → v2* |
+| AC-3 | Importación | ✅ Crea producto + variantes agrupando por `slug`; reporta creados, actualizados, omitidos y errores por fila |
 | AC-4 | Inventario | ✅ El `stock` de cada variante se establece desde el CSV |
-| AC-5 | Idempotencia | ✅ Reimportar no duplica: los `slug` existentes se omiten con aviso |
-| AC-6 | Multi-tenant / plan | ✅ RLS por tenant; respeta el tope de productos del plan (importa hasta el remanente) |
+| AC-5 | Idempotencia | ✅ Modo `create`: los `slug` existentes se omiten. Modo `upsert`: se actualizan (variantes por SKU/atributos; las nuevas se insertan) — reimportar no duplica |
+| AC-6 | Multi-tenant / plan | ✅ RLS por tenant; solo los productos nuevos cuentan contra el tope del plan (importa hasta el remanente) |
+
+**v2 ✅ (upsert, v93).** `mode: 'create' | 'upsert'`. En upsert, un `slug` existente actualiza el producto y empareja sus variantes por **SKU** (fallback **atributos**): las emparejadas se actualizan, las nuevas se insertan, las no presentes se conservan. UI con checkbox "Actualizar productos existentes" + conteos creados/actualizados. Cierra el ciclo de edición en masa con HU-130.
 
 ---
 
