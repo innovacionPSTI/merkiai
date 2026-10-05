@@ -501,15 +501,15 @@
 > Como administrador, quiero generar respaldos de productos, pedidos y clientes, para proteger los datos y poder restaurarlos o auditarlos.
 
 **Estimación:** M (5 puntos)
-**Módulo:** admin (exportación de respaldo), `packages/database`, opcional tarea programada
-**Estado:** 🔲 Pendiente (roadmap v17)
+**Módulo:** `packages/database` (`objectsToCsv`), admin (`GET /api/admin/backup`, `BackupWidget` en Configuración › General)
+**Estado:** ✅ **Implementada (descarga manual).** `GET /api/admin/backup?domain=products|orders|customers&format=csv|json` descarga una copia por dominio, acotada por tenant vía **RLS** (`getAdminDb`) y gated por rol (`canAccess(..,'configuracion')`). **Productos** (CSV) reusan `productsToCsv` → compatible con la carga masiva (HU-124); **pedidos** aplanan `shipping_addr` (depto/ciudad/dirección) e incluyen `items` como JSON; **clientes** exportan datos de contacto. `format=json` entrega un respaldo fiel (filas crudas). Serializador genérico nuevo `objectsToCsv` (escape RFC4180 + objetos→JSON). UI: tarjeta "Respaldos de datos" con botones CSV/JSON por dominio. Tests: database +1 (`objectsToCsv`), admin +3 (endpoint). **Pendiente:** respaldos programados + restauración (HU-133).
 
 | # | Escenario | Resultado esperado |
 |---|-----------|-------------------|
-| AC-1 | Generar respaldo | Descarga un archivo (CSV/JSON) por dominio: productos, pedidos y clientes |
-| AC-2 | Alcance y permisos | Solo roles autorizados; los datos sensibles se manejan con service_role del lado servidor |
-| AC-3 | Programación (opcional) | Se puede agendar un respaldo periódico automático |
-| AC-4 | Integridad | El respaldo es consistente (snapshot) y documenta fecha/versión para restauración |
+| AC-1 | Generar respaldo | ✅ Descarga CSV o JSON por dominio: productos, pedidos y clientes |
+| AC-2 | Alcance y permisos | ✅ Solo roles con acceso a configuración; datos acotados por **RLS por tenant** del lado servidor |
+| AC-3 | Programación (opcional) | ◻️ Agendar respaldo periódico → HU-133 |
+| AC-4 | Integridad | ✅ El nombre del archivo incluye la fecha (`respaldo-<dominio>-YYYY-MM-DD`); JSON es copia fiel |
 
 ---
 

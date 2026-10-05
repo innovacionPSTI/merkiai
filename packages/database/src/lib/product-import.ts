@@ -101,9 +101,20 @@ export interface ExportProduct {
 }
 
 /** Escapa una celda CSV (comillas, comas, saltos) según RFC4180. */
-function csvCell(v: unknown): string {
+export function csvCell(v: unknown): string {
   const s = v == null ? '' : String(v)
   return /[",\n\r]/.test(s) ? `"${s.replace(/"/g, '""')}"` : s
+}
+
+/**
+ * Serializa objetos a CSV con un orden de columnas dado (genérico, reutilizable
+ * para respaldos de cualquier entidad — HU-125). Valores objeto/array → JSON.
+ */
+export function objectsToCsv(headers: string[], rows: Record<string, unknown>[]): string {
+  const cell = (v: unknown) => csvCell(v != null && typeof v === 'object' ? JSON.stringify(v) : v)
+  const lines = [headers.map(csvCell).join(',')]
+  for (const r of rows) lines.push(headers.map((h) => cell(r[h])).join(','))
+  return lines.join('\n')
 }
 
 function imagesToField(images: ExportProduct['images']): string {

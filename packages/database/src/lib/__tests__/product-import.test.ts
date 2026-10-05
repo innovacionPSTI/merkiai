@@ -2,6 +2,7 @@ import {
   parseProductsCsv,
   parseCsv,
   productsToCsv,
+  objectsToCsv,
   PRODUCT_IMPORT_TEMPLATE,
 } from '../product-import'
 
@@ -131,6 +132,17 @@ describe('productsToCsv (HU-130)', () => {
     }])
     const rows = parseCsv(csv)
     expect(rows[1][1]).toBe('Café "especial", lote 1')
+  })
+
+  it('objectsToCsv respeta el orden de columnas, escapa y serializa objetos (HU-125)', () => {
+    const csv = objectsToCsv(
+      ['id', 'name', 'addr'],
+      [{ id: 1, name: 'Ana, Pérez', addr: { city: 'Cali' }, extra: 'ignorado' }],
+    )
+    const rows = parseCsv(csv)
+    expect(rows[0]).toEqual(['id', 'name', 'addr'])
+    expect(rows[1][1]).toBe('Ana, Pérez')              // celda con coma escapada
+    expect(JSON.parse(rows[1][2])).toEqual({ city: 'Cali' }) // objeto → JSON
   })
 
   it('ida y vuelta: export → import conserva los datos', () => {

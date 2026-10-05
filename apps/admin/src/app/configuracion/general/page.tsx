@@ -7,6 +7,7 @@ import { getAdminDb } from '@/lib/admin-db'
 import { canAccess } from '@/lib/roles'
 import StoreConfigForm from '../StoreConfigForm'
 import DataTransferWidget from '../DataTransferWidget'
+import BackupWidget from '../BackupWidget'
 
 export const metadata: Metadata = { title: 'General · Configuración' }
 export const dynamic = 'force-dynamic'
@@ -30,12 +31,22 @@ export default async function ConfigGeneralPage() {
       </div>
 
       <div className="mt-8">
-        <h2 className="font-display text-brand-primary text-xl mb-1">Datos y respaldos</h2>
+        <h2 className="font-display text-brand-primary text-xl mb-1">Contenido del sitio</h2>
         <p className="font-brand text-sm text-brand-primary/50 mb-4">
           Exporta o importa el contenido del sitio (páginas, navegación, banners, secciones).
         </p>
         <div className="bg-white rounded-2xl p-6 shadow-sm">
           <DataTransferWidget />
+        </div>
+      </div>
+
+      <div className="mt-8">
+        <h2 className="font-display text-brand-primary text-xl mb-1">Respaldos de datos</h2>
+        <p className="font-brand text-sm text-brand-primary/50 mb-4">
+          Descarga una copia de tus productos, pedidos y clientes.
+        </p>
+        <div className="bg-white rounded-2xl p-6 shadow-sm">
+          <BackupWidget />
         </div>
       </div>
     </div>
