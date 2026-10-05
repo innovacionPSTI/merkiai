@@ -2,6 +2,11 @@ import type { NextConfig } from 'next'
 
 // ── Security headers ───────────────────────────────────────────────────────────
 
+// HU-128 v3 · el Constructor incrusta la tienda (subdominio del tenant) en el
+// iframe de vista previa. Sin `frame-src`, el CSP del admin cae a default-src
+// 'self' y bloquea el iframe. Se permite el dominio base del storefront.
+const STOREFRONT_BASE = (process.env.STOREFRONT_BASE_DOMAIN ?? 'merkiai.com').trim()
+
 const CSP = [
   "default-src 'self'",
   "script-src 'self' 'unsafe-inline' 'unsafe-eval'",
@@ -10,6 +15,8 @@ const CSP = [
   "img-src 'self' data: blob: https://*.supabase.co",
   // Stack Auth + Supabase
   "connect-src 'self' https://*.supabase.co wss://*.supabase.co https://*.stack-auth.com",
+  // Vista previa: permitir incrustar el storefront del tenant (subdominios).
+  `frame-src 'self' https://*.${STOREFRONT_BASE}`,
   "frame-ancestors 'none'",
   "base-uri 'self'",
   "form-action 'self'",
