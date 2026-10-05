@@ -2,6 +2,13 @@ import type { NextConfig } from 'next'
 
 // ── Security headers ───────────────────────────────────────────────────────────
 
+// HU-128 v3 · la vista previa del Constructor embebe la tienda en un iframe desde
+// el admin. Para permitirlo (sin abrir el framing a terceros), se habilita el
+// origen del admin vía `ADMIN_PREVIEW_ORIGIN` (p. ej. https://admin.merkiai.com).
+// Si no se define, el framing sigue bloqueado ('none') y el preview va en pestaña nueva.
+const ADMIN_ORIGIN = process.env.ADMIN_PREVIEW_ORIGIN?.trim()
+const FRAME_ANCESTORS = ADMIN_ORIGIN ? `'self' ${ADMIN_ORIGIN}` : "'none'"
+
 const CSP = [
   "default-src 'self'",
   // Next.js requires unsafe-inline for hydration scripts; nonce-based CSP requires custom server
@@ -12,14 +19,16 @@ const CSP = [
   // Stack Auth + Supabase + Vercel Analytics
   "connect-src 'self' https://*.supabase.co wss://*.supabase.co https://*.stack-auth.com https://*.vercel-insights.com https://vitals.vercel-insights.com",
   "media-src 'self' https://*.supabase.co",
-  "frame-ancestors 'none'",
+  `frame-ancestors ${FRAME_ANCESTORS}`,
   "base-uri 'self'",
   "form-action 'self'",
 ].join('; ')
 
 const SECURITY_HEADERS = [
   { key: 'Content-Security-Policy',        value: CSP },
-  { key: 'X-Frame-Options',               value: 'DENY' },
+  // XFO solo soporta DENY/SAMEORIGIN; con un origen de admin externo se delega en
+  // `frame-ancestors` (CSP, que lo supersede). Sin admin configurado → DENY.
+  ...(ADMIN_ORIGIN ? [] : [{ key: 'X-Frame-Options', value: 'DENY' }]),
   { key: 'X-Content-Type-Options',        value: 'nosniff' },
   { key: 'X-DNS-Prefetch-Control',        value: 'on' },
   { key: 'Referrer-Policy',              value: 'strict-origin-when-cross-origin' },

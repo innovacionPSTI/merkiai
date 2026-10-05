@@ -12,6 +12,7 @@
 import { useCallback, useEffect, useState } from 'react'
 import { listBlockTypes, getBlockSchema, listTemplates, getTemplateHomeLayout } from '@merkiai/database/blocks'
 import SectionEditor from './SectionEditor'
+import { getPreviewUrlAction } from '@/app/constructor/preview-action'
 
 interface PageOption { key: string; label: string; slug: string }
 interface SectionRow {
@@ -25,7 +26,6 @@ interface SectionRow {
 }
 
 const api = '/api/admin/cms/sections'
-const SITE_URL = (process.env.NEXT_PUBLIC_SITE_URL ?? '').replace(/\/$/, '')
 
 export default function ConstructorClient({ pages, initialPageKey, initialTemplate }: { pages: PageOption[]; initialPageKey: string; initialTemplate: string }) {
   const [pageKey, setPageKey] = useState(initialPageKey)
@@ -54,6 +54,22 @@ export default function ConstructorClient({ pages, initialPageKey, initialTempla
   }, [])
 
   useEffect(() => { void load(pageKey) }, [pageKey, load])
+
+  // HU-128 v3 · resuelve la URL de vista previa FIRMADA (token por-tenant) vía el
+  // control plane. Se re-pide al cambiar de página o al pulsar "Actualizar".
+  const [previewUrl, setPreviewUrl] = useState<string | null>(null)
+  const [previewErr, setPreviewErr] = useState<string | null>(null)
+  useEffect(() => {
+    const cp = pages.find((p) => p.key === pageKey)
+    const path = cp?.slug ? `/${cp.slug}` : '/'
+    let cancelled = false
+    getPreviewUrlAction(path).then((r) => {
+      if (cancelled) return
+      setPreviewUrl(r.url ?? null)
+      setPreviewErr(r.error ?? null)
+    })
+    return () => { cancelled = true }
+  }, [pageKey, previewKey, pages])
 
   async function addBlock(type: string) {
     if (!type) return
@@ -179,9 +195,6 @@ export default function ConstructorClient({ pages, initialPageKey, initialTempla
 
   const activeTpl = listTemplates().find((t) => t.name === template)
   const isHome = pageKey === 'home'
-  const currentPage = pages.find((p) => p.key === pageKey)
-  const previewPath = currentPage?.slug ? `/${currentPage.slug}` : '/'
-  const previewSrc = SITE_URL ? `${SITE_URL}${previewPath}?preview=${previewKey}` : ''
 
   return (
     <div className="space-y-6">
@@ -333,20 +346,27 @@ export default function ConstructorClient({ pages, initialPageKey, initialTempla
               <button onClick={bump} className="rounded-lg border border-slate-300 px-3 py-1 text-xs font-medium text-slate-700 hover:bg-slate-50">Actualizar</button>
             </div>
           </div>
-          {previewSrc ? (
-            <div className="rounded-xl border border-slate-200 bg-slate-50 p-2 flex justify-center">
-              <iframe
-                key={previewKey}
-                src={previewSrc}
-                title="Vista previa de la tienda"
-                className="h-[70vh] bg-white rounded-lg transition-all"
-                style={{ width: device === 'desktop' ? '100%' : device === 'tablet' ? 768 : 390, maxWidth: '100%' }}
-              />
+          {previewUrl ? (
+            <>
+              <div className="rounded-xl border border-slate-200 bg-slate-50 p-2 flex justify-center">
+                <iframe
+                  key={`${previewKey}-${device}`}
+                  src={previewUrl}
+                  title="Vista previa de la tienda"
+                  className="h-[70vh] bg-white rounded-lg transition-all"
+                  style={{ width: device === 'desktop' ? '100%' : device === 'tablet' ? 768 : 390, maxWidth: '100%' }}
+                />
+              </div>
+              <p className="text-[11px] text-slate-400">
+                ¿No se ve? <a href={previewUrl} target="_blank" rel="noopener noreferrer" className="underline">Ábrela en una pestaña nueva</a> (algunos dominios propios no permiten incrustar).
+              </p>
+            </>
+          ) : previewErr ? (
+            <div className="rounded-xl border border-dashed border-amber-300 bg-amber-50 p-6 text-sm text-amber-800">
+              No se pudo generar la vista previa: {previewErr}
             </div>
           ) : (
-            <p className="rounded-xl border border-dashed border-slate-300 p-6 text-sm text-slate-400">
-              Configura <code>NEXT_PUBLIC_SITE_URL</code> para ver la vista previa de la tienda.
-            </p>
+            <p className="rounded-xl border border-dashed border-slate-300 p-6 text-sm text-slate-400">Cargando vista previa…</p>
           )}
         </div>
       </div>

@@ -29,14 +29,27 @@ async function fetchTenantHost(tenantId: string): Promise<string | null> {
   }
 }
 
-/** URL de vista previa de la tienda para `path` (o null si no se pudo resolver). */
-export async function getPreviewUrl(tenantId: string, path = '/'): Promise<string | null> {
+export type PreviewResult =
+  | { ok: true; url: string }
+  | { ok: false; reason: 'missing_secret' | 'control_plane' | 'no_host' }
+
+/** URL de vista previa de la tienda para `path`, o el motivo por el que no se pudo. */
+export async function resolvePreviewUrl(tenantId: string, path = '/'): Promise<PreviewResult> {
   const secret = process.env.PREVIEW_SIGNING_SECRET
-  if (!secret) return null
+  if (!secret) return { ok: false, reason: 'missing_secret' }
+  if (!process.env.CONTROL_PLANE_URL || !process.env.INTERNAL_API_SECRET) {
+    return { ok: false, reason: 'control_plane' }
+  }
   const host = await fetchTenantHost(tenantId)
-  if (!host) return null
+  if (!host) return { ok: false, reason: 'no_host' }
   const token = makePreviewToken(tenantId, secret)
   const proto = host.includes('localhost') ? 'http' : 'https'
   const qs = new URLSearchParams({ token, path }).toString()
-  return `${proto}://${host}/api/preview?${qs}`
+  return { ok: true, url: `${proto}://${host}/api/preview?${qs}` }
+}
+
+/** Compat: URL de vista previa, o null si no se pudo resolver. */
+export async function getPreviewUrl(tenantId: string, path = '/'): Promise<string | null> {
+  const r = await resolvePreviewUrl(tenantId, path)
+  return r.ok ? r.url : null
 }

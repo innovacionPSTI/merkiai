@@ -66,6 +66,7 @@ Específicas:
 
 Para cada uno de los **3 proyectos** (web/admin/console):
 
+- [ ] **Vista previa del Constructor (HU-128 v3).** Para que funcione en prod: (a) **admin** con `PREVIEW_SIGNING_SECRET` (mismo valor que la **web**) + `CONTROL_PLANE_URL` + `INTERNAL_API_SECRET` + `STOREFRONT_BASE_DOMAIN`; (b) el tenant debe tener `subdomain` o `primary_domain` en la tabla `tenants` (la consola lo setea al aprovisionar); (c) para el **preview embebido** en el iframe, la **web** necesita `ADMIN_PREVIEW_ORIGIN=https://admin.merkiai.com` (si no, el preview abre en pestaña nueva — también válido). El admin ahora muestra el motivo exacto si falla (`missing_secret`/`control_plane`/`no_host`).
 - [ ] **OAuth de Google con keys propias** (no las *Shared keys* de dev) — quita la marca de Stack Auth y arregla el drop de cookie en el primer retorno. *(Se puede dejar para el final; con Shared keys funciona en dev.)*
 - [ ] **Authorized redirect URIs** en Google Cloud por subdominio: `*.merkiai.com` (web), `admin.merkiai.com`, `console.merkiai.com`. *(Va con las keys propias de Google.)*
 - [x] **Trusted Domains** en Stack Auth (¡distinto de los redirect URIs de Google!): **web** = `*.merkiai.com` (wildcard, si lo soporta) + dominios propios; **admin** = solo `admin.merkiai.com`; **console** = solo `console.merkiai.com`; `localhost` en dev.
