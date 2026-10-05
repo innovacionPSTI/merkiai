@@ -13,6 +13,7 @@ export * from './lib/product-import'
 export * from './lib/category-import'
 export * from './lib/coupon-import'
 export * from './lib/customer-import'
+export * from './lib/blog-import'
 
 // ─── Provider abstractions ────────────────────────────────────────────────────
 export * from './providers/payment/index'
