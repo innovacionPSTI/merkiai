@@ -1,19 +1,13 @@
 import type { ProductVariant, ProductWithVariants } from '@merkiai/database'
 
 /**
- * Returns the ordered list of variant option names for a product.
- * If variant_options JSONB is set, uses it.
- * Otherwise derives from legacy coffee-specific fields.
+ * Returns the ordered list of variant option names for a product,
+ * desde `variant_options` (sistema genérico de atributos). HU-260: se eliminó el
+ * fallback a campos de café; los productos declaran sus dimensiones aquí.
  */
 export function getProductOptions(product: ProductWithVariants): string[] {
   const opts = product.variant_options
-  if (Array.isArray(opts) && opts.length > 0) return opts as string[]
-  // Legacy fallback: derive from which coffee fields are used
-  const options: string[] = []
-  if (product.variants.some((v) => v.roast)) options.push('Tueste')
-  if (product.variants.some((v) => v.weight)) options.push('Peso')
-  if (product.variants.some((v) => v.grind)) options.push('Molienda')
-  return options
+  return Array.isArray(opts) && opts.length > 0 ? (opts as string[]) : []
 }
 
 /**
@@ -25,21 +19,12 @@ export function getProductOptions(product: ProductWithVariants): string[] {
  * every other, causing all options to show as blocked in the selector.
  */
 export function getVariantAttrs(variant: ProductVariant, options: string[]): Record<string, string> {
-  let raw: Record<string, string> = {}
-
-  if (
+  const raw: Record<string, string> =
     variant.attributes &&
     typeof variant.attributes === 'object' &&
-    !Array.isArray(variant.attributes) &&
-    Object.keys(variant.attributes as object).length > 0
-  ) {
-    raw = variant.attributes as Record<string, string>
-  } else {
-    // Legacy coffee fields
-    if (variant.roast) raw['Tueste'] = variant.roast
-    if (variant.weight) raw['Peso'] = variant.weight
-    if (variant.grind) raw['Molienda'] = variant.grind
-  }
+    !Array.isArray(variant.attributes)
+      ? (variant.attributes as Record<string, string>)
+      : {}
 
   // When options are declared, return only those keys — strip any extra JSONB fields
   // (e.g. sku, notes) that would corrupt the compatibility checks in the selector.
@@ -53,9 +38,7 @@ export function getVariantAttrs(variant: ProductVariant, options: string[]): Rec
 export function getVariantLabel(variant: ProductVariant, options: string[]): string {
   const attrs = getVariantAttrs(variant, options)
   const parts = options.map((o) => attrs[o]).filter(Boolean)
-  if (parts.length > 0) return parts.join(' · ')
-  // Final fallback
-  return [variant.weight, variant.grind, variant.roast].filter(Boolean).join(' · ')
+  return parts.join(' · ')
 }
 
 /**

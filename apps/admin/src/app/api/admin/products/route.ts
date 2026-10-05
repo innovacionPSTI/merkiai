@@ -67,10 +67,7 @@ export async function POST(req: NextRequest) {
   const variantRows: VariantInsert[] = variants.map((v: any) => ({
     product_id: product.id,
     tenant_id: tenantId,
-    roast: (v.roast || null) as VariantInsert['roast'],
     weight: (v.weight || null) as VariantInsert['weight'],
-    grind: (v.grind || null) as VariantInsert['grind'],
-    brew_method: (v.brew_method || null) as VariantInsert['brew_method'],
     price: Number(v.price),
     stock: Number(v.stock ?? 0),
     sku: v.sku || null,

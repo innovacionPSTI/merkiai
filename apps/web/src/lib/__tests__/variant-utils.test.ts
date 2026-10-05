@@ -22,10 +22,7 @@ function makeVariant(overrides: Partial<ProductVariant> = {}): ProductVariant {
     price: 30000,
     stock: 10,
     active: true,
-    roast: null,
     weight: null,
-    grind: null,
-    brew_method: null,
     image_url: null,
     attributes: null,
     weight_kg: null,
@@ -64,28 +61,13 @@ describe('getProductOptions', () => {
     expect(getProductOptions(product)).toEqual(['Color', 'Talla'])
   })
 
-  it('falls back to legacy coffee fields when variant_options is empty array', () => {
-    const variants = [
-      makeVariant({ roast: 'Medio', weight: '250g', grind: 'Molido' }),
-    ]
-    const product = makeProduct(variants, [])
-    expect(getProductOptions(product)).toEqual(['Tueste', 'Peso', 'Molienda'])
+  it('empty variant_options array → [] (HU-260: sin fallback de café)', () => {
+    const product = makeProduct([makeVariant()], [])
+    expect(getProductOptions(product)).toEqual([])
   })
 
-  it('falls back when variant_options is null', () => {
-    const variants = [makeVariant({ weight: '500g' })]
-    const product = makeProduct(variants, undefined)
-    expect(getProductOptions(product)).toEqual(['Peso'])
-  })
-
-  it('only includes options that are actually used by at least one variant', () => {
-    const variants = [makeVariant({ roast: 'Oscuro' })] // no weight or grind
-    const product = makeProduct(variants, undefined)
-    expect(getProductOptions(product)).toEqual(['Tueste'])
-  })
-
-  it('returns empty array when no JSONB and no legacy fields', () => {
-    const product = makeProduct([makeVariant()])
+  it('null variant_options → []', () => {
+    const product = makeProduct([makeVariant()], undefined)
     expect(getProductOptions(product)).toEqual([])
   })
 })
@@ -98,25 +80,14 @@ describe('getVariantAttrs', () => {
     expect(getVariantAttrs(variant, ['Color', 'Talla'])).toEqual({ Color: 'Rojo', Talla: 'M' })
   })
 
-  it('falls back to legacy fields when attributes is null', () => {
-    const variant = makeVariant({ roast: 'Claro', weight: '250g', grind: 'Entero' })
-    expect(getVariantAttrs(variant, ['Tueste', 'Peso', 'Molienda'])).toEqual({
-      Tueste: 'Claro',
-      Peso: '250g',
-      Molienda: 'Entero',
-    })
+  it('attributes nulo → {} (HU-260: sin fallback de café)', () => {
+    const variant = makeVariant({ attributes: null })
+    expect(getVariantAttrs(variant, ['Color', 'Talla'])).toEqual({})
   })
 
-  it('falls back to legacy fields when attributes is empty object', () => {
-    const variant = makeVariant({ attributes: {} as never, roast: 'Medio' })
-    expect(getVariantAttrs(variant, ['Tueste'])).toEqual({ Tueste: 'Medio' })
-  })
-
-  it('ignores null legacy fields', () => {
-    const variant = makeVariant({ roast: 'Oscuro' }) // weight and grind are null
-    const attrs = getVariantAttrs(variant, ['Tueste', 'Peso'])
-    expect(attrs).toEqual({ Tueste: 'Oscuro' })
-    expect(attrs['Peso']).toBeUndefined()
+  it('devuelve solo las claves declaradas en options', () => {
+    const variant = makeVariant({ attributes: { Color: 'Rojo', interno: 'x' } as never })
+    expect(getVariantAttrs(variant, ['Color'])).toEqual({ Color: 'Rojo' })
   })
 })
 
@@ -128,19 +99,14 @@ describe('getVariantLabel', () => {
     expect(getVariantLabel(variant, ['Color', 'Talla'])).toBe('Azul · L')
   })
 
-  it('falls back to legacy join for coffee variants', () => {
-    const variant = makeVariant({ weight: '250g', grind: 'Molido', roast: 'Medio' })
-    expect(getVariantLabel(variant, ['Peso', 'Molienda', 'Tueste'])).toBe('250g · Molido · Medio')
-  })
-
   it('skips missing options from label', () => {
     const variant = makeVariant({ attributes: { Color: 'Verde' } as never })
     expect(getVariantLabel(variant, ['Color', 'Talla'])).toBe('Verde')
   })
 
-  it('uses final legacy fallback when no options match', () => {
-    const variant = makeVariant({ weight: '500g', roast: 'Oscuro' })
-    expect(getVariantLabel(variant, [])).toBe('500g · Oscuro')
+  it('sin opciones que coincidan → cadena vacía (HU-260: sin fallback de café)', () => {
+    const variant = makeVariant({ attributes: {} as never })
+    expect(getVariantLabel(variant, [])).toBe('')
   })
 })
 

@@ -136,10 +136,7 @@ export type Database = {
           tenant_id: string
           id: number
           product_id: number
-          roast: 'claro' | 'medio' | 'oscuro' | null
-          weight: '250g' | '500g' | '1kg' | null
-          grind: 'grano' | 'media' | 'fina' | 'gruesa' | null
-          brew_method: 'espresso' | 'filtrado' | 'cold_brew' | 'universal' | null
+          weight: string | null
           price: number
           stock: number
           sku: string | null
@@ -154,10 +151,7 @@ export type Database = {
           tenant_id?: string
           id?: number
           product_id: number
-          roast?: 'claro' | 'medio' | 'oscuro' | null
-          weight?: '250g' | '500g' | '1kg' | null
-          grind?: 'grano' | 'media' | 'fina' | 'gruesa' | null
-          brew_method?: 'espresso' | 'filtrado' | 'cold_brew' | 'universal' | null
+          weight?: string | null
           price: number
           stock?: number
           sku?: string | null
@@ -172,10 +166,7 @@ export type Database = {
           tenant_id?: string
           id?: number
           product_id?: number
-          roast?: 'claro' | 'medio' | 'oscuro' | null
-          weight?: '250g' | '500g' | '1kg' | null
-          grind?: 'grano' | 'media' | 'fina' | 'gruesa' | null
-          brew_method?: 'espresso' | 'filtrado' | 'cold_brew' | 'universal' | null
+          weight?: string | null
           price?: number
           stock?: number
           sku?: string | null

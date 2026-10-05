@@ -250,8 +250,6 @@ export default function ProductForm({ product, categories, variantTypes }: Props
         width_cm:  v.width_cm  ? Number(v.width_cm)  : null,
         height_cm: v.height_cm ? Number(v.height_cm) : null,
         attributes: Object.keys(v.attributes).length > 0 ? v.attributes : null,
-        // Limpiar campos legacy si usamos variantes genéricas
-        ...(variantOptions.length > 0 ? { roast: null, weight: null, grind: null, brew_method: null } : {}),
       })),
     }
 

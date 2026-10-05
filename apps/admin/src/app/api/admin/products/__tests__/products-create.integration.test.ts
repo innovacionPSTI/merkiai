@@ -66,14 +66,12 @@ const createdProduct = {
 }
 
 const baseVariant = {
-  roast: 'medium',
   weight: '500g',
-  grind: null,
-  brew_method: null,
   price: 45000,
   stock: 10,
   sku: null,
   active: true,
+  attributes: { Peso: '500g' },
 }
 
 function makePostRequest(body: object): NextRequest {

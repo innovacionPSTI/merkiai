@@ -10,9 +10,6 @@ import type { Category, ProductWithVariants } from '../types'
 
 export async function getProducts(
   filters: {
-    roast?: string
-    weight?: string
-    brew_method?: string
     featured?: boolean
     category_slug?: string
   } = {},
