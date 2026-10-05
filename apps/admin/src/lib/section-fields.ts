@@ -7,7 +7,7 @@
  * Es la única lógica no trivial del Constructor de páginas, por eso vive suelta
  * y con pruebas: el resto es render derivado del schema.
  */
-import { getBlockSchema } from '@merkiai/database'
+import { getBlockSchema } from '@merkiai/database/blocks'
 
 export interface SectionFieldPayload {
   /** Columnas de page_sections a actualizar (title/subtitle/cta_label/…). */

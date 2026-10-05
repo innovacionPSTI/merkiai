@@ -28,6 +28,25 @@ const SECURITY_HEADERS = [
 
 const nextConfig: NextConfig = {
   transpilePackages: ['@merkiai/ui', '@merkiai/database'],
+
+  // El barrel @merkiai/database re-exporta utilidades server-only (preview.ts →
+  // node:crypto). Si un componente cliente lo arrastra (directa o transitivamente),
+  // webpack falla con UnhandledSchemeError. Normalizamos el esquema `node:` y, en
+  // el bundle de cliente, resolvemos `crypto` a vacío (esas funciones nunca se
+  // llaman en cliente; el server conserva el crypto real).
+  webpack: (config, { isServer, webpack }) => {
+    config.plugins.push(
+      new webpack.NormalModuleReplacementPlugin(/^node:/, (resource: { request: string }) => {
+        resource.request = resource.request.replace(/^node:/, '')
+      }),
+    )
+    if (!isServer) {
+      config.resolve = config.resolve ?? {}
+      config.resolve.fallback = { ...(config.resolve.fallback ?? {}), crypto: false }
+    }
+    return config
+  },
+
   images: {
     remotePatterns: [
       {

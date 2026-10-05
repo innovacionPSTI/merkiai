@@ -6,7 +6,7 @@
  *   'column'   → columna de section_items (icon/title/description/image_url/…)
  *   'metadata' → dentro de section_items.metadata (JSONB) (bg_color/rating/role)
  */
-import { getBlockSchema, type BlockField } from '@merkiai/database'
+import { getBlockSchema, type BlockField } from '@merkiai/database/blocks'
 
 export interface ItemFieldPayload {
   columns: Record<string, unknown>

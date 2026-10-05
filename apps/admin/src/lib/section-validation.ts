@@ -8,7 +8,7 @@
  * HU-222 para acotar la salida del generador de diseño por IA.
  */
 import { z } from 'zod'
-import { getBlockSchema, listBlockTypes, type BlockField } from '@merkiai/database'
+import { getBlockSchema, listBlockTypes, type BlockField } from '@merkiai/database/blocks'
 
 function fieldToZod(f: BlockField): z.ZodTypeAny {
   switch (f.type) {

@@ -31,6 +31,21 @@ const SECURITY_HEADERS = [
 
 const nextConfig: NextConfig = {
   transpilePackages: ['@merkiai/ui', '@merkiai/database'],
+
+  // Ver apps/admin: evita UnhandledSchemeError de `node:crypto` (preview.ts del
+  // barrel) en bundles de cliente. Normaliza `node:` y stub de crypto en cliente.
+  webpack: (config, { isServer, webpack }) => {
+    config.plugins.push(
+      new webpack.NormalModuleReplacementPlugin(/^node:/, (resource: { request: string }) => {
+        resource.request = resource.request.replace(/^node:/, '')
+      }),
+    )
+    if (!isServer) {
+      config.resolve = config.resolve ?? {}
+      config.resolve.fallback = { ...(config.resolve.fallback ?? {}), crypto: false }
+    }
+    return config
+  },
   images: {
     remotePatterns: [
       {
