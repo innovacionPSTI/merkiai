@@ -1,4 +1,4 @@
-import { norm, matchesQuery, paginate } from '../shop-filters'
+import { norm, matchesQuery, paginate, parseShopUrl, buildShopQuery } from '../shop-filters'
 
 const prod = (over: any = {}): any => ({
   id: 1, name: 'Camiseta Azul', description: 'Algodón premium', slug: 'camiseta-azul',
@@ -46,5 +46,32 @@ describe('paginate', () => {
   })
   it('lista vacía → 1 página', () => {
     expect(paginate([], 1, 10)).toMatchObject({ items: [], pageCount: 1, safePage: 1 })
+  })
+})
+
+describe('parseShopUrl', () => {
+  it('lee defaults cuando no hay params', () => {
+    expect(parseShopUrl({})).toEqual({ q: '', categoria: null, orden: 'destacados', page: 1 })
+  })
+  it('lee q/categoria/orden/page', () => {
+    expect(parseShopUrl({ q: 'cafe', categoria: '3', orden: 'precio-asc', page: '2' }))
+      .toEqual({ q: 'cafe', categoria: 3, orden: 'precio-asc', page: 2 })
+  })
+  it('ignora categoria no numérica y page<=1', () => {
+    expect(parseShopUrl({ categoria: 'x', page: '1' })).toMatchObject({ categoria: null, page: 1 })
+  })
+})
+
+describe('buildShopQuery', () => {
+  it('omite los valores por defecto', () => {
+    expect(buildShopQuery({ q: '', categoria: null, orden: 'destacados', page: 1 })).toBe('')
+  })
+  it('serializa solo lo no-default', () => {
+    expect(buildShopQuery({ q: 'cafe', categoria: 3, orden: 'nombre', page: 2 }))
+      .toBe('q=cafe&categoria=3&orden=nombre&page=2')
+  })
+  it('round-trip con parseShopUrl', () => {
+    const s = { q: 'té verde', categoria: 5, orden: 'precio-desc', page: 4 }
+    expect(parseShopUrl(Object.fromEntries(new URLSearchParams(buildShopQuery(s))))).toEqual(s)
   })
 })

@@ -38,3 +38,39 @@ export function paginate<T>(list: T[], page: number, size: number): Paged<T> {
   const items = list.slice((safePage - 1) * size, safePage * size)
   return { items, pageCount, safePage }
 }
+
+// ── Sincronización de estado con la URL (compartible/bookmarkable) ────────────
+
+export interface ShopUrlState {
+  q: string
+  categoria: number | null
+  orden: string
+  page: number
+}
+
+type RawParams = Record<string, string | string[] | undefined>
+
+const str = (v: string | string[] | undefined): string =>
+  (Array.isArray(v) ? v[0] : v) ?? ''
+
+/** Lee el estado inicial del shop desde los searchParams (con defaults). */
+export function parseShopUrl(sp: RawParams): ShopUrlState {
+  const cat = str(sp.categoria)
+  const pageNum = parseInt(str(sp.page), 10)
+  return {
+    q: str(sp.q),
+    categoria: cat && Number.isFinite(Number(cat)) ? Number(cat) : null,
+    orden: str(sp.orden) || 'destacados',
+    page: Number.isFinite(pageNum) && pageNum > 1 ? pageNum : 1,
+  }
+}
+
+/** Construye el querystring canónico (omite defaults) para el estado dado. */
+export function buildShopQuery(s: ShopUrlState): string {
+  const p = new URLSearchParams()
+  if (s.q.trim()) p.set('q', s.q.trim())
+  if (s.categoria != null) p.set('categoria', String(s.categoria))
+  if (s.orden && s.orden !== 'destacados') p.set('orden', s.orden)
+  if (s.page > 1) p.set('page', String(s.page))
+  return p.toString()
+}

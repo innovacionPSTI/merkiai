@@ -2,12 +2,13 @@
 
 import { useState, useMemo, useEffect } from 'react'
 import Link from 'next/link'
+import { useRouter } from 'next/navigation'
 import { Icon } from '@merkiai/ui'
 import { useCartStore } from '@/store/cart'
 import type { CartItem } from '@/store/cart'
 import type { ProductWithVariants } from '@merkiai/database'
 import { getProductOptions, getVariantAttrs, getVariantLabel, isColorValue, swatchColor } from '@/lib/variant-utils'
-import { matchesQuery, paginate } from '@/lib/shop-filters'
+import { matchesQuery, paginate, parseShopUrl, buildShopQuery } from '@/lib/shop-filters'
 
 const SORTS = [
   { value: 'destacados', label: 'Destacados' },
@@ -160,15 +161,25 @@ function FilterRow({ label, active, onClick }: { label: string; active: boolean;
 // ── Main component ────────────────────────────────────────────────────────────
 
 export default function ShopClient({ products, searchParams, gridVariant = 'comfortable', colorMap }: Props) {
-  const [selectedCategory, setSelectedCategory] = useState<number | null>(
-    searchParams.categoria ? Number(searchParams.categoria) : null
-  )
+  const router = useRouter()
+  const initial = useMemo(() => parseShopUrl(searchParams), [searchParams])
+  const [selectedCategory, setSelectedCategory] = useState<number | null>(initial.categoria)
   const [selectedAttrs, setSelectedAttrs] = useState<Record<string, string>>({})
-  const [sort, setSort] = useState('destacados')
-  const [query, setQuery] = useState(typeof searchParams.q === 'string' ? searchParams.q : '')
-  const [page, setPage] = useState(1)
+  const [sort, setSort] = useState(initial.orden)
+  const [query, setQuery] = useState(initial.q)
+  const [page, setPage] = useState(initial.page)
   const [mobileFiltersOpen, setMobileFiltersOpen] = useState(false)
   const addItem = useCartStore((s) => s.addItem)
+
+  // Sincroniza q/categoría/orden/página con la URL (compartible + botón atrás).
+  // Se omite en el primer render para no sobrescribir la URL que llegó del SSR.
+  const url = buildShopQuery({ q: query, categoria: selectedCategory, orden: sort, page })
+  const [mounted, setMounted] = useState(false)
+  useEffect(() => { setMounted(true) }, [])
+  useEffect(() => {
+    if (!mounted) return
+    router.replace(url ? `?${url}` : '?', { scroll: false })
+  }, [url, mounted, router])
 
   const fmt = (n: number) =>
     new Intl.NumberFormat('es-CO', { style: 'currency', currency: 'COP', maximumFractionDigits: 0 }).format(n)
@@ -236,7 +247,13 @@ export default function ShopClient({ products, searchParams, gridVariant = 'comf
   }, [products, selectedCategory, selectedAttrs, sort, query])
 
   // Paginación: vuelve a la página 1 cuando cambian filtros/búsqueda/orden.
-  useEffect(() => { setPage(1) }, [selectedCategory, selectedAttrs, sort, query])
+  // Salta el primer render para respetar la página que llegó por la URL (SSR).
+  const filterSig = JSON.stringify([selectedCategory, selectedAttrs, sort, query])
+  useEffect(() => {
+    if (!mounted) return
+    setPage(1)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [filterSig])
   const { items: paged, pageCount, safePage } = useMemo(
     () => paginate(filtered, page, PAGE_SIZE),
     [filtered, page],
