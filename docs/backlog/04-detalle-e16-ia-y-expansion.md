@@ -815,7 +815,7 @@
 
 **Estimación:** M (5 puntos)
 **Módulo:** `packages/database` (`parseCategoriesCsv`), admin (`/api/admin/categories/import`, `CsvImportModal` genérico)
-**Estado:** 🔶 **v1 (categorías + cupones).** Motor compartido con HU-124: `parseCsv` + `CsvImportModal` genérico (cualquier endpoint que acepte `{csv,mode,preview}`; prop `idLabel`). **Categorías ✅:** `parseCategoriesCsv` (jerarquía por `parent_slug`, sinónimos ES) + `/api/admin/categories/import` (preview, upsert por slug, resolución madre→id en 2ª pasada). **Cupones ✅:** `parseCouponsCsv` (identidad por `code`, tipo percentage/fixed con sinónimos, %≤100) + `/api/admin/coupons/import` (preview, upsert reusando `createCoupon`/`updateCoupon`). Tests: database +12, admin +8. **Pendiente:** **clientes y posts del blog** (parser por entidad + endpoint; UI ya reutilizable).
+**Estado:** 🔶 **v1 (categorías + cupones).** Motor compartido con HU-124: `parseCsv` + `CsvImportModal` genérico (cualquier endpoint que acepte `{csv,mode,preview}`; prop `idLabel`). **Categorías ✅:** `parseCategoriesCsv` (jerarquía por `parent_slug`, sinónimos ES) + `/api/admin/categories/import` (preview, upsert por slug, resolución madre→id en 2ª pasada). **Cupones ✅:** `parseCouponsCsv` (identidad por `code`, tipo percentage/fixed con sinónimos, %≤100) + `/api/admin/coupons/import` (preview, upsert reusando `createCoupon`/`updateCoupon`). **Clientes ✅:** `parseCustomersCsv` (identidad por `email` validado, sinónimos ES) + `/api/admin/customers/import` (preview, upsert; crea registros de contacto con `stack_id=NULL`, sin tocar Stack Auth). Tests: database +17, admin +12. **Pendiente:** **posts del blog** (parser + endpoint; UI ya reutilizable).
 
 | # | Escenario | Resultado esperado |
 |---|-----------|-------------------|

@@ -3,6 +3,7 @@
 import { useState, useMemo } from 'react'
 import Link from 'next/link'
 import { PageHeader } from '@merkiai/ui'
+import CsvImportModal from '@/components/CsvImportModal'
 
 export type ClientType = 'con_cuenta' | 'sin_cuenta'
 
@@ -62,7 +63,18 @@ export default function ClientesClient({ clients }: Props) {
   return (
     <div className="space-y-6">
       {/* Header */}
-      <PageHeader title="Clientes" description={`${total} clientes en total.`} />
+      <PageHeader
+        title="Clientes"
+        description={`${total} clientes en total.`}
+        action={
+          <CsvImportModal
+            endpoint="/api/admin/customers/import"
+            entityLabel="clientes"
+            idLabel="email"
+            onDone={() => { if (typeof window !== 'undefined') window.location.reload() }}
+          />
+        }
+      />
 
       {/* Contadores */}
       <div className="grid grid-cols-3 gap-4">
