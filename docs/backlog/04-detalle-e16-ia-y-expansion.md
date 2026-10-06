@@ -409,6 +409,30 @@
 
 ---
 
+### HU-270 — Catálogo server-side: búsqueda + paginación + facetas en BD · E3 (storefront, rendimiento)
+
+> Como comprador en una tienda con catálogo grande, quiero que `/shop` cargue rápido buscando, filtrando y paginando **en el servidor**, sin que el navegador descargue todo el catálogo.
+
+**Estimación:** L (8 puntos) · **Track:** storefront + BD
+**Estado:** 🔲 Pendiente — **v1 (client-side) ya entregado** (búsqueda + paginación + sync URL en `ShopClient`; rinde bien a escala go-live de cientos–pocos miles de productos). Esta HU es la optimización para catálogos muy grandes.
+
+**Contexto/bloqueos detectados (por eso requiere migración):**
+- `products` **no tiene precio** (vive en `product_variants`), así que ordenar por precio en BD exige **denormalizar** `products.min_price`/`max_price` (columna + trigger, o vista) con **índice** para ordenar/paginar.
+- Las **facetas** (color/talla) viven en `product_variants.attributes` (**JSONB**); filtrar por ellas en BD pide **índice GIN** sobre `attributes` y, para la semántica actual (un producto califica si tiene *alguna* variante activa por cada atributo seleccionado, no necesariamente la misma), **N subconsultas `EXISTS`/intersección de `product_id`** o una **función RPC** dedicada.
+- Las **facetas disponibles** (lista de categorías + valores de atributos del catálogo) deben venir de una consulta **ligera aparte** (`getCatalogFacets`), no del grid paginado.
+
+**Diseño propuesto:** migración `min_price`/`max_price` (+ trigger o recálculo en save de variantes) + GIN sobre `attributes`; `getProductsPage(db,{search,categoryId,attrs,sort,limit,offset}) → {products,total}` (search `ilike` name/description; attrs vía intersección de `product_id` o RPC; sort por `min_price`/`featured`/`created_at`); `getCatalogFacets(db)`; `/shop` pasa a SSR por `searchParams` (el sync de URL de v1 ya deja el estado en la URL) y `ShopClient` se vuelve presentacional. Mantener fallback client-side si la migración no está aplicada.
+
+| # | Escenario | Resultado esperado |
+|---|-----------|-------------------|
+| AC-1 | Paginación | `/shop?page=N` trae solo esa página desde BD (`limit/offset` o keyset) + total |
+| AC-2 | Búsqueda | `?q` filtra en BD (name/description) sin traer todo el catálogo |
+| AC-3 | Facetas | Categorías y atributos filtran en BD; las facetas disponibles salen de consulta ligera |
+| AC-4 | Orden | Orden por precio/novedad/nombre resuelto en BD (vía `min_price` denormalizado) |
+| AC-5 | Paridad | Misma semántica de facetas que v1; sin regresión visual |
+
+---
+
 ### HU-122 — Variantes de disposición por plantilla · E3  *(dividida en 122a/122b/122c)*
 
 > **XL dividida** por superficie, para entregar valor incremental (no todo-o-nada). Todas dependen de HU-121.
