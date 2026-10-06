@@ -6,6 +6,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { platformDb } from '@/lib/platform-db'
 import { hasInternalSecret } from '@/lib/auth'
+import { addDomainToVercel, removeDomainFromVercel, type VercelResult } from '@/lib/vercel'
 
 export const dynamic = 'force-dynamic'
 
@@ -49,6 +50,8 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
   }
 
   const patch: Record<string, unknown> = {}
+  // HU-174 v2: tras guardar, (des)registrar el dominio en Vercel (enrutado + cert).
+  let vercelAction: null | { kind: 'add' | 'remove'; domain: string } = null
   if (body.status !== undefined) {
     if (!STATUSES.includes(String(body.status))) {
       return NextResponse.json({ error: `status inválido (${STATUSES.join('|')})` }, { status: 400 })
@@ -65,8 +68,12 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
   if (body.dbRef !== undefined) patch.db_ref = body.dbRef === null ? null : String(body.dbRef)
   if (body.primaryDomain !== undefined) {
     if (body.primaryDomain === null) {
+      // Capturamos el dominio actual para quitarlo también de Vercel.
+      const { data: cur } = await platformDb()
+        .from('tenants').select('primary_domain').eq('id', id).maybeSingle()
       patch.primary_domain = null
       patch.domain_status = 'none'
+      if (cur?.primary_domain) vercelAction = { kind: 'remove', domain: cur.primary_domain as string }
     } else {
       // HU-174: gating anti-hijack — solo se activa un dominio propio ya VERIFICADO.
       const domain = String(body.primaryDomain).trim().toLowerCase()
@@ -78,6 +85,7 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
       }
       patch.primary_domain = domain
       patch.domain_status = 'active'
+      vercelAction = { kind: 'add', domain }
     }
   }
   if (Object.keys(patch).length === 0) {
@@ -98,5 +106,15 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
     return NextResponse.json({ error: 'update_failed', detail: error.message }, { status: 502 })
   }
   if (!data) return NextResponse.json({ error: 'not_found' }, { status: 404 })
-  return NextResponse.json({ tenant: data })
+
+  // Aprovisionamiento en Vercel (no bloquea la activación en BD: el subdominio
+  // sigue sirviendo; si falla, se reporta para que el admin lo reintente).
+  let vercel: VercelResult | undefined
+  if (vercelAction) {
+    vercel = vercelAction.kind === 'add'
+      ? await addDomainToVercel(vercelAction.domain)
+      : await removeDomainFromVercel(vercelAction.domain)
+  }
+
+  return NextResponse.json({ tenant: data, ...(vercel ? { vercel } : {}) })
 }

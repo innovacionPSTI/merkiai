@@ -76,28 +76,35 @@ export async function verifyDomain(tenantId: string): Promise<{ ok: boolean; sta
   }
 }
 
+export interface PatchResult {
+  ok: boolean
+  error?: string
+  /** Resultado del aprovisionamiento en Vercel (alta/baja del dominio). */
+  vercel?: { ok: boolean; skipped?: boolean; error?: string; verified?: boolean }
+}
+
 /** Activa el dominio verificado (PATCH primaryDomain; el control plane lo gatea por estado). */
-export async function activateDomain(tenantId: string, domain: string): Promise<{ ok: boolean; error?: string }> {
+export async function activateDomain(tenantId: string, domain: string): Promise<PatchResult> {
   return patchPrimaryDomain(tenantId, domain)
 }
 
 /** Quita el dominio propio: vuelve al subdominio *.merkiai.com (primary_domain=null). */
-export async function removeDomain(tenantId: string): Promise<{ ok: boolean; error?: string }> {
+export async function removeDomain(tenantId: string): Promise<PatchResult> {
   return patchPrimaryDomain(tenantId, null)
 }
 
-async function patchPrimaryDomain(tenantId: string, primaryDomain: string | null): Promise<{ ok: boolean; error?: string }> {
+async function patchPrimaryDomain(tenantId: string, primaryDomain: string | null): Promise<PatchResult> {
   const b = base(); const h = headers()
   if (!b || !h) return { ok: false, error: 'Control plane no configurado.' }
   try {
     const res = await fetch(`${b}/api/internal/tenants/${tenantId}`, {
       method: 'PATCH', headers: h, cache: 'no-store', body: JSON.stringify({ primaryDomain }),
     })
+    const d = await res.json().catch(() => ({}))
     if (!res.ok) {
-      const d = await res.json().catch(() => ({}))
       return { ok: false, error: d.detail ?? d.error ?? `Error ${res.status}` }
     }
-    return { ok: true }
+    return { ok: true, vercel: d.vercel }
   } catch (e) {
     return { ok: false, error: e instanceof Error ? e.message : String(e) }
   }

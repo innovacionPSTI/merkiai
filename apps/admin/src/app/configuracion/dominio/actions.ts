@@ -48,7 +48,14 @@ export async function activateDomainAction(_prev: DomainActionState, formData: F
   const res = await activateDomain(u.tenantId, domain)
   revalidatePath('/configuracion/dominio')
   if (!res.ok) return { ok: false, error: res.error ?? 'No se pudo activar el dominio.' }
-  return { ok: true, message: 'Dominio activado. Tu tienda ya responde en tu dominio propio.' }
+  // Aviso si el alta en el hosting (Vercel) falló: la tienda sigue en el subdominio.
+  if (res.vercel && res.vercel.ok === false) {
+    return { ok: true, message: `Dominio activado, pero el alta en el hosting falló (${res.vercel.error ?? 'reintenta'}). Tu tienda sigue disponible en tu subdominio mientras se resuelve.` }
+  }
+  const prov = res.vercel?.skipped
+    ? ' Recuerda dar de alta el dominio en el hosting.'
+    : ' El certificado HTTPS puede tardar unos minutos en emitirse.'
+  return { ok: true, message: `Dominio activado.${prov}` }
 }
 
 /** Quita el dominio propio: la tienda vuelve a su subdominio *.merkiai.com. */
