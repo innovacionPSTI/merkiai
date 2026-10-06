@@ -6,6 +6,7 @@
 import {
   normalizeDomain, isValidDomain, makeVerifyToken,
   expectedTxtName, expectedTxtValue, verifyTxt,
+  expectedDnsRecords, type DnsRecord, type DnsTargets,
 } from './domain-verification'
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -18,14 +19,17 @@ export interface DomainRequestResult {
   domain?: string
   txtName?: string
   txtValue?: string
+  /** Registros A/CNAME para apuntar el dominio a la plataforma (HU-174 v2). */
+  dns?: DnsRecord[]
 }
 
 /**
  * Registra la solicitud de dominio: valida, normaliza, emite token y deja el
- * tenant en `pending`. Devuelve las instrucciones del registro TXT a publicar.
+ * tenant en `pending`. Devuelve las instrucciones del registro TXT (propiedad)
+ * y los registros A/CNAME (apuntado) a publicar.
  */
 export async function requestDomain(
-  db: Db, tenantId: string, input: string, rng: () => number = Math.random,
+  db: Db, tenantId: string, input: string, rng: () => number = Math.random, targets: DnsTargets = {},
 ): Promise<DomainRequestResult> {
   const domain = normalizeDomain(input)
   if (!isValidDomain(domain)) return { ok: false, error: 'Dominio inválido o no permitido.' }
@@ -36,7 +40,19 @@ export async function requestDomain(
   }).eq('id', tenantId)
   if (error) return { ok: false, error: error.message }
 
-  return { ok: true, domain, txtName: expectedTxtName(domain), txtValue: expectedTxtValue(token) }
+  return {
+    ok: true, domain,
+    txtName: expectedTxtName(domain), txtValue: expectedTxtValue(token),
+    dns: expectedDnsRecords(domain, targets),
+  }
+}
+
+/** Objetivos DNS de la plataforma desde el entorno (Vercel por defecto). */
+export function dnsTargetsFromEnv(): DnsTargets {
+  return {
+    aRecord: process.env.DOMAIN_A_RECORD,
+    cnameTarget: process.env.DOMAIN_CNAME_TARGET,
+  }
 }
 
 export interface DomainVerifyResult {

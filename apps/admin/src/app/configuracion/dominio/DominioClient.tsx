@@ -52,8 +52,13 @@ export default function DominioClient({ state: initial }: { state: DomainState |
   const status = STATUS[initial.domain_status] ?? STATUS.none
   const domain = initial.domain_requested ?? ''
   const instr = reqState.instructions
+  // Las instrucciones persisten vía GET (initial) o llegan recién tras registrar.
+  const txtName = instr?.txtName ?? initial.txtName
+  const txtValue = instr?.txtValue ?? initial.txtValue
+  const dns = instr?.dns ?? initial.dns ?? []
   const canVerify = initial.domain_status === 'pending' || initial.domain_status === 'verified'
   const canActivate = initial.domain_status === 'verified'
+  const inProcess = initial.domain_status !== 'none'
 
   const Msg = ({ s }: { s: DomainActionState }) =>
     s.error ? <p className="font-brand text-sm text-red-600 mt-2">{s.error}</p>
@@ -84,17 +89,17 @@ export default function DominioClient({ state: initial }: { state: DomainState |
         <Msg s={reqState} />
       </div>
 
-      {/* Paso 2 · Registro TXT */}
-      {(instr?.txtName || initial.domain_status !== 'none') && (
+      {/* Paso 2 · Registro TXT (propiedad) */}
+      {inProcess && (
         <div className="bg-white rounded-2xl p-6 shadow-sm">
           <h2 className="font-display text-brand-primary text-lg mb-1">2 · Verifica la propiedad</h2>
           <p className="font-brand text-sm text-brand-primary/50 mb-4">
             Crea este registro <strong>TXT</strong> en el DNS de tu dominio. Cuando propague, pulsa Verificar.
           </p>
-          {instr?.txtName && instr?.txtValue && (
+          {txtName && txtValue && (
             <div className="space-y-2 mb-4">
-              <Row label="Tipo / Nombre (host)" value={instr.txtName} />
-              <Row label="Valor" value={instr.txtValue} />
+              <Row label="Tipo: TXT · Nombre (host)" value={txtName} />
+              <Row label="Valor" value={txtValue} />
             </div>
           )}
           <form action={verAction}>
@@ -107,10 +112,36 @@ export default function DominioClient({ state: initial }: { state: DomainState |
         </div>
       )}
 
-      {/* Paso 3 · Activar */}
+      {/* Paso 3 · Apuntar el dominio (A / CNAME) */}
+      {inProcess && dns.length > 0 && (
+        <div className="bg-white rounded-2xl p-6 shadow-sm">
+          <h2 className="font-display text-brand-primary text-lg mb-1">3 · Apunta tu dominio</h2>
+          <p className="font-brand text-sm text-brand-primary/50 mb-4">
+            Además del TXT, crea estos registros para que tu dominio <strong>cargue</strong> la tienda.
+            El certificado HTTPS se emite solo cuando el DNS ya apunta a la plataforma (puede tardar unos minutos).
+          </p>
+          <div className="space-y-3">
+            {dns.map((r) => (
+              <div key={`${r.type}-${r.name}`} className="space-y-2">
+                {r.note && <p className="font-brand text-xs text-brand-primary/40">{r.note}</p>}
+                <div className="grid grid-cols-1 sm:grid-cols-[auto_1fr] gap-2">
+                  <Row label="Tipo / Nombre (host)" value={`${r.type} · ${r.name}`} />
+                  <Row label={r.type === 'CNAME' ? 'Destino' : 'Valor'} value={r.value} />
+                </div>
+              </div>
+            ))}
+          </div>
+          <p className="font-brand text-xs text-brand-primary/40 mt-3">
+            Tip: si tu proveedor no permite un registro <code>A</code> en el apex, usa un <code>ALIAS</code>/<code>ANAME</code> al mismo destino.
+            Mientras tanto tu tienda sigue disponible en tu subdominio <code>*.merkiai.com</code>.
+          </p>
+        </div>
+      )}
+
+      {/* Paso 4 · Activar */}
       {(canActivate || initial.domain_status === 'active') && (
         <div className="bg-white rounded-2xl p-6 shadow-sm">
-          <h2 className="font-display text-brand-primary text-lg mb-1">3 · Activar</h2>
+          <h2 className="font-display text-brand-primary text-lg mb-1">4 · Activar</h2>
           <p className="font-brand text-sm text-brand-primary/50 mb-4">
             {initial.domain_status === 'active'
               ? 'Tu tienda ya responde en tu dominio propio.'

@@ -20,9 +20,14 @@ async function fetchTenantHost(tenantId: string): Promise<string | null> {
     const d = await res.json()
     const t = d?.tenant
     if (!t) return null
-    // Dominio propio (solo se setea cuando está activo, HU-174) o el subdominio.
-    if (t.primary_domain) return t.primary_domain as string
+    // HU-174 v2: la vista previa usa SIEMPRE el subdominio estable (*.merkiai.com),
+    // aunque el tenant ya tenga dominio propio activo. Motivos:
+    //  · el `frame-src` del CSP del admin solo permite `*.${BASE_DOMAIN}` (no el
+    //    dominio propio), así que embeber el dominio propio rompería el iframe;
+    //  · el subdominio siempre resuelve al tenant (resolve-tenant hace OR de
+    //    primary_domain/subdomain), y su cert/CDN ya está listo.
     if (t.subdomain) return `${t.subdomain}.${BASE_DOMAIN}`
+    if (t.primary_domain) return t.primary_domain as string
     return null
   } catch {
     return null

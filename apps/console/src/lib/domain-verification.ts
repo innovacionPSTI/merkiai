@@ -51,6 +51,41 @@ export function expectedTxtValue(token: string): string {
   return `merkiai-domain-verification=${token}`
 }
 
+// ── Apuntar el dominio a la plataforma (A / CNAME) ────────────────────────────
+
+export interface DnsRecord {
+  type: 'TXT' | 'A' | 'CNAME'
+  /** Host/nombre del registro ('@' = apex; 'www'; o el nombre del TXT). */
+  name: string
+  value: string
+  note?: string
+}
+
+export interface DnsTargets {
+  /** IP del registro A del apex (en Vercel, 76.76.21.21 por defecto). */
+  aRecord?: string
+  /** Destino CNAME para el subdominio www (en Vercel, cname.vercel-dns.com). */
+  cnameTarget?: string
+}
+
+const DEFAULT_A_RECORD = '76.76.21.21'
+const DEFAULT_CNAME = 'cname.vercel-dns.com'
+
+/**
+ * Registros DNS que el comerciante debe crear para que su dominio APUNTE a la
+ * plataforma (además del TXT de propiedad). El apex va por A; `www` por CNAME.
+ * Los destinos son configurables según el hosting (Vercel por defecto).
+ */
+export function expectedDnsRecords(domain: string, targets: DnsTargets = {}): DnsRecord[] {
+  const d = normalizeDomain(domain)
+  const a = targets.aRecord || DEFAULT_A_RECORD
+  const cname = targets.cnameTarget || DEFAULT_CNAME
+  return [
+    { type: 'A',     name: '@',   value: a,     note: `Apunta tu dominio (${d}) a la plataforma.` },
+    { type: 'CNAME', name: 'www', value: cname, note: `Apunta www.${d} a la plataforma (opcional pero recomendado).` },
+  ]
+}
+
 /**
  * ¿Alguno de los registros TXT resueltos prueba la propiedad?
  * `records` puede venir como strings o como fragmentos (p. ej. dns.resolveTxt

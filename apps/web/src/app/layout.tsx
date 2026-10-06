@@ -7,6 +7,7 @@ import { stackServerApp } from '../stack'
 import CartSyncOnLogin from '@/components/auth/CartSyncOnLogin'
 import { buildThemeCSS } from '@/lib/theme-css'
 import { getStoreContext } from '@/lib/store-context'
+import { headers } from 'next/headers'
 import './globals.css'
 
 // ── Fuentes (next/font: build-time, self-hosted) ──────────────────────────────
@@ -81,12 +82,20 @@ const nunito = Nunito({
 
 // ── Metadata ──────────────────────────────────────────────────────────────────
 
-const BASE_URL = (process.env.NEXT_PUBLIC_SITE_URL ?? '').replace(/\/$/, '')
-
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 export async function generateMetadata(_props: object, _parent: ResolvingMetadata): Promise<Metadata> {
   // HU-217: metadata (título/favicon/SEO) del contexto de tienda (por tenant).
   const { config } = await getStoreContext().catch(() => ({ config: null }))
+
+  // HU-174 v2: la base para canónicas/OG es el HOST de la petición (dominio
+  // propio o subdominio del tenant), no un NEXT_PUBLIC_SITE_URL fijo que
+  // apuntaría siempre a una sola tienda. Fallback al env en dev/single-tenant.
+  const h = await headers()
+  const host = h.get('x-forwarded-host') ?? h.get('host') ?? ''
+  const proto = h.get('x-forwarded-proto') ?? (host.includes('localhost') ? 'http' : 'https')
+  const BASE_URL = host
+    ? `${proto}://${host}`
+    : (process.env.NEXT_PUBLIC_SITE_URL ?? '').replace(/\/$/, '')
 
   const storeName   = config?.store_name   ?? 'Tienda en línea'
   const description = config?.store_description ?? 'Bienvenido a nuestra tienda en línea. Explora nuestros productos y realiza tu pedido de forma segura.'

@@ -5,10 +5,21 @@
  */
 export type DomainStatus = 'none' | 'pending' | 'verified' | 'active'
 
+export interface DnsRecord {
+  type: 'TXT' | 'A' | 'CNAME'
+  name: string
+  value: string
+  note?: string
+}
+
 export interface DomainState {
   primary_domain: string | null
   domain_status: DomainStatus
   domain_requested: string | null
+  /** Instrucciones vigentes (presentes mientras hay un dominio en proceso). */
+  txtName?: string
+  txtValue?: string
+  dns?: DnsRecord[]
 }
 
 export interface DomainInstructions {
@@ -17,6 +28,7 @@ export interface DomainInstructions {
   domain?: string
   txtName?: string
   txtValue?: string
+  dns?: DnsRecord[]
 }
 
 function base(): string | null {

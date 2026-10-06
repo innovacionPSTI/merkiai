@@ -5,6 +5,7 @@ import {
   expectedTxtName,
   expectedTxtValue,
   verifyTxt,
+  expectedDnsRecords,
 } from '../domain-verification'
 
 describe('normalizeDomain', () => {
@@ -54,5 +55,23 @@ describe('verifyTxt', () => {
   it('rechaza token distinto o ausente', () => {
     expect(verifyTxt(['merkiai-domain-verification=otro'], token)).toBe(false)
     expect(verifyTxt([], token)).toBe(false)
+  })
+})
+
+describe('expectedDnsRecords', () => {
+  it('devuelve A (apex) + CNAME (www) con defaults de Vercel', () => {
+    const recs = expectedDnsRecords('WWW.Mitienda.com/')
+    expect(recs).toEqual([
+      expect.objectContaining({ type: 'A', name: '@', value: '76.76.21.21' }),
+      expect.objectContaining({ type: 'CNAME', name: 'www', value: 'cname.vercel-dns.com' }),
+    ])
+    // normaliza el dominio en las notas
+    expect(recs[0].note).toContain('mitienda.com')
+  })
+
+  it('respeta destinos configurados (otro hosting)', () => {
+    const recs = expectedDnsRecords('mitienda.com', { aRecord: '1.2.3.4', cnameTarget: 'edge.ejemplo.net' })
+    expect(recs[0].value).toBe('1.2.3.4')
+    expect(recs[1].value).toBe('edge.ejemplo.net')
   })
 })
