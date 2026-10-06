@@ -98,6 +98,8 @@ export type Database = {
           seo_desc: string | null
           created_at: string
           variant_options: Json | null
+          min_price: number | null
+          max_price: number | null
         }
         Insert: {
           id?: number
@@ -114,6 +116,8 @@ export type Database = {
           seo_desc?: string | null
           created_at?: string
           variant_options?: Json | null
+          min_price?: number | null
+          max_price?: number | null
         }
         Update: {
           id?: number
@@ -129,6 +133,8 @@ export type Database = {
           seo_desc?: string | null
           created_at?: string
           variant_options?: Json | null
+          min_price?: number | null
+          max_price?: number | null
         }
         Relationships: [
           {

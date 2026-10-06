@@ -51,11 +51,11 @@ describe('paginate', () => {
 
 describe('parseShopUrl', () => {
   it('lee defaults cuando no hay params', () => {
-    expect(parseShopUrl({})).toEqual({ q: '', categoria: null, orden: 'destacados', page: 1 })
+    expect(parseShopUrl({})).toEqual({ q: '', categoria: null, orden: 'destacados', page: 1, attrs: {} })
   })
-  it('lee q/categoria/orden/page', () => {
-    expect(parseShopUrl({ q: 'cafe', categoria: '3', orden: 'precio-asc', page: '2' }))
-      .toEqual({ q: 'cafe', categoria: 3, orden: 'precio-asc', page: 2 })
+  it('lee q/categoria/orden/page/attrs', () => {
+    expect(parseShopUrl({ q: 'cafe', categoria: '3', orden: 'precio-asc', page: '2', attr_Color: 'Rojo' }))
+      .toEqual({ q: 'cafe', categoria: 3, orden: 'precio-asc', page: 2, attrs: { Color: 'Rojo' } })
   })
   it('ignora categoria no numérica y page<=1', () => {
     expect(parseShopUrl({ categoria: 'x', page: '1' })).toMatchObject({ categoria: null, page: 1 })
@@ -64,14 +64,14 @@ describe('parseShopUrl', () => {
 
 describe('buildShopQuery', () => {
   it('omite los valores por defecto', () => {
-    expect(buildShopQuery({ q: '', categoria: null, orden: 'destacados', page: 1 })).toBe('')
+    expect(buildShopQuery({ q: '', categoria: null, orden: 'destacados', page: 1, attrs: {} })).toBe('')
   })
-  it('serializa solo lo no-default', () => {
-    expect(buildShopQuery({ q: 'cafe', categoria: 3, orden: 'nombre', page: 2 }))
-      .toBe('q=cafe&categoria=3&orden=nombre&page=2')
+  it('serializa solo lo no-default (atributos como attr_<nombre>)', () => {
+    expect(buildShopQuery({ q: 'cafe', categoria: 3, orden: 'nombre', page: 2, attrs: { Color: 'Rojo' } }))
+      .toBe('q=cafe&categoria=3&orden=nombre&page=2&attr_Color=Rojo')
   })
   it('round-trip con parseShopUrl', () => {
-    const s = { q: 'té verde', categoria: 5, orden: 'precio-desc', page: 4 }
+    const s = { q: 'té verde', categoria: 5, orden: 'precio-desc', page: 4, attrs: { Color: 'Azul', Talla: 'M' } }
     expect(parseShopUrl(Object.fromEntries(new URLSearchParams(buildShopQuery(s))))).toEqual(s)
   })
 })

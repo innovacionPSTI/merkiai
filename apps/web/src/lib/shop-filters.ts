@@ -46,6 +46,8 @@ export interface ShopUrlState {
   categoria: number | null
   orden: string
   page: number
+  /** Atributos seleccionados { Color: 'Rojo' } (en la URL como attr_<Nombre>). */
+  attrs: Record<string, string>
 }
 
 type RawParams = Record<string, string | string[] | undefined>
@@ -53,15 +55,25 @@ type RawParams = Record<string, string | string[] | undefined>
 const str = (v: string | string[] | undefined): string =>
   (Array.isArray(v) ? v[0] : v) ?? ''
 
+const ATTR_PREFIX = 'attr_'
+
 /** Lee el estado inicial del shop desde los searchParams (con defaults). */
 export function parseShopUrl(sp: RawParams): ShopUrlState {
   const cat = str(sp.categoria)
   const pageNum = parseInt(str(sp.page), 10)
+  const attrs: Record<string, string> = {}
+  for (const [k, v] of Object.entries(sp)) {
+    if (k.startsWith(ATTR_PREFIX)) {
+      const val = str(v)
+      if (val) attrs[k.slice(ATTR_PREFIX.length)] = val
+    }
+  }
   return {
     q: str(sp.q),
     categoria: cat && Number.isFinite(Number(cat)) ? Number(cat) : null,
     orden: str(sp.orden) || 'destacados',
     page: Number.isFinite(pageNum) && pageNum > 1 ? pageNum : 1,
+    attrs,
   }
 }
 
@@ -72,5 +84,9 @@ export function buildShopQuery(s: ShopUrlState): string {
   if (s.categoria != null) p.set('categoria', String(s.categoria))
   if (s.orden && s.orden !== 'destacados') p.set('orden', s.orden)
   if (s.page > 1) p.set('page', String(s.page))
+  // Orden estable de atributos para URLs canónicas.
+  for (const k of Object.keys(s.attrs).sort()) {
+    if (s.attrs[k]) p.set(ATTR_PREFIX + k, s.attrs[k])
+  }
   return p.toString()
 }

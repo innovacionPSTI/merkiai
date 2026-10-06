@@ -1,14 +1,14 @@
 'use client'
 
-import { useState, useMemo, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { Icon } from '@merkiai/ui'
 import { useCartStore } from '@/store/cart'
 import type { CartItem } from '@/store/cart'
-import type { ProductWithVariants } from '@merkiai/database'
+import type { ProductWithVariants, CatalogFacets } from '@merkiai/database'
 import { getProductOptions, getVariantAttrs, getVariantLabel, isColorValue, swatchColor } from '@/lib/variant-utils'
-import { matchesQuery, paginate, parseShopUrl, buildShopQuery } from '@/lib/shop-filters'
+import { buildShopQuery, type ShopUrlState } from '@/lib/shop-filters'
 
 const SORTS = [
   { value: 'destacados', label: 'Destacados' },
@@ -17,19 +17,16 @@ const SORTS = [
   { value: 'nombre',      label: 'A–Z' },
 ]
 
-/** Productos por página en la grilla de la tienda. */
-const PAGE_SIZE = 12
-
 interface Props {
-  products: ProductWithVariants[]
-  searchParams: Record<string, string | string[] | undefined>
-  /** Densidad de grilla por plantilla activa (HU-122a): 'comfortable' | 'compact'. */
+  products: ProductWithVariants[]   // HU-270: página actual, ya filtrada en BD
+  total: number
+  pageSize: number
+  facets: CatalogFacets
+  state: ShopUrlState
   gridVariant?: string
-  /** HU-264: mapa de colores de swatch de la tienda (valor→hex). */
   colorMap?: Record<string, string>
 }
 
-/** Clases de la grilla de productos según la variante de disposición. */
 const GRID_CLASSES: Record<string, string> = {
   comfortable: 'grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-6',
   compact: 'grid grid-cols-2 sm:grid-cols-3 xl:grid-cols-4 gap-4',
@@ -55,76 +52,45 @@ function FilterPanel({
 }: FilterPanelProps) {
   return (
     <div className="space-y-6">
-      {/* Header row */}
       <div className="flex items-center justify-between">
         <h2 className="font-brand font-semibold text-brand-primary text-sm">Filtros</h2>
         {hasFilters && (
-          <button
-            onClick={onClearFilters}
-            className="font-brand text-xs text-brand-primary/40 hover:text-brand-primary underline transition-colors"
-          >
+          <button onClick={onClearFilters} className="font-brand text-xs text-brand-primary/40 hover:text-brand-primary underline transition-colors">
             Limpiar
           </button>
         )}
       </div>
 
-      {/* Categorías */}
       {categories.length > 1 && (
         <div>
-          <p className="font-brand text-xs font-semibold text-brand-primary/50 uppercase tracking-wider mb-3">
-            Categoría
-          </p>
+          <p className="font-brand text-xs font-semibold text-brand-primary/50 uppercase tracking-wider mb-3">Categoría</p>
           <div className="space-y-1.5">
-            <FilterRow
-              label="Todas"
-              active={selectedCategory === null}
-              onClick={() => onSelectCategory(null)}
-            />
+            <FilterRow label="Todas" active={selectedCategory === null} onClick={() => onSelectCategory(null)} />
             {categories.map((c) => (
-              <FilterRow
-                key={c.id}
-                label={c.name}
-                active={selectedCategory === c.id}
-                onClick={() => onSelectCategory(selectedCategory === c.id ? null : c.id)}
-              />
+              <FilterRow key={c.id} label={c.name} active={selectedCategory === c.id}
+                onClick={() => onSelectCategory(selectedCategory === c.id ? null : c.id)} />
             ))}
           </div>
         </div>
       )}
 
-      {/* Atributos dinámicos */}
       {attrFilters.map((f) => (
         <div key={f.name}>
-          <p className="font-brand text-xs font-semibold text-brand-primary/50 uppercase tracking-wider mb-3">
-            {f.name}
-          </p>
+          <p className="font-brand text-xs font-semibold text-brand-primary/50 uppercase tracking-wider mb-3">{f.name}</p>
           {f.values.every((v) => isColorValue(v)) ? (
-            // Color swatches
             <div className="flex flex-wrap gap-2">
               {f.values.map((v) => (
-                <button
-                  key={v}
-                  onClick={() => onToggleAttr(f.name, v)}
-                  title={v}
+                <button key={v} onClick={() => onToggleAttr(f.name, v)} title={v}
                   className={`w-7 h-7 rounded-full border-2 transition-all ${
-                    selectedAttrs[f.name] === v
-                      ? 'border-brand-primary scale-110 shadow-md'
-                      : 'border-transparent hover:border-brand-primary/40'
+                    selectedAttrs[f.name] === v ? 'border-brand-primary scale-110 shadow-md' : 'border-transparent hover:border-brand-primary/40'
                   }`}
-                  style={{ backgroundColor: swatchColor(v, colorMap) }}
-                />
+                  style={{ backgroundColor: swatchColor(v, colorMap) }} />
               ))}
             </div>
           ) : (
-            // Pills
             <div className="space-y-1.5">
               {f.values.map((v) => (
-                <FilterRow
-                  key={v}
-                  label={v}
-                  active={selectedAttrs[f.name] === v}
-                  onClick={() => onToggleAttr(f.name, v)}
-                />
+                <FilterRow key={v} label={v} active={selectedAttrs[f.name] === v} onClick={() => onToggleAttr(f.name, v)} />
               ))}
             </div>
           )}
@@ -136,14 +102,10 @@ function FilterPanel({
 
 function FilterRow({ label, active, onClick }: { label: string; active: boolean; onClick: () => void }) {
   return (
-    <button
-      onClick={onClick}
+    <button onClick={onClick}
       className={`w-full text-left flex items-center gap-2.5 font-brand text-sm px-3 py-2 rounded-xl transition-colors ${
-        active
-          ? 'bg-brand-primary text-brand-cream'
-          : 'text-brand-primary hover:bg-brand-primary/5'
-      }`}
-    >
+        active ? 'bg-brand-primary text-brand-cream' : 'text-brand-primary hover:bg-brand-primary/5'
+      }`}>
       <span className={`w-4 h-4 rounded border-2 flex items-center justify-center shrink-0 transition-colors ${
         active ? 'border-brand-cream bg-brand-cream' : 'border-brand-primary/20'
       }`}>
@@ -158,128 +120,58 @@ function FilterRow({ label, active, onClick }: { label: string; active: boolean;
   )
 }
 
-// ── Main component ────────────────────────────────────────────────────────────
+// ── Main component (presentacional; navega por URL → SSR, HU-270) ─────────────
 
-export default function ShopClient({ products, searchParams, gridVariant = 'comfortable', colorMap }: Props) {
+export default function ShopClient({ products, total, pageSize, facets, state, gridVariant = 'comfortable', colorMap }: Props) {
   const router = useRouter()
-  const initial = useMemo(() => parseShopUrl(searchParams), [searchParams])
-  const [selectedCategory, setSelectedCategory] = useState<number | null>(initial.categoria)
-  const [selectedAttrs, setSelectedAttrs] = useState<Record<string, string>>({})
-  const [sort, setSort] = useState(initial.orden)
-  const [query, setQuery] = useState(initial.q)
-  const [page, setPage] = useState(initial.page)
-  const [mobileFiltersOpen, setMobileFiltersOpen] = useState(false)
   const addItem = useCartStore((s) => s.addItem)
-
-  // Sincroniza q/categoría/orden/página con la URL (compartible + botón atrás).
-  // Se omite en el primer render para no sobrescribir la URL que llegó del SSR.
-  const url = buildShopQuery({ q: query, categoria: selectedCategory, orden: sort, page })
-  const [mounted, setMounted] = useState(false)
-  useEffect(() => { setMounted(true) }, [])
-  useEffect(() => {
-    if (!mounted) return
-    router.replace(url ? `?${url}` : '?', { scroll: false })
-  }, [url, mounted, router])
+  const [mobileFiltersOpen, setMobileFiltersOpen] = useState(false)
+  const [queryInput, setQueryInput] = useState(state.q)
 
   const fmt = (n: number) =>
     new Intl.NumberFormat('es-CO', { style: 'currency', currency: 'COP', maximumFractionDigits: 0 }).format(n)
 
-  // Derive categories from products
-  const categories = useMemo(() => {
-    const map = new Map<number, string>()
-    products.forEach((p) => { if (p.category) map.set(p.category.id, p.category.name) })
-    return [...map.entries()].map(([id, name]) => ({ id, name }))
-  }, [products])
+  /** Navega con un estado parcial; resetea a página 1 salvo que se indique page. */
+  function nav(partial: Partial<ShopUrlState>) {
+    const next: ShopUrlState = { ...state, page: 1, ...partial }
+    const qs = buildShopQuery(next)
+    router.push(qs ? `?${qs}` : '?', { scroll: false })
+  }
 
-  // Derive attribute filters from all active variants across all products
-  const attrFilters = useMemo(() => {
-    const optionMap = new Map<string, Set<string>>()
-    products.forEach((p) => {
-      const opts = getProductOptions(p)
-      opts.forEach((opt) => {
-        if (!optionMap.has(opt)) optionMap.set(opt, new Set())
-        p.variants.filter((v) => v.active).forEach((v) => {
-          const attrs = getVariantAttrs(v, opts)
-          if (attrs[opt]) optionMap.get(opt)!.add(attrs[opt])
-        })
-      })
-    })
-    return [...optionMap.entries()]
-      .filter(([, vals]) => vals.size >= 2)
-      .map(([name, vals]) => ({ name, values: [...vals] }))
-  }, [products])
-
-  const filtered = useMemo(() => {
-    let list = products.filter((p) => {
-      if (selectedCategory && p.category?.id !== selectedCategory) return false
-      // Búsqueda por texto: nombre, descripción, categoría o SKU de variante.
-      if (!matchesQuery(p, query)) return false
-      const opts = getProductOptions(p)
-      for (const [opt, val] of Object.entries(selectedAttrs)) {
-        if (!val) continue
-        const hasVariant = p.variants.some((v) => {
-          if (!v.active) return false
-          return getVariantAttrs(v, opts)[opt] === val
-        })
-        if (!hasVariant) return false
-      }
-      return true
-    })
-
-    switch (sort) {
-      case 'precio-asc':
-        list = [...list].sort((a, b) =>
-          Math.min(...a.variants.map((v) => v.price)) - Math.min(...b.variants.map((v) => v.price))
-        )
-        break
-      case 'precio-desc':
-        list = [...list].sort((a, b) =>
-          Math.min(...b.variants.map((v) => v.price)) - Math.min(...a.variants.map((v) => v.price))
-        )
-        break
-      case 'nombre':
-        list = [...list].sort((a, b) => a.name.localeCompare(b.name, 'es'))
-        break
-      default:
-        list = [...list].sort((a, b) => (b.featured ? 1 : 0) - (a.featured ? 1 : 0))
-    }
-    return list
-  }, [products, selectedCategory, selectedAttrs, sort, query])
-
-  // Paginación: vuelve a la página 1 cuando cambian filtros/búsqueda/orden.
-  // Salta el primer render para respetar la página que llegó por la URL (SSR).
-  const filterSig = JSON.stringify([selectedCategory, selectedAttrs, sort, query])
+  // Búsqueda con debounce: sincroniza el input local con la URL (SSR).
+  useEffect(() => { setQueryInput(state.q) }, [state.q])
+  const firstSearch = useRef(true)
   useEffect(() => {
-    if (!mounted) return
-    setPage(1)
+    if (firstSearch.current) { firstSearch.current = false; return }
+    if (queryInput === state.q) return
+    const t = setTimeout(() => nav({ q: queryInput }), 350)
+    return () => clearTimeout(t)
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [filterSig])
-  const { items: paged, pageCount, safePage } = useMemo(
-    () => paginate(filtered, page, PAGE_SIZE),
-    [filtered, page],
-  )
+  }, [queryInput])
 
-  const hasFilters = selectedCategory !== null || Object.values(selectedAttrs).some(Boolean) || query.trim() !== ''
-  const hasAnyFilters = categories.length > 1 || attrFilters.length > 0
+  const selectedCategory = state.categoria
+  const selectedAttrs = state.attrs
+  const hasFilters = selectedCategory !== null || Object.values(selectedAttrs).some(Boolean) || state.q.trim() !== ''
+  const hasAnyFilters = facets.categories.length > 1 || facets.attrFilters.length > 0
   const activeFilterCount = (selectedCategory ? 1 : 0) + Object.values(selectedAttrs).filter(Boolean).length
 
-  function clearFilters() {
-    setSelectedCategory(null)
-    setSelectedAttrs({})
-    setQuery('')
-  }
-
   function toggleAttr(opt: string, val: string) {
-    setSelectedAttrs((prev) => ({ ...prev, [opt]: prev[opt] === val ? '' : val }))
+    const nextAttrs = { ...selectedAttrs }
+    if (nextAttrs[opt] === val) delete nextAttrs[opt]
+    else nextAttrs[opt] = val
+    nav({ attrs: nextAttrs })
   }
+  function clearFilters() { nav({ q: '', categoria: null, attrs: {} }) }
+
+  const pageCount = Math.max(1, Math.ceil(total / pageSize))
 
   const filterPanelProps: FilterPanelProps = {
-    categories,
-    attrFilters,
+    categories: facets.categories,
+    attrFilters: facets.attrFilters,
     selectedCategory,
     selectedAttrs,
     hasFilters,
-    onSelectCategory: setSelectedCategory,
+    onSelectCategory: (id) => nav({ categoria: id }),
     onToggleAttr: toggleAttr,
     onClearFilters: clearFilters,
     colorMap,
@@ -289,38 +181,34 @@ export default function ShopClient({ products, searchParams, gridVariant = 'comf
     <div className="min-h-screen bg-brand-cream pt-24">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
 
-        {/* Page header */}
         <div className="flex items-center justify-between mb-8">
           <div>
             <h1 className="font-display text-brand-primary text-section">Catálogo</h1>
             <p className="font-brand text-sm text-brand-primary/50 mt-1">
-              {filtered.length} {filtered.length === 1 ? 'producto' : 'productos'}
+              {total} {total === 1 ? 'producto' : 'productos'}
               {hasFilters && <span className="ml-1 text-brand-primary/40">filtrados</span>}
             </p>
           </div>
 
           <div className="flex items-center gap-3">
-            {/* Búsqueda por texto */}
-            <div className="relative">
+            {/* Búsqueda por texto (debounce → URL → SSR) */}
+            <form onSubmit={(e) => { e.preventDefault(); nav({ q: queryInput }) }} className="relative">
               <span className="absolute left-3 top-1/2 -translate-y-1/2 text-brand-primary/40 pointer-events-none">
                 <Icon name="search" size={16} />
               </span>
               <input
                 type="search"
-                value={query}
-                onChange={(e) => setQuery(e.target.value)}
+                value={queryInput}
+                onChange={(e) => setQueryInput(e.target.value)}
                 placeholder="Buscar productos…"
                 aria-label="Buscar productos"
                 className="font-brand text-sm border border-brand-primary/20 rounded-full pl-9 pr-4 py-2 bg-white text-brand-primary focus:outline-none focus:border-brand-primary w-40 sm:w-56 transition-all"
               />
-            </div>
+            </form>
 
-            {/* Mobile: filtros button */}
             {hasAnyFilters && (
-              <button
-                onClick={() => setMobileFiltersOpen(true)}
-                className="lg:hidden relative font-brand text-sm border border-brand-primary/20 bg-white text-brand-primary rounded-full px-4 py-2 flex items-center gap-2 hover:border-brand-primary transition-colors"
-              >
+              <button onClick={() => setMobileFiltersOpen(true)}
+                className="lg:hidden relative font-brand text-sm border border-brand-primary/20 bg-white text-brand-primary rounded-full px-4 py-2 flex items-center gap-2 hover:border-brand-primary transition-colors">
                 <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth={1.8} viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" d="M3 4.5h14.25M3 9h9.75M3 13.5h5.25m5.25-.75 2.25 2.25m0 0 2.25 2.25M15.75 12l2.25 2.25M12 20.25l2.25-2.25" />
                 </svg>
@@ -333,46 +221,38 @@ export default function ShopClient({ products, searchParams, gridVariant = 'comf
               </button>
             )}
 
-            {/* Sort */}
-            <select
-              value={sort}
-              onChange={(e) => setSort(e.target.value)}
-              className="font-brand text-sm border border-brand-primary/20 rounded-full px-4 py-2 bg-white text-brand-primary focus:outline-none focus:border-brand-primary"
-            >
+            <select value={state.orden} onChange={(e) => nav({ orden: e.target.value })}
+              className="font-brand text-sm border border-brand-primary/20 rounded-full px-4 py-2 bg-white text-brand-primary focus:outline-none focus:border-brand-primary">
               {SORTS.map((s) => <option key={s.value} value={s.value}>{s.label}</option>)}
             </select>
           </div>
         </div>
 
-        {/* Main layout: sidebar + grid */}
         <div className="flex gap-8 items-start">
-
-          {/* ── Desktop sidebar ── */}
           {hasAnyFilters && (
             <aside className="hidden lg:block w-56 shrink-0 sticky top-28 bg-white rounded-2xl shadow-sm p-5">
               <FilterPanel {...filterPanelProps} />
             </aside>
           )}
 
-          {/* ── Product grid ── */}
           <div className="flex-1 min-w-0">
-            {filtered.length === 0 ? (
+            {products.length === 0 ? (
               <div className="py-24 text-center">
                 <p className="font-brand text-brand-primary/40 text-xl mb-4">No hay productos con estos filtros.</p>
-                <button onClick={clearFilters} className="font-brand text-sm text-brand-primary underline">
-                  Limpiar filtros
-                </button>
+                {hasFilters && (
+                  <button onClick={clearFilters} className="font-brand text-sm text-brand-primary underline">Limpiar filtros</button>
+                )}
               </div>
             ) : (
               <>
                 <div className={GRID_CLASSES[gridVariant] ?? GRID_CLASSES.comfortable}>
-                  {paged.map((product) => (
+                  {products.map((product) => (
                     <ProductCard key={product.id} product={product} fmt={fmt} addItem={addItem} colorMap={colorMap} />
                   ))}
                 </div>
                 {pageCount > 1 && (
-                  <Pager page={safePage} pageCount={pageCount} onPage={(p) => {
-                    setPage(p)
+                  <Pager page={state.page} pageCount={pageCount} onPage={(p) => {
+                    nav({ page: p })
                     if (typeof window !== 'undefined') window.scrollTo({ top: 0, behavior: 'smooth' })
                   }} />
                 )}
@@ -382,35 +262,22 @@ export default function ShopClient({ products, searchParams, gridVariant = 'comf
         </div>
       </div>
 
-      {/* ── Mobile filter drawer ── */}
       {mobileFiltersOpen && (
         <div className="fixed inset-0 z-50 lg:hidden">
-          {/* Backdrop */}
-          <div
-            className="absolute inset-0 bg-black/40 backdrop-blur-sm"
-            onClick={() => setMobileFiltersOpen(false)}
-          />
-          {/* Drawer */}
+          <div className="absolute inset-0 bg-black/40 backdrop-blur-sm" onClick={() => setMobileFiltersOpen(false)} />
           <div className="absolute inset-y-0 left-0 w-72 bg-white shadow-xl overflow-y-auto">
             <div className="flex items-center justify-between px-5 py-4 border-b border-gray-100">
               <h2 className="font-brand font-semibold text-brand-primary">Filtros</h2>
-              <button
-                onClick={() => setMobileFiltersOpen(false)}
-                aria-label="Cerrar filtros"
-                className="font-brand text-sm text-brand-primary/40 hover:text-brand-primary inline-flex"
-              >
+              <button onClick={() => setMobileFiltersOpen(false)} aria-label="Cerrar filtros"
+                className="font-brand text-sm text-brand-primary/40 hover:text-brand-primary inline-flex">
                 <Icon name="close" size={18} />
               </button>
             </div>
-            <div className="p-5">
-              <FilterPanel {...filterPanelProps} />
-            </div>
+            <div className="p-5"><FilterPanel {...filterPanelProps} /></div>
             <div className="sticky bottom-0 border-t border-gray-100 p-4 bg-white">
-              <button
-                onClick={() => setMobileFiltersOpen(false)}
-                className="w-full font-brand text-sm bg-brand-primary text-brand-cream py-3 rounded-xl hover:bg-brand-dark transition-colors"
-              >
-                Ver {filtered.length} {filtered.length === 1 ? 'producto' : 'productos'}
+              <button onClick={() => setMobileFiltersOpen(false)}
+                className="w-full font-brand text-sm bg-brand-primary text-brand-cream py-3 rounded-xl hover:bg-brand-dark transition-colors">
+                Ver {total} {total === 1 ? 'producto' : 'productos'}
               </button>
             </div>
           </div>
@@ -423,12 +290,10 @@ export default function ShopClient({ products, searchParams, gridVariant = 'comf
 // ── Pager ─────────────────────────────────────────────────────────────────────
 
 function Pager({ page, pageCount, onPage }: { page: number; pageCount: number; onPage: (p: number) => void }) {
-  // Ventana compacta de páginas alrededor de la actual.
   const pages: number[] = []
   const from = Math.max(1, page - 2)
   const to = Math.min(pageCount, page + 2)
   for (let i = from; i <= to; i++) pages.push(i)
-
   const btn = 'font-brand text-sm w-9 h-9 rounded-full flex items-center justify-center transition-colors disabled:opacity-40'
 
   return (
@@ -496,14 +361,10 @@ function ProductCard({ product, fmt, addItem, colorMap }: {
 
   return (
     <div className="group bg-white rounded-2xl overflow-hidden shadow-card hover:shadow-card-hover transition-all duration-300">
-      {/* Image */}
       <Link href={`/shop/${product.slug}`} className="block relative overflow-hidden bg-brand-cream-warm h-56">
         {image?.url ? (
-          <img
-            src={image.url}
-            alt={image.alt || product.name}
-            className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
-          />
+          <img src={image.url} alt={image.alt || product.name}
+            className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105" />
         ) : (
           <div className="w-full h-full flex items-center justify-center">
             <span className="font-display text-brand-primary/10 text-6xl">▲</span>
@@ -517,7 +378,6 @@ function ProductCard({ product, fmt, addItem, colorMap }: {
         <div className="absolute bottom-0 left-0 right-0 h-8 bg-white rounded-t-[60%]" />
       </Link>
 
-      {/* Info */}
       <div className="p-4 pt-1">
         <Link href={`/shop/${product.slug}`}>
           <p className="font-brand text-[10px] text-brand-primary/40 uppercase tracking-wider">{product.category?.name ?? ''}</p>
@@ -529,12 +389,8 @@ function ProductCard({ product, fmt, addItem, colorMap }: {
         {colorValues.length > 0 && (
           <div className="flex gap-1.5 mt-2">
             {colorValues.slice(0, 6).map((v) => (
-              <div
-                key={v}
-                title={v}
-                className="w-4 h-4 rounded-full border border-gray-200"
-                style={{ backgroundColor: swatchColor(v, colorMap) }}
-              />
+              <div key={v} title={v} className="w-4 h-4 rounded-full border border-gray-200"
+                style={{ backgroundColor: swatchColor(v, colorMap) }} />
             ))}
             {colorValues.length > 6 && (
               <span className="font-brand text-[10px] text-brand-primary/40">+{colorValues.length - 6}</span>
@@ -545,9 +401,7 @@ function ProductCard({ product, fmt, addItem, colorMap }: {
         {chipValues.length > 0 && (
           <div className="flex gap-1 mt-2 flex-wrap">
             {chipValues.map((v) => (
-              <span key={v} className="font-brand text-[10px] border border-brand-primary/20 text-brand-primary/60 rounded px-1.5 py-0.5">
-                {v}
-              </span>
+              <span key={v} className="font-brand text-[10px] border border-brand-primary/20 text-brand-primary/60 rounded px-1.5 py-0.5">{v}</span>
             ))}
             {chipOpt && activeVariants.length > chipValues.length && (
               <span className="font-brand text-[10px] text-brand-primary/30">+{activeVariants.length - chipValues.length}</span>
@@ -557,9 +411,7 @@ function ProductCard({ product, fmt, addItem, colorMap }: {
 
         <div className="flex items-center justify-between mt-3">
           <div>
-            {hasMultiplePrices && (
-              <span className="font-brand text-[10px] text-brand-primary/40">Desde</span>
-            )}
+            {hasMultiplePrices && <span className="font-brand text-[10px] text-brand-primary/40">Desde</span>}
             <p className="font-brand font-bold text-brand-price leading-tight flex items-baseline gap-2">
               {defaultVariant ? fmt(minPrice) : '—'}
               {defaultVariant?.compare_at_price && defaultVariant.compare_at_price > defaultVariant.price && (
@@ -569,9 +421,7 @@ function ProductCard({ product, fmt, addItem, colorMap }: {
           </div>
           {canQuickAdd ? (
             outOfStock ? (
-              <span className="rounded-full border border-brand-primary/20 text-brand-primary/40 px-3 py-1 text-xs font-brand">
-                Agotado
-              </span>
+              <span className="rounded-full border border-brand-primary/20 text-brand-primary/40 px-3 py-1 text-xs font-brand">Agotado</span>
             ) : (
             <button
               onClick={() => {
@@ -594,16 +444,13 @@ function ProductCard({ product, fmt, addItem, colorMap }: {
                   height_cm: defaultVariant.height_cm ?? null,
                 })
               }}
-              className="rounded-full border border-brand-primary text-brand-primary px-3 py-1 text-xs font-brand hover:bg-brand-primary hover:text-brand-cream transition-colors"
-            >
+              className="rounded-full border border-brand-primary text-brand-primary px-3 py-1 text-xs font-brand hover:bg-brand-primary hover:text-brand-cream transition-colors">
               Agregar
             </button>
             )
           ) : (
-            <Link
-              href={`/shop/${product.slug}`}
-              className="rounded-full border border-brand-primary text-brand-primary px-3 py-1 text-xs font-brand hover:bg-brand-primary hover:text-brand-cream transition-colors"
-            >
+            <Link href={`/shop/${product.slug}`}
+              className="rounded-full border border-brand-primary text-brand-primary px-3 py-1 text-xs font-brand hover:bg-brand-primary hover:text-brand-cream transition-colors">
               Ver opciones
             </Link>
           )}

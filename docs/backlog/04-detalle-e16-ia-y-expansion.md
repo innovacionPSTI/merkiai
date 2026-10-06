@@ -414,7 +414,7 @@
 > Como comprador en una tienda con catálogo grande, quiero que `/shop` cargue rápido buscando, filtrando y paginando **en el servidor**, sin que el navegador descargue todo el catálogo.
 
 **Estimación:** L (8 puntos) · **Track:** storefront + BD
-**Estado:** 🔲 Pendiente — **v1 (client-side) ya entregado** (búsqueda + paginación + sync URL en `ShopClient`; rinde bien a escala go-live de cientos–pocos miles de productos). Esta HU es la optimización para catálogos muy grandes.
+**Estado:** ✅ **Implementada.** Migración `e17/24` (`products.min_price`/`max_price` por trigger + backfill + índice GIN sobre `attributes`). `getProductsPage(db,{search,categoryId,attrs,sort,limit,offset})→{products,total}` (orden por `min_price`; atributos por intersección de `product_id`; búsqueda `ilike` name/descr; `.range` + `count`) y `getCatalogFacets(db)` (categorías + atributos, consulta ligera). `/shop` SSR por `searchParams`; `ShopClient` presentacional que navega por URL (`attr_<Nombre>` para atributos). Fallback: si la migración no está, el orden por precio queda degradado (`min_price` NULL ordena al final) pero el resto funciona. Tests: database +4. *Nota:* la búsqueda server-side cubre name/descr (no SKU, que sí cubría el v1 client-side).
 
 **Contexto/bloqueos detectados (por eso requiere migración):**
 - `products` **no tiene precio** (vive en `product_variants`), así que ordenar por precio en BD exige **denormalizar** `products.min_price`/`max_price` (columna + trigger, o vista) con **índice** para ordenar/paginar.
