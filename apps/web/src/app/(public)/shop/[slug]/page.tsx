@@ -1,8 +1,9 @@
-import { getProductBySlug, getProducts, getTemplateVariant, getVariantTypes, buildSwatchColorMap } from '@merkiai/database'
+import { getProductBySlug, getProducts, getTemplateVariant, getVariantTypes, buildSwatchColorMap, getApprovedReviews, reviewStats } from '@merkiai/database'
 import { getStoreContext } from '@/lib/store-context'
 import { notFound } from 'next/navigation'
 import type { Metadata } from 'next'
 import ProductDetail from '@/components/shop/ProductDetail'
+import Reviews from '@/components/shop/Reviews'
 import { buildProductJsonLd } from '@/lib/json-ld'
 import { getRequestCatalogDb } from '@/lib/tenant-db'
 
@@ -57,6 +58,10 @@ export default async function ProductPage({ params }: Props) {
     .then((all) => all.filter((p) => p.id !== product.id && p.category_id === product.category_id).slice(0, 3))
     .catch(() => [])
 
+  // HU-101 · reseñas aprobadas + estadística (para estrellas y JSON-LD).
+  const reviews = await getApprovedReviews(db, product.id).catch(() => [])
+  const stats = reviewStats(reviews)
+
   const trustBadges = (storeConfig?.trust_badges ?? []).filter((b) => b.enabled)
   const pdpVariant = getTemplateVariant(ctx?.template, 'product_detail')
   // HU-264: mapa de colores de swatch de la tienda.
@@ -71,6 +76,7 @@ export default async function ProductPage({ params }: Props) {
     variants: product.variants,
     storeName: storeConfig?.store_name,
     siteUrl: process.env.NEXT_PUBLIC_SITE_URL,
+    rating: stats.count > 0 ? { average: stats.average, count: stats.count } : null,
   })
 
   return (
@@ -80,6 +86,7 @@ export default async function ProductPage({ params }: Props) {
         dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
       />
       <ProductDetail product={product} related={related} trustBadges={trustBadges} layoutVariant={pdpVariant} colorMap={colorMap} />
+      <Reviews productId={product.id} stats={stats} initialReviews={reviews} />
     </>
   )
 }

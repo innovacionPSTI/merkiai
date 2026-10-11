@@ -21,8 +21,8 @@
 > Como comprador, quiero calificar (1–5 estrellas) y reseñar productos que compré, y leer las reseñas de otros, para decidir con más confianza.
 
 **Estimación:** L (8 puntos)
-**Módulo:** `packages/database` (tabla `product_reviews`), PDP, grid, admin (moderación)
-**Estado:** 🔲 Pendiente (roadmap v17)
+**Módulo:** `packages/database` (`product_reviews`, `queries/reviews`), `apps/web` (PDP `Reviews` + `/api/reviews` + JSON-LD), `apps/admin` (`/resenas` + `/api/admin/reviews`)
+**Estado:** ✅ **Implementada (v1).** Tabla `product_reviews` (migración `e17/25`, RLS: público ve `approved`, alta pública forzada a `pending`, moderación solo `is_admin`). PDP: estrellas + promedio + lista + formulario (envío a moderación) y `aggregateRating` en JSON-LD. Admin `/resenas`: pestañas por estado + aprobar/rechazar/eliminar. Tests: database +7, admin +4, web +2. **Pendiente v2:** "compra verificada" (ligar a `orders`), paginación de reseñas, voto útil.
 
 | # | Escenario | Resultado esperado |
 |---|-----------|-------------------|

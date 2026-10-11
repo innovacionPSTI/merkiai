@@ -326,6 +326,40 @@ export type Database = {
           }
         ]
       }
+      product_reviews: {
+        Row: {
+          id: number
+          tenant_id: string
+          product_id: number
+          customer_id: string | null
+          author_name: string
+          rating: number
+          title: string | null
+          body: string | null
+          status: 'pending' | 'approved' | 'rejected'
+          created_at: string
+        }
+        Insert: {
+          id?: number
+          tenant_id?: string
+          product_id: number
+          customer_id?: string | null
+          author_name: string
+          rating: number
+          title?: string | null
+          body?: string | null
+          status?: 'pending' | 'approved' | 'rejected'
+          created_at?: string
+        }
+        Update: {
+          author_name?: string
+          rating?: number
+          title?: string | null
+          body?: string | null
+          status?: 'pending' | 'approved' | 'rejected'
+        }
+        Relationships: []
+      }
       blog_posts: {
         Row: {
           tenant_id: string
@@ -1419,6 +1453,7 @@ export type Order = Omit<Database['public']['Tables']['orders']['Row'], 'shippin
   items: OrderItem[]
 }
 export type BlogPost = Database['public']['Tables']['blog_posts']['Row']
+export type ProductReview = Database['public']['Tables']['product_reviews']['Row']
 export type NewsletterSubscriber = Database['public']['Tables']['newsletter_subscribers']['Row']
 export type StoreConfigRow = Database['public']['Tables']['store_config']['Row']
 export type PaymentConfig = Database['public']['Tables']['payment_config']['Row']

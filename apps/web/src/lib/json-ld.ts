@@ -11,6 +11,8 @@ export interface ProductJsonLdInput {
   variants?: Array<{ price: number }> | null
   storeName?: string | null
   siteUrl?: string
+  /** HU-101 · calificación agregada (si hay reseñas aprobadas). */
+  rating?: { average: number; count: number } | null
 }
 
 /** Precio más bajo entre las variantes (o null si no hay). */
@@ -42,6 +44,17 @@ export function buildProductJsonLd(input: ProductJsonLdInput): Record<string, un
         }
       : {}),
     ...(input.storeName ? { brand: { '@type': 'Brand', name: input.storeName } } : {}),
+    ...(input.rating && input.rating.count > 0
+      ? {
+          aggregateRating: {
+            '@type': 'AggregateRating',
+            ratingValue: input.rating.average,
+            reviewCount: input.rating.count,
+            bestRating: 5,
+            worstRating: 1,
+          },
+        }
+      : {}),
   }
 }
 

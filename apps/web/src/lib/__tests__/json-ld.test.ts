@@ -50,6 +50,14 @@ describe('buildProductJsonLd', () => {
   it('produce JSON serializable', () => {
     expect(() => JSON.stringify(buildProductJsonLd(base))).not.toThrow()
   })
+
+  it('incluye aggregateRating cuando hay reseñas (HU-101)', () => {
+    const ld = buildProductJsonLd({ name: 'X', slug: 'x', rating: { average: 4.3, count: 7 } }) as any
+    expect(ld.aggregateRating).toMatchObject({ '@type': 'AggregateRating', ratingValue: 4.3, reviewCount: 7, bestRating: 5 })
+  })
+  it('omite aggregateRating sin reseñas', () => {
+    expect((buildProductJsonLd({ name: 'X', slug: 'x', rating: { average: 0, count: 0 } }) as any).aggregateRating).toBeUndefined()
+  })
 })
 
 describe('buildArticleJsonLd', () => {

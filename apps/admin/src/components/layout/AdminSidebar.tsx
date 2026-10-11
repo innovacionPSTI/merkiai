@@ -79,6 +79,7 @@ const NAV: NavNode[] = [
       { kind: 'leaf', href: '/productos',  icon: <Icon name="product" />,  label: 'Productos',   section: 'productos' },
       { kind: 'leaf', href: '/categorias', icon: <Icon name="category" />, label: 'Categorías',  section: 'categorias' },
       { kind: 'leaf', href: '/variantes',  icon: <Icon name="variant" />,  label: 'Variantes',   section: 'variantes' },
+      { kind: 'leaf', href: '/resenas',    icon: <Icon name="star" />,     label: 'Reseñas',     section: 'productos' },
     ],
   },
   {
