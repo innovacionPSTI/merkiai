@@ -51,27 +51,27 @@ describe('paginate', () => {
 
 describe('parseShopUrl', () => {
   it('lee defaults cuando no hay params', () => {
-    expect(parseShopUrl({})).toEqual({ q: '', categoria: null, orden: 'destacados', page: 1, attrs: {} })
+    expect(parseShopUrl({})).toEqual({ q: '', categoria: null, orden: 'destacados', page: 1, attrs: {}, minPrice: null, maxPrice: null })
   })
-  it('lee q/categoria/orden/page/attrs', () => {
-    expect(parseShopUrl({ q: 'cafe', categoria: '3', orden: 'precio-asc', page: '2', attr_Color: 'Rojo' }))
-      .toEqual({ q: 'cafe', categoria: 3, orden: 'precio-asc', page: 2, attrs: { Color: 'Rojo' } })
+  it('lee q/categoria/orden/page/attrs/precio', () => {
+    expect(parseShopUrl({ q: 'cafe', categoria: '3', orden: 'precio-asc', page: '2', attr_Color: 'Rojo', pmin: '1000', pmax: '5000' }))
+      .toEqual({ q: 'cafe', categoria: 3, orden: 'precio-asc', page: 2, attrs: { Color: 'Rojo' }, minPrice: 1000, maxPrice: 5000 })
   })
-  it('ignora categoria no numérica y page<=1', () => {
-    expect(parseShopUrl({ categoria: 'x', page: '1' })).toMatchObject({ categoria: null, page: 1 })
+  it('ignora categoria no numérica, page<=1 y precio negativo', () => {
+    expect(parseShopUrl({ categoria: 'x', page: '1', pmin: '-5' })).toMatchObject({ categoria: null, page: 1, minPrice: null })
   })
 })
 
 describe('buildShopQuery', () => {
   it('omite los valores por defecto', () => {
-    expect(buildShopQuery({ q: '', categoria: null, orden: 'destacados', page: 1, attrs: {} })).toBe('')
+    expect(buildShopQuery({ q: '', categoria: null, orden: 'destacados', page: 1, attrs: {}, minPrice: null, maxPrice: null })).toBe('')
   })
-  it('serializa solo lo no-default (atributos como attr_<nombre>)', () => {
-    expect(buildShopQuery({ q: 'cafe', categoria: 3, orden: 'nombre', page: 2, attrs: { Color: 'Rojo' } }))
-      .toBe('q=cafe&categoria=3&orden=nombre&page=2&attr_Color=Rojo')
+  it('serializa solo lo no-default (atributos attr_<nombre>, precio pmin/pmax)', () => {
+    expect(buildShopQuery({ q: 'cafe', categoria: 3, orden: 'nombre', page: 2, attrs: { Color: 'Rojo' }, minPrice: 1000, maxPrice: 5000 }))
+      .toBe('q=cafe&categoria=3&orden=nombre&page=2&attr_Color=Rojo&pmin=1000&pmax=5000')
   })
   it('round-trip con parseShopUrl', () => {
-    const s = { q: 'té verde', categoria: 5, orden: 'precio-desc', page: 4, attrs: { Color: 'Azul', Talla: 'M' } }
+    const s = { q: 'té verde', categoria: 5, orden: 'precio-desc', page: 4, attrs: { Color: 'Azul', Talla: 'M' }, minPrice: 2000, maxPrice: 9000 }
     expect(parseShopUrl(Object.fromEntries(new URLSearchParams(buildShopQuery(s))))).toEqual(s)
   })
 })

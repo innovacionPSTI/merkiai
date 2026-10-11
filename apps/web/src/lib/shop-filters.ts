@@ -48,6 +48,9 @@ export interface ShopUrlState {
   page: number
   /** Atributos seleccionados { Color: 'Rojo' } (en la URL como attr_<Nombre>). */
   attrs: Record<string, string>
+  /** Rango de precio (en la unidad del catálogo, p. ej. pesos). null = sin límite. */
+  minPrice: number | null
+  maxPrice: number | null
 }
 
 type RawParams = Record<string, string | string[] | undefined>
@@ -68,12 +71,18 @@ export function parseShopUrl(sp: RawParams): ShopUrlState {
       if (val) attrs[k.slice(ATTR_PREFIX.length)] = val
     }
   }
+  const toPrice = (v: string): number | null => {
+    const n = Number(v)
+    return v !== '' && Number.isFinite(n) && n >= 0 ? n : null
+  }
   return {
     q: str(sp.q),
     categoria: cat && Number.isFinite(Number(cat)) ? Number(cat) : null,
     orden: str(sp.orden) || 'destacados',
     page: Number.isFinite(pageNum) && pageNum > 1 ? pageNum : 1,
     attrs,
+    minPrice: toPrice(str(sp.pmin)),
+    maxPrice: toPrice(str(sp.pmax)),
   }
 }
 
@@ -88,5 +97,7 @@ export function buildShopQuery(s: ShopUrlState): string {
   for (const k of Object.keys(s.attrs).sort()) {
     if (s.attrs[k]) p.set(ATTR_PREFIX + k, s.attrs[k])
   }
+  if (s.minPrice != null) p.set('pmin', String(s.minPrice))
+  if (s.maxPrice != null) p.set('pmax', String(s.maxPrice))
   return p.toString()
 }

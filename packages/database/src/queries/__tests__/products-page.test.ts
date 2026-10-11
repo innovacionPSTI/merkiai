@@ -65,16 +65,29 @@ describe('getProductsPage', () => {
     const res = await getProductsPage(db, { attrs: { Color: 'Inexistente' } })
     expect(res).toEqual({ products: [], total: 0 })
   })
+
+  it('aplica filtro de precio por solapamiento (gte max_price / lte min_price)', async () => {
+    const { db, calls } = makeDb({ products: [{ data: [product(1)], error: null, count: 1 }] })
+    await getProductsPage(db, { minPrice: 1000, maxPrice: 5000 })
+    const ops = calls.find((c) => c.table === 'products')!.ops
+    expect(ops).toContainEqual(['gte', 'max_price', 1000])
+    expect(ops).toContainEqual(['lte', 'min_price', 5000])
+  })
 })
 
 describe('getCatalogFacets', () => {
-  it('arma categorías + atributos con ≥2 valores', async () => {
+  it('arma categorías + atributos con ≥2 valores + límites de precio', async () => {
     const { db } = makeDb({
       categories: [{ data: [{ id: 1, name: 'Ropa' }], error: null }],
       product_variants: [{ data: [
         { attributes: { Color: 'Rojo', Talla: 'M' } },
         { attributes: { Color: 'Azul', Talla: 'M' } },
       ], error: null }],
+      // dos consultas de products: min_price asc y max_price desc
+      products: [
+        { data: [{ min_price: 1500 }], error: null },
+        { data: [{ max_price: 99000 }], error: null },
+      ],
     })
     const facets = await getCatalogFacets(db)
     expect(facets.categories).toEqual([{ id: 1, name: 'Ropa' }])
@@ -82,5 +95,6 @@ describe('getCatalogFacets', () => {
     expect(color?.values.sort()).toEqual(['Azul', 'Rojo'])
     // Talla solo tiene 'M' (1 valor) → se omite
     expect(facets.attrFilters.find((f) => f.name === 'Talla')).toBeUndefined()
+    expect(facets.priceBounds).toEqual({ min: 1500, max: 99000 })
   })
 })

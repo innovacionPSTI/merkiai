@@ -44,11 +44,16 @@ interface FilterPanelProps {
   onClearFilters: () => void
   hasFilters: boolean
   colorMap?: Record<string, string>
+  priceBounds: { min: number; max: number } | null
+  minPrice: number | null
+  maxPrice: number | null
+  onApplyPrice: (min: number | null, max: number | null) => void
 }
 
 function FilterPanel({
   categories, attrFilters, selectedCategory, selectedAttrs,
   onSelectCategory, onToggleAttr, onClearFilters, hasFilters, colorMap,
+  priceBounds, minPrice, maxPrice, onApplyPrice,
 }: FilterPanelProps) {
   return (
     <div className="space-y-6">
@@ -60,6 +65,11 @@ function FilterPanel({
           </button>
         )}
       </div>
+
+      {/* HU-104 · rango de precio */}
+      {priceBounds && priceBounds.max > priceBounds.min && (
+        <PriceFilter bounds={priceBounds} minPrice={minPrice} maxPrice={maxPrice} onApply={onApplyPrice} />
+      )}
 
       {categories.length > 1 && (
         <div>
@@ -120,6 +130,48 @@ function FilterRow({ label, active, onClick }: { label: string; active: boolean;
   )
 }
 
+function PriceFilter({ bounds, minPrice, maxPrice, onApply }: {
+  bounds: { min: number; max: number }
+  minPrice: number | null
+  maxPrice: number | null
+  onApply: (min: number | null, max: number | null) => void
+}) {
+  const [lo, setLo] = useState(minPrice != null ? String(minPrice) : '')
+  const [hi, setHi] = useState(maxPrice != null ? String(maxPrice) : '')
+  // Re-sincroniza si cambia el estado (navegación / limpiar).
+  useEffect(() => { setLo(minPrice != null ? String(minPrice) : '') }, [minPrice])
+  useEffect(() => { setHi(maxPrice != null ? String(maxPrice) : '') }, [maxPrice])
+
+  const parse = (v: string): number | null => {
+    const n = Number(v)
+    return v.trim() !== '' && Number.isFinite(n) && n >= 0 ? Math.round(n) : null
+  }
+  function apply() {
+    let min = parse(lo)
+    let max = parse(hi)
+    if (min != null && max != null && min > max) { const t = min; min = max; max = t } // normaliza invertido
+    onApply(min, max)
+  }
+  const inputCls = 'w-full border border-brand-primary/20 rounded-lg px-2.5 py-1.5 font-brand text-xs text-brand-primary focus:outline-none focus:border-brand-primary'
+
+  return (
+    <div>
+      <p className="font-brand text-xs font-semibold text-brand-primary/50 uppercase tracking-wider mb-3">Precio</p>
+      <div className="flex items-center gap-2">
+        <input type="number" inputMode="numeric" min={0} value={lo} onChange={(e) => setLo(e.target.value)}
+          placeholder={String(bounds.min)} aria-label="Precio mínimo" className={inputCls} />
+        <span className="text-brand-primary/30">–</span>
+        <input type="number" inputMode="numeric" min={0} value={hi} onChange={(e) => setHi(e.target.value)}
+          placeholder={String(bounds.max)} aria-label="Precio máximo" className={inputCls} />
+      </div>
+      <button onClick={apply}
+        className="mt-2 w-full font-brand text-xs border border-brand-primary text-brand-primary rounded-lg py-1.5 hover:bg-brand-primary hover:text-brand-cream transition-colors">
+        Aplicar
+      </button>
+    </div>
+  )
+}
+
 // ── Main component (presentacional; navega por URL → SSR, HU-270) ─────────────
 
 export default function ShopClient({ products, total, pageSize, facets, state, gridVariant = 'comfortable', colorMap }: Props) {
@@ -151,9 +203,11 @@ export default function ShopClient({ products, total, pageSize, facets, state, g
 
   const selectedCategory = state.categoria
   const selectedAttrs = state.attrs
-  const hasFilters = selectedCategory !== null || Object.values(selectedAttrs).some(Boolean) || state.q.trim() !== ''
-  const hasAnyFilters = facets.categories.length > 1 || facets.attrFilters.length > 0
-  const activeFilterCount = (selectedCategory ? 1 : 0) + Object.values(selectedAttrs).filter(Boolean).length
+  const hasPrice = state.minPrice != null || state.maxPrice != null
+  const priceFacet = facets.priceBounds && facets.priceBounds.max > facets.priceBounds.min
+  const hasFilters = selectedCategory !== null || Object.values(selectedAttrs).some(Boolean) || state.q.trim() !== '' || hasPrice
+  const hasAnyFilters = facets.categories.length > 1 || facets.attrFilters.length > 0 || !!priceFacet
+  const activeFilterCount = (selectedCategory ? 1 : 0) + Object.values(selectedAttrs).filter(Boolean).length + (hasPrice ? 1 : 0)
 
   function toggleAttr(opt: string, val: string) {
     const nextAttrs = { ...selectedAttrs }
@@ -161,7 +215,7 @@ export default function ShopClient({ products, total, pageSize, facets, state, g
     else nextAttrs[opt] = val
     nav({ attrs: nextAttrs })
   }
-  function clearFilters() { nav({ q: '', categoria: null, attrs: {} }) }
+  function clearFilters() { nav({ q: '', categoria: null, attrs: {}, minPrice: null, maxPrice: null }) }
 
   const pageCount = Math.max(1, Math.ceil(total / pageSize))
 
@@ -175,6 +229,10 @@ export default function ShopClient({ products, total, pageSize, facets, state, g
     onToggleAttr: toggleAttr,
     onClearFilters: clearFilters,
     colorMap,
+    priceBounds: facets.priceBounds,
+    minPrice: state.minPrice,
+    maxPrice: state.maxPrice,
+    onApplyPrice: (min, max) => nav({ minPrice: min, maxPrice: max }),
   }
 
   return (

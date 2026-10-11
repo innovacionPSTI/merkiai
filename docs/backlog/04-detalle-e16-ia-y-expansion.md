@@ -71,14 +71,14 @@
 > Como comprador, quiero filtrar el catálogo por rango de precio para ajustar la búsqueda a mi presupuesto.
 
 **Estimación:** S (3 puntos)
-**Módulo:** `apps/web/src/components/shop/ShopClient.tsx`, query de productos
-**Estado:** 🔲 Pendiente (roadmap v17)
+**Módulo:** `apps/web` (`ShopClient` `PriceFilter`, `shop-filters`), `packages/database` (`getProductsPage`/`getCatalogFacets`)
+**Estado:** ✅ **Implementada.** Filtro min/max resuelto **en BD** sobre `min_price`/`max_price` (HU-270) por **solapamiento** de rangos (`max_price>=pmin AND min_price<=pmax`). `getCatalogFacets` devuelve `priceBounds` (más barato/caro, consultas ligeras indexadas) para placeholders; estado en la URL (`pmin`/`pmax`), integrado en "Limpiar" y el contador de filtros activos; normaliza el rango invertido. Tests: web +1, database +1.
 
 | # | Escenario | Resultado esperado |
 |---|-----------|-------------------|
-| AC-1 | Control de rango (slider o min/max) | Filtra el grid; combinable con los filtros de variante existentes |
-| AC-2 | Estado en la URL | El rango se refleja en query params (compartible, SSR-friendly) |
-| AC-3 | Rango sin coincidencias | Estado vacío consistente con los demás filtros |
+| AC-1 | Control de rango (min/max) | ✅ Dos inputs + Aplicar en el panel; combinable con categoría/atributos/búsqueda |
+| AC-2 | Estado en la URL | ✅ `?pmin&pmax` (compartible, SSR: el filtrado ocurre en el servidor) |
+| AC-3 | Rango sin coincidencias | ✅ Estado vacío consistente + "Limpiar filtros" |
 
 ---
 

@@ -44,6 +44,8 @@ export interface CatalogFacets {
   categories: { id: number; name: string }[]
   /** Atributos de variante con ≥2 valores (color/talla…) para filtrar. */
   attrFilters: { name: string; values: string[] }[]
+  /** Rango de precio del catálogo (para el filtro de precio, HU-104). null si vacío. */
+  priceBounds: { min: number; max: number } | null
 }
 
 /**
@@ -54,13 +56,16 @@ export interface CatalogFacets {
 export async function getCatalogFacets(db: Db): Promise<CatalogFacets> {
   const supabase = db
 
-  const [{ data: cats }, { data: variantRows }] = await Promise.all([
+  const [{ data: cats }, { data: variantRows }, { data: pMin }, { data: pMax }] = await Promise.all([
     supabase.from('categories').select('id, name').eq('active', true).order('order_index', { ascending: true }),
     supabase
       .from('product_variants')
       .select('attributes, products!inner(active)')
       .eq('active', true)
       .eq('products.active', true),
+    // Límites de precio del catálogo (HU-104): producto más barato / más caro.
+    supabase.from('products').select('min_price').eq('active', true).not('min_price', 'is', null).order('min_price', { ascending: true }).limit(1),
+    supabase.from('products').select('max_price').eq('active', true).not('max_price', 'is', null).order('max_price', { ascending: false }).limit(1),
   ])
 
   const optionMap = new Map<string, Set<string>>()
@@ -78,9 +83,14 @@ export async function getCatalogFacets(db: Db): Promise<CatalogFacets> {
     .filter(([, vals]) => vals.size >= 2)
     .map(([name, vals]) => ({ name, values: [...vals] }))
 
+  const min = (pMin ?? [])[0]?.min_price
+  const max = (pMax ?? [])[0]?.max_price
+  const priceBounds = (typeof min === 'number' && typeof max === 'number') ? { min, max } : null
+
   return {
     categories: (cats ?? []).map((c: any) => ({ id: c.id, name: c.name })),
     attrFilters,
+    priceBounds,
   }
 }
 
@@ -89,6 +99,9 @@ export interface ProductsPageOpts {
   categoryId?: number | null
   /** Atributos seleccionados { Color: 'Rojo', Talla: 'M' }. */
   attrs?: Record<string, string>
+  /** Rango de precio (HU-104): se filtra por solapamiento con [min_price, max_price]. */
+  minPrice?: number | null
+  maxPrice?: number | null
   sort?: string
   limit?: number
   offset?: number
@@ -112,7 +125,7 @@ function sanitizeSearch(q: string): string {
  */
 export async function getProductsPage(db: Db, opts: ProductsPageOpts = {}): Promise<ProductsPage> {
   const supabase = db
-  const { search = '', categoryId = null, attrs = {}, sort = 'destacados', limit = 12, offset = 0 } = opts
+  const { search = '', categoryId = null, attrs = {}, minPrice = null, maxPrice = null, sort = 'destacados', limit = 12, offset = 0 } = opts
 
   // Resolución de atributos → conjunto de product_id candidatos (intersección).
   const activeAttrs = Object.entries(attrs).filter(([, v]) => v)
@@ -135,6 +148,11 @@ export async function getProductsPage(db: Db, opts: ProductsPageOpts = {}): Prom
 
   if (categoryId != null) query = query.eq('category_id', categoryId)
   if (candidateIds !== null) query = query.in('id', candidateIds)
+
+  // HU-104 · rango de precio por solapamiento: el rango del producto
+  // [min_price, max_price] intersecta [minPrice, maxPrice].
+  if (minPrice != null) query = query.gte('max_price', minPrice)
+  if (maxPrice != null) query = query.lte('min_price', maxPrice)
 
   const q = sanitizeSearch(search)
   if (q) query = query.or(`name.ilike.*${q}*,description.ilike.*${q}*`)
