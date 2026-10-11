@@ -38,15 +38,15 @@
 > Como comprador, quiero buscar productos por texto libre y ver sugerencias mientras escribo, para encontrar rápido lo que quiero.
 
 **Estimación:** M (5 puntos)
-**Módulo:** `apps/web` (Navbar search + `/api/search`), índice full-text en Postgres
-**Estado:** 🔲 Pendiente (roadmap v17)
+**Módulo:** `apps/web` (`SearchBox`, `/api/search/suggest`), `packages/database` (`suggestProducts`)
+**Estado:** ✅ **Implementada (v1).** Buscador con **autocompletado** en `/shop`: `SearchBox` con debounce (200 ms), navegación por teclado (↑/↓/Enter/Esc), dropdown con nombre + imagen + precio. `suggestProducts` (consulta ligera `ilike` name/descr, mín. 2 chars, sin variantes) + `GET /api/search/suggest` acotado por tenant (RLS). Clic en sugerencia → PDP; Enter / "Ver todos los resultados" → `?q` (SSR, reusa el grid de HU-270). Tests: database +2. **Pendiente/mejoras:** llevar el `SearchBox` al **navbar** global; índice `pg_trgm`/`tsvector` para `<300ms` en catálogos grandes (hoy `ilike` + índice de texto simple).
 
 | # | Escenario | Resultado esperado |
 |---|-----------|-------------------|
-| AC-1 | Escribir en el buscador del navbar | Autocompletado con nombre + thumbnail (debounce); busca en nombre, descripción y categoría |
-| AC-2 | Enviar la búsqueda | Página de resultados reutilizando el grid de `/shop` con el término aplicado |
-| AC-3 | Sin resultados | Estado vacío con sugerencias o CTA a catálogo |
-| AC-4 | Rendimiento | Índice `tsvector`/`pg_trgm`; respuesta < 300 ms en catálogos medianos |
+| AC-1 | Escribir en el buscador | ✅ Autocompletado nombre + thumbnail + precio (debounce); busca en nombre y descripción. *Categoría → mejora* |
+| AC-2 | Enviar la búsqueda | ✅ Resultados reutilizando el grid de `/shop` (`?q`, SSR) |
+| AC-3 | Sin resultados | ✅ Dropdown vacío + estado vacío del grid con "Limpiar filtros" |
+| AC-4 | Rendimiento | 🔶 `ilike` sobre name/descr (ok para catálogos medianos); índice `pg_trgm`/`tsvector` → mejora |
 
 ---
 

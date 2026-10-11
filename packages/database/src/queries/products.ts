@@ -171,6 +171,36 @@ export async function getProductsPage(db: Db, opts: ProductsPageOpts = {}): Prom
   return { products: (data ?? []) as unknown as ProductWithVariants[], total: count ?? 0 }
 }
 
+export interface ProductSuggestion {
+  id: number
+  name: string
+  slug: string
+  image_url: string | null
+  min_price: number | null
+}
+
+/**
+ * Sugerencias de autocompletado (HU-102): consulta ligera por nombre/descr.
+ * Devuelve pocos campos (sin variantes) para respuestas rápidas. RLS por tenant.
+ */
+export async function suggestProducts(db: Db, search: string, limit = 6): Promise<ProductSuggestion[]> {
+  const q = sanitizeSearch(search)
+  if (q.length < 2) return []
+  const { data } = await db
+    .from('products')
+    .select('id, name, slug, images, min_price')
+    .eq('active', true)
+    .or(`name.ilike.*${q}*,description.ilike.*${q}*`)
+    .order('featured', { ascending: false })
+    .order('min_price', { ascending: true, nullsFirst: false })
+    .limit(limit)
+
+  return (data ?? []).map((p: any) => {
+    const imgs = Array.isArray(p.images) ? p.images as Array<{ url?: string }> : []
+    return { id: p.id, name: p.name, slug: p.slug, image_url: imgs[0]?.url ?? null, min_price: p.min_price ?? null }
+  })
+}
+
 export async function getProductBySlug(slug: string, db: Db) {
   const supabase = db
   const { data, error } = await supabase

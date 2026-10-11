@@ -3,7 +3,7 @@
  * Supabase se mockea: cada from(table) devuelve una cadena "thenable" que
  * resuelve a la siguiente respuesta encolada para esa tabla.
  */
-import { getProductsPage, getCatalogFacets } from '../products'
+import { getProductsPage, getCatalogFacets, suggestProducts } from '../products'
 
 function makeDb(responses: Record<string, any[]>) {
   const calls: { table: string; ops: any[] }[] = []
@@ -96,5 +96,25 @@ describe('getCatalogFacets', () => {
     // Talla solo tiene 'M' (1 valor) → se omite
     expect(facets.attrFilters.find((f) => f.name === 'Talla')).toBeUndefined()
     expect(facets.priceBounds).toEqual({ min: 1500, max: 99000 })
+  })
+})
+
+describe('suggestProducts (HU-102)', () => {
+  it('ignora términos de menos de 2 caracteres', async () => {
+    const { db, calls } = makeDb({ products: [{ data: [], error: null }] })
+    const r = await suggestProducts(db, 'a')
+    expect(r).toEqual([])
+    expect(calls.length).toBe(0) // ni siquiera consulta
+  })
+
+  it('devuelve sugerencias con imagen y precio', async () => {
+    const { db, calls } = makeDb({
+      products: [{ data: [{ id: 1, name: 'Camiseta', slug: 'camiseta', images: [{ url: 'http://a.jpg' }], min_price: 59900 }], error: null }],
+    })
+    const r = await suggestProducts(db, 'cami', 6)
+    expect(r[0]).toEqual({ id: 1, name: 'Camiseta', slug: 'camiseta', image_url: 'http://a.jpg', min_price: 59900 })
+    const ops = calls.find((c) => c.table === 'products')!.ops.map((o) => o[0])
+    expect(ops).toContain('or')     // búsqueda name/descr
+    expect(ops).toContain('limit')
   })
 })

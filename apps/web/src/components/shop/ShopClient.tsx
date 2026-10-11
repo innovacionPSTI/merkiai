@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect, useRef } from 'react'
+import { useState, useEffect } from 'react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { Icon } from '@merkiai/ui'
@@ -9,6 +9,7 @@ import type { CartItem } from '@/store/cart'
 import type { ProductWithVariants, CatalogFacets } from '@merkiai/database'
 import { getProductOptions, getVariantAttrs, getVariantLabel, isColorValue, swatchColor } from '@/lib/variant-utils'
 import { buildShopQuery, type ShopUrlState } from '@/lib/shop-filters'
+import SearchBox from './SearchBox'
 
 const SORTS = [
   { value: 'destacados', label: 'Destacados' },
@@ -178,7 +179,6 @@ export default function ShopClient({ products, total, pageSize, facets, state, g
   const router = useRouter()
   const addItem = useCartStore((s) => s.addItem)
   const [mobileFiltersOpen, setMobileFiltersOpen] = useState(false)
-  const [queryInput, setQueryInput] = useState(state.q)
 
   const fmt = (n: number) =>
     new Intl.NumberFormat('es-CO', { style: 'currency', currency: 'COP', maximumFractionDigits: 0 }).format(n)
@@ -189,17 +189,6 @@ export default function ShopClient({ products, total, pageSize, facets, state, g
     const qs = buildShopQuery(next)
     router.push(qs ? `?${qs}` : '?', { scroll: false })
   }
-
-  // Búsqueda con debounce: sincroniza el input local con la URL (SSR).
-  useEffect(() => { setQueryInput(state.q) }, [state.q])
-  const firstSearch = useRef(true)
-  useEffect(() => {
-    if (firstSearch.current) { firstSearch.current = false; return }
-    if (queryInput === state.q) return
-    const t = setTimeout(() => nav({ q: queryInput }), 350)
-    return () => clearTimeout(t)
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [queryInput])
 
   const selectedCategory = state.categoria
   const selectedAttrs = state.attrs
@@ -249,20 +238,8 @@ export default function ShopClient({ products, total, pageSize, facets, state, g
           </div>
 
           <div className="flex items-center gap-3">
-            {/* Búsqueda por texto (debounce → URL → SSR) */}
-            <form onSubmit={(e) => { e.preventDefault(); nav({ q: queryInput }) }} className="relative">
-              <span className="absolute left-3 top-1/2 -translate-y-1/2 text-brand-primary/40 pointer-events-none">
-                <Icon name="search" size={16} />
-              </span>
-              <input
-                type="search"
-                value={queryInput}
-                onChange={(e) => setQueryInput(e.target.value)}
-                placeholder="Buscar productos…"
-                aria-label="Buscar productos"
-                className="font-brand text-sm border border-brand-primary/20 rounded-full pl-9 pr-4 py-2 bg-white text-brand-primary focus:outline-none focus:border-brand-primary w-40 sm:w-56 transition-all"
-              />
-            </form>
+            {/* Búsqueda con autocompletado (HU-102) → URL → SSR */}
+            <SearchBox initialQuery={state.q} onSearch={(q) => nav({ q })} />
 
             {hasAnyFilters && (
               <button onClick={() => setMobileFiltersOpen(true)}
