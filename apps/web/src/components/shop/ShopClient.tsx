@@ -10,6 +10,7 @@ import type { ProductWithVariants, CatalogFacets } from '@merkiai/database'
 import { getProductOptions, getVariantAttrs, getVariantLabel, isColorValue, swatchColor } from '@/lib/variant-utils'
 import { buildShopQuery, type ShopUrlState } from '@/lib/shop-filters'
 import SearchBox from './SearchBox'
+import WishlistButton from './WishlistButton'
 
 const SORTS = [
   { value: 'destacados', label: 'Destacados' },
@@ -395,7 +396,7 @@ function ProductCard({ product, fmt, addItem, colorMap }: {
   const outOfStock = !product.allow_backorder && !!defaultVariant && defaultVariant.stock === 0
 
   return (
-    <div className="group bg-white rounded-2xl overflow-hidden shadow-card hover:shadow-card-hover transition-all duration-300">
+    <div className="group relative bg-white rounded-2xl overflow-hidden shadow-card hover:shadow-card-hover transition-all duration-300">
       <Link href={`/shop/${product.slug}`} className="block relative overflow-hidden bg-brand-cream-warm h-56">
         {image?.url ? (
           <img src={image.url} alt={image.alt || product.name}
@@ -412,6 +413,10 @@ function ProductCard({ product, fmt, addItem, colorMap }: {
         )}
         <div className="absolute bottom-0 left-0 right-0 h-8 bg-white rounded-t-[60%]" />
       </Link>
+      {/* HU-103 · favorito (fuera del Link para no navegar al togglear) */}
+      <div className="absolute top-3 right-3">
+        <WishlistButton item={{ id: product.id, slug: product.slug, name: product.name, imageUrl: image?.url ?? null, price: minPrice || null }} />
+      </div>
 
       <div className="p-4 pt-1">
         <Link href={`/shop/${product.slug}`}>

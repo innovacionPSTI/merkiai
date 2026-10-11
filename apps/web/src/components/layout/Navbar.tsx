@@ -4,6 +4,7 @@ import { Suspense, useEffect, useRef, useState } from 'react'
 import Link from 'next/link'
 import { useCartStore } from '@/store/cart'
 import CartDrawer from '@/components/cart/CartDrawer'
+import WishlistNavLink from '@/components/layout/WishlistNavLink'
 import NavAuthButton from '@/components/auth/NavAuthButton'
 import type { NavItemWithChildren } from '@merkiai/database'
 
@@ -148,6 +149,8 @@ export default function Navbar({
                   <NavAuthButton />
                 </Suspense>
               )}
+
+              <WishlistNavLink />
 
               {showCart && (
                 <button

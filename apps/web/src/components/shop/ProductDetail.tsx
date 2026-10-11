@@ -5,6 +5,7 @@ import Link from 'next/link'
 import { useCartStore } from '@/store/cart'
 import type { ProductWithVariants, TrustBadge } from '@merkiai/database'
 import { getProductOptions, getVariantAttrs, getVariantLabel, isColorValue, swatchColor } from '@/lib/variant-utils'
+import WishlistButton from './WishlistButton'
 
 interface Props {
   product: ProductWithVariants
@@ -456,6 +457,12 @@ export default function ProductDetail({ product, related, trustBadges = [], layo
               >
                 Comprar ahora
               </Link>
+              {/* HU-103 · guardar en favoritos */}
+              <WishlistButton
+                variant="button"
+                className="w-full justify-center py-3"
+                item={{ id: product.id, slug: product.slug, name: product.name, imageUrl: product.images[0]?.url ?? null, price: selectedVariant?.price ?? (activeVariants.length ? Math.min(...activeVariants.map((v) => v.price)) : null) }}
+              />
             </div>
 
             {/* Badges de confianza — configurados en admin → Configuración → General */}

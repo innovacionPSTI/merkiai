@@ -55,14 +55,14 @@
 > Como comprador, quiero guardar productos como favoritos para comprarlos después.
 
 **Estimación:** M (5 puntos)
-**Módulo:** `packages/database` (`wishlists`), PDP/grid (corazón), `/account`
-**Estado:** 🔲 Pendiente (roadmap v17)
+**Módulo:** `apps/web` (`store/wishlist`, `WishlistButton`, `/wishlist`, `WishlistNavLink`)
+**Estado:** 🔶 **v1 (client-side).** `useWishlistStore` (zustand + persist en localStorage, por origen = por tenant). Corazón (`WishlistButton`) en tarjetas de `/shop` y botón "Guardar" en la PDP; página `/wishlist` (quitar/vaciar/ver) + contador en el navbar. Guard de hidratación para no desajustar el SSR. Tests: web +3. **Pendiente v2:** persistir por `customer_id` en BD y **fusionar** el localStorage al iniciar sesión; indicar sin-stock + enlace a HU-105.
 
 | # | Escenario | Resultado esperado |
 |---|-----------|-------------------|
-| AC-1 | Usuario autenticado marca un favorito | Persiste por cuenta; visible en `/account` |
-| AC-2 | Invitado marca un favorito | Persiste en localStorage y se fusiona al iniciar sesión |
-| AC-3 | Producto sin stock en la wishlist | Se indica el estado; enlaza a "avísame cuando vuelva" (HU-105) |
+| AC-1 | Usuario autenticado marca un favorito | 🔶 v1 guarda en localStorage (visible en `/wishlist`); persistencia por cuenta → v2 |
+| AC-2 | Invitado marca un favorito | ✅ Persiste en localStorage. Fusión al iniciar sesión → v2 |
+| AC-3 | Producto sin stock en la wishlist | ◻️ Indicar estado + enlace a "avísame" (HU-105) → v2 |
 
 ---
 
