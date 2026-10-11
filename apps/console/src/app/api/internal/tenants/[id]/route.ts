@@ -70,10 +70,14 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
     if (body.primaryDomain === null) {
       // Capturamos el dominio actual para quitarlo también de Vercel.
       const { data: cur } = await platformDb()
-        .from('tenants').select('primary_domain').eq('id', id).maybeSingle()
+        .from('tenants').select('primary_domain, domain_requested').eq('id', id).maybeSingle()
+      // Pizarra limpia: también se borra el dominio solicitado y el token de TXT.
       patch.primary_domain = null
       patch.domain_status = 'none'
-      if (cur?.primary_domain) vercelAction = { kind: 'remove', domain: cur.primary_domain as string }
+      patch.domain_requested = null
+      patch.domain_verify_token = null
+      const toUnlink = (cur?.primary_domain ?? cur?.domain_requested) as string | undefined
+      if (toUnlink) vercelAction = { kind: 'remove', domain: toUnlink }
     } else {
       // HU-174: gating anti-hijack — solo se activa un dominio propio ya VERIFICADO.
       const domain = String(body.primaryDomain).trim().toLowerCase()

@@ -147,12 +147,22 @@ export default function DominioClient({ state: initial }: { state: DomainState |
               ? 'Tu tienda ya responde en tu dominio propio.'
               : 'Activa el dominio verificado como el dominio principal de tu tienda.'}
           </p>
-          {initial.domain_status !== 'active' && (
+          {initial.domain_status !== 'active' ? (
             <form action={actAction}>
               <input type="hidden" name="domain" value={domain} />
               <button type="submit"
                 className="bg-brand-primary text-brand-cream rounded-xl px-5 py-2.5 font-brand text-sm hover:bg-brand-dark transition-colors inline-flex items-center gap-2">
                 <Icon name="check" size={16} /> Activar dominio
+              </button>
+            </form>
+          ) : (
+            // Ya activo: permite reintentar el alta en el hosting (p. ej. tras corregir
+            // VERCEL_PROJECT_ID / VERCEL_TEAM_ID) sin tener que quitar y re-registrar.
+            <form action={actAction}>
+              <input type="hidden" name="domain" value={domain} />
+              <button type="submit"
+                className="border border-brand-primary/30 text-brand-primary rounded-xl px-4 py-2 font-brand text-sm hover:bg-brand-cream transition-colors inline-flex items-center gap-2">
+                <Icon name="refresh" size={15} /> Reintentar alta en el hosting
               </button>
             </form>
           )}
