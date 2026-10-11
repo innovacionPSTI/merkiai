@@ -9,12 +9,14 @@ import type { HostingProvider, ProvisionResult, ProvisionStatus, DnsRecord } fro
 type Fetch = typeof fetch
 
 function cfg() {
+  // Nombres GENÉRICOS (no delatan el proveedor) y sin el prefijo `VERCEL_`,
+  // que Vercel reserva para sus variables de sistema y no deja crear como env propias.
   return {
-    token: process.env.VERCEL_API_TOKEN,
-    projectId: process.env.VERCEL_PROJECT_ID,
-    teamId: process.env.VERCEL_TEAM_ID,
-    aRecord: process.env.DOMAIN_A_RECORD || '76.76.21.21',
-    cname: process.env.DOMAIN_CNAME_TARGET || 'cname.vercel-dns.com',
+    token: process.env.HOSTING_API_TOKEN,
+    projectId: process.env.HOSTING_PROJECT_ID,
+    teamId: process.env.HOSTING_TEAM_ID,
+    aRecord: process.env.HOSTING_A_RECORD || '76.76.21.21',
+    cname: process.env.HOSTING_CNAME_TARGET || 'cname.vercel-dns.com',
   }
 }
 const qs = (teamId?: string) => (teamId ? `?teamId=${encodeURIComponent(teamId)}` : '')
@@ -32,7 +34,7 @@ export class VercelHostingProvider implements HostingProvider {
 
   async linkDomain(domain: string): Promise<ProvisionResult> {
     const { token, projectId, teamId } = cfg()
-    if (!token || !projectId) return { ok: false, code: 'not_configured', internalDetail: 'VERCEL_API_TOKEN/VERCEL_PROJECT_ID ausentes' }
+    if (!token || !projectId) return { ok: false, code: 'not_configured', internalDetail: 'HOSTING_API_TOKEN/HOSTING_PROJECT_ID ausentes' }
     try {
       const res = await this.doFetch(
         `https://api.vercel.com/v10/projects/${encodeURIComponent(projectId)}/domains${qs(teamId)}`,
