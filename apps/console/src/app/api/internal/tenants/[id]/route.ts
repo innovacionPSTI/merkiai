@@ -6,7 +6,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { platformDb } from '@/lib/platform-db'
 import { hasInternalSecret } from '@/lib/auth'
-import { addDomainToVercel, removeDomainFromVercel, type VercelResult } from '@/lib/vercel'
+import { getHostingProvider, type ProvisionResult } from '@/lib/hosting'
 
 export const dynamic = 'force-dynamic'
 
@@ -111,14 +111,20 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
   }
   if (!data) return NextResponse.json({ error: 'not_found' }, { status: 404 })
 
-  // Aprovisionamiento en Vercel (no bloquea la activación en BD: el subdominio
-  // sigue sirviendo; si falla, se reporta para que el admin lo reintente).
-  let vercel: VercelResult | undefined
+  // Aprovisionamiento en la infraestructura del sitio (abstracción de hosting).
+  // No bloquea la activación en BD: el subdominio sigue sirviendo. El detalle
+  // técnico va a logs; al panel solo llega un código abstracto.
+  let provision: { ok: boolean; code?: string } | undefined
   if (vercelAction) {
-    vercel = vercelAction.kind === 'add'
-      ? await addDomainToVercel(vercelAction.domain)
-      : await removeDomainFromVercel(vercelAction.domain)
+    const provider = getHostingProvider()
+    const res: ProvisionResult = vercelAction.kind === 'add'
+      ? await provider.linkDomain(vercelAction.domain)
+      : await provider.unlinkDomain(vercelAction.domain)
+    if (!res.ok && res.internalDetail) {
+      console.warn(`[hosting] ${vercelAction.kind} ${vercelAction.domain}: ${res.internalDetail}`)
+    }
+    provision = { ok: res.ok, ...(res.code ? { code: res.code } : {}) }
   }
 
-  return NextResponse.json({ tenant: data, ...(vercel ? { vercel } : {}) })
+  return NextResponse.json({ tenant: data, ...(provision ? { provision } : {}) })
 }

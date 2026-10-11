@@ -9,7 +9,16 @@ export interface DnsRecord {
   type: 'TXT' | 'A' | 'CNAME'
   name: string
   value: string
-  note?: string
+  /** Para qué sirve el registro (validación / enrutado). */
+  purpose?: string
+}
+
+export type ProvisionState = 'awaiting_dns' | 'certificate' | 'propagating' | 'active' | 'error'
+
+export interface Provision {
+  state: ProvisionState
+  records: DnsRecord[]
+  active: boolean
 }
 
 export interface DomainState {
@@ -19,7 +28,8 @@ export interface DomainState {
   /** Instrucciones vigentes (presentes mientras hay un dominio en proceso). */
   txtName?: string
   txtValue?: string
-  dns?: DnsRecord[]
+  /** Estado del aprovisionamiento + registros DNS (abstracción de hosting). */
+  provision?: Provision
 }
 
 export interface DomainInstructions {
@@ -28,7 +38,6 @@ export interface DomainInstructions {
   domain?: string
   txtName?: string
   txtValue?: string
-  dns?: DnsRecord[]
 }
 
 function base(): string | null {
@@ -79,8 +88,14 @@ export async function verifyDomain(tenantId: string): Promise<{ ok: boolean; sta
 export interface PatchResult {
   ok: boolean
   error?: string
-  /** Resultado del aprovisionamiento en Vercel (alta/baja del dominio). */
-  vercel?: { ok: boolean; skipped?: boolean; error?: string; verified?: boolean }
+  /** Resultado abstracto del aprovisionamiento (sin detalles de infraestructura). */
+  provision?: { ok: boolean; code?: string }
+}
+
+/** Mensaje genérico para el comerciante según el código abstracto (sin infra). */
+export function provisionMessage(code?: string): string {
+  if (code === 'conflict') return 'Ese dominio ya está en uso en otra tienda. Verifica que sea tuyo.'
+  return 'Estamos terminando de habilitar tu dominio. Puede tardar unos minutos; tu tienda ya está disponible en tu subdominio mientras tanto.'
 }
 
 /** Activa el dominio verificado (PATCH primaryDomain; el control plane lo gatea por estado). */
@@ -104,7 +119,7 @@ async function patchPrimaryDomain(tenantId: string, primaryDomain: string | null
     if (!res.ok) {
       return { ok: false, error: d.detail ?? d.error ?? `Error ${res.status}` }
     }
-    return { ok: true, vercel: d.vercel }
+    return { ok: true, provision: d.provision }
   } catch (e) {
     return { ok: false, error: e instanceof Error ? e.message : String(e) }
   }

@@ -3,7 +3,7 @@
 import { revalidatePath } from 'next/cache'
 import { getAdminUser } from '@/lib/auth'
 import { canAccess } from '@/lib/roles'
-import { requestDomain, verifyDomain, activateDomain, removeDomain, type DomainInstructions } from '@/lib/domains'
+import { requestDomain, verifyDomain, activateDomain, removeDomain, provisionMessage, type DomainInstructions } from '@/lib/domains'
 
 export interface DomainActionState {
   ok: boolean
@@ -48,18 +48,11 @@ export async function activateDomainAction(_prev: DomainActionState, formData: F
   const res = await activateDomain(u.tenantId, domain)
   revalidatePath('/configuracion/dominio')
   if (!res.ok) return { ok: false, error: res.error ?? 'No se pudo activar el dominio.' }
-  // Aviso si el alta en el hosting (Vercel) falló: la tienda sigue en el subdominio.
-  if (res.vercel && res.vercel.ok === false) {
-    const err = res.vercel.error ?? 'reintenta'
-    const hint = /project.*not.*found|not.*found.*project/i.test(err)
-      ? ' Revisa que VERCEL_PROJECT_ID sea el del proyecto de la tienda y, si está en un Team, que VERCEL_TEAM_ID esté configurado.'
-      : ''
-    return { ok: true, message: `Dominio activado, pero el alta en el hosting falló (${err}).${hint} Tu tienda sigue disponible en tu subdominio mientras se resuelve.` }
+  // Mensaje GENÉRICO para el comerciante (sin detalles de infraestructura).
+  if (res.provision && res.provision.ok === false) {
+    return { ok: true, message: provisionMessage(res.provision.code) }
   }
-  const prov = res.vercel?.skipped
-    ? ' Recuerda dar de alta el dominio en el hosting.'
-    : ' El certificado HTTPS puede tardar unos minutos en emitirse.'
-  return { ok: true, message: `Dominio activado.${prov}` }
+  return { ok: true, message: 'Dominio activado. El certificado HTTPS puede tardar unos minutos en habilitarse.' }
 }
 
 /** Quita el dominio propio: la tienda vuelve a su subdominio *.merkiai.com. */

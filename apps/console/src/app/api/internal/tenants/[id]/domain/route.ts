@@ -7,8 +7,9 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { platformDb } from '@/lib/platform-db'
 import { hasInternalSecret } from '@/lib/auth'
-import { requestDomain, dnsTargetsFromEnv } from '@/lib/domain-service'
-import { expectedDnsRecords, expectedTxtName, expectedTxtValue } from '@/lib/domain-verification'
+import { requestDomain } from '@/lib/domain-service'
+import { expectedTxtName, expectedTxtValue } from '@/lib/domain-verification'
+import { getHostingProvider } from '@/lib/hosting'
 
 export const dynamic = 'force-dynamic'
 
@@ -19,20 +20,21 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ id: 
     .from('tenants').select('primary_domain, domain_status, domain_requested, domain_verify_token').eq('id', id).maybeSingle()
   if (!data) return NextResponse.json({ error: 'not_found' }, { status: 404 })
 
-  // Mientras haya un dominio en proceso, devolvemos también las instrucciones DNS
-  // (TXT de propiedad + A/CNAME de apuntado) para que el admin las muestre.
   const domain = data.domain_requested as string | null
   const token = data.domain_verify_token as string | null
   const { domain_verify_token: _omit, ...publicData } = data as Record<string, unknown>
+
+  if (!domain || !token) return NextResponse.json(publicData)
+
+  // Registros DNS + estado del aprovisionamiento desde la abstracción de hosting
+  // (no se expone qué infraestructura es). Incluye el TXT de propiedad.
+  const provider = getHostingProvider()
+  const provision = await provider.getStatus(domain)
   return NextResponse.json({
     ...publicData,
-    ...(domain && token
-      ? {
-          txtName: expectedTxtName(domain),
-          txtValue: expectedTxtValue(token),
-          dns: expectedDnsRecords(domain, dnsTargetsFromEnv()),
-        }
-      : {}),
+    txtName: expectedTxtName(domain),
+    txtValue: expectedTxtValue(token),
+    provision, // { state, records, active }
   })
 }
 
@@ -40,6 +42,11 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
   if (!hasInternalSecret(req)) return NextResponse.json({ error: 'unauthorized' }, { status: 401 })
   const { id } = await params
   const body = (await req.json().catch(() => ({}))) as { domain?: string }
-  const res = await requestDomain(platformDb(), id, String(body.domain ?? ''), Math.random, dnsTargetsFromEnv())
+  const res = await requestDomain(platformDb(), id, String(body.domain ?? ''))
+  // Da de alta el dominio en la infraestructura de inmediato (idempotente).
+  if (res.ok && res.domain) {
+    const link = await getHostingProvider().linkDomain(res.domain)
+    if (!link.ok && link.internalDetail) console.warn(`[hosting] link ${res.domain}: ${link.internalDetail}`)
+  }
   return NextResponse.json(res, { status: res.ok ? 200 : 400 })
 }
