@@ -32,6 +32,8 @@ interface PaymentConfigData {
 
 interface Props {
   initialConfig: PaymentConfigData | null
+  /** URL pública de la tienda (dominio propio o subdominio) para las URLs de webhook. */
+  storeBaseUrl?: string | null
 }
 
 // Orden y etiquetas del menú horizontal. 'none' = pago manual.
@@ -58,9 +60,10 @@ const STRING_FIELDS = [
 const WEBHOOK_BASE = (process.env.NEXT_PUBLIC_SITE_URL ?? '').replace(/\/$/, '')
 
 /** URL de webhook de una pasarela, copiable para registrarla en su cuenta. */
-function WebhookUrl({ provider, note }: { provider: string; note?: string }) {
-  const url = WEBHOOK_BASE
-    ? `${WEBHOOK_BASE}/api/webhooks/${provider}`
+function WebhookUrl({ provider, note, base }: { provider: string; note?: string; base?: string | null }) {
+  const effBase = (base || WEBHOOK_BASE || '').replace(/\/$/, '')
+  const url = effBase
+    ? `${effBase}/api/webhooks/${provider}`
     : `https://tu-dominio.com/api/webhooks/${provider}`
   const [copied, setCopied] = useState(false)
 
@@ -80,7 +83,7 @@ function WebhookUrl({ provider, note }: { provider: string; note?: string }) {
         </button>
       </div>
       <p className="font-brand text-[11px] text-brand-primary/40 mt-1">
-        {!WEBHOOK_BASE && 'Configura NEXT_PUBLIC_SITE_URL para generar la URL real. '}
+        {!effBase && 'La URL real aparecerá cuando tu tienda tenga dominio/subdominio. '}
         {note}
       </p>
     </div>
@@ -88,8 +91,9 @@ function WebhookUrl({ provider, note }: { provider: string; note?: string }) {
 }
 
 /** URL parametrizada copiable (para pegar en el panel de la pasarela). */
-function CopyableUrl({ label, path, note }: { label: string; path: string; note?: string }) {
-  const url = WEBHOOK_BASE ? `${WEBHOOK_BASE}${path}` : `https://tu-dominio.com${path}`
+function CopyableUrl({ label, path, note, base }: { label: string; path: string; note?: string; base?: string | null }) {
+  const effBase = (base || WEBHOOK_BASE || '').replace(/\/$/, '')
+  const url = effBase ? `${effBase}${path}` : `https://tu-dominio.com${path}`
   const [copied, setCopied] = useState(false)
   return (
     <div className="mt-2 rounded-xl border border-brand-primary/10 bg-brand-cream/30 p-3">
@@ -107,7 +111,7 @@ function CopyableUrl({ label, path, note }: { label: string; path: string; note?
         </button>
       </div>
       <p className="font-brand text-[11px] text-brand-primary/40 mt-1">
-        {!WEBHOOK_BASE && 'Configura NEXT_PUBLIC_SITE_URL para generar la URL real. '}
+        {!effBase && 'La URL real aparecerá cuando tu tienda tenga dominio/subdominio. '}
         {note}
       </p>
     </div>
@@ -378,9 +382,10 @@ function SecretInput({ label, name, hasExisting, placeholder, hint }: {
   )
 }
 
-export default function PaymentConfigForm({ initialConfig }: Props) {
+export default function PaymentConfigForm({ initialConfig, storeBaseUrl }: Props) {
   const cfg = initialConfig
   const formRef = useRef<HTMLFormElement>(null)
+  const whBase = storeBaseUrl ?? null
 
   const [activeProvider, setActiveProvider] = useState<ActiveProvider>(cfg?.active_provider ?? 'none')
   // El tab visible arranca en la pasarela activa (o Wompi si es manual).
@@ -536,7 +541,7 @@ export default function PaymentConfigForm({ initialConfig }: Props) {
         <SecretInput label="Llave privada (prv_…)" name="wompi_private_key" hasExisting={cfg?.has_wompi_private_key ?? false} placeholder="prv_test_… o prv_prod_…" hint="Usada internamente. Nunca se expone al cliente." />
         <SecretInput label="Llave de integridad" name="wompi_integrity_secret" hasExisting={cfg?.has_wompi_integrity_secret ?? false} placeholder="test_integrity_… o prod_integrity_…" hint="Firma SHA256 de los payment links. Panel Wompi → Desarrolladores → Integridad." />
         <SecretInput label="Llave de eventos (webhooks)" name="wompi_events_secret" hasExisting={cfg?.has_wompi_events_secret ?? false} placeholder="test_events_… o prod_events_…" hint="Verifica que el webhook venga de Wompi. Panel Wompi → Webhooks." />
-        <WebhookUrl provider="wompi" note="Pégala en Wompi → Desarrolladores → Eventos/Webhook." />
+        <WebhookUrl provider="wompi" base={whBase} note="Pégala en Wompi → Desarrolladores → Eventos/Webhook." />
         <ActivateRow provider="wompi" />
       </div>
 
@@ -554,7 +559,7 @@ export default function PaymentConfigForm({ initialConfig }: Props) {
         </div>
         <SecretInput label="Access Token (TEST-… o APP_USR-…)" name="mercadopago_access_token" hasExisting={cfg?.has_mercadopago_access_token ?? false} placeholder="TEST-abc123… o APP_USR-abc123…" hint="Credencial privada de servidor. TEST-… = sandbox, APP_USR-… = producción." />
         <SecretInput label="Clave secreta del webhook (x-signature)" name="mercadopago_webhook_secret" hasExisting={cfg?.has_mercadopago_webhook_secret ?? false} placeholder="Clave secreta de la firma" hint="Verifica la firma x-signature del webhook. Panel MP → Webhooks → Configurar notificaciones → Clave secreta. Opcional (el estado se re-consulta a la API)." />
-        <WebhookUrl provider="mercadopago" note="Pégala en MercadoPago → Tus integraciones → Webhooks (notificaciones)." />
+        <WebhookUrl provider="mercadopago" base={whBase} note="Pégala en MercadoPago → Tus integraciones → Webhooks (notificaciones)." />
         <ActivateRow provider="mercadopago" />
       </div>
 
@@ -588,11 +593,13 @@ export default function PaymentConfigForm({ initialConfig }: Props) {
           <CopyableUrl
             label="URL de Confirmación (server-to-server)"
             path="/api/webhooks/tucompra"
+            base={whBase}
             note="Pégala en el panel Tu Compra → URL de Confirmación. En «sonda de confirmación» habilita al menos «Numero Factura» (correlaciona el pedido) y «Firma TuCompra»."
           />
           <CopyableUrl
             label="URL de Retorno (navegador)"
             path="/checkout/confirmation"
+            base={whBase}
             note="A donde vuelve el cliente tras pagar. Pégala en el panel Tu Compra → URL de Retorno."
           />
         </div>
@@ -616,7 +623,7 @@ export default function PaymentConfigForm({ initialConfig }: Props) {
           </div>
           <span className="font-brand text-sm text-brand-primary">Modo sandbox (pruebas)</span>
         </label>
-        <WebhookUrl provider="bold" note="Regístrala en Bold → Panel de Comercios → Integraciones → Webhooks." />
+        <WebhookUrl provider="bold" base={whBase} note="Regístrala en Bold → Panel de Comercios → Integraciones → Webhooks." />
         <ActivateRow provider="bold" />
       </div>
 

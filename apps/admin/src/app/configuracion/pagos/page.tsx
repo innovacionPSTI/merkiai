@@ -5,6 +5,7 @@ import { getPaymentConfig } from '@merkiai/database'
 import { getAdminUser } from '@/lib/auth'
 import { getAdminDb } from '@/lib/admin-db'
 import { canAccess } from '@/lib/roles'
+import { resolveStoreBaseUrl } from '@/lib/store-url'
 import PaymentConfigForm from '../PaymentConfigForm'
 
 export const metadata: Metadata = { title: 'Pagos · Configuración' }
@@ -20,6 +21,8 @@ export default async function ConfigPagosPage() {
   if (!fullAccess) redirect('/configuracion/general')
 
   const paymentConfig = await getPaymentConfig(getAdminDb(adminUser.tenantId), adminUser.tenantId).catch(() => null)
+  // URL pública de la tienda (dominio propio o subdominio) para las URLs de webhook.
+  const storeBaseUrl = await resolveStoreBaseUrl(adminUser.tenantId).catch(() => null)
 
   const paymentConfigData = paymentConfig
     ? {
@@ -52,7 +55,7 @@ export default async function ConfigPagosPage() {
       </div>
 
       <div className="bg-white rounded-2xl p-6 shadow-sm">
-        <PaymentConfigForm initialConfig={paymentConfigData} />
+        <PaymentConfigForm initialConfig={paymentConfigData} storeBaseUrl={storeBaseUrl} />
       </div>
     </div>
   )
