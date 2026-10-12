@@ -341,7 +341,7 @@ Se reorganizó la configuración de pagos con la misma lógica de "Proveedor act
 - [x] **Tests** — `payment-status.integration.test.ts` (5) + `sendPaymentConfirmed` en `email.test.ts` ✅
 
 ### Reposicionamiento a CMS general (des-branding)
-- [x] **Marca eliminada** — todas las referencias a "VPS Coffee" quitadas de docs (README, PROGRESS, BACKLOG, DEPLOYMENT, STACK_AUTH_SETUP y sub-READMEs), seeds canónicos y fixtures de tests; dominios `vpscoffee.com` → `shop.example.com`. Las migraciones históricas (1–23) se dejan como registro ✅
+- [x] **Marca eliminada** — todas las referencias a la marca inicial quitadas de docs (README, PROGRESS, BACKLOG, DEPLOYMENT, STACK_AUTH_SETUP y sub-READMEs), seeds canónicos y fixtures de tests; dominios de ejemplo → `shop.example.com`. Las migraciones históricas (1–23) se dejan como registro ✅
 - [x] **Nombre genérico** — la documentación usa "Commerce CMS" como nombre de plataforma (placeholder; el nombre real se configura por instancia en `store_config`) ✅
 - [x] **Reposicionamiento** — README y objetivos del backlog reescritos como **CMS de e-commerce general y personalizable (white-label)** con tres pilares: CMS + e-commerce, integraciones intercambiables (pagos/envíos/email) y **componentes de IA** (arquitectura extensible para generación de contenido, recomendaciones y asistencia). Ejemplos de café/maquila marcados como ilustrativos, no como vertical obligatorio ✅
 - [x] Suites verdes tras el renombrado: **web 26/290, database 11/124, admin 12/165** ✅
