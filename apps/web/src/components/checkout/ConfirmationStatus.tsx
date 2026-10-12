@@ -8,6 +8,7 @@ type UiStatus = 'loading' | 'approved' | 'pending' | 'rejected' | 'generic'
 const RECONCILE_ENDPOINT: Record<string, string> = {
   tucompra: '/api/checkout/tucompra/reconcile',
   bold: '/api/checkout/bold/reconcile',
+  wompi: '/api/checkout/wompi/reconcile',
 }
 
 /**
@@ -16,7 +17,7 @@ const RECONCILE_ENDPOINT: Record<string, string> = {
  * unas veces; para el resto lee el estado que dejó el webhook. Sin pedido en la URL
  * cae a un mensaje genérico de "pedido recibido".
  */
-export default function ConfirmationStatus({ order, whatsapp }: { order: string | null; whatsapp: string }) {
+export default function ConfirmationStatus({ order, whatsapp, txnId = null }: { order: string | null; whatsapp: string; txnId?: string | null }) {
   const [status, setStatus] = useState<UiStatus>(order ? 'loading' : 'generic')
   const [method, setMethod] = useState<string | null>(null)
   const started = useRef(false)
@@ -47,7 +48,7 @@ export default function ConfirmationStatus({ order, whatsapp }: { order: string 
         try {
           await fetch(endpoint, {
             method: 'POST', headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ order }),
+            body: JSON.stringify({ order, ...(txnId ? { id: txnId } : {}) }),
           })
         } catch { /* reintenta */ }
         if (cancelled) return

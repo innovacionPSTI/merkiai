@@ -1,94 +1,21 @@
 /**
- * Unit tests — lib/wompi.ts
+ * Unit tests — lib/wompi.ts (helpers puros del webhook)
  *
  * Covers:
- *   buildWompiCheckoutUrl  — estructura de URL, firma SHA256
  *   verifyWompiWebhook     — firma válida, inválida, sin secret (fail-closed)
+ *   isWompiTimestampFresh  — ventana de replay
  *   mapWompiStatus         — todos los estados de Wompi
+ *
+ * La construcción de la URL de pago y la re-consulta por API se prueban en
+ * WompiGateway (@merkiai/database), que es la fuente única del checkout/reconcile.
  */
 
 import { createHash } from 'crypto'
 import {
-  buildWompiCheckoutUrl,
   verifyWompiWebhook,
   isWompiTimestampFresh,
   mapWompiStatus,
 } from '../wompi'
-
-// ─────────────────────────────────────────────
-// buildWompiCheckoutUrl
-// ─────────────────────────────────────────────
-describe('buildWompiCheckoutUrl', () => {
-  const baseParams = {
-    publicKey: 'pub_test_abc123',
-    integritySecret: 'test_int_secret',
-    reference: 'ORD-0042',
-    amountInCents: 9800000,
-    redirectUrl: 'https://shop.example.com/checkout/confirmation?order=ORD-0042',
-  }
-
-  it('genera una URL que empieza en el dominio de Wompi', () => {
-    const url = buildWompiCheckoutUrl(baseParams)
-    expect(url).toContain('checkout.wompi.co/p/')
-  })
-
-  it('incluye public-key, currency, amount-in-cents, reference y redirect-url', () => {
-    const url = new URL(buildWompiCheckoutUrl(baseParams))
-    expect(url.searchParams.get('public-key')).toBe('pub_test_abc123')
-    expect(url.searchParams.get('currency')).toBe('COP')
-    expect(url.searchParams.get('amount-in-cents')).toBe('9800000')
-    expect(url.searchParams.get('reference')).toBe('ORD-0042')
-    expect(url.searchParams.get('redirect-url')).toBe(baseParams.redirectUrl)
-  })
-
-  it('calcula correctamente la firma SHA256 de integridad', () => {
-    const url = new URL(buildWompiCheckoutUrl(baseParams))
-    const expected = createHash('sha256')
-      .update(`ORD-00429800000COPtest_int_secret`)
-      .digest('hex')
-    expect(url.searchParams.get('signature:integrity')).toBe(expected)
-  })
-
-  it('usa COP por defecto si no se especifica currency', () => {
-    const url = new URL(buildWompiCheckoutUrl(baseParams))
-    expect(url.searchParams.get('currency')).toBe('COP')
-  })
-
-  it('respeta la currency personalizada y la incluye en la firma', () => {
-    const url = new URL(buildWompiCheckoutUrl({ ...baseParams, currency: 'USD' }))
-    expect(url.searchParams.get('currency')).toBe('USD')
-    const expected = createHash('sha256')
-      .update(`ORD-00429800000USDtest_int_secret`)
-      .digest('hex')
-    expect(url.searchParams.get('signature:integrity')).toBe(expected)
-  })
-
-  it('incluye customer-data:email si se proporciona', () => {
-    const url = new URL(
-      buildWompiCheckoutUrl({
-        ...baseParams,
-        customerData: { email: 'juan@example.com' },
-      })
-    )
-    expect(url.searchParams.get('customer-data:email')).toBe('juan@example.com')
-  })
-
-  it('incluye customer-data:full-name si se proporciona', () => {
-    const url = new URL(
-      buildWompiCheckoutUrl({
-        ...baseParams,
-        customerData: { fullName: 'Juan Pérez' },
-      })
-    )
-    expect(url.searchParams.get('customer-data:full-name')).toBe('Juan Pérez')
-  })
-
-  it('no incluye campos customer-data si no se pasan', () => {
-    const url = new URL(buildWompiCheckoutUrl(baseParams))
-    expect(url.searchParams.has('customer-data:email')).toBe(false)
-    expect(url.searchParams.has('customer-data:full-name')).toBe(false)
-  })
-})
 
 // ─────────────────────────────────────────────
 // verifyWompiWebhook

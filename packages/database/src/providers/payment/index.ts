@@ -57,6 +57,7 @@ export function getPaymentGateway(
         publicKey: config.wompi_public_key,
         integritySecret: config.wompi_integrity_secret,
         eventsSecret: config.wompi_events_secret ?? undefined,
+        privateKey: config.wompi_private_key ?? undefined,
       })
     }
 

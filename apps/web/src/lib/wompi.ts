@@ -1,62 +1,11 @@
 import { createHash, timingSafeEqual } from 'crypto'
 
-const WOMPI_CHECKOUT_BASE = 'https://checkout.wompi.co/p/'
-
 /**
- * Construye la URL de pago de Wompi (Hosted Checkout).
- * Docs: https://docs.wompi.co/docs/en/widget-checkout-web
+ * Helpers puros del WEBHOOK de Wompi (verificación de firma, ventana de replay y
+ * mapeo de estado). La construcción de la URL de pago y la re-consulta por API
+ * viven en `WompiGateway` (@merkiai/database), que es la fuente única usada por el
+ * checkout y el reconcile.
  *
- * La firma de integridad es SHA256(`{reference}{amountInCents}{currency}{integritySecret}`)
- * Las credenciales se leen desde la BD vía getPaymentConfig(); no usan process.env.
- */
-export function buildWompiCheckoutUrl(params: {
-  publicKey: string
-  integritySecret: string
-  reference: string
-  amountInCents: number
-  currency?: string
-  redirectUrl: string
-  customerData?: {
-    email?: string
-    fullName?: string
-    phoneNumber?: string
-    legalId?: string
-    legalIdType?: string
-  }
-}): string {
-  const currency = params.currency ?? 'COP'
-  const signature = createHash('sha256')
-    .update(`${params.reference}${params.amountInCents}${currency}${params.integritySecret}`)
-    .digest('hex')
-
-  const url = new URL(WOMPI_CHECKOUT_BASE)
-  url.searchParams.set('public-key', params.publicKey)
-  url.searchParams.set('currency', currency)
-  url.searchParams.set('amount-in-cents', String(params.amountInCents))
-  url.searchParams.set('reference', params.reference)
-  url.searchParams.set('redirect-url', params.redirectUrl)
-  url.searchParams.set('signature:integrity', signature)
-
-  if (params.customerData?.email) {
-    url.searchParams.set('customer-data:email', params.customerData.email)
-  }
-  if (params.customerData?.fullName) {
-    url.searchParams.set('customer-data:full-name', params.customerData.fullName)
-  }
-  if (params.customerData?.phoneNumber) {
-    url.searchParams.set('customer-data:phone-number', params.customerData.phoneNumber)
-  }
-  if (params.customerData?.legalId) {
-    url.searchParams.set('customer-data:legal-id', params.customerData.legalId)
-  }
-  if (params.customerData?.legalIdType) {
-    url.searchParams.set('customer-data:legal-id-type', params.customerData.legalIdType)
-  }
-
-  return url.toString()
-}
-
-/**
  * Verifica la firma del webhook de Wompi.
  * Cabeceras: x-timestamp, x-checksum
  * Firma esperada: SHA256(`{payload}{timestamp}{eventsSecret}`)
