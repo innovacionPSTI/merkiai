@@ -16,14 +16,36 @@ const STATUS: Record<string, { label: string; tone: BadgeTone }> = {
 
 // Pipeline de aprovisionamiento (abstracción de hosting; sin detalles de infra).
 const PIPE = ['Validación DNS', 'Certificado', 'Propagación', 'Activo'] as const
-function pipeIndex(state: ProvisionState | undefined, domainActive: boolean): number {
-  if (domainActive) return 3
+function pipeIndex(state: ProvisionState | undefined, providerActive: boolean): number {
+  if (providerActive) return 3
   switch (state) {
     case 'active': return 3
     case 'propagating': return 2
     case 'certificate': return 1
     default: return 0
   }
+}
+
+// El estado que se MUESTRA se deriva del proveedor en vivo (no del flag en BD),
+// para no cantar "Activo" si el dominio aún no responde de verdad. El flag
+// `domain_status` solo gobierna qué acciones se habilitan (verificar/activar).
+function displayStatus(
+  domainStatus: string,
+  provision: DomainState['provision'],
+): { label: string; tone: BadgeTone } {
+  if (provision) {
+    if (provision.active) return { label: 'Activo', tone: 'success' }
+    switch (provision.state) {
+      case 'certificate': return { label: 'Emitiendo certificado', tone: 'info' }
+      case 'propagating':  return { label: 'Propagando', tone: 'info' }
+      case 'error':        return { label: 'Revisa la configuración', tone: 'warn' }
+      default:
+        return domainStatus === 'pending'
+          ? { label: 'Pendiente de verificar', tone: 'warn' }
+          : { label: 'Esperando propagación DNS', tone: 'warn' }
+    }
+  }
+  return STATUS[domainStatus] ?? STATUS.none
 }
 
 function CopyRow({ label, value }: { label: string; value: string }) {
@@ -81,17 +103,19 @@ export default function DominioClient({ state: initial }: { state: DomainState |
     )
   }
 
-  const status = STATUS[initial.domain_status] ?? STATUS.none
+  const provision = initial.provision
+  const status = displayStatus(initial.domain_status, provision)
   const domain = initial.domain_requested ?? ''
   const txtName = reqState.instructions?.txtName ?? initial.txtName
   const txtValue = reqState.instructions?.txtValue ?? initial.txtValue
-  const provision = initial.provision
   const records: DnsRecord[] = provision?.records ?? []
   const inProcess = initial.domain_status !== 'none'
   const canVerify = initial.domain_status === 'pending' || initial.domain_status === 'verified'
   const canActivate = initial.domain_status === 'verified'
+  // "Activo" de verdad = el proveedor lo confirma; el flag en BD no basta.
   const isActive = initial.domain_status === 'active'
-  const pIdx = pipeIndex(provision?.state, isActive)
+  const providerActive = provision?.active ?? false
+  const pIdx = pipeIndex(provision?.state, providerActive)
 
   const Msg = ({ s }: { s: DomainActionState }) =>
     s.error ? <p className="font-brand text-sm text-red-600 mt-2">{s.error}</p>
@@ -179,7 +203,11 @@ export default function DominioClient({ state: initial }: { state: DomainState |
         <div className="bg-white rounded-2xl p-6 shadow-sm">
           <h2 className="font-display text-brand-primary text-lg mb-1">3 · Activar</h2>
           <p className="font-brand text-sm text-brand-primary/50 mb-4">
-            {isActive ? 'Tu tienda ya responde en tu dominio propio.' : 'Activa el dominio verificado como el dominio principal de tu tienda.'}
+            {providerActive
+              ? 'Tu tienda ya responde en tu dominio propio.'
+              : isActive
+                ? 'Estamos terminando de habilitar tu dominio. Pulsa Verificar estado para comprobar la propagación; mientras tanto tu tienda sigue en tu subdominio.'
+                : 'Activa el dominio verificado como el dominio principal de tu tienda.'}
           </p>
           <form action={actAction}>
             <input type="hidden" name="domain" value={domain} />
