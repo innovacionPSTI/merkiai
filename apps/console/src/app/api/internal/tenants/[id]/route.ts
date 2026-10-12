@@ -57,6 +57,16 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
       return NextResponse.json({ error: `status inválido (${STATUSES.join('|')})` }, { status: 400 })
     }
     patch.status = body.status
+    // HU-174 v5 (hardening): el dominio propio NO debe seguir enrutando a una
+    // tienda suspendida/cancelada; al reactivar, se vuelve a enlazar. Se conserva
+    // `primary_domain` en BD para restaurarlo sin re-verificar.
+    const st = String(body.status)
+    if (st === 'suspended' || st === 'canceled' || st === 'active') {
+      const { data: cur } = await platformDb()
+        .from('tenants').select('primary_domain').eq('id', id).maybeSingle()
+      const dom = cur?.primary_domain as string | undefined
+      if (dom) vercelAction = { kind: st === 'active' ? 'add' : 'remove', domain: dom }
+    }
   }
   if (body.plan !== undefined) patch.plan = String(body.plan)
   if (body.dataIsolation !== undefined) {

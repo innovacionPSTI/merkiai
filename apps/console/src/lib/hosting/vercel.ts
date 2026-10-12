@@ -21,6 +21,11 @@ function cfg() {
 }
 const qs = (teamId?: string) => (teamId ? `?teamId=${encodeURIComponent(teamId)}` : '')
 
+/** Dominio raíz sin el prefijo `www.` (lo que el comerciante escribe como su dominio). */
+function apexOf(domain: string): string {
+  return domain.replace(/^www\./i, '')
+}
+
 function routingRecords(domain: string, aRecord: string, cname: string): DnsRecord[] {
   return [
     { type: 'A', name: '@', value: aRecord, purpose: 'Enrutado del dominio raíz' },
@@ -32,13 +37,16 @@ export class VercelHostingProvider implements HostingProvider {
   readonly id = 'managed'
   constructor(private doFetch: Fetch = fetch) {}
 
-  async linkDomain(domain: string): Promise<ProvisionResult> {
+  /** Alta de un nombre en el proyecto. `redirect` convierte el nombre en redirección 308. */
+  private async addName(name: string, redirect?: string): Promise<ProvisionResult> {
     const { token, projectId, teamId } = cfg()
     if (!token || !projectId) return { ok: false, code: 'not_configured', internalDetail: 'HOSTING_API_TOKEN/HOSTING_PROJECT_ID ausentes' }
     try {
+      const body: Record<string, unknown> = { name }
+      if (redirect) { body.redirect = redirect; body.redirectStatusCode = 308 }
       const res = await this.doFetch(
         `https://api.vercel.com/v10/projects/${encodeURIComponent(projectId)}/domains${qs(teamId)}`,
-        { method: 'POST', headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' }, body: JSON.stringify({ name: domain }) },
+        { method: 'POST', headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' }, body: JSON.stringify(body) },
       )
       const data = await res.json().catch(() => ({})) as { error?: { code?: string; message?: string } }
       if (res.ok) return { ok: true }
@@ -53,12 +61,26 @@ export class VercelHostingProvider implements HostingProvider {
     }
   }
 
-  async unlinkDomain(domain: string): Promise<ProvisionResult> {
+  async linkDomain(domain: string): Promise<ProvisionResult> {
+    // HU-174 v4: registramos el apex y el `www` como redirección canónica al apex.
+    // El apex es obligatorio; el `www` es best-effort (si el comerciante no crea el
+    // CNAME simplemente no resuelve, pero no debe bloquear la activación del apex).
+    const apex = apexOf(domain)
+    const apexRes = await this.addName(apex)
+    if (!apexRes.ok) return apexRes
+    const wwwRes = await this.addName(`www.${apex}`, apex)
+    if (!wwwRes.ok && wwwRes.internalDetail) {
+      return { ok: true, internalDetail: `www no registrado: ${wwwRes.internalDetail}` }
+    }
+    return { ok: true }
+  }
+
+  private async removeName(name: string): Promise<ProvisionResult> {
     const { token, projectId, teamId } = cfg()
     if (!token || !projectId) return { ok: true } // nada que desvincular
     try {
       const res = await this.doFetch(
-        `https://api.vercel.com/v9/projects/${encodeURIComponent(projectId)}/domains/${encodeURIComponent(domain)}${qs(teamId)}`,
+        `https://api.vercel.com/v9/projects/${encodeURIComponent(projectId)}/domains/${encodeURIComponent(name)}${qs(teamId)}`,
         { method: 'DELETE', headers: { Authorization: `Bearer ${token}` } },
       )
       if (res.ok || res.status === 404) return { ok: true }
@@ -68,7 +90,18 @@ export class VercelHostingProvider implements HostingProvider {
     }
   }
 
-  async getStatus(domain: string): Promise<ProvisionStatus> {
+  async unlinkDomain(domain: string): Promise<ProvisionResult> {
+    // Quita apex y www (ambos idempotentes: 404 = ya no estaba).
+    const apex = apexOf(domain)
+    const a = await this.removeName(apex)
+    const w = await this.removeName(`www.${apex}`)
+    if (!a.ok) return a
+    if (!w.ok && w.internalDetail) return { ok: true, internalDetail: `www no removido: ${w.internalDetail}` }
+    return { ok: true }
+  }
+
+  async getStatus(domainInput: string): Promise<ProvisionStatus> {
+    const domain = apexOf(domainInput)
     const { token, projectId, teamId, aRecord, cname } = cfg()
     const routing = routingRecords(domain, aRecord, cname)
     if (!token || !projectId) return { state: 'awaiting_dns', records: routing, active: false }

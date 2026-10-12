@@ -21,6 +21,22 @@ describe('VercelHostingProvider.linkDomain', () => {
     expect(await new VercelHostingProvider(jest.fn(async () => resp({})) as any).linkDomain('x.com')).toEqual({ ok: true })
     expect(await new VercelHostingProvider(jest.fn(async () => resp({ error: { code: 'domain_already_in_use' } }, 409)) as any).linkDomain('x.com')).toEqual({ ok: true })
   })
+  it('registra apex + www como redirección 308 (HU-174 v4)', async () => {
+    withEnv({ HOSTING_API_TOKEN: 't', HOSTING_PROJECT_ID: 'prj' })
+    const calls: any[] = []
+    const fetchMock = jest.fn(async (_url: string, init: any) => { calls.push(JSON.parse(init.body)); return resp({}) })
+    const r = await new VercelHostingProvider(fetchMock as any).linkDomain('www.mitienda.com')
+    expect(r).toEqual({ ok: true })
+    expect(calls[0]).toEqual({ name: 'mitienda.com' })
+    expect(calls[1]).toMatchObject({ name: 'www.mitienda.com', redirect: 'mitienda.com', redirectStatusCode: 308 })
+  })
+  it('www best-effort: si falla, el apex igual queda ok', async () => {
+    withEnv({ HOSTING_API_TOKEN: 't', HOSTING_PROJECT_ID: 'prj' })
+    const fetchMock = jest.fn()
+      .mockResolvedValueOnce(resp({}))                                   // apex ok
+      .mockResolvedValueOnce(resp({ error: { message: 'boom' } }, 500))  // www falla
+    expect(await new VercelHostingProvider(fetchMock as any).linkDomain('mitienda.com')).toMatchObject({ ok: true })
+  })
   it('project not found → code not_configured (detalle solo interno)', async () => {
     withEnv({ HOSTING_API_TOKEN: 't', HOSTING_PROJECT_ID: 'prj' })
     const r = await new VercelHostingProvider(jest.fn(async () => resp({ error: { code: 'not_found', message: 'Project not found' } }, 404)) as any).linkDomain('x.com')
