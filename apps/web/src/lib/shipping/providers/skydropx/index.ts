@@ -81,12 +81,15 @@ export class SkydropxProvider implements ShippingProvider {
     try {
       const quotationId = await this._createQuotation(address, parcel)
       const proRates = await this._pollRates(quotationId)
-      const successful = proRates.filter((r) => r.success)
+      // Usable = marcada success, o con un precio real (> 0). Algunos servicios
+      // devuelven el precio con status 'price_found_internal' y success=false
+      // (p. ej. mensajería intra-ciudad); si trae total > 0 es cotizable.
+      const successful = proRates.filter((r) => r.success === true || Number(r.total) > 0)
       if (successful.length === 0) {
         // Diagnóstico compacto: peso/dimensiones enviados + motivo de CADA
         // transportadora (status + error). Así se ve por qué fallan las 8.
         const reasons = proRates.map((r) =>
-          `${r.provider_name}/${r.provider_service_code ?? r.provider_service_name}: ${r.status ?? '?'}` +
+          `${r.provider_name}/${r.provider_service_code ?? r.provider_service_name}: ${r.status ?? '?'} (total=${r.total ?? 'null'})` +
           (r.error_messages?.length ? ` — ${r.error_messages.map((e) => e.error_message).join('; ')}` : ''),
         )
         console.warn(
@@ -127,7 +130,7 @@ export class SkydropxProvider implements ShippingProvider {
     // 1. Get cheapest rate
     const quotationId = await this._createQuotation(destination, parcel)
     const proRates = await this._pollRates(quotationId)
-    const successRates = proRates.filter((r) => r.success)
+    const successRates = proRates.filter((r) => r.success === true || Number(r.total) > 0)
     if (!successRates.length) throw new Error('No hay tarifas disponibles de Skydropx')
 
     const cheapest = successRates.reduce((a, b) =>

@@ -144,9 +144,9 @@ describe('SkydropxProvider — happy path', () => {
     expect(credentials.clientSecret).toBe('test-secret')
   })
 
-  it('filtra tarifas donde success = false', async () => {
+  it('excluye tarifas rechazadas sin precio (success=false y total null)', async () => {
     const mixedRates = [
-      { ...mockProRates[0], success: false },
+      { ...mockProRates[0], success: false, total: null },
       { ...mockProRates[1], success: true },
     ]
     mockFetch
@@ -160,6 +160,26 @@ describe('SkydropxProvider — happy path', () => {
 
     expect(rates).toHaveLength(1)
     expect(rates[0].carrier_name).toBe('Coordinadora')
+  })
+
+  it('incluye tarifas con precio real aunque success=false (price_found_internal)', async () => {
+    // Skydropx: algunos servicios (mensajería intra-ciudad) devuelven el precio
+    // con success=false; si trae total > 0 debe cotizarse igual.
+    const mixedRates = [
+      { ...mockProRates[0], success: false, status: 'price_found_internal' }, // tiene total > 0
+      { ...mockProRates[1], success: false, total: null },                    // rechazada sin precio
+    ]
+    mockFetch
+      .mockResolvedValueOnce(quotationCreatedResponse())
+      .mockResolvedValueOnce(ratesCompletedResponse(mixedRates))
+
+    const provider = new SkydropxProvider(CREDENTIALS)
+    const promise = provider.getRates(dummyAddress, dummyParcel)
+    jest.runAllTimers()
+    const rates = await promise
+
+    expect(rates).toHaveLength(1)
+    expect(rates[0].carrier_name).toBe(mockProRates[0].provider_display_name)
   })
 })
 
