@@ -7,12 +7,12 @@
 import { NextResponse } from 'next/server'
 import { getAdminUser } from '@/lib/auth'
 import { getAdminDb } from '@/lib/admin-db'
-import { canAccess } from '@/lib/roles'
+import { userCanAccess } from '@/lib/roles'
 import { getActiveTheme, getPageSections, getSectionItems, getStoreConfig, buildStorePresetPayload } from '@merkiai/database'
 
 export async function GET() {
   const user = await getAdminUser()
-  if (!user || !canAccess(user.role, 'configuracion')) {
+  if (!user || !userCanAccess(user, 'configuracion')) {
     return NextResponse.json({ error: 'No autorizado' }, { status: 401 })
   }
   const db = getAdminDb(user.tenantId)

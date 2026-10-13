@@ -3,7 +3,7 @@ import type { Metadata } from 'next'
 import { listReviews } from '@merkiai/database'
 import { getAdminUser } from '@/lib/auth'
 import { getAdminDb } from '@/lib/admin-db'
-import { canAccess } from '@/lib/roles'
+import { userCanAccess } from '@/lib/roles'
 import ReviewsClient from './ReviewsClient'
 
 export const metadata: Metadata = { title: 'Reseñas' }
@@ -11,7 +11,7 @@ export const dynamic = 'force-dynamic'
 
 export default async function ReviewsPage() {
   const adminUser = await getAdminUser()
-  if (!adminUser || !canAccess(adminUser.role, 'productos')) redirect('/no-autorizado')
+  if (!adminUser || !userCanAccess(adminUser, 'productos')) redirect('/no-autorizado')
 
   const db = getAdminDb(adminUser.tenantId)
   const reviews = await listReviews(db)

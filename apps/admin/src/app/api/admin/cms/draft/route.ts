@@ -12,7 +12,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { getAdminUser } from '@/lib/auth'
 import { getAdminDb } from '@/lib/admin-db'
-import { canAccess } from '@/lib/roles'
+import { userCanAccess } from '@/lib/roles'
 import {
   saveSectionDraft, publishSectionDraft, discardSectionDraft,
   saveItemDraft, publishItemDraft, discardItemDraft,
@@ -21,7 +21,7 @@ import { validateSectionPayload, validateItemByItemType } from '@/lib/section-va
 
 export async function POST(req: NextRequest) {
   const adminUser = await getAdminUser()
-  if (!adminUser || !canAccess(adminUser.role, 'contenido')) {
+  if (!adminUser || !userCanAccess(adminUser, 'contenido')) {
     return NextResponse.json({ error: 'No autorizado' }, { status: 401 })
   }
 

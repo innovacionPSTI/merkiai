@@ -1,13 +1,14 @@
 'use client'
 
 import { useState } from 'react'
-import { ENTITLEMENTS_CATALOG } from '@merkiai/tenancy'
+import { ENTITLEMENTS_CATALOG, ADMIN_SECTIONS, STAFF_ROLES } from '@merkiai/tenancy'
 import { input, btn } from '@/lib/styles'
 import type { PlanRow } from '@/lib/plans'
 import { savePlan } from '../../actions'
 
 const FEATURES = ENTITLEMENTS_CATALOG.filter((e) => e.kind === 'feature')
 const LIMITS = ENTITLEMENTS_CATALOG.filter((e) => e.kind === 'limit')
+const STAFF_ROLE_LABELS: Record<string, string> = { vendedor: 'Vendedor', gestor_tienda: 'Gestor de Tienda' }
 
 const EMPTY: PlanRow = {
   key: '', name: '', price_cents: 0, currency: 'COP',
@@ -82,6 +83,35 @@ export default function PlanForm({ plans }: { plans: PlanRow[] }) {
                 <input style={input} type="number" min={0} name={`limit_${l.key}`} placeholder="ilimitado" defaultValue={limitVal(l.key)} />
               </label>
             ))}
+          </div>
+        </fieldset>
+
+        <fieldset style={{ border: '1px solid #333', borderRadius: 8, padding: 12 }}>
+          <legend style={{ fontSize: 12, color: '#aaa', padding: '0 6px' }}>Acceso por rol (staff)</legend>
+          <p style={{ fontSize: 11, color: 'var(--ui-muted)', margin: '0 0 8px' }}>
+            Qué secciones del admin ve cada rol de staff en este plan. Sin nada marcado = acceso por defecto del rol. Admin y Super Admin siempre tienen acceso completo.
+          </p>
+          <div style={{ display: 'grid', gap: 12 }}>
+            {STAFF_ROLES.map((role) => {
+              const current = p.role_access?.[role]
+              return (
+                <div key={role}>
+                  <div style={{ fontSize: 13, fontWeight: 600, marginBottom: 6 }}>{STAFF_ROLE_LABELS[role] ?? role}</div>
+                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 6 }}>
+                    {ADMIN_SECTIONS.map((s) => (
+                      <label key={s.key} style={{ display: 'flex', gap: 6, alignItems: 'center', fontSize: 12 }}>
+                        <input
+                          type="checkbox"
+                          name={`roleacc_${role}_${s.key}`}
+                          defaultChecked={Array.isArray(current) ? current.includes(s.key) : false}
+                        />
+                        {s.label}
+                      </label>
+                    ))}
+                  </div>
+                </div>
+              )
+            })}
           </div>
         </fieldset>
 

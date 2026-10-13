@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { updateVariantType, deleteVariantType } from '@merkiai/database'
 import { getAdminUser } from '@/lib/auth'
 import { getAdminDb } from '@/lib/admin-db'
-import { canAccess } from '@/lib/roles'
+import { userCanAccess } from '@/lib/roles'
 import type { AdminRole } from '@/lib/roles'
 
 interface Params { params: Promise<{ id: string }> }
@@ -10,7 +10,7 @@ interface Params { params: Promise<{ id: string }> }
 /** PATCH /api/admin/variant-types/[id] — Actualiza un tipo de variante */
 export async function PATCH(request: NextRequest, { params }: Params) {
   const adminUser = await getAdminUser()
-  if (!adminUser || !canAccess(adminUser.role as AdminRole, 'variantes')) {
+  if (!adminUser || !userCanAccess(adminUser, 'variantes')) {
     return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
   }
 
@@ -51,7 +51,7 @@ export async function PATCH(request: NextRequest, { params }: Params) {
 /** DELETE /api/admin/variant-types/[id] — Elimina un tipo de variante */
 export async function DELETE(_request: NextRequest, { params }: Params) {
   const adminUser = await getAdminUser()
-  if (!adminUser || !canAccess(adminUser.role as AdminRole, 'variantes')) {
+  if (!adminUser || !userCanAccess(adminUser, 'variantes')) {
     return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
   }
 

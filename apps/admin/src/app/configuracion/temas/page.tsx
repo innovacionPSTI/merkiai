@@ -2,7 +2,7 @@ import { redirect } from 'next/navigation'
 import { PageHeader } from '@merkiai/ui'
 import { getAdminUser } from '@/lib/auth'
 import { getAdminDb } from '@/lib/admin-db'
-import { canAccess } from '@/lib/roles'
+import { userCanAccess } from '@/lib/roles'
 import { getThemes } from '@merkiai/database'
 import TemasClient from './TemasClient'
 
@@ -11,7 +11,7 @@ export const metadata = { title: 'Temas' }
 export default async function TemasPage() {
   const adminUser = await getAdminUser()
   if (!adminUser) redirect('/sign-in')
-  if (!canAccess(adminUser.role, 'configuracion')) redirect('/dashboard')
+  if (!userCanAccess(adminUser, 'configuracion')) redirect('/dashboard')
 
   const themes = await getThemes(getAdminDb(adminUser.tenantId)).catch(() => [])
 

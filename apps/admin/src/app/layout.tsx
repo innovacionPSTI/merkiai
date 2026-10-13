@@ -118,7 +118,7 @@ export default async function AdminRootLayout({ children }: { children: React.Re
           <StackTheme>
             {isProtectedRoute && adminUser ? (
               <div className="flex min-h-screen">
-                <AdminSidebar role={adminUser.role} />
+                <AdminSidebar role={adminUser.role} allowedSections={adminUser.allowedSections} />
                 <div className="flex-1 flex flex-col min-w-0">
                   {/* Topbar */}
                   <header className="bg-white border-b border-gray-100 pl-14 pr-6 md:px-6 py-4 flex items-center justify-between shadow-sm sticky top-0 z-10">

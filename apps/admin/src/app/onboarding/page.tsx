@@ -1,7 +1,7 @@
 import { redirect } from 'next/navigation'
 import type { Metadata } from 'next'
 import { getAdminUser } from '@/lib/auth'
-import { canAccess } from '@/lib/roles'
+import { userCanAccess } from '@/lib/roles'
 import { getOnboardingOptions, getOnboardingProgress } from '@/lib/onboarding'
 import OnboardingWizard from './OnboardingWizard'
 
@@ -10,7 +10,7 @@ export const dynamic = 'force-dynamic'
 
 export default async function OnboardingPage() {
   const adminUser = await getAdminUser()
-  if (!adminUser || !canAccess(adminUser.role, 'configuracion')) {
+  if (!adminUser || !userCanAccess(adminUser, 'configuracion')) {
     redirect('/no-autorizado')
   }
 

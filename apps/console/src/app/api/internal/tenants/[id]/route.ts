@@ -28,13 +28,13 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ id: 
 
   const { data: plan } = await db
     .from('plans')
-    .select('features, limits')
+    .select('features, limits, role_access')
     .eq('key', tenant.plan)
     .maybeSingle()
 
   return NextResponse.json({
     tenant,
-    entitlements: { features: plan?.features ?? {}, limits: plan?.limits ?? {} },
+    entitlements: { features: plan?.features ?? {}, limits: plan?.limits ?? {}, roleAccess: plan?.role_access ?? {} },
   })
 }
 

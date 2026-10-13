@@ -6,7 +6,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { getAdminUser } from '@/lib/auth'
 import { getAdminDb } from '@/lib/admin-db'
-import { canAccess } from '@/lib/roles'
+import { userCanAccess } from '@/lib/roles'
 import { importPagePackage, PagePackageError } from '@merkiai/database'
 
 const SLUG_RE = /^[a-z0-9]+(?:-[a-z0-9]+)*$/
@@ -14,7 +14,7 @@ const KEY_RE = /^[a-z0-9_-]{2,40}$/
 
 export async function POST(req: NextRequest) {
   const user = await getAdminUser()
-  if (!user || !canAccess(user.role, 'contenido')) {
+  if (!user || !userCanAccess(user, 'contenido')) {
     return NextResponse.json({ error: 'No autorizado' }, { status: 401 })
   }
   const body = await req.json().catch(() => null)

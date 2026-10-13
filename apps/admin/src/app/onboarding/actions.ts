@@ -2,7 +2,7 @@
 
 import { revalidatePath } from 'next/cache'
 import { getAdminUser } from '@/lib/auth'
-import { canAccess } from '@/lib/roles'
+import { userCanAccess } from '@/lib/roles'
 import { applyOnboardingPreset, completeOnboarding, dismissOnboarding, reopenOnboarding } from '@/lib/onboarding'
 
 export interface OnboardingActionState {
@@ -17,7 +17,7 @@ export async function applyPresetAction(
   formData: FormData,
 ): Promise<OnboardingActionState> {
   const adminUser = await getAdminUser()
-  if (!adminUser || !canAccess(adminUser.role, 'configuracion')) {
+  if (!adminUser || !userCanAccess(adminUser, 'configuracion')) {
     return { ok: false, error: 'No autorizado.' }
   }
 
@@ -39,7 +39,7 @@ export async function applyPresetAction(
 /** HU-236 v2: marca el onboarding como completado u omitido, o lo reabre. */
 export async function setOnboardingDoneAction(formData: FormData): Promise<void> {
   const adminUser = await getAdminUser()
-  if (!adminUser || !canAccess(adminUser.role, 'configuracion')) return
+  if (!adminUser || !userCanAccess(adminUser, 'configuracion')) return
 
   const intent = String(formData.get('intent') ?? '')
   if (intent === 'complete') await completeOnboarding(adminUser.tenantId)

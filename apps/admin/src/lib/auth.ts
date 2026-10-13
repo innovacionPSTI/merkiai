@@ -7,9 +7,10 @@
 
 import { stackServerApp } from '@/stack'
 import { createServerClient } from '@merkiai/database'
-import type { AdminRole } from './roles'
-import { isAdminRole } from './roles'
+import type { AdminRole, AdminSection } from './roles'
+import { isAdminRole, effectiveSections } from './roles'
 import { getActiveTenantId } from './active-tenant'
+import { getTenantEntitlements } from './entitlements'
 
 export interface AdminUser {
   /** Email verificado en Stack Auth */
@@ -22,6 +23,15 @@ export interface AdminUser {
   tenantId: string
   /** true si el correo tiene perfil admin en >1 tenant y falta elegir cuál. */
   needsWorkspaceSelection: boolean
+  /** HU-281 · Secciones efectivas (rol + matriz del plan). Fuente para los guards. */
+  allowedSections: AdminSection[]
+}
+
+/** Secciones efectivas del rol según la matriz del plan del tenant (HU-281). */
+async function resolveAllowedSections(role: AdminRole, tenantId: string): Promise<AdminSection[]> {
+  // Sin tocar seguridad: si no hay control plane o falla, caen los defaults del rol.
+  const { entitlements } = await getTenantEntitlements(tenantId).catch(() => ({ entitlements: null }))
+  return effectiveSections(role, entitlements?.roleAccess)
 }
 
 /**
@@ -68,6 +78,7 @@ export async function getAdminUser(): Promise<AdminUser | null> {
       role: first.role as AdminRole,
       tenantId: first.tenant_id,
       needsWorkspaceSelection: true,
+      allowedSections: effectiveSections(first.role as AdminRole, null), // se recalcula al elegir workspace
     }
   }
 
@@ -77,5 +88,6 @@ export async function getAdminUser(): Promise<AdminUser | null> {
     role: chosen.role as AdminRole,
     tenantId: chosen.tenant_id,
     needsWorkspaceSelection: false,
+    allowedSections: await resolveAllowedSections(chosen.role as AdminRole, chosen.tenant_id),
   }
 }

@@ -2,11 +2,11 @@ import { listReviews, setReviewStatus, deleteReview } from '@merkiai/database'
 import { NextRequest, NextResponse } from 'next/server'
 import { getAdminUser } from '@/lib/auth'
 import { getAdminDb } from '@/lib/admin-db'
-import { canAccess } from '@/lib/roles'
+import { userCanAccess } from '@/lib/roles'
 
 async function guard() {
   const user = await getAdminUser()
-  if (!user || !canAccess(user.role, 'productos')) return null
+  if (!user || !userCanAccess(user, 'productos')) return null
   return user
 }
 

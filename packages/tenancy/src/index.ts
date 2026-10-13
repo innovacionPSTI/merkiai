@@ -39,5 +39,6 @@ export {
   EntitlementError,
   entitlementDef,
   ENTITLEMENTS_CATALOG, FEATURES, LIMITS,
+  ADMIN_SECTIONS, STAFF_ROLES, effectiveSectionsForRole,
 } from './entitlements'
-export type { PlanEntitlements, EntitlementDef, EntitlementKind } from './entitlements'
+export type { PlanEntitlements, EntitlementDef, EntitlementKind, AdminSectionDef } from './entitlements'

@@ -47,7 +47,7 @@ export async function GET(req: NextRequest) {
   // Entitlements del plan (HU-173): features/limits para gating en el plano de tienda.
   const { data: plan } = await db
     .from('plans')
-    .select('features, limits')
+    .select('features, limits, role_access')
     .eq('key', data.plan)
     .maybeSingle()
 
@@ -58,6 +58,6 @@ export async function GET(req: NextRequest) {
     dbRef: data.db_ref,
     plan: data.plan,
     status: data.status,
-    entitlements: { features: plan?.features ?? {}, limits: plan?.limits ?? {} },
+    entitlements: { features: plan?.features ?? {}, limits: plan?.limits ?? {}, roleAccess: plan?.role_access ?? {} },
   })
 }

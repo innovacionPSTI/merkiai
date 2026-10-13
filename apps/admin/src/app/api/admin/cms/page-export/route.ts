@@ -5,12 +5,12 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { getAdminUser } from '@/lib/auth'
 import { getAdminDb } from '@/lib/admin-db'
-import { canAccess } from '@/lib/roles'
+import { userCanAccess } from '@/lib/roles'
 import { exportPage, PagePackageError } from '@merkiai/database'
 
 export async function GET(req: NextRequest) {
   const user = await getAdminUser()
-  if (!user || !canAccess(user.role, 'contenido')) {
+  if (!user || !userCanAccess(user, 'contenido')) {
     return NextResponse.json({ error: 'No autorizado' }, { status: 401 })
   }
   const pageKey = new URL(req.url).searchParams.get('page_key')

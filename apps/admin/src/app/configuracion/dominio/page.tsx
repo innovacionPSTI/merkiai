@@ -2,7 +2,7 @@ import { redirect } from 'next/navigation'
 import type { Metadata } from 'next'
 import { PageHeader } from '@merkiai/ui'
 import { getAdminUser } from '@/lib/auth'
-import { canAccess } from '@/lib/roles'
+import { userCanAccess } from '@/lib/roles'
 import { getDomainState } from '@/lib/domains'
 import DominioClient from './DominioClient'
 
@@ -11,7 +11,7 @@ export const dynamic = 'force-dynamic'
 
 export default async function DominioPage() {
   const adminUser = await getAdminUser()
-  if (!adminUser || !canAccess(adminUser.role, 'configuracion')) redirect('/no-autorizado')
+  if (!adminUser || !userCanAccess(adminUser, 'configuracion')) redirect('/no-autorizado')
 
   const state = await getDomainState(adminUser.tenantId)
 

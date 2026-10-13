@@ -4,7 +4,7 @@ import { PageHeader } from '@merkiai/ui'
 import { getStoreConfig } from '@merkiai/database'
 import { getAdminUser } from '@/lib/auth'
 import { getAdminDb } from '@/lib/admin-db'
-import { canAccess } from '@/lib/roles'
+import { userCanAccess } from '@/lib/roles'
 import StoreConfigForm from '../StoreConfigForm'
 import DataTransferWidget from '../DataTransferWidget'
 import BackupWidget from '../BackupWidget'
@@ -14,7 +14,7 @@ export const dynamic = 'force-dynamic'
 
 export default async function ConfigGeneralPage() {
   const adminUser = await getAdminUser()
-  if (!adminUser || !canAccess(adminUser.role, 'configuracion')) {
+  if (!adminUser || !userCanAccess(adminUser, 'configuracion')) {
     redirect('/no-autorizado')
   }
 

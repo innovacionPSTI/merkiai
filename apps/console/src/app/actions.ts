@@ -4,7 +4,7 @@ import { revalidatePath } from 'next/cache'
 import { requirePlatformOperator } from '@/lib/platform-auth'
 import { platformDb } from '@/lib/platform-db'
 import { parsePlanForm, buildEntitlements } from '@/lib/plan-validation'
-import { ENTITLEMENTS_CATALOG } from '@merkiai/tenancy'
+import { ENTITLEMENTS_CATALOG, ADMIN_SECTIONS, STAFF_ROLES } from '@merkiai/tenancy'
 import { parsePresetForm } from '@/lib/preset-validation'
 import { getPlans } from '@/lib/plans'
 import { provisionTenant, ensureTenantTeam } from '@/lib/provisioning'
@@ -243,7 +243,18 @@ export async function savePlan(formData: FormData) {
   })
   if (!parsed.ok) return // (la UI valida; el server rechaza en silencio si es inválido)
 
-  await platformDb().from('plans').upsert(parsed.value, { onConflict: 'key' })
+  // HU-281: matriz rol→secciones por plan (solo roles de staff). Campos
+  // `roleacc_<role>_<section>` (checkbox). Rol sin secciones marcadas → se omite
+  // (usa el acceso por defecto del código en el admin).
+  const sectionKeys = ADMIN_SECTIONS.map((s) => s.key)
+  const roleAccess: Record<string, string[]> = {}
+  for (const role of STAFF_ROLES) {
+    const secs = sectionKeys.filter((k) => formData.get(`roleacc_${role}_${k}`) != null)
+    if (secs.length) roleAccess[role] = secs
+  }
+
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  await platformDb().from('plans').upsert({ ...parsed.value, role_access: roleAccess } as any, { onConflict: 'key' })
   revalidatePath('/')
   revalidatePath('/planes')
 }

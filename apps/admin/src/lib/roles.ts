@@ -14,6 +14,9 @@
  *  - customer      : Usuario del sitio web (apps/web). No aplica al admin.
  */
 
+// Subpath puro (sin jwt/supabase) para no arrastrar ESM a los tests de componentes.
+import { effectiveSectionsForRole } from '@merkiai/tenancy/entitlements'
+
 /** Roles que tienen acceso efectivo al panel de administración */
 export type AdminRole = 'super_admin' | 'admin' | 'vendedor' | 'gestor_tienda'
 
@@ -90,9 +93,35 @@ export function isAdminRole(role: string): role is AdminRole {
   return ADMIN_ROLES.includes(role as AdminRole)
 }
 
-/** Verifica si el rol tiene acceso a una sección */
+/** Verifica si el rol tiene acceso a una sección (matriz por DEFECTO del código). */
 export function canAccess(role: AdminRole, section: AdminSection): boolean {
   return ROLE_CONFIG[role].sections.includes(section)
+}
+
+/**
+ * Secciones EFECTIVAS de un rol considerando la matriz del plan (HU-281).
+ * admin/super_admin siempre completas; vendedor/gestor_tienda pueden ser
+ * ampliadas o recortadas por el plan (`roleAccess`). Si no hay override, usa
+ * el default del código.
+ */
+export function effectiveSections(
+  role: AdminRole,
+  roleAccess?: Record<string, string[]> | null,
+): AdminSection[] {
+  const defaults = ROLE_CONFIG[role].sections
+  return effectiveSectionsForRole(role, defaults, roleAccess) as AdminSection[]
+}
+
+/**
+ * Verifica acceso usando las secciones efectivas del AdminUser (rol + matriz del
+ * plan). Si `allowedSections` no está presente, cae al default del rol.
+ */
+export function userCanAccess(
+  user: { allowedSections?: AdminSection[]; role?: AdminRole },
+  section: AdminSection,
+): boolean {
+  const secs = user.allowedSections ?? (user.role ? ROLE_CONFIG[user.role].sections : [])
+  return secs.includes(section)
 }
 
 /**

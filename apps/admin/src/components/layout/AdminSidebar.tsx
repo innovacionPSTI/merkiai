@@ -166,13 +166,14 @@ function getActiveGroupId(nodes: NavNode[], pathname: string): string | null {
 
 // ── Componente principal ─────────────────────────────────────────────────────
 
-interface Props { role: AdminRole }
+interface Props { role: AdminRole; allowedSections?: AdminSection[] }
 
-export default function AdminSidebar({ role }: Props) {
+export default function AdminSidebar({ role, allowedSections: allowedSectionsProp }: Props) {
   const pathname = usePathname()
   const app = useStackApp()
 
-  const allowedSections = ROLE_CONFIG[role].sections
+  // HU-281: usa las secciones efectivas (rol + matriz del plan); fallback al rol.
+  const allowedSections = allowedSectionsProp ?? ROLE_CONFIG[role].sections
   const fullAccess = role === 'super_admin' || role === 'admin'
 
   // Drawer móvil

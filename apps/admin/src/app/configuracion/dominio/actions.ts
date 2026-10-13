@@ -2,7 +2,7 @@
 
 import { revalidatePath } from 'next/cache'
 import { getAdminUser } from '@/lib/auth'
-import { canAccess } from '@/lib/roles'
+import { userCanAccess } from '@/lib/roles'
 import { requestDomain, verifyDomain, activateDomain, removeDomain, provisionMessage, type DomainInstructions } from '@/lib/domains'
 
 export interface DomainActionState {
@@ -14,7 +14,7 @@ export interface DomainActionState {
 
 async function guard() {
   const u = await getAdminUser()
-  if (!u || !canAccess(u.role, 'configuracion')) return null
+  if (!u || !userCanAccess(u, 'configuracion')) return null
   return u
 }
 

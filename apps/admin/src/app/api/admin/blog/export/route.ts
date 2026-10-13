@@ -2,12 +2,12 @@ import { objectsToCsv } from '@merkiai/database'
 import { NextResponse } from 'next/server'
 import { getAdminUser } from '@/lib/auth'
 import { getAdminDb } from '@/lib/admin-db'
-import { canAccess } from '@/lib/roles'
+import { userCanAccess } from '@/lib/roles'
 
 /** GET → exporta posts del blog a CSV compatible con el importador (HU-132). RLS. */
 export async function GET() {
   const user = await getAdminUser()
-  if (!user || !canAccess(user.role, 'blog')) return NextResponse.json({ error: 'No autorizado' }, { status: 401 })
+  if (!user || !userCanAccess(user, 'blog')) return NextResponse.json({ error: 'No autorizado' }, { status: 401 })
 
   const db = getAdminDb(user.tenantId)
   const { data, error } = await db

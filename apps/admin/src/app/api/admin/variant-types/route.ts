@@ -2,13 +2,13 @@ import { NextRequest, NextResponse } from 'next/server'
 import { getVariantTypes, createVariantType } from '@merkiai/database'
 import { getAdminUser } from '@/lib/auth'
 import { getAdminDb } from '@/lib/admin-db'
-import { canAccess } from '@/lib/roles'
+import { userCanAccess } from '@/lib/roles'
 import type { AdminRole } from '@/lib/roles'
 
 /** GET /api/admin/variant-types — Lista todos los tipos de variante */
 export async function GET() {
   const adminUser = await getAdminUser()
-  if (!adminUser || !canAccess(adminUser.role as AdminRole, 'variantes')) {
+  if (!adminUser || !userCanAccess(adminUser, 'variantes')) {
     return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
   }
 
@@ -19,7 +19,7 @@ export async function GET() {
 /** POST /api/admin/variant-types — Crea un nuevo tipo de variante */
 export async function POST(request: NextRequest) {
   const adminUser = await getAdminUser()
-  if (!adminUser || !canAccess(adminUser.role as AdminRole, 'variantes')) {
+  if (!adminUser || !userCanAccess(adminUser, 'variantes')) {
     return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
   }
 

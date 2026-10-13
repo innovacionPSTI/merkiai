@@ -7,7 +7,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { getAdminUser } from '@/lib/auth'
 import { getAdminDb } from '@/lib/admin-db'
-import { canAccess } from '@/lib/roles'
+import { userCanAccess } from '@/lib/roles'
 
 // Columnas que se copian (sin id/section_key/tenant_id/draft/timestamps).
 const SECTION_COLS = ['page_key', 'section_type', 'title', 'subtitle', 'body', 'image_url', 'cta_label', 'cta_url', 'enabled', 'settings']
@@ -21,7 +21,7 @@ function copy(row: Record<string, unknown>, cols: string[]): Record<string, unkn
 
 export async function POST(req: NextRequest) {
   const user = await getAdminUser()
-  if (!user || !canAccess(user.role, 'contenido')) {
+  if (!user || !userCanAccess(user, 'contenido')) {
     return NextResponse.json({ error: 'No autorizado' }, { status: 401 })
   }
   const body = await req.json().catch(() => ({}))

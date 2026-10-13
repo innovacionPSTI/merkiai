@@ -4,7 +4,7 @@ import { PageHeader } from '@merkiai/ui'
 import { listInstances, getProviderDef, PAYMENT_PROVIDERS } from '@merkiai/database'
 import { getAdminUser } from '@/lib/auth'
 import { getAdminDb } from '@/lib/admin-db'
-import { canAccess } from '@/lib/roles'
+import { userCanAccess } from '@/lib/roles'
 import { resolveStoreBaseUrl } from '@/lib/store-url'
 import { maskInstance, publicProviders } from '@/lib/mask-instance'
 import IntegrationInstancesForm from '../IntegrationInstancesForm'
@@ -14,7 +14,7 @@ export const dynamic = 'force-dynamic'
 
 export default async function ConfigPagosPage() {
   const adminUser = await getAdminUser()
-  if (!adminUser || !canAccess(adminUser.role, 'configuracion')) redirect('/no-autorizado')
+  if (!adminUser || !userCanAccess(adminUser, 'configuracion')) redirect('/no-autorizado')
 
   const fullAccess = adminUser.role === 'super_admin' || adminUser.role === 'admin'
   if (!fullAccess) redirect('/configuracion/general')

@@ -2,6 +2,7 @@ import {
   hasFeature, withinLimit, limitOf,
   resolveFeature, resolveLimit, requireFeature, enforceLimit,
   EntitlementError, entitlementDef, ENTITLEMENTS_CATALOG, FEATURES, LIMITS,
+  effectiveSectionsForRole,
 } from '../entitlements'
 import type { PlanEntitlements } from '../entitlements'
 
@@ -76,5 +77,33 @@ describe('catálogo canónico de entitlements (HU-239)', () => {
       expect(err.code).toBe('ENTITLEMENT')
       expect(err.meta).toMatchObject({ limit: 0, current: 0 })
     }
+  })
+})
+
+describe('effectiveSectionsForRole (HU-281)', () => {
+  const DEF = ['dashboard', 'productos', 'pedidos', 'clientes', 'cupones']
+
+  it('roles NO-staff ignoran la matriz (acceso completo del rol)', () => {
+    expect(effectiveSectionsForRole('admin', DEF, { admin: ['dashboard'] })).toEqual(DEF)
+    expect(effectiveSectionsForRole('super_admin', DEF, { super_admin: [] })).toEqual(DEF)
+  })
+
+  it('rol staff sin override usa los defaults', () => {
+    expect(effectiveSectionsForRole('vendedor', DEF, {})).toEqual(DEF)
+    expect(effectiveSectionsForRole('vendedor', DEF, undefined)).toEqual(DEF)
+    expect(effectiveSectionsForRole('vendedor', DEF, { vendedor: [] })).toEqual(DEF)
+  })
+
+  it('rol staff con override recorta y valida secciones; garantiza dashboard', () => {
+    expect(effectiveSectionsForRole('vendedor', DEF, { vendedor: ['productos', 'pedidos'] }))
+      .toEqual(['dashboard', 'productos', 'pedidos'])
+    // secciones desconocidas se descartan
+    expect(effectiveSectionsForRole('vendedor', DEF, { vendedor: ['productos', 'inexistente'] }))
+      .toEqual(['dashboard', 'productos'])
+  })
+
+  it('rol staff con override puede AMPLIAR más allá del default', () => {
+    expect(effectiveSectionsForRole('gestor_tienda', DEF, { gestor_tienda: ['contenido', 'configuracion'] }))
+      .toEqual(['dashboard', 'contenido', 'configuracion'])
   })
 })

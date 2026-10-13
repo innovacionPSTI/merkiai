@@ -9,6 +9,57 @@ export interface PlanEntitlements {
   features: Record<string, boolean | string | number | null>
   /** Límites cuantitativos (null/undefined = ilimitado). */
   limits: Record<string, number | null>
+  /** HU-281 · Matriz rol→secciones del admin por plan (solo roles de staff).
+   *  Rol ausente/vacío → acceso por defecto del código. */
+  roleAccess?: Record<string, string[]>
+}
+
+// ─── Catálogo de secciones del admin (HU-281) ────────────────────────────────
+// Fuente compartida para el editor de planes (consola) y la validación. El tipo
+// `AdminSection` del admin (apps/admin/src/lib/roles.ts) debe mantenerse en sync
+// con estas claves.
+
+export interface AdminSectionDef { key: string; label: string }
+
+export const ADMIN_SECTIONS: AdminSectionDef[] = [
+  { key: 'dashboard',     label: 'Panel' },
+  { key: 'productos',     label: 'Productos' },
+  { key: 'categorias',    label: 'Categorías' },
+  { key: 'variantes',     label: 'Variantes' },
+  { key: 'pedidos',       label: 'Pedidos' },
+  { key: 'clientes',      label: 'Clientes' },
+  { key: 'contenido',     label: 'Contenido' },
+  { key: 'blog',          label: 'Blog' },
+  { key: 'newsletter',    label: 'Newsletter' },
+  { key: 'cupones',       label: 'Cupones' },
+  { key: 'apariencia',    label: 'Apariencia' },
+  { key: 'media',         label: 'Medios' },
+  { key: 'configuracion', label: 'Configuración' },
+  { key: 'usuarios',      label: 'Usuarios' },
+  { key: 'sistema',       label: 'Sistema' },
+]
+
+/** Roles de STAFF cuyo acceso por secciones es configurable por plan. */
+export const STAFF_ROLES = ['vendedor', 'gestor_tienda'] as const
+
+/**
+ * Secciones efectivas de un rol según el plan (HU-281). Pura.
+ *  - Roles NO-staff (admin/super_admin): se devuelve `defaults` (acceso completo).
+ *  - Roles staff: override del plan si trae lista no vacía (validada contra las
+ *    secciones conocidas, 'dashboard' garantizado); si no, `defaults`.
+ */
+export function effectiveSectionsForRole(
+  role: string,
+  defaults: string[],
+  roleAccess: Record<string, string[]> | undefined | null,
+): string[] {
+  if (!(STAFF_ROLES as readonly string[]).includes(role)) return defaults
+  const override = roleAccess?.[role]
+  if (!Array.isArray(override) || override.length === 0) return defaults
+  const valid = new Set(ADMIN_SECTIONS.map((s) => s.key))
+  const filtered = override.filter((s) => valid.has(s))
+  if (!filtered.includes('dashboard')) filtered.unshift('dashboard')
+  return filtered.length ? filtered : defaults
 }
 
 /** ¿El plan habilita la funcionalidad `feature`? */
