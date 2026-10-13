@@ -21,7 +21,7 @@
  *   5. Update the admin configuración UI.
  */
 
-import { getShippingConfig } from '@merkiai/database'
+import { getShippingConfig, resolveShippingCreds } from '@merkiai/database'
 import { getStoreContext } from '../store-context'
 import { FixedRateProvider } from './providers/fixed-rate'
 import { SkydropxProvider } from './providers/skydropx'
@@ -37,64 +37,50 @@ export type { SkydropxConfig, SkydropxOriginAddress, SkydropxShipmentResult } fr
  * across requests since the admin can change the config at any time.
  */
 export async function getShippingProvider(): Promise<ShippingProvider> {
-  let config
+  let config, creds
   try {
     const ctx = await getStoreContext()
     config = await getShippingConfig(ctx.db, ctx.tenantId)
+    // ADR-004: credenciales del carrier desde la instancia activa (fallback legacy).
+    creds = await resolveShippingCreds(ctx.db, ctx.tenantId)
   } catch {
-    console.warn('[shipping] Could not load shipping_config — using fixed rate fallback')
+    console.warn('[shipping] Could not load shipping config — using fixed rate fallback')
     return new FixedRateProvider(8000)
   }
 
-  switch (config.provider) {
-    case 'skydropx': {
-      const {
-        skydropx_client_id,
-        skydropx_client_secret,
-        skydropx_base_url,
-        origin_name,
-        origin_street,
-        origin_neighborhood,
-        origin_city,
-        origin_department,
-        origin_postal_code,
-        origin_phone,
-        origin_email,
-      } = config
-
-      if (!skydropx_client_id || !skydropx_client_secret) {
-        console.warn('[shipping] Skydropx: faltan credenciales — usando tarifa fija')
-        return new FixedRateProvider(config.fixed_rate)
-      }
-
-      // postal_code is optional — Skydropx accepts area_level1+area_level2 without it
-      const hasOrigin = origin_name && origin_street && origin_city &&
-                        origin_department && origin_phone && origin_email
-
-      if (!hasOrigin) {
-        console.warn('[shipping] Skydropx: dirección de origen incompleta — usando tarifa fija')
-        return new FixedRateProvider(config.fixed_rate)
-      }
-
-      return new SkydropxProvider({
-        clientId: skydropx_client_id,
-        clientSecret: skydropx_client_secret,
-        baseUrl: skydropx_base_url ?? 'https://api-pro.skydropx.com',
-        origin: {
-          name: origin_name!,
-          street: origin_street!,
-          neighborhood: origin_neighborhood ?? '',
-          city: origin_city!,
-          department: origin_department!,
-          postalCode: origin_postal_code!,
-          phone: origin_phone!,
-          email: origin_email!,
-        },
-      })
-    }
-
-    // 'fixed' and any unknown future value → FixedRateProvider
-    default:
+  // El carrier (Skydropx) opera si hay credenciales resueltas (instancia o legacy)
+  // o si el modo de shipping_config es 'skydropx'. Los AJUSTES (origen, tarifa
+  // fija) siguen en shipping_config.
+  const wantsCarrier = creds !== null || config.provider === 'skydropx'
+  if (wantsCarrier && creds?.clientId && creds?.clientSecret) {
+    const {
+      origin_name, origin_street, origin_neighborhood, origin_city,
+      origin_department, origin_postal_code, origin_phone, origin_email,
+    } = config
+    // postal_code is optional — Skydropx accepts area_level1+area_level2 without it
+    const hasOrigin = origin_name && origin_street && origin_city &&
+                      origin_department && origin_phone && origin_email
+    if (!hasOrigin) {
+      console.warn('[shipping] Skydropx: dirección de origen incompleta — usando tarifa fija')
       return new FixedRateProvider(config.fixed_rate)
+    }
+    return new SkydropxProvider({
+      clientId: creds.clientId,
+      clientSecret: creds.clientSecret,
+      baseUrl: creds.baseUrl ?? 'https://api-pro.skydropx.com',
+      origin: {
+        name: origin_name!,
+        street: origin_street!,
+        neighborhood: origin_neighborhood ?? '',
+        city: origin_city!,
+        department: origin_department!,
+        postalCode: origin_postal_code!,
+        phone: origin_phone!,
+        email: origin_email!,
+      },
+    })
   }
+
+  // 'fixed' / 'none' / sin credenciales → tarifa fija.
+  return new FixedRateProvider(config.fixed_rate)
 }

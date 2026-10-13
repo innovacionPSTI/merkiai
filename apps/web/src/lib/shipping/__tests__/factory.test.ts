@@ -7,16 +7,20 @@
 
 jest.mock('@merkiai/database', () => ({
   getShippingConfig: jest.fn(),
+  resolveShippingCreds: jest.fn(),
 }))
 // HU-232: getShippingProvider resuelve el contexto (db + tenantId) del tenant.
 jest.mock('../../store-context', () => ({ getStoreContext: jest.fn(async () => ({ db: {}, tenantId: 't1' })) }))
 
-import { getShippingConfig } from '@merkiai/database'
+import { getShippingConfig, resolveShippingCreds } from '@merkiai/database'
 import { getShippingProvider } from '../index'
 import { FixedRateProvider } from '../providers/fixed-rate'
 import { SkydropxProvider } from '../providers/skydropx'
 
 const mockGetShippingConfig = getShippingConfig as jest.MockedFunction<typeof getShippingConfig>
+const mockResolveShippingCreds = resolveShippingCreds as jest.MockedFunction<typeof resolveShippingCreds>
+const SKY_CREDS = { provider: 'skydropx', clientId: 'cid', clientSecret: 'secret', baseUrl: undefined, addressFromId: undefined }
+beforeEach(() => { mockResolveShippingCreds.mockResolvedValue(null as never) }) // por defecto: sin carrier → tarifa fija
 
 const DESTINATION = { name: 'T', street1: 'C1', postal_code: '000', area_level1: 'X', area_level2: 'Y', country_code: 'CO', phone: '0', email: 'e@e.com' }
 const PARCEL      = { length: 20, width: 15, height: 8, weight: 0.3 }
@@ -81,6 +85,7 @@ describe('getShippingProvider — provider = "skydropx"', () => {
       skydropx_client_id: 'cid', skydropx_client_secret: 'secret',
       ...FULL_ORIGIN,
     })
+    mockResolveShippingCreds.mockResolvedValueOnce(SKY_CREDS as never)
     const provider = await getShippingProvider()
     expect(provider).toBeInstanceOf(SkydropxProvider)
     expect(provider.name).toBe('skydropx')
@@ -110,6 +115,7 @@ describe('getShippingProvider — provider = "skydropx"', () => {
       skydropx_client_id: 'cid', skydropx_client_secret: 'secret',
       // origin fields left null
     })
+    mockResolveShippingCreds.mockResolvedValueOnce(SKY_CREDS as never)
     expect(await getShippingProvider()).toBeInstanceOf(FixedRateProvider)
   })
 
@@ -119,6 +125,7 @@ describe('getShippingProvider — provider = "skydropx"', () => {
       skydropx_client_id: 'cid', skydropx_client_secret: 'secret',
       ...FULL_ORIGIN, origin_city: null,
     })
+    mockResolveShippingCreds.mockResolvedValueOnce(SKY_CREDS as never)
     expect(await getShippingProvider()).toBeInstanceOf(FixedRateProvider)
   })
 })

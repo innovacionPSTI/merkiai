@@ -9,7 +9,7 @@
  * so the webhook can still respond 200 and avoid retries.
  */
 
-import { createServerClient, getShippingConfig } from '@merkiai/database'
+import { createServerClient, getShippingConfig, resolveShippingCreds } from '@merkiai/database'
 import { SkydropxProvider } from './providers/skydropx'
 import { calculateParcel } from './types'
 import type { ShippingAddress } from './types'
@@ -47,18 +47,16 @@ export async function createShipmentForOrder(
       return null
     }
 
-    // 2. Load shipping config (HU-216: del tenant del pedido, no del default)
+    // 2. Load shipping config (ajustes/origen) + credenciales del carrier activo.
     const config = await getShippingConfig(supabase, order.tenant_id)
-
-    if (config.provider !== 'skydropx') {
-      // Fixed rate — no label to generate
+    // ADR-004: credenciales del carrier desde la instancia activa (fallback legacy).
+    const creds = await resolveShippingCreds(supabase, order.tenant_id)
+    if (!creds) {
+      // Sin carrier activo (tarifa fija / none) — no hay guía que generar.
       return null
     }
 
     const {
-      skydropx_client_id,
-      skydropx_client_secret,
-      skydropx_base_url,
       origin_name,
       origin_street,
       origin_neighborhood,
@@ -68,6 +66,9 @@ export async function createShipmentForOrder(
       origin_phone,
       origin_email,
     } = config
+    const skydropx_client_id = creds.clientId
+    const skydropx_client_secret = creds.clientSecret
+    const skydropx_base_url = creds.baseUrl ?? null
 
     if (
       !skydropx_client_id || !skydropx_client_secret ||

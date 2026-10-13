@@ -15,7 +15,7 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server'
-import { getShippingConfig } from '@merkiai/database'
+import { getShippingConfig, resolveShippingCreds } from '@merkiai/database'
 import { getAdminUser } from '@/lib/auth'
 import { getAdminDb } from '@/lib/admin-db'
 import { skydropxFetch } from '@/lib/shipping/providers/skydropx/auth'
@@ -44,14 +44,15 @@ export async function POST(req: NextRequest) {
     }
 
     const config = await getShippingConfig(getAdminDb(adminUser.tenantId), adminUser.tenantId)
-    if (!config.skydropx_client_id || !config.skydropx_client_secret) {
+    const resolved = await resolveShippingCreds(getAdminDb(adminUser.tenantId), adminUser.tenantId)
+    if (!resolved) {
       return NextResponse.json({ error: 'Skydropx no está configurado' }, { status: 503 })
     }
 
     const creds = {
-      clientId: config.skydropx_client_id,
-      clientSecret: config.skydropx_client_secret,
-      baseUrl: config.skydropx_base_url ?? 'https://app.skydropx.com',
+      clientId: resolved.clientId,
+      clientSecret: resolved.clientSecret,
+      baseUrl: resolved.baseUrl ?? 'https://app.skydropx.com',
     }
 
     const pickupBody = {
@@ -104,15 +105,15 @@ export async function GET(req: NextRequest) {
     const page    = searchParams.get('page') ?? '1'
     const perPage = searchParams.get('per_page') ?? '20'
 
-    const config = await getShippingConfig(getAdminDb(adminUser.tenantId), adminUser.tenantId)
-    if (!config.skydropx_client_id || !config.skydropx_client_secret) {
+    const resolved = await resolveShippingCreds(getAdminDb(adminUser.tenantId), adminUser.tenantId)
+    if (!resolved) {
       return NextResponse.json({ error: 'Skydropx no está configurado' }, { status: 503 })
     }
 
     const creds = {
-      clientId: config.skydropx_client_id,
-      clientSecret: config.skydropx_client_secret,
-      baseUrl: config.skydropx_base_url ?? 'https://app.skydropx.com',
+      clientId: resolved.clientId,
+      clientSecret: resolved.clientSecret,
+      baseUrl: resolved.baseUrl ?? 'https://app.skydropx.com',
     }
 
     const res = await skydropxFetch(
