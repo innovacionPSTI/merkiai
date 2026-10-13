@@ -48,23 +48,60 @@ interface Draft {
   boldSandbox: boolean
 }
 
-function SecretField({ label, hint, hasExisting, value, onChange }: {
-  label: string; hint?: string; hasExisting: boolean; value: string; onChange: (v: string) => void
+/** Genera un secreto aleatorio de 256 bits (base64url, sin espacios) con Web Crypto. */
+function generateSecret(): string {
+  const bytes = new Uint8Array(32)
+  crypto.getRandomValues(bytes)
+  let bin = ''
+  bytes.forEach((b) => { bin += String.fromCharCode(b) })
+  const b64 = btoa(bin).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '')
+  return `whsec_${b64}`
+}
+
+function SecretField({ label, hint, hasExisting, value, onChange, generatable = false }: {
+  label: string; hint?: string; hasExisting: boolean; value: string; onChange: (v: string) => void; generatable?: boolean
 }) {
   const [changing, setChanging] = useState(!hasExisting)
+  const [reveal, setReveal] = useState(false)
+  const [copied, setCopied] = useState(false)
+  const editing = !hasExisting || changing
+
+  function copy() {
+    if (!value) return
+    navigator.clipboard?.writeText(value)
+    setCopied(true); setTimeout(() => setCopied(false), 1500)
+  }
+
   return (
     <div>
       <label className="font-brand text-sm font-semibold text-brand-primary block mb-1">{label}</label>
-      {hasExisting && !changing ? (
+      {!editing ? (
         <div className="flex items-center gap-3">
           <span className="flex-1 border border-brand-primary/10 rounded-xl px-4 py-2.5 font-mono text-sm text-brand-primary/40 bg-gray-50">••••••••••••</span>
           <button type="button" onClick={() => setChanging(true)} className="font-brand text-xs text-brand-primary underline hover:text-brand-dark">Cambiar</button>
         </div>
       ) : (
-        <input type="password" autoComplete="off" value={value} onChange={(e) => onChange(e.target.value)}
-          className="w-full border border-brand-primary/20 rounded-xl px-4 py-2.5 font-mono text-sm focus:outline-none focus:border-brand-primary" />
+        <>
+          <input type={generatable && reveal ? 'text' : 'password'} autoComplete="off" value={value} onChange={(e) => onChange(e.target.value)}
+            className="w-full border border-brand-primary/20 rounded-xl px-4 py-2.5 font-mono text-sm focus:outline-none focus:border-brand-primary" />
+          {generatable && (
+            <div className="flex items-center gap-3 mt-1.5">
+              <button type="button" onClick={() => { onChange(generateSecret()); setReveal(true) }}
+                className="font-brand text-xs font-semibold text-brand-primary underline hover:text-brand-dark">Generar clave segura</button>
+              {value && (
+                <>
+                  <button type="button" onClick={() => setReveal((r) => !r)} className="font-brand text-xs text-brand-primary/60 hover:text-brand-primary">{reveal ? 'Ocultar' : 'Ver'}</button>
+                  <button type="button" onClick={copy} className="font-brand text-xs text-brand-primary/60 hover:text-brand-primary">{copied ? 'Copiada ✓' : 'Copiar'}</button>
+                </>
+              )}
+            </div>
+          )}
+        </>
       )}
       {hint && <p className="font-brand text-xs text-brand-primary/40 mt-1">{hint}</p>}
+      {generatable && editing && (
+        <p className="font-brand text-xs text-amber-600/80 mt-1">Pega esta misma clave en Skydropx (método HMAC) y guárdala aquí. Debe coincidir exactamente.</p>
+      )}
     </div>
   )
 }
@@ -219,7 +256,7 @@ export default function IntegrationInstancesForm({ kind, apiBase, addLabel, empt
         {/* Campos del registry */}
         {def.fields.map((f) => f.type === 'secret' ? (
           <SecretField key={f.key} label={f.label} hint={f.hint} hasExisting={d.secretSet[f.key] ?? false}
-            value={d.creds[f.key] ?? ''} onChange={(v) => setCred(f.key, v)} />
+            value={d.creds[f.key] ?? ''} onChange={(v) => setCred(f.key, v)} generatable={f.key === 'webhook_secret'} />
         ) : (
           <div key={f.key}>
             <label className="font-brand text-sm font-semibold text-brand-primary block mb-1">{f.label}</label>
