@@ -31,6 +31,22 @@ import type { ShippingProvider } from './types'
 
 export type { ShippingProvider, ShippingRate, ShippingAddress, ShippingParcel, ParcelItem } from './types'
 export { calculateParcel } from './types'
+
+/**
+ * Aplica el cargo adicional (fijo + %) a las tarifas de una transportadora.
+ * Transparente para el comprador (se suma al total mostrado). No aplica a la
+ * tarifa fija. HU-280.
+ */
+export function applyHandlingFee(
+  rates: import('./types').ShippingRate[],
+  fixed: number,
+  percent: number,
+): import('./types').ShippingRate[] {
+  const f = Math.max(0, fixed || 0)
+  const p = Math.max(0, percent || 0)
+  if (!f && !p) return rates
+  return rates.map((r) => ({ ...r, total_price: Math.round(r.total_price * (1 + p / 100) + f) }))
+}
 export { SkydropxProvider } from './providers/skydropx'
 export type { SkydropxConfig, SkydropxOriginAddress, SkydropxShipmentResult } from './providers/skydropx'
 
@@ -53,10 +69,14 @@ export async function getShippingProvider(): Promise<ShippingProvider> {
     return new FixedRateProvider(8000)
   }
 
-  // El carrier (Skydropx) opera si hay credenciales resueltas (instancia o legacy)
-  // o si el modo de shipping_config es 'skydropx'. Los AJUSTES (origen, tarifa
-  // fija) siguen en shipping_config.
-  const wantsCarrier = creds !== null || config.provider === 'skydropx'
+  // El método activo lo decide shipping_config.provider (fuente de verdad):
+  //   'fixed'    → tarifa fija (autoritativo, aunque exista una transportadora).
+  //   'skydropx' → transportadora activa; si no hay credenciales, cae a tarifa fija.
+  if (config.provider === 'fixed') {
+    return new FixedRateProvider(config.fixed_rate)
+  }
+
+  const wantsCarrier = creds !== null
   if (wantsCarrier && creds?.clientId && creds?.clientSecret) {
     const {
       origin_name, origin_street, origin_neighborhood, origin_city,

@@ -17,6 +17,20 @@ interface Props {
   showEnv?: boolean
   /** Mostrar la URL de webhook (solo pagos). */
   showWebhook?: boolean
+  /** Método incorporado (sin credenciales) que se lista junto a las instancias. Ej. "Tarifa fija" en envíos. */
+  builtin?: BuiltinMethod
+  /** Hook tras activar/desactivar una instancia (ej. fijar shipping_config.provider). */
+  onAfterActivate?: (id: string | null) => Promise<void>
+}
+
+export interface BuiltinMethod {
+  title: string
+  subtitle: string
+  /** true cuando el método incorporado es el ACTIVO (ningún carrier lo está). */
+  active: boolean
+  badgeText?: string
+  onActivate: () => void
+  onEdit?: () => void
 }
 
 type Env = 'test' | 'production'
@@ -122,7 +136,7 @@ function WebhookUrl({ provider, base }: { provider: string; base?: string | null
   )
 }
 
-export default function IntegrationInstancesForm({ kind, apiBase, addLabel, emptyText, instances, providers, storeBaseUrl, showEnv = true, showWebhook = false }: Props) {
+export default function IntegrationInstancesForm({ kind, apiBase, addLabel, emptyText, instances, providers, storeBaseUrl, showEnv = true, showWebhook = false, builtin, onAfterActivate }: Props) {
   const router = useRouter()
   const defaultEnv: Env = showEnv ? 'test' : 'production'
   const [busy, setBusy] = useState(false)
@@ -204,7 +218,11 @@ export default function IntegrationInstancesForm({ kind, apiBase, addLabel, empt
   const activate = (id: string | null) => run(async () => {
     const r = await api('/activate', 'POST', { id })
     if (!r.ok) { const miss = Array.isArray(r.data.missing) ? ` (${(r.data.missing as string[]).join(', ')})` : ''; throw new Error(((r.data.error as string) ?? 'No se pudo activar') + miss) }
-  }, id ? 'Medio de pago activado' : 'Cobro en línea desactivado (pago manual)')
+    await onAfterActivate?.(id)
+  }, id ? 'Método activado' : 'Cobro en línea desactivado (pago manual)')
+
+  // Un carrier es el método ACTIVO solo si está activo y el incorporado (tarifa fija) no lo está.
+  const carrierIsActive = (inst: MaskedInstance) => inst.isActive && !(builtin?.active)
 
   const remove = (inst: MaskedInstance) => {
     if (typeof window !== 'undefined' && !window.confirm(`¿Quitar "${inst.label || labelOf(inst.provider)}"? Se borran sus credenciales.`)) return
@@ -321,25 +339,42 @@ export default function IntegrationInstancesForm({ kind, apiBase, addLabel, empt
       <ResourceList
         addLabel={addLabel}
         onAdd={() => setDraft({ mode: 'add', provider: '', label: '', environment: defaultEnv, creds: {}, secretSet: {}, tcMethods: TC_METHODS.map((m) => ({ tipo: m.tipo, id: TC_IDS.test[m.tipo], enabled: false })), boldSandbox: true })}
-        isEmpty={instances.length === 0}
+        isEmpty={!builtin && instances.length === 0}
         emptyIcon={kind === 'shipping' ? 'truck' : kind === 'email' ? 'bell' : 'money'}
         emptyText={emptyText}
       >
+        {builtin && (
+          <ResourceItem
+            key="__builtin"
+            icon={<Icon name="money" size={18} />}
+            title={builtin.title}
+            subtitle={builtin.subtitle}
+            accent={builtin.active}
+            badges={<>
+              {builtin.badgeText && <StatusBadge tone="neutral">{builtin.badgeText}</StatusBadge>}
+              {builtin.active && <StatusBadge tone="success">Activo</StatusBadge>}
+            </>}
+            actions={<>
+              {builtin.onEdit && <ResourceAction icon="edit" label="Editar" onClick={builtin.onEdit} disabled={busy} />}
+              {!builtin.active && <ResourceAction icon="check" label="Activar" tone="primary" onClick={builtin.onActivate} disabled={busy} />}
+            </>}
+          />
+        )}
         {instances.map((inst) => (
           <ResourceItem
             key={inst.id}
             icon={<Icon name={kind === 'shipping' ? 'truck' : kind === 'email' ? 'bell' : 'money'} size={18} />}
             title={inst.label || labelOf(inst.provider)}
             subtitle={descOf(inst.provider)}
-            accent={inst.isActive}
+            accent={carrierIsActive(inst)}
             badges={<>
               {showEnv && <EnvBadge env={inst.environment === 'production' ? 'prod' : 'demo'} />}
-              {inst.isActive && <StatusBadge tone="success">Activa</StatusBadge>}
+              {carrierIsActive(inst) && <StatusBadge tone="success">Activa</StatusBadge>}
             </>}
             actions={<>
               <ResourceAction icon="refresh" label={verifying === inst.id ? 'Verificando…' : 'Verificar'} onClick={() => verify(inst)} disabled={verifying !== null || busy} />
               <ResourceAction icon="edit" label="Editar" onClick={() => setDraft(editDraft(inst))} disabled={busy} />
-              {!inst.isActive && <ResourceAction icon="check" label="Activar" tone="primary" onClick={() => activate(inst.id)} disabled={busy} />}
+              {!carrierIsActive(inst) && <ResourceAction icon="check" label="Activar" tone="primary" onClick={() => activate(inst.id)} disabled={busy} />}
               <ResourceAction icon="trash" label="Quitar" tone="danger" onClick={() => remove(inst)} disabled={busy} />
             </>}
           />

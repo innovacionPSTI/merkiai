@@ -18,7 +18,11 @@ import { NextRequest } from 'next/server'
 jest.mock('@/lib/shipping', () => ({
   getShippingProvider: jest.fn(),
   calculateParcel: jest.fn(),
+  applyHandlingFee: jest.fn((rates: unknown) => rates), // HU-280: passthrough por defecto
 }))
+// HU-280: el cargo adicional lee shipping_config vía store-context.
+jest.mock('@/lib/store-context', () => ({ getStoreContext: jest.fn(async () => ({ db: {}, tenantId: 't1' })) }))
+jest.mock('@merkiai/database', () => ({ getShippingConfig: jest.fn(async () => ({ handling_fee_fixed: 0, handling_fee_percent: 0 })) }))
 
 import { getShippingProvider, calculateParcel } from '@/lib/shipping'
 import { POST } from '../shipping/rates/route'

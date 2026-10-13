@@ -490,6 +490,8 @@ export type Database = {
           tenant_id: string
           provider: 'fixed' | 'skydropx'
           fixed_rate: number
+          handling_fee_fixed: number
+          handling_fee_percent: number
           free_shipping_enabled: boolean
           free_shipping_min_amount: number
           skydropx_client_id: string | null
@@ -511,6 +513,8 @@ export type Database = {
           tenant_id?: string
           provider?: 'fixed' | 'skydropx'
           fixed_rate?: number
+          handling_fee_fixed?: number
+          handling_fee_percent?: number
           free_shipping_enabled?: boolean
           free_shipping_min_amount?: number
           skydropx_client_id?: string | null
@@ -531,6 +535,8 @@ export type Database = {
           id?: number
           provider?: 'fixed' | 'skydropx'
           fixed_rate?: number
+          handling_fee_fixed?: number
+          handling_fee_percent?: number
           free_shipping_enabled?: boolean
           free_shipping_min_amount?: number
           skydropx_client_id?: string | null

@@ -8,7 +8,7 @@ import { canAccess } from '@/lib/roles'
 import { maskInstance, publicProviders } from '@/lib/mask-instance'
 import { resolveStoreBaseUrl } from '@/lib/store-url'
 import ShippingConfigForm from '../ShippingConfigForm'
-import IntegrationInstancesForm from '../IntegrationInstancesForm'
+import ShippingMethodsForm from '../ShippingMethodsForm'
 
 export const metadata: Metadata = { title: 'Envíos · Configuración' }
 export const dynamic = 'force-dynamic'
@@ -32,28 +32,25 @@ export default async function ConfigEnviosPage() {
         <PageHeader title="Envíos" description="Transportadoras (credenciales) y ajustes de envío: tarifa, envío gratis y dirección de origen. Solo una transportadora activa a la vez." />
       </div>
 
-      {/* Transportadoras (credenciales por instancia — ADR-004) */}
+      {/* Métodos de envío (tarifa fija + transportadoras, un solo activo) */}
       <div>
-        <h2 className="font-display text-brand-primary text-xl mb-1">Transportadoras</h2>
+        <h2 className="font-display text-brand-primary text-xl mb-1">Métodos de envío</h2>
         <p className="font-brand text-sm text-brand-primary/50 mb-4">
-          Conecta la cuenta de tu transportadora. Al activar una, la tienda cotiza y genera guías con ella; si no hay ninguna activa, se usa la tarifa fija de abajo.
+          Elige cómo se cobra el envío. Solo un método activo a la vez: la tarifa fija o una transportadora que cotiza en tiempo real y genera guías.
         </p>
-        <IntegrationInstancesForm
-          kind="shipping"
-          apiBase="/api/admin/shipping-instances"
-          addLabel="Agregar transportadora"
-          emptyText="Aún no has conectado una transportadora. Se usará la tarifa fija de abajo."
+        <ShippingMethodsForm
+          provider={(shippingConfig?.provider as 'fixed' | 'skydropx') ?? 'fixed'}
+          fixedRate={shippingConfig?.fixed_rate ?? 8000}
           instances={instances}
           providers={providers}
           storeBaseUrl={storeBaseUrl}
-          showWebhook
         />
       </div>
 
-      {/* Ajustes de envío (tarifa fija, envío gratis, dirección de origen) */}
+      {/* Ajustes globales (envío gratis, cargo adicional, dirección de origen) */}
       <div>
-        <h2 className="font-display text-brand-primary text-xl mb-1">Ajustes de envío</h2>
-        <p className="font-brand text-sm text-brand-primary/50 mb-4">Tarifa fija (fallback), envío gratis y dirección de origen para las guías.</p>
+        <h2 className="font-display text-brand-primary text-xl mb-1">Ajustes globales</h2>
+        <p className="font-brand text-sm text-brand-primary/50 mb-4">Envío gratis, cargo adicional y dirección de origen. Aplican sin importar el método activo.</p>
         <div className="bg-white rounded-2xl p-6 shadow-sm">
           <ShippingConfigForm initialConfig={shippingConfig} />
         </div>

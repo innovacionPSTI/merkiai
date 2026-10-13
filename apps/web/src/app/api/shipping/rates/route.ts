@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { getShippingProvider, calculateParcel } from '@/lib/shipping'
+import { getShippingConfig } from '@merkiai/database'
+import { getShippingProvider, calculateParcel, applyHandlingFee } from '@/lib/shipping'
 import type { ShippingAddress, ParcelItem } from '@/lib/shipping'
+import { getStoreContext } from '@/lib/store-context'
 import { humanizeShippingError } from '@/lib/shipping/rate-errors'
 
 // Skydropx PRO exige un valor declarado mínimo para cotizar (insurance/aduana).
@@ -35,7 +37,14 @@ export async function POST(req: NextRequest) {
 
     // Factory reads provider + credentials from shipping_config in the DB
     const provider = await getShippingProvider()
-    const rates = await provider.getRates(shippingAddress, parcel)
+    let rates = await provider.getRates(shippingAddress, parcel)
+
+    // Cargo adicional (fijo + %) solo sobre tarifas de transportadora (HU-280).
+    if (provider.name !== 'fixed') {
+      const ctx = await getStoreContext()
+      const cfg = await getShippingConfig(ctx.db, ctx.tenantId).catch(() => null)
+      if (cfg) rates = applyHandlingFee(rates, cfg.handling_fee_fixed, cfg.handling_fee_percent)
+    }
 
     return NextResponse.json({
       provider: provider.name,
