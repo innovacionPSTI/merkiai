@@ -85,20 +85,6 @@ export class SkydropxProvider implements ShippingProvider {
       // devuelven el precio con status 'price_found_internal' y success=false
       // (p. ej. mensajería intra-ciudad); si trae total > 0 es cotizable.
       const successful = proRates.filter((r) => r.success === true || Number(r.total) > 0)
-      if (successful.length === 0) {
-        // Diagnóstico compacto: peso/dimensiones enviados + motivo de CADA
-        // transportadora (status + error). Así se ve por qué fallan las 8.
-        const reasons = proRates.map((r) =>
-          `${r.provider_name}/${r.provider_service_code ?? r.provider_service_name}: ${r.status ?? '?'} (total=${r.total ?? 'null'})` +
-          (r.error_messages?.length ? ` — ${r.error_messages.map((e) => e.error_message).join('; ')}` : ''),
-        )
-        console.warn(
-          `[SkydropxProvider] quotation ${quotationId}: 0/${proRates.length} tarifas. ` +
-          `parcel=${JSON.stringify({ w: parcel.weight, l: parcel.length, an: parcel.width, h: parcel.height, declared: parcel.declaredAmount })} ` +
-          `origen=${this.config.origin.department}/${this.config.origin.city} destino=${address.area_level1}/${address.area_level2}`,
-        )
-        reasons.forEach((r) => console.warn('  ·', r))
-      }
       return successful
         .map((r) => ({
           id: r.id,
@@ -263,10 +249,6 @@ export class SkydropxProvider implements ShippingProvider {
       const rates = data.rates ?? data.data?.attributes?.rates ?? data.included
 
       if (isCompleted) {
-        if (!rates) {
-          // Diagnóstico: completó sin rates en las claves conocidas → log de claves.
-          console.warn(`[SkydropxProvider] quotation ${quotationId} completó sin 'rates'. Claves:`, Object.keys(data), JSON.stringify(data).slice(0, 800))
-        }
         return (rates ?? []) as ProRate[]
       }
 

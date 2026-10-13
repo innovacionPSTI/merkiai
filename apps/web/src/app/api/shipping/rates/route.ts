@@ -31,7 +31,6 @@ export async function POST(req: NextRequest) {
     // configurado o datos incompletos), se usa un mínimo cotizable.
     const MIN_PARCEL_WEIGHT_KG = 1
     if (!Number.isFinite(parcel.weight) || parcel.weight <= 0) {
-      console.warn(`[api/shipping/rates] peso calculado inválido (${parcel.weight}); usando mínimo ${MIN_PARCEL_WEIGHT_KG}kg. items=${JSON.stringify(items).slice(0, 400)}`)
       parcel.weight = MIN_PARCEL_WEIGHT_KG
     }
 
