@@ -1,7 +1,8 @@
 # ADR-004 · Instancias de integración (multi-config) + registry de proveedores
 
-Estado: **Implementado para PAGOS** (HU-275/276/277 ✅). Pendiente: envíos/correo
-(HU-278) y multi-dominio (HU-279). Fecha: 2026-10.
+Estado: **Implementado para PAGOS y CORREO** (HU-275/276/277 ✅, HU-278 correo ✅).
+Pendiente: envíos (resto de HU-278) y multi-dominio (HU-279). Fecha: 2026-10.
+Migraciones de backfill: e17/27 (pagos), e17/28 (envíos+correo).
 Relacionado: HU-271..274 (patrón de recursos UI), HU-272 (Pagos lista + wizard).
 
 ## Secuencia de despliegue (pagos)
