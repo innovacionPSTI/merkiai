@@ -26,6 +26,15 @@ export async function POST(req: NextRequest) {
 
     const parcel = calculateParcel(items as ParcelItem[])
 
+    // Las transportadoras rechazan peso 0 (todos los servicios salen
+    // 'not_applicable'). Si el peso calculado es 0/NaN (ítems sin peso
+    // configurado o datos incompletos), se usa un mínimo cotizable.
+    const MIN_PARCEL_WEIGHT_KG = 1
+    if (!Number.isFinite(parcel.weight) || parcel.weight <= 0) {
+      console.warn(`[api/shipping/rates] peso calculado inválido (${parcel.weight}); usando mínimo ${MIN_PARCEL_WEIGHT_KG}kg. items=${JSON.stringify(items).slice(0, 400)}`)
+      parcel.weight = MIN_PARCEL_WEIGHT_KG
+    }
+
     // Valor declarado que exige Skydropx PRO — suma de (precio × qty), con un
     // piso igual al mínimo de Skydropx (evita el 422 "declared_amount" en pedidos
     // de muy bajo valor; el valor declarado es solo para seguro/aduana del envío).
