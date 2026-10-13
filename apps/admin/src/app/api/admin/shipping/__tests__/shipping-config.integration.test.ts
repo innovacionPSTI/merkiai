@@ -121,15 +121,15 @@ describe('PATCH /api/admin/shipping — validación', () => {
     expect(res.status).toBe(400)
   })
 
-  it('retorna 400 si se activa skydropx sin credenciales completas', async () => {
-    // Simula que la config actual no tiene credenciales
+  it('retorna 400 si se activa skydropx sin dirección de origen (ADR-004: credenciales van en instancias)', async () => {
+    // La config actual no tiene dirección de origen
     mockGet.mockResolvedValueOnce(baseConfig)
     const req = makePatchRequest({ provider: 'skydropx' })
     const res = await PATCH(req)
     expect(res.status).toBe(400)
     const data = await res.json()
-    expect(data.missing).toContain('skydropx_client_id')
-    expect(data.missing).toContain('skydropx_client_secret')
+    // Ya NO se exigen credenciales aquí (viven en la instancia de Transportadora)
+    expect(data.missing).not.toContain('skydropx_client_id')
     expect(data.missing).toContain('origin_name')
     expect(data.missing).toContain('origin_city')
     expect(data.missing).toContain('origin_department')

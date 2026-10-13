@@ -97,10 +97,7 @@ export default function ShippingConfigForm({ initialConfig }: Props) {
     }
 
     if (provider === 'skydropx') {
-      if (clientId)     body.skydropx_client_id  = clientId
-      if (clientSecret) body.skydropx_client_secret = clientSecret
-      body.skydropx_base_url = baseUrl
-
+      // Las credenciales del carrier se gestionan como instancia (Transportadoras).
       body.origin_name         = originName         || null
       body.origin_street       = originStreet       || null
       body.origin_neighborhood = originNeighborhood || null
@@ -214,59 +211,12 @@ export default function ShippingConfigForm({ initialConfig }: Props) {
       {/* ── Skydropx — solo cuando está seleccionado ───────────────────────── */}
       {provider === 'skydropx' && (
         <>
-          {/* Credenciales */}
-          <div className="border border-brand-primary/10 rounded-2xl p-5 space-y-4 bg-brand-cream/30">
-            <p className="font-brand text-sm font-semibold text-brand-primary">Credenciales API</p>
-            <p className="font-brand text-xs text-brand-primary/40">
-              Obten Client ID y Client Secret en{' '}
-              <a
-                href="https://pro.skydropx.com/merchant_stores/applications"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="underline"
-              >
-                pro.skydropx.com → Aplicaciones
-              </a>
+          {/* Credenciales: ahora se gestionan como instancia en "Transportadoras" (ADR-004) */}
+          <div className="border border-brand-primary/10 rounded-2xl p-4 bg-brand-cream/30">
+            <p className="font-brand text-xs text-brand-primary/60">
+              Las <strong>credenciales de Skydropx</strong> (Client ID / Secret) se configuran y activan en la sección
+              <strong> “Transportadoras”</strong> de arriba. Aquí solo defines la tarifa fija de respaldo y la dirección de origen.
             </p>
-
-            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-              {[
-                { label: 'Client ID',     value: clientId,     onChange: setClientId,     placeholder: 'Client ID',     type: 'text'     },
-                { label: 'Client Secret', value: clientSecret, onChange: setClientSecret, placeholder: secretPlaceholder, type: 'password' },
-              ].map((f) => (
-                <div key={f.label}>
-                  <label className="font-brand text-xs font-semibold text-brand-primary block mb-1">{f.label}</label>
-                  <input
-                    type={f.type}
-                    value={f.value}
-                    onChange={(e) => f.onChange(e.target.value)}
-                    placeholder={f.placeholder}
-                    autoComplete="off"
-                    className="w-full border border-gray-200 rounded-xl px-4 py-2.5 font-brand text-sm focus:outline-none focus:border-brand-primary"
-                  />
-                </div>
-              ))}
-            </div>
-
-            <div>
-              <label className="font-brand text-xs font-semibold text-brand-primary block mb-1">
-                Base URL (avanzado)
-              </label>
-              <input
-                type="text"
-                value={baseUrl}
-                onChange={(e) => setBaseUrl(e.target.value)}
-                placeholder="https://app.skydropx.com"
-                className="w-full border border-gray-200 rounded-xl px-4 py-2.5 font-brand text-sm focus:outline-none focus:border-brand-primary"
-              />
-            </div>
-
-            <div className="p-3 bg-amber-50 border border-amber-200 rounded-xl">
-              <p className="font-brand text-xs text-amber-700">
-                <strong>Seguridad:</strong> El Client Secret nunca se devuelve completo en la UI.
-                Deja el campo vacío si no quieres cambiarlo.
-              </p>
-            </div>
           </div>
 
           {/* Dirección de origen */}

@@ -60,28 +60,26 @@ export async function PATCH(req: NextRequest) {
       )
     }
 
-    // If switching to skydropx, credentials + origin address are required
+    // ADR-004: las credenciales del carrier viven en la instancia activa
+    // (Transportadoras), no en shipping_config. Para el modo 'skydropx' solo se
+    // exige la dirección de origen (necesaria para generar guías).
     if (body.provider === 'skydropx') {
       const current = await getShippingConfig(supabase, adminUser.tenantId)
-      const effectiveClientId     = body.skydropx_client_id     ?? current.skydropx_client_id
-      const effectiveClientSecret = body.skydropx_client_secret ?? current.skydropx_client_secret
       const effectiveOriginName   = (body as Record<string, unknown>).origin_name   ?? current.origin_name
       const effectiveOriginCity   = (body as Record<string, unknown>).origin_city   ?? current.origin_city
       const effectiveOriginDept   = (body as Record<string, unknown>).origin_department ?? current.origin_department
       const effectiveOriginPC     = (body as Record<string, unknown>).origin_postal_code ?? current.origin_postal_code
 
       const missing = [
-        !effectiveClientId     && 'skydropx_client_id',
-        !effectiveClientSecret && 'skydropx_client_secret',
-        !effectiveOriginName   && 'origin_name',
-        !effectiveOriginCity   && 'origin_city',
-        !effectiveOriginDept   && 'origin_department',
-        !effectiveOriginPC     && 'origin_postal_code',
+        !effectiveOriginName && 'origin_name',
+        !effectiveOriginCity && 'origin_city',
+        !effectiveOriginDept && 'origin_department',
+        !effectiveOriginPC   && 'origin_postal_code',
       ].filter(Boolean)
 
       if (missing.length) {
         return NextResponse.json(
-          { error: 'Para activar Skydropx faltan campos obligatorios', missing },
+          { error: 'Para envíos con transportadora falta la dirección de origen', missing },
           { status: 400 }
         )
       }
