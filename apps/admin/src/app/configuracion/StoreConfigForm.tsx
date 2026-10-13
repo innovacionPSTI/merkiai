@@ -238,13 +238,13 @@ export default function StoreConfigForm({ initialConfig }: Props) {
             Palabras clave SEO
           </label>
           <p className="font-brand text-xs text-brand-primary/40 mb-2">
-            Separadas por comas. Ej: café de especialidad, tienda online, maquila de café.
+            Separadas por comas. Ej: tienda online, envíos a todo el país, compra segura.
           </p>
           <input
             type="text"
             value={seoKeywords}
             onChange={(e) => setSeoKeywords(e.target.value)}
-            placeholder="café, tienda online, ecommerce"
+            placeholder="tienda online, ecommerce, envíos"
             className="w-full border border-gray-200 rounded-xl px-4 py-2.5 font-brand text-sm focus:outline-none focus:border-brand-primary"
           />
         </div>
@@ -530,14 +530,14 @@ export default function StoreConfigForm({ initialConfig }: Props) {
         </div>
       </div>
 
-      {/* Actions */}
-      <div className="flex items-center gap-4 pt-1">
+      {/* Actions — barra fija al pie para que "Guardar" esté siempre a la vista */}
+      <div className="sticky bottom-0 -mx-6 -mb-6 mt-2 px-6 py-4 bg-white/95 backdrop-blur border-t border-gray-100 flex items-center gap-4">
         <button
           onClick={handleSave}
           disabled={status === 'saving'}
-          className="bg-brand-primary text-brand-cream rounded-full px-6 py-2.5 font-brand text-sm hover:bg-brand-dark transition-colors disabled:opacity-50"
+          className="bg-brand-primary text-brand-cream rounded-xl px-6 py-2.5 font-brand text-sm hover:bg-brand-dark transition-colors disabled:opacity-50"
         >
-          {status === 'saving' ? 'Guardando...' : 'Guardar'}
+          {status === 'saving' ? 'Guardando...' : 'Guardar cambios'}
         </button>
 
         {status === 'saved' && (

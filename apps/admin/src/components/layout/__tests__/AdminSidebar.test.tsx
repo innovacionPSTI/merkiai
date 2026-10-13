@@ -39,6 +39,18 @@ describe('AdminSidebar', () => {
     expect(screen.getByText('Categorías')).toBeInTheDocument()
   })
 
+  it('Configuración (leaf-group) se expande y se COLAPSA con el chevron', () => {
+    render(<AdminSidebar role="super_admin" />)
+    // Colapsado: no se ve "General"
+    expect(screen.queryByText('General')).not.toBeInTheDocument()
+    // Expandir con el botón del chevron (no el link de navegación)
+    fireEvent.click(screen.getByRole('button', { name: /Expandir Configuración/ }))
+    expect(screen.getByText('General')).toBeInTheDocument()
+    // Colapsar de nuevo (antes quedaba fijo por la ruta)
+    fireEvent.click(screen.getByRole('button', { name: /Colapsar Configuración/ }))
+    expect(screen.queryByText('General')).not.toBeInTheDocument()
+  })
+
   it('oculta secciones sin permiso según el rol (vendedor no ve Configuración)', () => {
     render(<AdminSidebar role="vendedor" />)
     expect(screen.getByText('Dashboard')).toBeInTheDocument()

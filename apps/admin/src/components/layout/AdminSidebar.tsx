@@ -149,7 +149,7 @@ const NAV: NavNode[] = [
 
 // ── Helpers ──────────────────────────────────────────────────────────────────
 
-/** Devuelve el label del grupo activo si el pathname pertenece a alguno de sus hijos */
+/** Devuelve el label del grupo/leaf-group activo si el pathname pertenece a él */
 function getActiveGroupId(nodes: NavNode[], pathname: string): string | null {
   for (const node of nodes) {
     if (node.kind === 'group') {
@@ -157,6 +157,8 @@ function getActiveGroupId(nodes: NavNode[], pathname: string): string | null {
         (child) => pathname === child.href || pathname.startsWith(child.href + '/')
       )
       if (hasActive) return node.label
+    } else if (node.kind === 'leaf-group') {
+      if (pathname === node.href || pathname.startsWith(node.href + '/')) return node.label
     }
   }
   return null
@@ -271,30 +273,43 @@ export default function AdminSidebar({ role }: Props) {
           // ── Hoja expandible a nivel raíz (ej. Configuración) ───────────────
           if (node.kind === 'leaf-group') {
             const isActive = pathname === node.href || pathname.startsWith(node.href + '/')
+            // La expansión la controla el estado (no la ruta): así se puede
+            // colapsar aunque estés dentro de una subpágina. La navegación la
+            // hace el Link; el chevron es un botón de toggle independiente.
+            const isOpen = openGroups.has(node.label)
             return (
               <div key={node.href}>
-                <Link
-                  href={node.href}
-                  className={`flex items-center gap-3 px-3 py-2.5 rounded-xl font-brand text-sm transition-colors ${
+                <div
+                  className={`flex items-center rounded-xl font-brand text-sm transition-colors ${
                     isActive
                       ? 'bg-brand-dark text-brand-cream font-semibold'
                       : 'text-brand-cream/60 hover:text-brand-cream hover:bg-brand-cream/10'
                   }`}
                 >
-                  <span className="text-base leading-none">{node.icon}</span>
-                  <span className="flex-1">{node.label}</span>
-                  <svg
-                    className={`w-3 h-3 transition-transform duration-200 ${isActive ? 'rotate-90' : ''}`}
-                    fill="none"
-                    stroke="currentColor"
-                    strokeWidth={2.5}
-                    viewBox="0 0 24 24"
+                  <Link href={node.href} className="flex items-center gap-3 px-3 py-2.5 flex-1 min-w-0">
+                    <span className="text-base leading-none">{node.icon}</span>
+                    <span className="flex-1">{node.label}</span>
+                  </Link>
+                  <button
+                    type="button"
+                    aria-label={isOpen ? `Colapsar ${node.label}` : `Expandir ${node.label}`}
+                    aria-expanded={isOpen}
+                    onClick={() => toggleGroup(node.label)}
+                    className="shrink-0 px-3 py-2.5 text-current/70 hover:text-current"
                   >
-                    <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" />
-                  </svg>
-                </Link>
+                    <svg
+                      className={`w-3 h-3 transition-transform duration-200 ${isOpen ? 'rotate-90' : ''}`}
+                      fill="none"
+                      stroke="currentColor"
+                      strokeWidth={2.5}
+                      viewBox="0 0 24 24"
+                    >
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" />
+                    </svg>
+                  </button>
+                </div>
 
-                {isActive && (
+                {isOpen && (
                   <div className="mt-0.5 ml-3 pl-3 border-l border-brand-cream/15 space-y-0.5">
                     {node.children
                       .filter((sub) => !sub.fullAccessOnly || fullAccess)
