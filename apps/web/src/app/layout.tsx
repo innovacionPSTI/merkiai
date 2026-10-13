@@ -1,6 +1,5 @@
 import type { Metadata, ResolvingMetadata } from 'next'
 import { Suspense } from 'react'
-import { Cormorant_Garamond, DM_Sans, Playfair_Display, Inter, Lora, Merriweather, Montserrat, Nunito } from 'next/font/google'
 import { StackProvider, StackTheme } from '@stackframe/stack'
 import { Analytics } from '@vercel/analytics/react'
 import { stackServerApp } from '../stack'
@@ -10,75 +9,30 @@ import { getStoreContext } from '@/lib/store-context'
 import { headers } from 'next/headers'
 import './globals.css'
 
-// ── Fuentes (next/font: build-time, self-hosted) ──────────────────────────────
+// ── Fuentes ───────────────────────────────────────────────────────────────────
+// Se cargan por <link> de Google Fonts en runtime (NO next/font), para que el
+// build no dependa de fonts.googleapis.com — ese fetch de build era intermitente
+// y hacía fallar el deploy. Solo se cargan las 2 familias que el tema use.
+const FONT_QUERY: Record<string, string> = {
+  cormorant:    'Cormorant+Garamond:ital,wght@0,300;0,400;0,500;0,600;0,700;1,400;1,500;1,600',
+  playfair:     'Playfair+Display:ital,wght@0,400;0,500;0,600;0,700;1,400;1,500;1,600',
+  lora:         'Lora:ital,wght@0,400;0,500;0,600;0,700;1,400;1,500;1,600',
+  merriweather: 'Merriweather:ital,wght@0,300;0,400;0,700;1,400',
+  'dm-sans':    'DM+Sans:wght@300;400;500;600;700',
+  inter:        'Inter:wght@300;400;500;600;700',
+  montserrat:   'Montserrat:wght@300;400;500;600;700',
+  nunito:       'Nunito:wght@300;400;500;600;700',
+}
+const DISPLAY_FONTS = new Set(['cormorant', 'playfair', 'lora', 'merriweather'])
+const BODY_FONTS = new Set(['dm-sans', 'inter', 'montserrat', 'nunito'])
 
-// Display opción 1: Cormorant Garamond (por defecto)
-const cormorant = Cormorant_Garamond({
-  subsets: ['latin'],
-  weight: ['300', '400', '500', '600', '700'],
-  style: ['normal', 'italic'],
-  variable: '--font-ahsing',
-  display: 'swap',
-})
-
-// Display opción 2: Playfair Display
-const playfair = Playfair_Display({
-  subsets: ['latin'],
-  weight: ['400', '500', '600', '700'],
-  style: ['normal', 'italic'],
-  variable: '--font-playfair',
-  display: 'swap',
-})
-
-// Body opción 1: DM Sans (por defecto)
-const dmSans = DM_Sans({
-  subsets: ['latin'],
-  weight: ['300', '400', '500', '600', '700'],
-  variable: '--font-geeeki',
-  display: 'swap',
-})
-
-// Body opción 2: Inter
-const inter = Inter({
-  subsets: ['latin'],
-  weight: ['300', '400', '500', '600', '700'],
-  variable: '--font-inter',
-  display: 'swap',
-})
-
-// Display opción 3: Lora
-const lora = Lora({
-  subsets: ['latin'],
-  weight: ['400', '500', '600', '700'],
-  style: ['normal', 'italic'],
-  variable: '--font-lora',
-  display: 'swap',
-})
-
-// Display opción 4: Merriweather
-const merriweather = Merriweather({
-  subsets: ['latin'],
-  weight: ['300', '400', '700'],
-  style: ['normal', 'italic'],
-  variable: '--font-merriweather',
-  display: 'swap',
-})
-
-// Body opción 3: Montserrat
-const montserrat = Montserrat({
-  subsets: ['latin'],
-  weight: ['300', '400', '500', '600', '700'],
-  variable: '--font-montserrat',
-  display: 'swap',
-})
-
-// Body opción 4: Nunito
-const nunito = Nunito({
-  subsets: ['latin'],
-  weight: ['300', '400', '500', '600', '700'],
-  variable: '--font-nunito',
-  display: 'swap',
-})
+/** URL de Google Fonts (css2) con solo las familias display+body seleccionadas. */
+function googleFontsHref(displayId?: string | null, bodyId?: string | null): string {
+  const d = displayId && DISPLAY_FONTS.has(displayId) ? displayId : 'cormorant'
+  const b = bodyId && BODY_FONTS.has(bodyId) ? bodyId : 'dm-sans'
+  const families = [FONT_QUERY[d], FONT_QUERY[b]].map((f) => `family=${f}`).join('&')
+  return `https://fonts.googleapis.com/css2?${families}&display=swap`
+}
 
 // ── Metadata ──────────────────────────────────────────────────────────────────
 
@@ -138,21 +92,16 @@ export default async function RootLayout({ children }: { children: React.ReactNo
   const analyticsEnabled = config?.analytics_enabled ?? false
   const themeCSS = theme ? buildThemeCSS(theme) : null
 
-  // Variables CSS de todas las fuentes pre-cargadas
-  const fontVars = [
-    cormorant.variable,
-    playfair.variable,
-    dmSans.variable,
-    inter.variable,
-    lora.variable,
-    merriweather.variable,
-    montserrat.variable,
-    nunito.variable,
-  ].join(' ')
+  // Solo las 2 familias que el tema use (display + body).
+  const fontsHref = googleFontsHref(theme?.font_display, theme?.font_body)
 
   return (
-    <html lang="es" className={fontVars}>
+    <html lang="es">
       <head>
+        {/* Fuentes del tema (Google Fonts en runtime; el build no depende de Google) */}
+        <link rel="preconnect" href="https://fonts.googleapis.com" />
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
+        <link rel="stylesheet" href={fontsHref} />
         {/* Favicon dinámico desde store_config */}
         {config?.favicon_url && (
           <link rel="icon" href={config.favicon_url} />

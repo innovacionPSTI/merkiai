@@ -11,8 +11,8 @@
  * El layout.tsx sobreescribe estas variables con el tema activo de la DB.
  * Si no hay tema en DB o falla la conexión, estos defaults se aplican.
  *
- * --font-display y --font-body apuntan a variables de next/font/google
- * que el layout.tsx inyecta como clases en <html>.
+ * --font-display y --font-body apuntan a familias de Google Fonts cargadas por
+ * <link> en layout.tsx (solo las que el tema use).
  */
 :root {
   /* Paleta por defecto (se sobreescribe con el tema del tenant) */
@@ -25,7 +25,16 @@
   --brand-text:        45 26 10;    /* #2D1A0A */
   --brand-price:       97 74 42;    /* HU-247 · por defecto = primario */
 
-  /* Tipografía (resuelta por el tema activo en layout.tsx) */
+  /* Tipografía: familias de Google Fonts cargadas por <link> en layout.tsx
+     (ya no por next/font, para no depender de Google en tiempo de build). */
+  --font-ahsing:       'Cormorant Garamond';
+  --font-geeeki:       'DM Sans';
+  --font-playfair:     'Playfair Display';
+  --font-lora:         'Lora';
+  --font-merriweather: 'Merriweather';
+  --font-inter:        'Inter';
+  --font-montserrat:   'Montserrat';
+  --font-nunito:       'Nunito';
   --font-display: var(--font-ahsing), Georgia, serif;
   --font-body:    var(--font-geeeki), system-ui, sans-serif;
 
