@@ -35,6 +35,7 @@ jest.mock('@merkiai/database', () => ({
   createServerClient: jest.fn(() => ({ from: mockFrom })),
   getPaymentConfig: jest.fn(),
   resolveActivePayment: jest.fn(),
+  resolveEmailConfig: jest.fn(),
   getStoreConfig: jest.fn(),
   applyStockForOrder: jest.fn(),
   markWebhookEventProcessed: jest.fn(async () => ({ duplicate: false })),
@@ -59,12 +60,13 @@ jest.mock('@/lib/tenant-context', () => ({
   resolveTenant: jest.fn(async () => ({ tenantId: '00000000-0000-0000-0000-000000000001' })),
 }))
 
-import { getPaymentConfig, resolveActivePayment, getStoreConfig } from '@merkiai/database'
+import { getPaymentConfig, resolveActivePayment, getStoreConfig, resolveEmailConfig } from '@merkiai/database'
 import { POST } from '../webhooks/bold/route'
 
 const mockGetPaymentConfig = getPaymentConfig as jest.MockedFunction<typeof getPaymentConfig>
 const mockResolveActivePayment = resolveActivePayment as jest.MockedFunction<typeof resolveActivePayment>
 const mockGetStoreConfig = getStoreConfig as jest.MockedFunction<typeof getStoreConfig>
+const mockResolveEmailConfig = resolveEmailConfig as jest.MockedFunction<typeof resolveEmailConfig>
 
 const configWithBold = { id: 1, active_provider: 'bold', bold_api_key: 'bk', bold_secret_key: 'sk', bold_sandbox: false }
 
@@ -87,6 +89,7 @@ beforeEach(() => {
     return { provider: 'bold', environment: 'test', credentials: { api_key: cfg.bold_api_key, secret_key: cfg.bold_secret_key }, settings: { sandbox: cfg.bold_sandbox ?? true }, source: 'legacy' } as never
   })
   mockGetStoreConfig.mockResolvedValue(null as never) // sin email para simplificar
+  mockResolveEmailConfig.mockResolvedValue(null as never) // sin email por defecto
   mockMap.mockReturnValue('approved')
   mockExtract.mockReturnValue({ orderReference: 'ORD-0042', rawStatus: 'SALE_APPROVED', paymentId: 'PAY-1' })
 })

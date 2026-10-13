@@ -19,6 +19,7 @@ jest.mock('@merkiai/database', () => ({
   createServerClient: jest.fn(() => ({ from: mockFrom })),
   getPaymentConfig: jest.fn(),
   resolveActivePayment: jest.fn(),
+  resolveEmailConfig: jest.fn(),
   getStoreConfig: jest.fn(),
   applyStockForOrder: jest.fn(),
   BoldGateway: jest.fn().mockImplementation(() => ({ queryStatusByReference: mockQuery })),
@@ -34,11 +35,12 @@ jest.mock('@/lib/shipping/shipments', () => ({
   createShipmentForOrder: jest.fn().mockResolvedValue(null),
 }))
 
-import { getPaymentConfig, resolveActivePayment, getStoreConfig } from '@merkiai/database'
+import { getPaymentConfig, resolveActivePayment, resolveEmailConfig, getStoreConfig } from '@merkiai/database'
 import { reconcileBoldOrder } from '../bold-reconcile'
 
 const mockGetPaymentConfig = getPaymentConfig as jest.MockedFunction<typeof getPaymentConfig>
 const mockResolveActivePayment = resolveActivePayment as jest.MockedFunction<typeof resolveActivePayment>
+const mockResolveEmailConfig = resolveEmailConfig as jest.MockedFunction<typeof resolveEmailConfig>
 const mockGetStoreConfig = getStoreConfig as jest.MockedFunction<typeof getStoreConfig>
 
 beforeEach(() => {
@@ -50,6 +52,7 @@ beforeEach(() => {
     return { provider: 'bold', environment: 'test', credentials: { api_key: cfg.bold_api_key, secret_key: cfg.bold_secret_key }, settings: { sandbox: cfg.bold_sandbox ?? true }, source: 'legacy' } as never
   })
   mockGetStoreConfig.mockResolvedValue(null as never)
+  mockResolveEmailConfig.mockResolvedValue(null as never)
 })
 
 describe('reconcileBoldOrder', () => {

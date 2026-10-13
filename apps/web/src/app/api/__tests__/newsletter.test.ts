@@ -21,6 +21,7 @@ const mockFrom        = jest.fn(() => ({
 jest.mock('@merkiai/database', () => ({
   createServerClient: jest.fn(() => ({ from: mockFrom })),
   getStoreConfig: jest.fn(),
+  resolveEmailConfig: jest.fn(),
 }))
 
 jest.mock('@/lib/tenant-context', () => ({
@@ -36,10 +37,11 @@ jest.mock('@/lib/email', () => ({
 
 import { NextRequest } from 'next/server'
 import { POST } from '../newsletter/route'
-import { getStoreConfig } from '@merkiai/database'
+import { getStoreConfig, resolveEmailConfig } from '@merkiai/database'
 import { sendNewsletterConfirmation } from '@/lib/email'
 
 const mockGetStoreConfig          = getStoreConfig as jest.MockedFunction<typeof getStoreConfig>
+const mockResolveEmailConfig      = resolveEmailConfig as jest.MockedFunction<typeof resolveEmailConfig>
 const mockSendNewsletterConfirmation = sendNewsletterConfirmation as jest.MockedFunction<typeof sendNewsletterConfirmation>
 
 function makeRequest(body: unknown) {
@@ -57,6 +59,10 @@ const STORE_CONFIG = {
 
 beforeEach(() => {
   jest.clearAllMocks()
+  mockResolveEmailConfig.mockImplementation(async () => {
+    const sc = await mockGetStoreConfig(undefined as never, undefined as never) as Record<string, string> | null
+    return sc?.resend_api_key && sc?.resend_from_email ? { apiKey: sc.resend_api_key, fromEmail: sc.resend_from_email, storeName: sc.store_name, provider: 'resend' } as never : null
+  })
   mockUpsert.mockResolvedValue({ error: null })
   mockSendNewsletterConfirmation.mockResolvedValue(undefined)
 })

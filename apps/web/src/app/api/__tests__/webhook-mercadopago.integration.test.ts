@@ -36,6 +36,7 @@ jest.mock('@merkiai/database', () => ({
   createServerClient: jest.fn(() => ({ from: mockFrom })),
   getPaymentConfig: jest.fn(),
   resolveActivePayment: jest.fn(),
+  resolveEmailConfig: jest.fn(),
   getStoreConfig: jest.fn(),
   applyStockForOrder: jest.fn(),
   markWebhookEventProcessed: jest.fn(async () => ({ duplicate: false })),
@@ -59,7 +60,7 @@ jest.mock('@/lib/email', () => ({
   })),
 }))
 
-import { getPaymentConfig, resolveActivePayment, getStoreConfig } from '@merkiai/database'
+import { getPaymentConfig, resolveActivePayment, getStoreConfig, resolveEmailConfig } from '@merkiai/database'
 import { getMercadoPagoPayment, mapMercadoPagoStatus } from '@/lib/mercadopago'
 import { sendOrderConfirmation } from '@/lib/email'
 import { POST } from '../webhooks/mercadopago/route'
@@ -67,6 +68,7 @@ import { POST } from '../webhooks/mercadopago/route'
 const mockGetPaymentConfig = getPaymentConfig as jest.MockedFunction<typeof getPaymentConfig>
 const mockResolveActivePayment = resolveActivePayment as jest.MockedFunction<typeof resolveActivePayment>
 const mockGetStoreConfig = getStoreConfig as jest.MockedFunction<typeof getStoreConfig>
+const mockResolveEmailConfig = resolveEmailConfig as jest.MockedFunction<typeof resolveEmailConfig>
 const mockGetMPPayment = getMercadoPagoPayment as jest.MockedFunction<typeof getMercadoPagoPayment>
 const mockMapMPStatus = mapMercadoPagoStatus as jest.MockedFunction<typeof mapMercadoPagoStatus>
 const mockSendEmail = sendOrderConfirmation as jest.MockedFunction<typeof sendOrderConfirmation>
@@ -127,6 +129,10 @@ beforeEach(() => {
     return { provider: 'mercadopago', environment: 'test', credentials: { access_token: cfg.mercadopago_access_token, public_key: cfg.mercadopago_public_key, webhook_secret: (cfg as Record<string, unknown>).mercadopago_webhook_secret }, settings: {}, source: 'legacy' } as never
   })
   mockGetStoreConfig.mockResolvedValue(storeConfig as never)
+  mockResolveEmailConfig.mockImplementation(async () => {
+    const sc = await mockGetStoreConfig(undefined as never, undefined as never) as Record<string, string> | null
+    return sc?.resend_api_key && sc?.resend_from_email ? { apiKey: sc.resend_api_key, fromEmail: sc.resend_from_email, storeName: sc.store_name, provider: 'resend' } as never : null
+  })
   mockGetMPPayment.mockResolvedValue(mockMPPayment)
   mockMapMPStatus.mockReturnValue('approved')
   mockSingle.mockResolvedValue({ data: mockOrder, error: null })

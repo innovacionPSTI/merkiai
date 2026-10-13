@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { resolveActivePayment, getStoreConfig, BoldGateway, applyStockForOrder, markWebhookEventProcessed } from '@merkiai/database'
+import { resolveActivePayment, resolveEmailConfig, BoldGateway, applyStockForOrder, markWebhookEventProcessed } from '@merkiai/database'
 import { resolveTenant } from '@/lib/tenant-context'
 import { getMachineDb } from '@/lib/machine-db'
 import { amountCoversOrder } from '@/lib/payment-guards'
@@ -114,15 +114,8 @@ export async function POST(req: NextRequest) {
     // Descuento de stock (idempotente) al confirmarse el pago
     await applyStockForOrder(orderReference)
 
-    const storeConfig = await getStoreConfig(supabase, tenantId).catch(() => null)
-    const emailConfig = storeConfig?.resend_api_key && storeConfig?.resend_from_email
-      ? buildEmailConfig(
-          storeConfig.resend_api_key,
-          storeConfig.resend_from_email,
-          storeConfig.store_name,
-          storeConfig.email_provider,
-        )
-      : null
+    const ec = await resolveEmailConfig(supabase, tenantId).catch(() => null)
+    const emailConfig = ec ? buildEmailConfig(ec.apiKey, ec.fromEmail, ec.storeName, ec.provider) : null
 
     if (emailConfig) {
       try {

@@ -41,6 +41,7 @@ jest.mock('@merkiai/database', () => ({
   getPaymentConfig: jest.fn(),
   resolveActivePayment: jest.fn(),
   getStoreConfig: jest.fn(),
+  resolveEmailConfig: jest.fn(),
   applyStockForOrder: jest.fn(),
   markWebhookEventProcessed: jest.fn(async () => ({ duplicate: false })),
 }))
@@ -63,7 +64,7 @@ jest.mock('@/lib/email', () => ({
   })),
 }))
 
-import { getPaymentConfig, resolveActivePayment, getStoreConfig } from '@merkiai/database'
+import { getPaymentConfig, resolveActivePayment, getStoreConfig, resolveEmailConfig } from '@merkiai/database'
 import { verifyWompiWebhook, mapWompiStatus } from '@/lib/wompi'
 import { sendOrderConfirmation } from '@/lib/email'
 import { POST } from '../webhooks/wompi/route'
@@ -71,6 +72,7 @@ import { POST } from '../webhooks/wompi/route'
 const mockGetPaymentConfig = getPaymentConfig as jest.MockedFunction<typeof getPaymentConfig>
 const mockResolveActivePayment = resolveActivePayment as jest.MockedFunction<typeof resolveActivePayment>
 const mockGetStoreConfig = getStoreConfig as jest.MockedFunction<typeof getStoreConfig>
+const mockResolveEmailConfig = resolveEmailConfig as jest.MockedFunction<typeof resolveEmailConfig>
 const mockVerifyWebhook = verifyWompiWebhook as jest.MockedFunction<typeof verifyWompiWebhook>
 const mockMapStatus = mapWompiStatus as jest.MockedFunction<typeof mapWompiStatus>
 const mockSendEmail = sendOrderConfirmation as jest.MockedFunction<typeof sendOrderConfirmation>
@@ -140,6 +142,10 @@ beforeEach(() => {
   mockGetPaymentConfig.mockResolvedValue(paymentConfig as never)
   mockResolveActivePayment.mockResolvedValue({ provider: 'wompi', environment: 'test', credentials: { events_secret: EVENTS_SECRET, public_key: 'pub_test_x' }, settings: {}, source: 'legacy' } as never)
   mockGetStoreConfig.mockResolvedValue(storeConfig as never)
+  mockResolveEmailConfig.mockImplementation(async () => {
+    const sc = await mockGetStoreConfig(undefined as never, undefined as never) as Record<string, string> | null
+    return sc?.resend_api_key && sc?.resend_from_email ? { apiKey: sc.resend_api_key, fromEmail: sc.resend_from_email, storeName: sc.store_name, provider: 'resend' } as never : null
+  })
   mockVerifyWebhook.mockReturnValue(true)
   mockMapStatus.mockReturnValue('approved')
   mockSingle.mockResolvedValue({ data: mockOrder, error: null })

@@ -8,7 +8,7 @@
  * `bold` en estado `pending`.
  */
 
-import { createServerClient, resolveActivePayment, getStoreConfig, BoldGateway, applyStockForOrder } from '@merkiai/database'
+import { createServerClient, resolveActivePayment, resolveEmailConfig, BoldGateway, applyStockForOrder } from '@merkiai/database'
 import type { Order, Database } from '@merkiai/database'
 import { sendOrderConfirmation, buildEmailConfig } from '@/lib/email'
 import { createShipmentForOrder } from '@/lib/shipping/shipments'
@@ -76,15 +76,8 @@ export async function reconcileBoldOrder(orderNumber: string): Promise<Reconcile
   if (paymentStatus === 'approved') {
     await applyStockForOrder(orderNumber)
 
-    const storeConfig = await getStoreConfig(supabase, order.tenant_id).catch(() => null)
-    const emailConfig = storeConfig?.resend_api_key && storeConfig?.resend_from_email
-      ? buildEmailConfig(
-          storeConfig.resend_api_key,
-          storeConfig.resend_from_email,
-          storeConfig.store_name,
-          storeConfig.email_provider,
-        )
-      : null
+    const ec = await resolveEmailConfig(supabase, order.tenant_id).catch(() => null)
+    const emailConfig = ec ? buildEmailConfig(ec.apiKey, ec.fromEmail, ec.storeName, ec.provider) : null
 
     if (emailConfig) {
       try {

@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { createServerClient, getStoreConfig } from '@merkiai/database'
+import { createServerClient, resolveEmailConfig } from '@merkiai/database'
 import { sendNewsletterConfirmation, buildEmailConfig } from '@/lib/email'
 import { resolveTenant } from '@/lib/tenant-context'
 
@@ -33,11 +33,11 @@ export async function POST(req: NextRequest) {
     // Send confirmation email only on first subscription
     if (!wasAlreadyActive) {
       try {
-        const storeConfig = await getStoreConfig(createServerClient(), tenantId)
-        if (storeConfig?.resend_api_key && storeConfig?.resend_from_email) {
+        const ec = await resolveEmailConfig(createServerClient(), tenantId).catch(() => null)
+        if (ec) {
           await sendNewsletterConfirmation(
             email,
-            buildEmailConfig(storeConfig.resend_api_key, storeConfig.resend_from_email, storeConfig.store_name),
+            buildEmailConfig(ec.apiKey, ec.fromEmail, ec.storeName, ec.provider),
           )
         }
       } catch (emailErr) {

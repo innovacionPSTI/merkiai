@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { stackServerApp } from '@/stack'
-import { createServerClient, getStoreConfig, ensureCustomer } from '@merkiai/database'
+import { createServerClient, resolveEmailConfig, ensureCustomer } from '@merkiai/database'
 import { sendWelcomeEmail, buildEmailConfig } from '@/lib/email'
 import { resolveTenant } from '@/lib/tenant-context';
 import { getMachineDb } from '@/lib/machine-db'
@@ -82,12 +82,12 @@ export async function POST(request: NextRequest) {
     // ── 3. Email de bienvenida ────────────────────────────────────────────────
     // Solo se envía si hay sesión válida (para no enviar a emails del body no verificados)
     if (sessionUser) {
-      const config = await getStoreConfig(createServerClient(), tenantId)
-      if (config?.resend_api_key && config?.resend_from_email) {
+      const ec = await resolveEmailConfig(createServerClient(), tenantId).catch(() => null)
+      if (ec) {
         await sendWelcomeEmail(
           email,
           displayName,
-          buildEmailConfig(config.resend_api_key, config.resend_from_email, config.store_name),
+          buildEmailConfig(ec.apiKey, ec.fromEmail, ec.storeName, ec.provider),
         )
       }
     }

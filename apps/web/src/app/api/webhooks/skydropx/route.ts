@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { createServerClient, getStoreConfig } from '@merkiai/database'
+import { createServerClient, resolveEmailConfig } from '@merkiai/database'
 import { getMachineDb } from '@/lib/machine-db'
 import { sendShippingNotification, buildEmailConfig } from '@/lib/email'
 import type { Order } from '@merkiai/database'
@@ -94,11 +94,11 @@ export async function POST(req: NextRequest) {
     if (newStatus === 'shipped' && updatedOrder) {
       try {
         // HU-216/227: store config del tenant del pedido, vía RLS (no service-role).
-        const storeConfig = await getStoreConfig(getMachineDb(updatedOrder.tenant_id), updatedOrder.tenant_id)
-        if (storeConfig?.resend_api_key && storeConfig?.resend_from_email && updatedOrder.tracking_number) {
+        const ec = await resolveEmailConfig(getMachineDb(updatedOrder.tenant_id), updatedOrder.tenant_id).catch(() => null)
+        if (ec && updatedOrder.tracking_number) {
           await sendShippingNotification(
             updatedOrder as unknown as Order & { tracking_number: string; carrier_name: string | null; label_url: string | null },
-            buildEmailConfig(storeConfig.resend_api_key, storeConfig.resend_from_email, storeConfig.store_name),
+            buildEmailConfig(ec.apiKey, ec.fromEmail, ec.storeName, ec.provider),
           )
         }
       } catch (emailErr) {
