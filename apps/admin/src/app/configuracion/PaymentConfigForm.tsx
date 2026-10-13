@@ -371,6 +371,21 @@ function SecretInput({ label, name, hasExisting, placeholder, hint }: {
   )
 }
 
+/** Fila "Entorno" al inicio del paso: muestra Pruebas/Producción detectado. */
+function EnvRow({ env, hint }: { env: Env; hint: string }) {
+  return (
+    <div className="rounded-xl bg-brand-cream/40 border border-brand-primary/10 px-3 py-2.5 flex items-center justify-between gap-3">
+      <div className="flex items-center gap-2">
+        <span className="font-brand text-sm font-semibold text-brand-primary">Entorno</span>
+        {env === 'unknown'
+          ? <span className="font-brand text-xs text-brand-primary/40">por definir</span>
+          : <EnvBadge env={env} />}
+      </div>
+      <span className="font-brand text-[11px] text-brand-primary/40 text-right max-w-[58%]">{hint}</span>
+    </div>
+  )
+}
+
 const GATEWAYS: ActiveProvider[] = ['wompi', 'mercadopago', 'tucompra', 'bold']
 
 export default function PaymentConfigForm({ initialConfig, storeBaseUrl }: Props) {
@@ -385,6 +400,9 @@ export default function PaymentConfigForm({ initialConfig, storeBaseUrl }: Props
   const [verifying, setVerifying] = useState<ActiveProvider | null>(null)
   // modal: alta/edición de un medio. provider null = aún eligiendo (modo alta).
   const [modal, setModal] = useState<{ mode: 'add' | 'edit'; provider: ActiveProvider | null } | null>(null)
+  // Llaves públicas controladas → el entorno (Pruebas/Producción) se detecta en vivo.
+  const [wompiPk, setWompiPk] = useState(cfg?.wompi_public_key ?? '')
+  const [mpPk, setMpPk] = useState(cfg?.mercadopago_public_key ?? '')
 
   // ¿Qué pasarelas tienen credenciales guardadas (se muestran como tarjetas)?
   const isConfigured = (p: ActiveProvider): boolean => {
@@ -509,9 +527,10 @@ export default function PaymentConfigForm({ initialConfig, storeBaseUrl }: Props
   function gatewayFields(p: ActiveProvider) {
     if (p === 'wompi') return (
       <div className="space-y-4">
+        <EnvRow env={wompiEnv(wompiPk)} hint="Se define por la llave pública: pub_test_ (Pruebas) o pub_prod_ (Producción)." />
         <div>
           <label className="font-brand text-sm font-semibold text-brand-primary block mb-1">Llave pública (pub_…)</label>
-          <input type="text" name="wompi_public_key" defaultValue={cfg?.wompi_public_key ?? ''} placeholder="pub_test_… o pub_prod_…"
+          <input type="text" name="wompi_public_key" value={wompiPk} onChange={(e) => setWompiPk(e.target.value)} placeholder="pub_test_… o pub_prod_…"
             className="w-full border border-brand-primary/20 rounded-xl px-4 py-2.5 font-mono text-sm focus:outline-none focus:border-brand-primary" />
           <p className="font-brand text-xs text-brand-primary/40 mt-1">Visible en el frontend. pub_test_ (pruebas) o pub_prod_ (producción).</p>
         </div>
@@ -523,9 +542,10 @@ export default function PaymentConfigForm({ initialConfig, storeBaseUrl }: Props
     )
     if (p === 'mercadopago') return (
       <div className="space-y-4">
+        <EnvRow env={mpEnv(mpPk)} hint="Se define por las credenciales: TEST- (Pruebas) o APP_USR- (Producción)." />
         <div>
           <label className="font-brand text-sm font-semibold text-brand-primary block mb-1">Public Key (APP_USR-… o TEST-…)</label>
-          <input type="text" name="mercadopago_public_key" defaultValue={cfg?.mercadopago_public_key ?? ''} placeholder="TEST-abc123… o APP_USR-abc123…"
+          <input type="text" name="mercadopago_public_key" value={mpPk} onChange={(e) => setMpPk(e.target.value)} placeholder="TEST-abc123… o APP_USR-abc123…"
             className="w-full border border-brand-primary/20 rounded-xl px-4 py-2.5 font-mono text-sm focus:outline-none focus:border-brand-primary" />
           <p className="font-brand text-xs text-brand-primary/40 mt-1">Usada en el checkout (Brick). Panel MP → Credenciales.</p>
         </div>
@@ -537,6 +557,7 @@ export default function PaymentConfigForm({ initialConfig, storeBaseUrl }: Props
     if (p === 'tucompra') return (
       <div className="space-y-4">
         <input type="hidden" name="_tucompra_present" value="1" readOnly />
+        <p className="font-brand text-xs text-brand-primary/50">El entorno (Pruebas/Producción) se elige en «Entorno» más abajo.</p>
         <div>
           <label className="font-brand text-sm font-semibold text-brand-primary block mb-1">Usuario</label>
           <input type="text" name="tucompra_user" defaultValue={cfg?.tucompra_user ?? ''} placeholder="Usuario de autenticación"
@@ -563,6 +584,7 @@ export default function PaymentConfigForm({ initialConfig, storeBaseUrl }: Props
     if (p === 'bold') return (
       <div className="space-y-4">
         <input type="hidden" name="_bold_present" value="1" readOnly />
+        <p className="font-brand text-xs text-brand-primary/50">El entorno (Pruebas/Producción) se define con el toggle «Modo sandbox» de abajo.</p>
         <SecretInput label="Llave de identidad (API key)" name="bold_api_key" hasExisting={!!cfg?.bold_api_key} placeholder="Llave de identidad Bold" hint="Se envía como x-api-key al crear links. Panel Bold → Integraciones → Llaves." />
         <SecretInput label="Llave secreta (webhook)" name="bold_secret_key" hasExisting={cfg?.has_bold_secret_key ?? false} placeholder="Llave secreta Bold" hint="Verifica la firma HMAC-SHA256 del webhook. En sandbox va vacía." />
         <label className="flex items-center gap-3 cursor-pointer">
