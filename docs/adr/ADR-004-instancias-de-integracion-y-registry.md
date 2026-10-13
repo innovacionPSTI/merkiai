@@ -1,7 +1,18 @@
 # ADR-004 · Instancias de integración (multi-config) + registry de proveedores
 
-Estado: **Propuesto** (Épica pendiente). Fecha: 2026-10.
+Estado: **Implementado para PAGOS** (HU-275/276/277 ✅). Pendiente: envíos/correo
+(HU-278) y multi-dominio (HU-279). Fecha: 2026-10.
 Relacionado: HU-271..274 (patrón de recursos UI), HU-272 (Pagos lista + wizard).
+
+## Secuencia de despliegue (pagos)
+
+1. Desplegar el código (runtime ya resuelve por instancia con fallback a legacy).
+2. Aplicar migraciones `e17/26` (tabla) y `e17/27` (backfill payment_config →
+   instancias). Ya es seguro: el admin escribe instancias y el runtime las lee.
+3. Verificar en Admin → Pagos que las pasarelas aparezcan como instancias.
+4. Probar un pago en sandbox.
+5. Más adelante (HU futura): retirar columnas legacy de `payment_config` tras
+   confirmar en producción.
 
 ## Contexto
 
