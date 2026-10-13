@@ -1,6 +1,8 @@
 'use client'
 
 import { useRef, useState } from 'react'
+import { useRouter } from 'next/navigation'
+import { ResourceList, ResourceItem, ResourceAction, EnvBadge, StatusBadge, WizardModal, Icon, type WizardStep } from '@merkiai/ui'
 
 type ActiveProvider = 'none' | 'wompi' | 'mercadopago' | 'tucompra' | 'bold'
 
@@ -158,19 +160,6 @@ function mpEnv(pk: string | null | undefined): Env {
   if (pk.startsWith('APP_USR')) return 'prod'
   if (pk.startsWith('TEST')) return 'demo'
   return 'unknown'
-}
-
-/** Chip visual que indica el entorno de una pasarela. */
-function EnvBadge({ env }: { env: Env }) {
-  if (env === 'unknown') return null
-  const prod = env === 'prod'
-  return (
-    <span className={`inline-flex items-center gap-1 rounded-full px-2.5 py-0.5 text-[11px] font-brand font-semibold ${
-      prod ? 'bg-amber-100 text-amber-800 border border-amber-300' : 'bg-sky-100 text-sky-700 border border-sky-300'
-    }`}>
-      {prod ? '● Producción' : '○ Demo · pruebas'}
-    </span>
-  )
 }
 
 /**
@@ -382,44 +371,77 @@ function SecretInput({ label, name, hasExisting, placeholder, hint }: {
   )
 }
 
+const GATEWAYS: ActiveProvider[] = ['wompi', 'mercadopago', 'tucompra', 'bold']
+
 export default function PaymentConfigForm({ initialConfig, storeBaseUrl }: Props) {
   const cfg = initialConfig
+  const router = useRouter()
   const formRef = useRef<HTMLFormElement>(null)
   const whBase = storeBaseUrl ?? null
 
-  const [activeProvider, setActiveProvider] = useState<ActiveProvider>(cfg?.active_provider ?? 'none')
-  // El tab visible arranca en la pasarela activa (o Wompi si es manual).
-  const [tab, setTab] = useState<ActiveProvider>(cfg?.active_provider && cfg.active_provider !== 'none' ? cfg.active_provider : 'wompi')
-
-  const [saving, setSaving] = useState(false)         // guardando credenciales
-  const [activating, setActivating] = useState<ActiveProvider | null>(null)
+  const activeProvider: ActiveProvider = cfg?.active_provider ?? 'none'
+  const [busy, setBusy] = useState(false)
   const [msg, setMsg] = useState<{ type: 'ok' | 'err'; text: string } | null>(null)
+  const [verifying, setVerifying] = useState<ActiveProvider | null>(null)
+  // modal: alta/edición de un medio. provider null = aún eligiendo (modo alta).
+  const [modal, setModal] = useState<{ mode: 'add' | 'edit'; provider: ActiveProvider | null } | null>(null)
+
+  // ¿Qué pasarelas tienen credenciales guardadas (se muestran como tarjetas)?
+  const isConfigured = (p: ActiveProvider): boolean => {
+    switch (p) {
+      case 'wompi':       return !!cfg?.wompi_public_key
+      case 'mercadopago': return !!cfg?.mercadopago_public_key || !!cfg?.has_mercadopago_access_token
+      case 'tucompra':    return !!cfg?.tucompra_user
+      case 'bold':        return !!cfg?.bold_api_key
+      default:            return false
+    }
+  }
+  const configured = GATEWAYS.filter(isConfigured)
+  const available = GATEWAYS.filter((p) => !isConfigured(p))
+
+  const envOf: Record<ActiveProvider, Env> = {
+    none: 'unknown',
+    wompi: wompiEnv(cfg?.wompi_public_key),
+    mercadopago: mpEnv(cfg?.mercadopago_public_key),
+    tucompra: tucompraEnv(cfg?.tucompra_api_url),
+    bold: cfg?.bold_sandbox ? 'demo' : 'prod',
+  }
 
   function buildFields(fd: FormData): Record<string, unknown> {
-    const payload: Record<string, unknown> = {
-      tucompra_sandbox: fd.get('tucompra_sandbox') === 'on',
-      bold_sandbox: fd.get('bold_sandbox') === 'on',
-    }
+    const payload: Record<string, unknown> = {}
     for (const field of STRING_FIELDS) {
       const val = fd.get(field)
       if (typeof val === 'string' && val.trim()) payload[field] = val.trim()
     }
+    // Flags de sandbox: SOLO si su sección está montada (marcador oculto), para no
+    // pisar la config de otra pasarela al editar una distinta.
+    if (fd.get('_bold_present')) payload.bold_sandbox = fd.get('bold_sandbox') === 'on'
+    if (fd.get('_tucompra_present')) payload.tucompra_sandbox = fd.get('tucompra_sandbox') === 'on'
     // Medios de Tu Compra: JSON editable [{tipo,id,enabled}]
     const tcm = fd.get('tucompra_methods_json')
     if (typeof tcm === 'string' && tcm.trim()) {
       try {
         const parsed = JSON.parse(tcm)
         if (Array.isArray(parsed)) payload.tucompra_methods = parsed
-      } catch { /* JSON inválido → se ignora, no se sobreescribe */ }
+      } catch { /* JSON inválido → se ignora */ }
     }
     return payload
   }
 
+  /** Campos a limpiar (null) al Quitar un medio de pago. */
+  function clearPayload(p: ActiveProvider): Record<string, unknown> {
+    switch (p) {
+      case 'wompi':       return { wompi_public_key: null, wompi_private_key: null, wompi_integrity_secret: null, wompi_events_secret: null }
+      case 'mercadopago': return { mercadopago_public_key: null, mercadopago_access_token: null, mercadopago_webhook_secret: null }
+      case 'tucompra':    return { tucompra_user: null, tucompra_password: null, tucompra_terminal: null, tucompra_api_url: null, tucompra_public_key: null, tucompra_encryption_key: null, tucompra_methods: [] }
+      case 'bold':        return { bold_api_key: null, bold_secret_key: null }
+      default:            return {}
+    }
+  }
+
   async function patch(payload: Record<string, unknown>) {
     const res = await fetch('/api/admin/payment-config', {
-      method: 'PATCH',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(payload),
+      method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload),
     })
     if (!res.ok) {
       const data = await res.json().catch(() => ({}))
@@ -429,192 +451,120 @@ export default function PaymentConfigForm({ initialConfig, storeBaseUrl }: Props
     return res.json()
   }
 
-  // Guardar credenciales SIN cambiar la pasarela activa.
-  async function handleSave(e: React.FormEvent<HTMLFormElement>) {
-    e.preventDefault()
-    setSaving(true); setMsg(null)
+  async function run(fn: () => Promise<void>, okText?: string) {
+    setBusy(true); setMsg(null)
     try {
-      await patch(buildFields(new FormData(e.currentTarget)))
-      setMsg({ type: 'ok', text: 'Credenciales guardadas' })
+      await fn()
+      if (okText) setMsg({ type: 'ok', text: okText })
+      router.refresh()
     } catch (err) {
       setMsg({ type: 'err', text: err instanceof Error ? err.message : 'Error' })
     } finally {
-      setSaving(false)
+      setBusy(false)
     }
   }
 
-  // Activar una pasarela: guarda lo escrito + la marca como activa (valida credenciales).
-  async function handleActivate(provider: ActiveProvider) {
-    if (!formRef.current) return
-    setActivating(provider); setMsg(null)
-    try {
-      const payload = buildFields(new FormData(formRef.current))
-      payload.active_provider = provider
+  // Guardar (alta/edición) del medio del modal.
+  async function saveModal() {
+    if (!formRef.current || !modal?.provider) return
+    const prov = modal.provider
+    await run(async () => {
+      await patch(buildFields(new FormData(formRef.current!)))
+      setModal(null)
+    }, `${PROVIDER_LABEL[prov]} guardado`)
+  }
+
+  const activate = (p: ActiveProvider) =>
+    run(async () => { await patch({ active_provider: p }) },
+      p === 'none' ? 'Pago manual activado' : `${PROVIDER_LABEL[p]} es ahora la pasarela activa`)
+
+  const remove = (p: ActiveProvider) => {
+    if (typeof window !== 'undefined' && !window.confirm(`¿Quitar ${PROVIDER_LABEL[p]}? Se borrarán sus credenciales de esta tienda.`)) return
+    run(async () => {
+      const payload = clearPayload(p)
+      if (activeProvider === p) payload.active_provider = 'none'
       await patch(payload)
-      setActiveProvider(provider)
-      setMsg({ type: 'ok', text: provider === 'none' ? 'Pago manual activado' : `${PROVIDER_LABEL[provider]} es ahora la pasarela activa` })
-    } catch (err) {
-      setMsg({ type: 'err', text: err instanceof Error ? err.message : 'Error' })
+    }, `${PROVIDER_LABEL[p]} eliminado`)
+  }
+
+  // Verificación de credenciales (HU-273): ping ligero a la pasarela.
+  async function verify(p: ActiveProvider) {
+    setVerifying(p); setMsg(null)
+    try {
+      const res = await fetch('/api/admin/payment-config/verify', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ provider: p }),
+      })
+      const data = await res.json().catch(() => ({}))
+      if (res.ok && data.ok) setMsg({ type: 'ok', text: `${PROVIDER_LABEL[p]}: credenciales válidas ✓` })
+      else if (data.supported === false) setMsg({ type: 'ok', text: `${PROVIDER_LABEL[p]}: verificación automática no disponible; se validará en el primer pago.` })
+      else setMsg({ type: 'err', text: `${PROVIDER_LABEL[p]}: ${data.detail ?? 'no se pudieron validar las credenciales'}` })
+    } catch {
+      setMsg({ type: 'err', text: 'No se pudo verificar en este momento.' })
     } finally {
-      setActivating(null)
+      setVerifying(null)
     }
   }
 
-  /** Fila de activación que se muestra al pie de cada tab. */
-  const ActivateRow = ({ provider }: { provider: ActiveProvider }) => (
-    activeProvider === provider ? (
-      <div className="flex items-center gap-2 rounded-xl bg-green-50 border border-green-200 px-4 py-3">
-        <span className="font-brand text-sm font-semibold text-green-700">● Esta es la pasarela activa</span>
-      </div>
-    ) : (
-      <button
-        type="button"
-        onClick={() => handleActivate(provider)}
-        disabled={activating !== null}
-        className="w-full rounded-xl bg-brand-primary text-brand-cream py-2.5 font-brand text-sm font-medium hover:bg-brand-dark transition-colors disabled:opacity-50"
-      >
-        {activating === provider ? 'Activando…' : (provider === 'none' ? 'Activar pago manual' : `Activar ${PROVIDER_LABEL[provider]}`)}
-      </button>
-    )
-  )
-
-  // Entorno detectado por pasarela (a partir de la config guardada).
-  const envOf: Record<ActiveProvider, Env> = {
-    none: 'unknown',
-    wompi: wompiEnv(cfg?.wompi_public_key),
-    mercadopago: mpEnv(cfg?.mercadopago_public_key),
-    tucompra: tucompraEnv(cfg?.tucompra_api_url),
-    bold: cfg?.bold_sandbox ? 'demo' : 'prod',
-  }
-
-  return (
-    <form ref={formRef} onSubmit={handleSave} className="space-y-6">
-
-      {/* Resumen de la pasarela activa */}
-      <div className="flex flex-wrap items-center gap-2">
-        <p className="font-brand text-sm text-brand-primary/70">
-          Pasarela activa: <strong className="text-brand-primary">{PROVIDER_LABEL[activeProvider]}</strong>
-        </p>
-        {activeProvider !== 'none' && <EnvBadge env={envOf[activeProvider]} />}
-        <span className="font-brand text-xs text-brand-primary/40">· solo una puede estar activa a la vez</span>
-      </div>
-
-      {/* ── Menú horizontal (tabs) ─────────────────────────────────── */}
-      <div className="border-b border-brand-primary/10 -mx-1">
-        <div className="flex gap-1 overflow-x-auto px-1 pb-px">
-          {TABS.map((t) => {
-            const isView = tab === t.value
-            const isActive = activeProvider === t.value
-            return (
-              <button
-                key={t.value}
-                type="button"
-                onClick={() => setTab(t.value)}
-                className={`shrink-0 whitespace-nowrap px-4 py-2.5 font-brand text-sm font-medium border-b-2 -mb-px transition-colors ${
-                  isView
-                    ? 'border-brand-primary text-brand-primary'
-                    : 'border-transparent text-brand-primary/50 hover:text-brand-primary'
-                }`}
-              >
-                {t.label}
-                {isActive && <span className="ml-1.5 text-green-600" title="Pasarela activa">●</span>}
-              </button>
-            )
-          })}
-        </div>
-      </div>
-
-      {/* ── Contenido del tab (todos montados; se oculta el inactivo) ── */}
-
-      {/* Wompi */}
-      <div className={tab === 'wompi' ? 'space-y-4' : 'hidden'}>
-        <div className="flex items-center gap-2">
-          <p className="font-brand text-xs text-brand-primary/40 flex-1">Tarjeta débito/crédito, PSE, Bancolombia Button</p>
-          <EnvBadge env={envOf.wompi} />
-        </div>
+  // ── Campos de cada pasarela (se montan dentro del modal) ────────────────────
+  function gatewayFields(p: ActiveProvider) {
+    if (p === 'wompi') return (
+      <div className="space-y-4">
         <div>
           <label className="font-brand text-sm font-semibold text-brand-primary block mb-1">Llave pública (pub_…)</label>
           <input type="text" name="wompi_public_key" defaultValue={cfg?.wompi_public_key ?? ''} placeholder="pub_test_… o pub_prod_…"
             className="w-full border border-brand-primary/20 rounded-xl px-4 py-2.5 font-mono text-sm focus:outline-none focus:border-brand-primary" />
-          <p className="font-brand text-xs text-brand-primary/40 mt-1">Visible en el frontend. Empieza con pub_test_ (sandbox) o pub_prod_ (producción).</p>
+          <p className="font-brand text-xs text-brand-primary/40 mt-1">Visible en el frontend. pub_test_ (pruebas) o pub_prod_ (producción).</p>
         </div>
-        <SecretInput label="Llave privada (prv_…)" name="wompi_private_key" hasExisting={cfg?.has_wompi_private_key ?? false} placeholder="prv_test_… o prv_prod_…" hint="Usada internamente. Nunca se expone al cliente." />
-        <SecretInput label="Llave de integridad" name="wompi_integrity_secret" hasExisting={cfg?.has_wompi_integrity_secret ?? false} placeholder="test_integrity_… o prod_integrity_…" hint="Firma SHA256 de los payment links. Panel Wompi → Desarrolladores → Integridad." />
+        <SecretInput label="Llave privada (prv_…)" name="wompi_private_key" hasExisting={cfg?.has_wompi_private_key ?? false} placeholder="prv_test_… o prv_prod_…" hint="Usada internamente para la re-consulta. Nunca se expone al cliente." />
+        <SecretInput label="Llave de integridad" name="wompi_integrity_secret" hasExisting={cfg?.has_wompi_integrity_secret ?? false} placeholder="test_integrity_… o prod_integrity_…" hint="Firma SHA256 del checkout. Panel Wompi → Desarrolladores → Integridad. (No la confundas con la de eventos)." />
         <SecretInput label="Llave de eventos (webhooks)" name="wompi_events_secret" hasExisting={cfg?.has_wompi_events_secret ?? false} placeholder="test_events_… o prod_events_…" hint="Verifica que el webhook venga de Wompi. Panel Wompi → Webhooks." />
         <WebhookUrl provider="wompi" base={whBase} note="Pégala en Wompi → Desarrolladores → Eventos/Webhook." />
-        <ActivateRow provider="wompi" />
       </div>
-
-      {/* MercadoPago */}
-      <div className={tab === 'mercadopago' ? 'space-y-4' : 'hidden'}>
-        <div className="flex items-center gap-2">
-          <p className="font-brand text-xs text-brand-primary/40 flex-1">Tarjeta, efectivo, Nequi, Daviplata</p>
-          <EnvBadge env={envOf.mercadopago} />
-        </div>
+    )
+    if (p === 'mercadopago') return (
+      <div className="space-y-4">
         <div>
           <label className="font-brand text-sm font-semibold text-brand-primary block mb-1">Public Key (APP_USR-… o TEST-…)</label>
           <input type="text" name="mercadopago_public_key" defaultValue={cfg?.mercadopago_public_key ?? ''} placeholder="TEST-abc123… o APP_USR-abc123…"
             className="w-full border border-brand-primary/20 rounded-xl px-4 py-2.5 font-mono text-sm focus:outline-none focus:border-brand-primary" />
-          <p className="font-brand text-xs text-brand-primary/40 mt-1">Usada en el frontend (checkout Brick). Panel MP → Credenciales.</p>
+          <p className="font-brand text-xs text-brand-primary/40 mt-1">Usada en el checkout (Brick). Panel MP → Credenciales.</p>
         </div>
-        <SecretInput label="Access Token (TEST-… o APP_USR-…)" name="mercadopago_access_token" hasExisting={cfg?.has_mercadopago_access_token ?? false} placeholder="TEST-abc123… o APP_USR-abc123…" hint="Credencial privada de servidor. TEST-… = sandbox, APP_USR-… = producción." />
-        <SecretInput label="Clave secreta del webhook (x-signature)" name="mercadopago_webhook_secret" hasExisting={cfg?.has_mercadopago_webhook_secret ?? false} placeholder="Clave secreta de la firma" hint="Verifica la firma x-signature del webhook. Panel MP → Webhooks → Configurar notificaciones → Clave secreta. Opcional (el estado se re-consulta a la API)." />
-        <WebhookUrl provider="mercadopago" base={whBase} note="Pégala en MercadoPago → Tus integraciones → Webhooks (notificaciones)." />
-        <ActivateRow provider="mercadopago" />
+        <SecretInput label="Access Token (TEST-… o APP_USR-…)" name="mercadopago_access_token" hasExisting={cfg?.has_mercadopago_access_token ?? false} placeholder="TEST-abc123… o APP_USR-abc123…" hint="Credencial privada de servidor. TEST-… = pruebas, APP_USR-… = producción." />
+        <SecretInput label="Clave secreta del webhook (x-signature)" name="mercadopago_webhook_secret" hasExisting={cfg?.has_mercadopago_webhook_secret ?? false} placeholder="Clave secreta de la firma" hint="Verifica la firma x-signature. Panel MP → Webhooks. Opcional (el estado se re-consulta a la API)." />
+        <WebhookUrl provider="mercadopago" base={whBase} note="Pégala en MercadoPago → Tus integraciones → Webhooks." />
       </div>
-
-      {/* Tu Compra — API REST (token JWT) */}
-      <div className={tab === 'tucompra' ? 'space-y-4' : 'hidden'}>
-        <div className="flex items-center gap-2">
-          <p className="font-brand text-xs text-brand-primary/40 flex-1">Pasarela colombiana (API REST) — tarjeta, efectivo, Nequi, PSE</p>
-          <EnvBadge env={envOf.tucompra} />
-        </div>
+    )
+    if (p === 'tucompra') return (
+      <div className="space-y-4">
+        <input type="hidden" name="_tucompra_present" value="1" readOnly />
         <div>
           <label className="font-brand text-sm font-semibold text-brand-primary block mb-1">Usuario</label>
           <input type="text" name="tucompra_user" defaultValue={cfg?.tucompra_user ?? ''} placeholder="Usuario de autenticación"
             className="w-full border border-brand-primary/20 rounded-xl px-4 py-2.5 font-mono text-sm focus:outline-none focus:border-brand-primary" />
         </div>
-        <SecretInput label="Contraseña (clave)" name="tucompra_password" hasExisting={cfg?.has_tucompra_password ?? false} placeholder="Clave de autenticación" hint="Credencial privada de servidor. Nunca se expone al cliente." />
+        <SecretInput label="Contraseña (clave)" name="tucompra_password" hasExisting={cfg?.has_tucompra_password ?? false} placeholder="Clave de autenticación" hint="Credencial privada de servidor." />
         <div>
           <label className="font-brand text-sm font-semibold text-brand-primary block mb-1">Terminal (Id Sistema)</label>
           <input type="text" name="tucompra_terminal" defaultValue={cfg?.tucompra_terminal ?? ''} placeholder="Terminal / Id Sistema"
             className="w-full border border-brand-primary/20 rounded-xl px-4 py-2.5 font-mono text-sm focus:outline-none focus:border-brand-primary" />
         </div>
-        <SecretInput label="Llave de encriptación (firma)" name="tucompra_encryption_key" hasExisting={cfg?.has_tucompra_encryption_key ?? false} placeholder="Llave de encriptación (MD5)" hint="La «Llave de encriptación» que entrega Tu Compra. Verifica la firma de la URL de Confirmación. Habilita «Firma TuCompra» en la sonda del panel." />
-
-        {/* Entorno + medios de pago (visual) → hidden tucompra_api_url / tucompra_methods_json */}
+        <SecretInput label="Llave de encriptación (firma)" name="tucompra_encryption_key" hasExisting={cfg?.has_tucompra_encryption_key ?? false} placeholder="Llave de encriptación (MD5)" hint="Verifica la firma de la URL de Confirmación. Habilita «Firma TuCompra» en la sonda del panel." />
         <TuCompraMethods
           initial={Array.isArray(cfg?.tucompra_methods) ? (cfg?.tucompra_methods as Array<{ tipo: string; id?: string; enabled?: boolean }>) : []}
           initialEnv={tucompraEnv(cfg?.tucompra_api_url)}
         />
-
         <div className="mt-3 pt-3 border-t border-brand-primary/10">
-          <p className="font-brand text-xs font-semibold text-brand-primary/70 mb-1">URLs para configurar en tu panel de Tu Compra</p>
-          <CopyableUrl
-            label="URL de Confirmación (server-to-server)"
-            path="/api/webhooks/tucompra"
-            base={whBase}
-            note="Pégala en el panel Tu Compra → URL de Confirmación. En «sonda de confirmación» habilita al menos «Numero Factura» (correlaciona el pedido) y «Firma TuCompra»."
-          />
-          <CopyableUrl
-            label="URL de Retorno (navegador)"
-            path="/checkout/confirmation"
-            base={whBase}
-            note="A donde vuelve el cliente tras pagar. Pégala en el panel Tu Compra → URL de Retorno."
-          />
+          <p className="font-brand text-xs font-semibold text-brand-primary/70 mb-1">URLs para tu panel de Tu Compra</p>
+          <CopyableUrl label="URL de Confirmación (server-to-server)" path="/api/webhooks/tucompra" base={whBase} note="Panel Tu Compra → URL de Confirmación. Habilita «Numero Factura» y «Firma TuCompra»." />
+          <CopyableUrl label="URL de Retorno (navegador)" path="/checkout/confirmation" base={whBase} note="Panel Tu Compra → URL de Retorno." />
         </div>
-
-        <ActivateRow provider="tucompra" />
       </div>
-
-      {/* Bold */}
-      <div className={tab === 'bold' ? 'space-y-4' : 'hidden'}>
-        <div className="flex items-center gap-2">
-          <p className="font-brand text-xs text-brand-primary/40 flex-1">Tarjeta, PSE, Nequi, Botón Bancolombia — link de pagos</p>
-          <EnvBadge env={envOf.bold} />
-        </div>
-        <SecretInput label="Llave de identidad (API key)" name="bold_api_key" hasExisting={!!cfg?.bold_api_key} placeholder="Llave de identidad Bold" hint="Se envía como Authorization: x-api-key al crear links. Panel Bold → Integraciones → Llaves." />
-        <SecretInput label="Llave secreta (webhook)" name="bold_secret_key" hasExisting={cfg?.has_bold_secret_key ?? false} placeholder="Llave secreta Bold" hint="Verifica la firma HMAC-SHA256 del webhook (x-bold-signature). En sandbox va vacía." />
+    )
+    if (p === 'bold') return (
+      <div className="space-y-4">
+        <input type="hidden" name="_bold_present" value="1" readOnly />
+        <SecretInput label="Llave de identidad (API key)" name="bold_api_key" hasExisting={!!cfg?.bold_api_key} placeholder="Llave de identidad Bold" hint="Se envía como x-api-key al crear links. Panel Bold → Integraciones → Llaves." />
+        <SecretInput label="Llave secreta (webhook)" name="bold_secret_key" hasExisting={cfg?.has_bold_secret_key ?? false} placeholder="Llave secreta Bold" hint="Verifica la firma HMAC-SHA256 del webhook. En sandbox va vacía." />
         <label className="flex items-center gap-3 cursor-pointer">
           <div className="relative">
             <input type="checkbox" name="bold_sandbox" defaultChecked={cfg?.bold_sandbox ?? true} className="sr-only peer" />
@@ -623,38 +573,130 @@ export default function PaymentConfigForm({ initialConfig, storeBaseUrl }: Props
           </div>
           <span className="font-brand text-sm text-brand-primary">Modo sandbox (pruebas)</span>
         </label>
-        <WebhookUrl provider="bold" base={whBase} note="Regístrala en Bold → Panel de Comercios → Integraciones → Webhooks." />
-        <ActivateRow provider="bold" />
+        <WebhookUrl provider="bold" base={whBase} note="Regístrala en Bold → Integraciones → Webhooks." />
       </div>
+    )
+    return null
+  }
 
-      {/* Pago manual */}
-      <div className={tab === 'none' ? 'space-y-4' : 'hidden'}>
-        <div className="rounded-xl bg-brand-yellow/15 border border-brand-yellow/30 p-4">
-          <p className="font-brand text-sm font-semibold text-brand-primary mb-1">Pago manual (sin pasarela en línea)</p>
-          <p className="font-brand text-xs text-brand-primary/60">
-            Con esta opción no se cobra en línea: cada pedido se crea como <strong>pendiente de validación</strong> y el
-            administrador confirma o rechaza el pago desde el detalle del pedido. Útil para transferencias o pago contra entrega.
-          </p>
-        </div>
-        <ActivateRow provider="none" />
-      </div>
+  const descOf = (p: ActiveProvider) => TABS.find((t) => t.value === p)?.desc ?? ''
 
-      {/* ── Acciones y estado ─────────────────────────────────────── */}
-      <div className="flex items-center gap-4 pt-2 border-t border-brand-primary/10">
-        <button
-          type="submit"
-          disabled={saving || activating !== null}
-          className="bg-white border border-brand-primary/30 text-brand-primary rounded-full px-6 py-2.5 font-brand font-medium text-sm hover:border-brand-primary transition-colors disabled:opacity-50"
-        >
-          {saving ? 'Guardando…' : 'Guardar credenciales'}
-        </button>
-        {msg && (
-          <span className={`font-brand text-sm ${msg.type === 'ok' ? 'text-green-600' : 'text-red-600'}`}>{msg.text}</span>
+  // Pasos del modal: alta = [elegir, credenciales]; edición = [credenciales].
+  const modalProvider = modal?.provider ?? null
+  const steps: WizardStep[] = modal
+    ? modal.mode === 'add'
+      ? [
+          {
+            title: 'Elegir',
+            canAdvance: modalProvider !== null,
+            content: (
+              <div>
+                <p className="font-brand text-sm text-brand-primary/60 mb-3">¿Qué medio de pago quieres agregar?</p>
+                {available.length === 0 ? (
+                  <p className="font-brand text-sm text-brand-primary/50">Ya agregaste todas las pasarelas disponibles.</p>
+                ) : (
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                    {available.map((p) => (
+                      <button key={p} type="button" onClick={() => setModal({ mode: 'add', provider: p })}
+                        className={`text-left rounded-xl border p-3 transition-colors ${modalProvider === p ? 'border-brand-primary ring-1 ring-brand-primary/20 bg-brand-cream/40' : 'border-brand-primary/15 hover:border-brand-primary/40'}`}>
+                        <span className="font-brand text-sm font-semibold text-brand-primary">{PROVIDER_LABEL[p]}</span>
+                        <p className="font-brand text-xs text-brand-primary/50 mt-0.5">{descOf(p)}</p>
+                      </button>
+                    ))}
+                  </div>
+                )}
+              </div>
+            ),
+          },
+          {
+            title: 'Credenciales',
+            content: modalProvider ? (
+              <div>
+                <div className="flex items-center gap-2 mb-3">
+                  <h3 className="font-display text-brand-primary text-base">{PROVIDER_LABEL[modalProvider]}</h3>
+                  <EnvBadge env={envOf[modalProvider]} />
+                </div>
+                {gatewayFields(modalProvider)}
+              </div>
+            ) : <span />,
+          },
+        ]
+      : [
+          {
+            title: 'Credenciales',
+            content: modalProvider ? gatewayFields(modalProvider) : <span />,
+          },
+        ]
+    : []
+
+  return (
+    <form ref={formRef} onSubmit={(e) => e.preventDefault()}>
+      <ResourceList
+        title="Medios de pago"
+        description="Agrega solo las pasarelas que vas a usar. Solo una puede estar activa (cobrando) a la vez; las demás quedan guardadas. Sin ninguna activa, los pedidos quedan en pago manual."
+        addLabel="Agregar medio de pago"
+        onAdd={() => setModal({ mode: 'add', provider: null })}
+        addDisabled={busy || available.length === 0}
+        isEmpty={configured.length === 0 && activeProvider !== 'none'}
+        emptyIcon="money"
+        emptyText="Aún no has agregado un medio de pago. Mientras tanto, cada pedido queda en pago manual."
+      >
+        {configured.map((p) => {
+          const active = activeProvider === p
+          return (
+            <ResourceItem
+              key={p}
+              icon={<Icon name="money" size={18} />}
+              title={PROVIDER_LABEL[p]}
+              subtitle={descOf(p)}
+              accent={active}
+              badges={<>
+                <EnvBadge env={envOf[p]} />
+                {active && <StatusBadge tone="success">Activa</StatusBadge>}
+              </>}
+              actions={<>
+                <ResourceAction icon="refresh" label={verifying === p ? 'Verificando…' : 'Verificar'} onClick={() => verify(p)} disabled={verifying !== null || busy} />
+                <ResourceAction icon="edit" label="Editar" onClick={() => setModal({ mode: 'edit', provider: p })} disabled={busy} />
+                {!active && <ResourceAction icon="check" label="Activar" tone="primary" onClick={() => activate(p)} disabled={busy} />}
+                <ResourceAction icon="trash" label="Quitar" tone="danger" onClick={() => remove(p)} disabled={busy} />
+              </>}
+            />
+          )
+        })}
+
+        {/* Pago manual: tarjeta informativa cuando es el modo activo */}
+        {activeProvider === 'none' && (
+          <ResourceItem
+            icon={<Icon name="money" size={18} />}
+            title="Pago manual"
+            subtitle="Sin pago en línea. Cada pedido queda pendiente de validación del administrador."
+            accent
+            badges={<StatusBadge tone="info">Activo</StatusBadge>}
+          />
         )}
-      </div>
-      <p className="font-brand text-xs text-brand-primary/40">
-        "Guardar credenciales" persiste los datos sin cambiar la pasarela activa. Para cambiar cuál cobra, usa "Activar" dentro de cada pestaña.
-      </p>
+      </ResourceList>
+
+      {/* Activar pago manual (cuando hay una pasarela activa) */}
+      {activeProvider !== 'none' && (
+        <button type="button" onClick={() => activate('none')} disabled={busy}
+          className="mt-4 font-brand text-xs text-brand-primary/50 hover:text-brand-primary underline disabled:opacity-40">
+          Desactivar cobro en línea (usar pago manual)
+        </button>
+      )}
+
+      {msg && (
+        <p className={`mt-4 font-brand text-sm ${msg.type === 'ok' ? 'text-green-600' : 'text-red-600'}`}>{msg.text}</p>
+      )}
+
+      <WizardModal
+        open={modal !== null}
+        title={modal?.mode === 'edit' ? `Editar ${modal?.provider ? PROVIDER_LABEL[modal.provider] : ''}` : 'Agregar medio de pago'}
+        steps={steps}
+        onClose={() => setModal(null)}
+        onFinish={saveModal}
+        finishLabel="Guardar"
+        busy={busy}
+      />
     </form>
   )
 }
