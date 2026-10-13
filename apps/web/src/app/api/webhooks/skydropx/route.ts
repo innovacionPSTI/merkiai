@@ -1,37 +1,45 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { createHmac, timingSafeEqual } from 'crypto'
+import { timingSafeEqual } from 'crypto'
 import { createServerClient, resolveEmailConfig, resolveShippingCreds, markWebhookEventProcessed } from '@merkiai/database'
 import { getMachineDb } from '@/lib/machine-db'
 import { sendShippingNotification, buildEmailConfig } from '@/lib/email'
 import type { Order } from '@merkiai/database'
 
 /**
- * Webhook de Skydropx PRO — eventos de seguimiento y entrega.
- *   shipment.status.updated / package.tracking.updated → actualiza order.status
- *   *.delivered → entregado · *.exception/returned → excepción
+ * Webhook de Skydropx — sección "Envíos" (shipments).
+ *
+ * Nuestra integración crea envíos vía POST /api/v1/shipments y guarda
+ * skydropx_shipment_id + tracking_number en la orden. Este webhook notifica el
+ * avance del envío (en tránsito / entregado / excepción) para actualizar
+ * order.status y enviar el correo de seguimiento.
+ *
+ * Formato (JSON:API):
+ *   { data: { id, type, attributes: { status, tracking_number?, ... } } }
+ *   `data.id` = id del envío (= orders.skydropx_shipment_id).
  *
  * Seguridad (HU-278):
- *  - El pedido se identifica por `tracking_number` (global del carrier) → se lee
- *    primero para conocer el tenant (único borde service-role legítimo).
- *  - Firma: si la instancia de Skydropx del tenant tiene `webhook_secret`
- *    configurado, se exige HMAC-SHA512(payload, secret) en X-Skydropx-Signature
- *    (fail-closed). Sin secreto configurado, se procesa (compatibilidad).
- *  - Idempotencia por id de evento + estado.
+ *  - Autenticación por TOKEN: en Skydropx → Webhooks, método "Token"; se envía
+ *    como `Authorization: Bearer <token>`. Si la instancia del tenant tiene
+ *    `webhook_token`, se exige y compara en tiempo constante (fail-closed).
+ *    Sin token configurado, se procesa (compatibilidad inicial).
+ *  - Idempotencia por id de envío + estado.
  */
 
-const WORKFLOW_STATUS_MAP: Record<string, 'shipped' | 'delivered' | 'exception'> = {
-  label_printed: 'shipped', in_transit: 'shipped', out_for_delivery: 'shipped',
-  delivered: 'delivered', exception: 'exception', returned: 'exception', failed_attempt: 'shipped',
-}
-const EVENT_STATUS_MAP: Record<string, 'shipped' | 'delivered' | 'exception'> = {
-  'shipment.status.updated': 'shipped', 'shipment.delivered': 'delivered', 'shipment.exception': 'exception',
-  'package.tracking.updated': 'shipped', 'package.in_transit': 'shipped', 'package.out_for_delivery': 'shipped',
-  'package.delivered': 'delivered', 'package.returned': 'exception',
+/** Estados de Skydropx → estado interno de la orden. Cubre envíos y órdenes. */
+const STATUS_MAP: Record<string, 'shipped' | 'delivered' | 'exception'> = {
+  // Envíos (shipments)
+  label_created: 'shipped', label_printed: 'shipped', picked_up: 'shipped',
+  in_transit: 'shipped', out_for_delivery: 'shipped', delivered: 'delivered',
+  exception: 'exception', returned: 'exception', cancelled: 'exception',
+  // Órdenes (por si se suscribe esa sección)
+  sent: 'shipped', partially_sent: 'shipped', fulfilled: 'delivered',
+  // draft → se ignora (no cambia el estado de la orden)
 }
 
-function signatureOk(expectedHex: string, received: string): boolean {
-  if (!received) return false
-  const a = Buffer.from(expectedHex, 'utf-8')
+function bearerOk(expected: string, authHeader: string | null): boolean {
+  if (!authHeader) return false
+  const received = authHeader.replace(/^Bearer\s+/i, '').trim()
+  const a = Buffer.from(expected, 'utf-8')
   const b = Buffer.from(received, 'utf-8')
   if (a.length !== b.length) return false
   try { return timingSafeEqual(a, b) } catch { return false }
@@ -43,59 +51,55 @@ export async function POST(req: NextRequest) {
 
   let payload: {
     event?: string
-    data?: { id?: string; type?: string; attributes?: { workflow_status?: string; tracking_number?: string; status_detail?: string; delivered_at?: string } }
+    data?: { id?: string; type?: string; attributes?: { status?: string; workflow_status?: string; tracking_number?: string } }
   }
   try { payload = JSON.parse(rawBody) } catch { return NextResponse.json({ error: 'Invalid JSON' }, { status: 400 }) }
 
-  const event = payload.event ?? ''
   const attrs = payload.data?.attributes ?? {}
+  const shipmentId = payload.data?.id ?? ''
   const trackingNumber = attrs.tracking_number ?? ''
+  // El estado llega en attributes.status; se aceptan variantes por robustez.
+  const rawStatus = (attrs.status ?? attrs.workflow_status ?? payload.event ?? '').toLowerCase()
+  const newStatus = STATUS_MAP[rawStatus] ?? null
 
-  let newStatus: 'shipped' | 'delivered' | 'exception' | null = null
-  if (attrs.workflow_status && WORKFLOW_STATUS_MAP[attrs.workflow_status]) newStatus = WORKFLOW_STATUS_MAP[attrs.workflow_status]
-  else if (EVENT_STATUS_MAP[event]) newStatus = EVENT_STATUS_MAP[event]
+  if (!newStatus || (!shipmentId && !trackingNumber)) {
+    return NextResponse.json({ ok: true, skipped: true })
+  }
 
-  if (!newStatus || !trackingNumber) return NextResponse.json({ ok: true, skipped: true })
-
-  // Bootstrap: identificar el pedido (y su tenant) por tracking_number.
+  // Bootstrap: identificar el pedido (y su tenant) por id de envío o tracking.
   const supabase = createServerClient()
-  const { data: order0 } = await supabase
-    .from('orders').select('tenant_id').eq('tracking_number', trackingNumber).maybeSingle()
+  let q = supabase.from('orders').select('tenant_id')
+  q = shipmentId ? q.eq('skydropx_shipment_id', shipmentId) : q.eq('tracking_number', trackingNumber)
+  const { data: order0 } = await q.maybeSingle()
   if (!order0?.tenant_id) return NextResponse.json({ ok: true, warning: 'order_not_found' })
   const tenantId = order0.tenant_id as string
 
-  // Firma: si la instancia del tenant tiene secreto, se exige (fail-closed).
+  // Autenticación por token: si la instancia del tenant lo tiene, se exige.
   const creds = await resolveShippingCreds(getMachineDb(tenantId), tenantId).catch(() => null)
-  const secret = creds?.webhookSecret
-  if (secret) {
-    const sig = req.headers.get('x-skydropx-signature') ?? ''
-    const expected = createHmac('sha512', secret).update(rawBody).digest('hex')
-    if (!signatureOk(expected, sig)) {
-      console.warn('[webhook/skydropx] Firma inválida')
-      return NextResponse.json({ error: 'Invalid signature' }, { status: 401 })
-    }
+  const token = creds?.webhookToken
+  if (token && !bearerOk(token, req.headers.get('authorization'))) {
+    console.warn('[webhook/skydropx] Token inválido')
+    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
   }
 
-  // Idempotencia por id de evento + estado.
-  const eventId = payload.data?.id ?? trackingNumber
+  // Idempotencia por id de envío + estado.
+  const eventId = shipmentId || trackingNumber
   const { duplicate } = await markWebhookEventProcessed('skydropx', `${eventId}:${newStatus}`)
   if (duplicate) return NextResponse.json({ ok: true, idempotent: true })
 
-  const { data: updatedOrder, error } = await supabase
-    .from('orders')
-    .update({ status: newStatus, updated_at: new Date().toISOString() })
-    .eq('tracking_number', trackingNumber)
-    .select()
-    .single()
+  const match = supabase.from('orders').update({ status: newStatus, updated_at: new Date().toISOString() })
+  const { data: updatedOrder, error } = await (
+    shipmentId ? match.eq('skydropx_shipment_id', shipmentId) : match.eq('tracking_number', trackingNumber)
+  ).select().single()
   if (error) {
     console.error('[webhook/skydropx] Error actualizando orden:', error)
     return NextResponse.json({ ok: true, warning: 'order_not_updated' })
   }
 
-  if (newStatus === 'shipped' && updatedOrder) {
+  if (newStatus === 'shipped' && updatedOrder?.tracking_number) {
     try {
       const ec = await resolveEmailConfig(getMachineDb(updatedOrder.tenant_id), updatedOrder.tenant_id).catch(() => null)
-      if (ec && updatedOrder.tracking_number) {
+      if (ec) {
         await sendShippingNotification(
           updatedOrder as unknown as Order & { tracking_number: string; carrier_name: string | null; label_url: string | null },
           buildEmailConfig(ec.apiKey, ec.fromEmail, ec.storeName, ec.provider),

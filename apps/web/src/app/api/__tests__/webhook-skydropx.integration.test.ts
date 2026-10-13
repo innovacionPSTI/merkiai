@@ -2,28 +2,26 @@
  * @jest-environment node
  */
 /**
- * Integration tests — POST /api/webhooks/skydropx
+ * Integration tests — POST /api/webhooks/skydropx (sección "Envíos")
  *
- * Payload format (PRO API):
- *   { event, data: { attributes: { tracking_number, workflow_status, ... } } }
+ * Formato real (JSON:API):
+ *   { data: { id, type, attributes: { status, tracking_number? } } }
+ *   data.id = id del envío (= orders.skydropx_shipment_id)
  *
- * EVENT_STATUS_MAP in the route:
- *   shipment.delivered, shipment.exception, package.in_transit, etc.
- * WORKFLOW_STATUS_MAP:
- *   in_transit, out_for_delivery, delivered, exception, etc.
+ * STATUS_MAP: in_transit/out_for_delivery/picked_up/label_* → shipped,
+ *   delivered/fulfilled → delivered, exception/returned/cancelled → exception.
  *
- * HU-278: la ruta ahora (1) identifica el pedido/tenant por tracking_number,
- * (2) verifica la firma HMAC-SHA512 si el tenant tiene webhook_secret,
+ * HU-278: la ruta (1) identifica el pedido/tenant por skydropx_shipment_id (o
+ * tracking_number), (2) autentica por token Bearer si está configurado,
  * (3) aplica idempotencia y (4) actualiza la orden + email.
  */
 
 import { NextRequest } from 'next/server'
-import { createHmac } from 'crypto'
 
 jest.mock('@merkiai/database', () => ({
   createServerClient: jest.fn(),
   resolveEmailConfig: jest.fn().mockResolvedValue(null), // sin email → skip
-  resolveShippingCreds: jest.fn().mockResolvedValue(null), // sin secreto → sin verificación de firma
+  resolveShippingCreds: jest.fn().mockResolvedValue(null), // sin token → sin verificación
   markWebhookEventProcessed: jest.fn().mockResolvedValue({ duplicate: false }),
 }))
 jest.mock('@/lib/machine-db', () => ({ getMachineDb: jest.fn(() => ({})) }))
@@ -64,17 +62,16 @@ function buildSupabaseMock(rowData: object | null = null, orderRow: object | nul
   const mockSupabase = {
     from: jest.fn().mockReturnValue({ select: readSelect, update: updateMock }),
   }
-  return { mockSupabase, updateMock, eqMock, selectMock, singleMock, readEq }
+  return { mockSupabase, updateMock, eqMock, readEq, selectMock, singleMock }
 }
 
-function eventPayload(event: string, tracking: string, workflowStatus?: string) {
+/** Payload de la sección Envíos: data.id = shipment id. */
+function shipmentPayload(shipmentId: string, status: string, tracking?: string) {
   return {
-    event,
     data: {
-      attributes: {
-        tracking_number: tracking,
-        ...(workflowStatus ? { workflow_status: workflowStatus } : {}),
-      },
+      id: shipmentId,
+      type: 'shipments',
+      attributes: { status, ...(tracking ? { tracking_number: tracking } : {}) },
     },
   }
 }
@@ -86,137 +83,122 @@ beforeEach(() => {
 })
 
 // ─────────────────────────────────────────────
-// Event mapping via EVENT_STATUS_MAP
+// Mapeo de estado
 // ─────────────────────────────────────────────
-describe('POST /api/webhooks/skydropx — event mapping', () => {
-  const eventMappings = [
-    { event: 'shipment.delivered',      expectedStatus: 'delivered' },
-    { event: 'shipment.exception',      expectedStatus: 'exception' },
-    { event: 'package.in_transit',      expectedStatus: 'shipped'   },
-    { event: 'package.out_for_delivery',expectedStatus: 'shipped'   },
-    { event: 'package.delivered',       expectedStatus: 'delivered' },
-    { event: 'package.returned',        expectedStatus: 'exception' },
+describe('POST /api/webhooks/skydropx — mapeo de estado', () => {
+  const mappings = [
+    { status: 'in_transit',       expected: 'shipped'   },
+    { status: 'out_for_delivery', expected: 'shipped'   },
+    { status: 'picked_up',        expected: 'shipped'   },
+    { status: 'delivered',        expected: 'delivered' },
+    { status: 'exception',        expected: 'exception' },
+    { status: 'returned',         expected: 'exception' },
+    { status: 'cancelled',        expected: 'exception' },
   ]
 
-  eventMappings.forEach(({ event, expectedStatus }) => {
-    it(`evento "${event}" → status "${expectedStatus}"`, async () => {
+  mappings.forEach(({ status, expected }) => {
+    it(`status "${status}" → order.status "${expected}"`, async () => {
       const { mockSupabase, updateMock } = buildSupabaseMock()
       mockCreateServerClient.mockReturnValue(mockSupabase as never)
 
-      const res = await POST(makeRequest(eventPayload(event, 'TRK-001-ABC')))
+      const res = await POST(makeRequest(shipmentPayload('SHIP-001', status)))
       const data = await res.json()
 
       expect(res.status).toBe(200)
       expect(data.ok).toBe(true)
-      expect(updateMock).toHaveBeenCalledWith(
-        expect.objectContaining({ status: expectedStatus })
-      )
+      expect(updateMock).toHaveBeenCalledWith(expect.objectContaining({ status: expected }))
     })
   })
 })
 
 // ─────────────────────────────────────────────
-// Workflow status mapping (takes precedence)
+// Identificación del pedido
 // ─────────────────────────────────────────────
-describe('POST /api/webhooks/skydropx — workflow_status mapping', () => {
-  const workflowMappings = [
-    { workflow_status: 'in_transit',       expectedStatus: 'shipped'   },
-    { workflow_status: 'out_for_delivery', expectedStatus: 'shipped'   },
-    { workflow_status: 'delivered',        expectedStatus: 'delivered' },
-    { workflow_status: 'exception',        expectedStatus: 'exception' },
-  ]
+describe('POST /api/webhooks/skydropx — identificación del pedido', () => {
+  it('filtra por skydropx_shipment_id cuando hay data.id', async () => {
+    const { mockSupabase, eqMock } = buildSupabaseMock()
+    mockCreateServerClient.mockReturnValue(mockSupabase as never)
 
-  workflowMappings.forEach(({ workflow_status, expectedStatus }) => {
-    it(`workflow_status "${workflow_status}" → "${expectedStatus}"`, async () => {
-      const { mockSupabase, updateMock } = buildSupabaseMock()
-      mockCreateServerClient.mockReturnValue(mockSupabase as never)
+    await POST(makeRequest(shipmentPayload('SHIP-ABC-123', 'delivered')))
 
-      const res = await POST(makeRequest(
-        eventPayload('shipment.status.updated', 'TRK-WF-001', workflow_status)
-      ))
+    expect(eqMock).toHaveBeenCalledWith('skydropx_shipment_id', 'SHIP-ABC-123')
+  })
 
-      expect(res.status).toBe(200)
-      expect(updateMock).toHaveBeenCalledWith(
-        expect.objectContaining({ status: expectedStatus })
-      )
-    })
+  it('cae a tracking_number cuando no hay data.id', async () => {
+    const { mockSupabase, eqMock } = buildSupabaseMock()
+    mockCreateServerClient.mockReturnValue(mockSupabase as never)
+
+    await POST(makeRequest({ data: { type: 'shipments', attributes: { status: 'delivered', tracking_number: 'TRK-9' } } }))
+
+    expect(eqMock).toHaveBeenCalledWith('tracking_number', 'TRK-9')
+  })
+
+  it('incluye updated_at en la actualización', async () => {
+    const { mockSupabase, updateMock } = buildSupabaseMock()
+    mockCreateServerClient.mockReturnValue(mockSupabase as never)
+
+    await POST(makeRequest(shipmentPayload('SHIP-XYZ', 'delivered')))
+
+    expect(updateMock).toHaveBeenCalledWith(expect.objectContaining({ updated_at: expect.any(String) }))
   })
 })
 
 // ─────────────────────────────────────────────
-// Eventos desconocidos → ignorar
+// Eventos ignorados
 // ─────────────────────────────────────────────
-describe('POST /api/webhooks/skydropx — eventos ignorados', () => {
-  it('evento desconocido → 200 sin actualizar la BD', async () => {
+describe('POST /api/webhooks/skydropx — ignorados', () => {
+  it('status "draft" → 200 sin actualizar', async () => {
     const { mockSupabase, updateMock } = buildSupabaseMock()
     mockCreateServerClient.mockReturnValue(mockSupabase as never)
 
-    const res = await POST(makeRequest(
-      eventPayload('shipment.unknown_event', 'TRK-999')
-    ))
-    const data = await res.json()
-
-    expect(res.status).toBe(200)
-    expect(data.ok).toBe(true)
-    expect(updateMock).not.toHaveBeenCalled()
-  })
-
-  it('sin tracking_number → 200 sin actualizar la BD', async () => {
-    const { mockSupabase, updateMock } = buildSupabaseMock()
-    mockCreateServerClient.mockReturnValue(mockSupabase as never)
-
-    const res = await POST(makeRequest({ event: 'shipment.delivered', data: { attributes: {} } }))
+    const res = await POST(makeRequest(shipmentPayload('SHIP-DR', 'draft')))
     expect(res.status).toBe(200)
     expect(updateMock).not.toHaveBeenCalled()
   })
 
-  it('pedido no encontrado → 200 sin actualizar la BD', async () => {
-    const { mockSupabase, updateMock } = buildSupabaseMock(null, null) // orderRow null
+  it('sin id ni tracking → 200 sin actualizar', async () => {
+    const { mockSupabase, updateMock } = buildSupabaseMock()
     mockCreateServerClient.mockReturnValue(mockSupabase as never)
 
-    const res = await POST(makeRequest(eventPayload('shipment.delivered', 'TRK-NOPE')))
-    const data = await res.json()
+    const res = await POST(makeRequest({ data: { type: 'shipments', attributes: { status: 'delivered' } } }))
     expect(res.status).toBe(200)
+    expect(updateMock).not.toHaveBeenCalled()
+  })
+
+  it('pedido no encontrado → 200 warning', async () => {
+    const { mockSupabase, updateMock } = buildSupabaseMock(null, null)
+    mockCreateServerClient.mockReturnValue(mockSupabase as never)
+
+    const res = await POST(makeRequest(shipmentPayload('SHIP-NOPE', 'delivered')))
+    const data = await res.json()
     expect(data.warning).toBe('order_not_found')
     expect(updateMock).not.toHaveBeenCalled()
   })
 })
 
 // ─────────────────────────────────────────────
-// Firma (HMAC-SHA512) — solo si hay secreto configurado
+// Autenticación por token (Bearer)
 // ─────────────────────────────────────────────
-describe('POST /api/webhooks/skydropx — verificación de firma', () => {
-  const SECRET = 'whsec_test_123'
-  const SKY_CREDS = { provider: 'skydropx', clientId: 'cid', clientSecret: 'sec', webhookSecret: SECRET }
+describe('POST /api/webhooks/skydropx — token', () => {
+  const TOKEN = 'whtok_test_abc123'
+  const CREDS = { provider: 'skydropx', clientId: 'cid', clientSecret: 'sec', webhookToken: TOKEN }
 
-  it('rechaza (401) firma inválida cuando hay secreto', async () => {
+  it('rechaza (401) token inválido cuando está configurado', async () => {
     const { mockSupabase, updateMock } = buildSupabaseMock()
     mockCreateServerClient.mockReturnValue(mockSupabase as never)
-    mockResolveShippingCreds.mockResolvedValue(SKY_CREDS as never)
+    mockResolveShippingCreds.mockResolvedValue(CREDS as never)
 
-    const res = await POST(makeRequest(
-      eventPayload('shipment.delivered', 'TRK-SIG'),
-      { 'x-skydropx-signature': 'deadbeef' }
-    ))
+    const res = await POST(makeRequest(shipmentPayload('SHIP-T', 'delivered'), { authorization: 'Bearer wrong' }))
     expect(res.status).toBe(401)
     expect(updateMock).not.toHaveBeenCalled()
   })
 
-  it('acepta firma válida cuando hay secreto', async () => {
+  it('acepta token válido (Bearer)', async () => {
     const { mockSupabase, updateMock } = buildSupabaseMock()
     mockCreateServerClient.mockReturnValue(mockSupabase as never)
-    mockResolveShippingCreds.mockResolvedValue(SKY_CREDS as never)
+    mockResolveShippingCreds.mockResolvedValue(CREDS as never)
 
-    const body = eventPayload('shipment.delivered', 'TRK-SIG-OK')
-    const raw = JSON.stringify(body)
-    const sig = createHmac('sha512', SECRET).update(raw).digest('hex')
-
-    const req = new NextRequest('http://localhost/api/webhooks/skydropx', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json', 'x-skydropx-signature': sig },
-      body: raw,
-    })
-    const res = await POST(req)
+    const res = await POST(makeRequest(shipmentPayload('SHIP-OK', 'delivered'), { authorization: `Bearer ${TOKEN}` }))
     expect(res.status).toBe(200)
     expect(updateMock).toHaveBeenCalled()
   })
@@ -226,48 +208,22 @@ describe('POST /api/webhooks/skydropx — verificación de firma', () => {
 // Idempotencia
 // ─────────────────────────────────────────────
 describe('POST /api/webhooks/skydropx — idempotencia', () => {
-  it('evento duplicado → 200 sin actualizar la BD', async () => {
+  it('evento duplicado → 200 sin actualizar', async () => {
     const { mockSupabase, updateMock } = buildSupabaseMock()
     mockCreateServerClient.mockReturnValue(mockSupabase as never)
     mockMarkProcessed.mockResolvedValue({ duplicate: true })
 
-    const res = await POST(makeRequest(eventPayload('shipment.delivered', 'TRK-DUP')))
+    const res = await POST(makeRequest(shipmentPayload('SHIP-DUP', 'delivered')))
     const data = await res.json()
-    expect(res.status).toBe(200)
     expect(data.idempotent).toBe(true)
     expect(updateMock).not.toHaveBeenCalled()
   })
 })
 
 // ─────────────────────────────────────────────
-// Actualización por tracking_number
+// Errores
 // ─────────────────────────────────────────────
-describe('POST /api/webhooks/skydropx — actualización de orden', () => {
-  it('filtra por el tracking_number correcto del payload', async () => {
-    const { mockSupabase, eqMock } = buildSupabaseMock()
-    mockCreateServerClient.mockReturnValue(mockSupabase as never)
-
-    await POST(makeRequest(eventPayload('shipment.delivered', 'TRK-ABC-12345')))
-
-    expect(eqMock).toHaveBeenCalledWith('tracking_number', 'TRK-ABC-12345')
-  })
-
-  it('incluye updated_at en la actualización', async () => {
-    const { mockSupabase, updateMock } = buildSupabaseMock()
-    mockCreateServerClient.mockReturnValue(mockSupabase as never)
-
-    await POST(makeRequest(eventPayload('shipment.delivered', 'TRK-XYZ')))
-
-    expect(updateMock).toHaveBeenCalledWith(
-      expect.objectContaining({ updated_at: expect.any(String) })
-    )
-  })
-})
-
-// ─────────────────────────────────────────────
-// Error handling
-// ─────────────────────────────────────────────
-describe('POST /api/webhooks/skydropx — manejo de errores', () => {
+describe('POST /api/webhooks/skydropx — errores', () => {
   it('retorna 400 si el body no es JSON válido', async () => {
     const req = new NextRequest('http://localhost/api/webhooks/skydropx', {
       method: 'POST',
