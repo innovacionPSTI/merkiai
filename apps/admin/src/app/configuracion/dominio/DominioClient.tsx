@@ -17,9 +17,10 @@ const STATUS: Record<string, { label: string; tone: BadgeTone }> = {
 // Pipeline de aprovisionamiento (abstracción de hosting; sin detalles de infra).
 const PIPE = ['Validación DNS', 'Certificado', 'Propagación', 'Activo'] as const
 function pipeIndex(state: ProvisionState | undefined, providerActive: boolean): number {
-  if (providerActive) return 3
+  // Activo = TODOS los pasos completados (índice = longitud → ninguno "en curso").
+  if (providerActive) return PIPE.length
   switch (state) {
-    case 'active': return 3
+    case 'active': return PIPE.length
     case 'propagating': return 2
     case 'certificate': return 1
     default: return 0
@@ -91,7 +92,9 @@ export default function DominioClient({ state: initial }: { state: DomainState |
   // Paso del asistente según el estado del dominio (se auto-avanza tras cada acción).
   const wizStep = initial.domain_status === 'none' ? 0
     : initial.domain_status === 'pending' ? 1
-    : 2 // verified | active
+    : 2 // verified | active (contenido del cuerpo)
+  // Para los puntos: si ya está activo, los 3 pasos salen completados (verde).
+  const wizDots = initial.domain_status === 'active' ? WIZARD_STEPS.length : wizStep
 
   const Msg = ({ s }: { s: DomainActionState }) =>
     s.error ? <p className="font-brand text-sm text-red-600 mt-2">{s.error}</p>
@@ -142,9 +145,9 @@ export default function DominioClient({ state: initial }: { state: DomainState |
                 {WIZARD_STEPS.map((label, i) => (
                   <div key={label} className="flex items-center gap-2">
                     <span className={`w-6 h-6 rounded-full flex items-center justify-center text-[11px] font-brand ${
-                      i < wizStep ? 'bg-green-600 text-white' : i === wizStep ? 'bg-brand-primary text-brand-cream' : 'bg-gray-200 text-brand-primary/50'
-                    }`}>{i < wizStep ? <Icon name="check" size={12} /> : i + 1}</span>
-                    <span className={`font-brand text-xs ${i === wizStep ? 'text-brand-primary font-semibold' : 'text-brand-primary/40'}`}>{label}</span>
+                      i < wizDots ? 'bg-green-600 text-white' : i === wizDots ? 'bg-brand-primary text-brand-cream' : 'bg-gray-200 text-brand-primary/50'
+                    }`}>{i < wizDots ? <Icon name="check" size={12} /> : i + 1}</span>
+                    <span className={`font-brand text-xs ${i === wizDots ? 'text-brand-primary font-semibold' : 'text-brand-primary/40'}`}>{label}</span>
                     {i < WIZARD_STEPS.length - 1 && <span className="text-brand-primary/20">→</span>}
                   </div>
                 ))}
