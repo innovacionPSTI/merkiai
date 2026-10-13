@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { getPaymentConfig, getStoreConfig, BoldGateway, applyStockForOrder, markWebhookEventProcessed } from '@merkiai/database'
+import { resolveActivePayment, getStoreConfig, BoldGateway, applyStockForOrder, markWebhookEventProcessed } from '@merkiai/database'
 import { resolveTenant } from '@/lib/tenant-context'
 import { getMachineDb } from '@/lib/machine-db'
 import { amountCoversOrder } from '@/lib/payment-guards'
@@ -33,19 +33,17 @@ export async function POST(req: NextRequest) {
   // ESE tenant, no la del default.
   const { tenantId } = await resolveTenant()
   const supabase = getMachineDb(tenantId) // HU-227: RLS por tenant (antes service-role)
-  const paymentConfig = await getPaymentConfig(supabase, tenantId).catch(() => null)
-
-  // Se valida por credenciales (no por proveedor activo): una notificación puede
-  // llegar por un pago iniciado aunque luego se cambie la pasarela activa.
-  if (!paymentConfig?.bold_api_key) {
-    console.warn('[webhook/bold] Bold no configurado')
+  // ADR-004: credenciales desde la instancia activa (fallback legacy interno).
+  const active = await resolveActivePayment(supabase, tenantId).catch(() => null)
+  if (!active || active.provider !== 'bold' || !active.credentials.api_key) {
+    console.warn('[webhook/bold] Bold no es la pasarela activa o no está configurado')
     return NextResponse.json({ error: 'Gateway not configured' }, { status: 503 })
   }
 
   const gateway = new BoldGateway({
-    apiKey:    paymentConfig.bold_api_key,
-    secretKey: paymentConfig.bold_secret_key ?? '',
-    sandbox:   paymentConfig.bold_sandbox ?? true,
+    apiKey:    active.credentials.api_key,
+    secretKey: active.credentials.secret_key ?? '',
+    sandbox:   (active.settings.sandbox as boolean | undefined) ?? true,
   })
 
   // 1) Verificar firma ANTES de cualquier cambio de estado

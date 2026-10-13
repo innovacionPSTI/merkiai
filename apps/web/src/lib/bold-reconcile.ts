@@ -8,7 +8,7 @@
  * `bold` en estado `pending`.
  */
 
-import { createServerClient, getPaymentConfig, getStoreConfig, BoldGateway, applyStockForOrder } from '@merkiai/database'
+import { createServerClient, resolveActivePayment, getStoreConfig, BoldGateway, applyStockForOrder } from '@merkiai/database'
 import type { Order, Database } from '@merkiai/database'
 import { sendOrderConfirmation, buildEmailConfig } from '@/lib/email'
 import { createShipmentForOrder } from '@/lib/shipping/shipments'
@@ -41,13 +41,13 @@ export async function reconcileBoldOrder(orderNumber: string): Promise<Reconcile
     return { ok: true, status: order.payment_status as ReconcileStatus }
   }
 
-  const config = await getPaymentConfig(supabase, order.tenant_id).catch(() => null)
-  if (!config?.bold_api_key) return { ok: false, reason: 'not_configured' }
+  const active = await resolveActivePayment(supabase, order.tenant_id).catch(() => null)
+  if (!active || active.provider !== 'bold' || !active.credentials.api_key) return { ok: false, reason: 'not_configured' }
 
   const gateway = new BoldGateway({
-    apiKey:    config.bold_api_key,
-    secretKey: config.bold_secret_key ?? '',
-    sandbox:   config.bold_sandbox ?? true,
+    apiKey:    active.credentials.api_key,
+    secretKey: active.credentials.secret_key ?? '',
+    sandbox:   (active.settings.sandbox as boolean | undefined) ?? true,
   })
 
   const result = await gateway.queryStatusByReference(orderNumber)

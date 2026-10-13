@@ -20,8 +20,9 @@ import { NextRequest } from 'next/server'
 jest.mock('@merkiai/database', () => ({
   createOrder: jest.fn(),
   getPaymentConfig: jest.fn(),
-  getPaymentGateway: jest.fn(),
   getActiveProvider: jest.fn(),
+  resolveActivePayment: jest.fn(),
+  gatewayFromInstance: jest.fn(),
   getStockForVariants: jest.fn(),
   createServerClient: jest.fn(),
 }))
@@ -35,13 +36,13 @@ jest.mock('@/stack', () => ({
 jest.mock('@/lib/tenant-context', () => ({ resolveTenant: jest.fn(async () => ({ tenantId: 't1' })) }))
 jest.mock('@/lib/machine-db', () => ({ getMachineDb: jest.fn(() => ({})) }))
 
-import { createOrder, getPaymentConfig, getPaymentGateway, getActiveProvider, getStockForVariants } from '@merkiai/database'
+import { createOrder, getPaymentConfig, resolveActivePayment, gatewayFromInstance, getStockForVariants } from '@merkiai/database'
 import { POST } from '../checkout/route'
 
 const mockCreateOrder = createOrder as jest.MockedFunction<typeof createOrder>
 const mockGetPaymentConfig = getPaymentConfig as jest.MockedFunction<typeof getPaymentConfig>
-const mockGetPaymentGateway = getPaymentGateway as jest.MockedFunction<typeof getPaymentGateway>
-const mockGetActiveProvider = getActiveProvider as jest.MockedFunction<typeof getActiveProvider>
+const mockResolveActivePayment = resolveActivePayment as jest.MockedFunction<typeof resolveActivePayment>
+const mockGatewayFromInstance = gatewayFromInstance as jest.MockedFunction<typeof gatewayFromInstance>
 const mockGetStockForVariants = getStockForVariants as jest.MockedFunction<typeof getStockForVariants>
 
 // ─────────────────────────────────────────────
@@ -104,12 +105,31 @@ function fakeGatewayFactory(method: string) {
   return { createPaymentUrl: jest.fn().mockResolvedValue(url) }
 }
 
+// ADR-004: mapea un config legacy → credenciales genéricas (como legacyCredentials).
+function credsFromConfig(provider: string, cfg: Record<string, unknown>) {
+  switch (provider) {
+    case 'wompi': return { credentials: { public_key: cfg.wompi_public_key, integrity_secret: cfg.wompi_integrity_secret, events_secret: cfg.wompi_events_secret }, settings: {} }
+    case 'mercadopago': return { credentials: { access_token: cfg.mercadopago_access_token, public_key: cfg.mercadopago_public_key }, settings: {} }
+    case 'bold': return { credentials: { api_key: cfg.bold_api_key, secret_key: cfg.bold_secret_key }, settings: { sandbox: cfg.bold_sandbox ?? true } }
+    case 'tucompra': return { credentials: { user: cfg.tucompra_user, password: cfg.tucompra_password, terminal: cfg.tucompra_terminal }, settings: { api_url: cfg.tucompra_api_url, methods: cfg.tucompra_methods ?? [] } }
+    default: return { credentials: {}, settings: {} }
+  }
+}
+
 beforeEach(() => {
   jest.clearAllMocks()
   mockGetPaymentConfig.mockResolvedValue(wompiConfig as never)
-  mockGetActiveProvider.mockImplementation(realActiveProvider as never)
-  mockGetPaymentGateway.mockImplementation(fakeGatewayFactory as never)
   mockGetStockForVariants.mockResolvedValue([]) // sin restricción de stock por defecto
+  // El resolver deriva la pasarela activa del config mockeado (como el real).
+  mockResolveActivePayment.mockImplementation(async () => {
+    const cfg = (await mockGetPaymentConfig(undefined as never, undefined as never)) as Record<string, unknown> | null
+    if (!cfg) return null
+    const provider = realActiveProvider(cfg)
+    if (provider === 'none') return null
+    const { credentials, settings } = credsFromConfig(provider, cfg)
+    return { provider, environment: 'test', credentials, settings, source: 'legacy' } as never
+  })
+  mockGatewayFromInstance.mockImplementation(((provider: string) => fakeGatewayFactory(provider)) as never)
 })
 
 // ─────────────────────────────────────────────
@@ -221,7 +241,7 @@ describe('POST /api/checkout — sin pasarela activa (manual)', () => {
 
     await POST(makeRequest(validBody))
 
-    expect(mockGetPaymentGateway).not.toHaveBeenCalled()
+    expect(mockGatewayFromInstance).not.toHaveBeenCalled()
   })
 })
 
@@ -247,7 +267,7 @@ describe('POST /api/checkout — happy path', () => {
     await POST(makeRequest(validBody))
 
     expect(mockCreateOrder).toHaveBeenCalledWith(expect.objectContaining({ payment_method: 'wompi' }), expect.anything())
-    expect(mockGetPaymentGateway).toHaveBeenCalledWith('wompi', expect.objectContaining({ active_provider: 'wompi' }))
+    expect(mockGatewayFromInstance).toHaveBeenCalledWith('wompi', expect.anything(), expect.anything())
   })
 
   it('usa shipping_cost = 0 si no se proporciona', async () => {
@@ -279,7 +299,7 @@ describe('POST /api/checkout — happy path', () => {
 
     expect(res.status).toBe(200)
     expect(data.payment_url).toBeTruthy()
-    expect(mockGetPaymentGateway).toHaveBeenCalledWith('bold', expect.objectContaining({ active_provider: 'bold' }))
+    expect(mockGatewayFromInstance).toHaveBeenCalledWith('bold', expect.anything(), expect.anything())
     expect(mockCreateOrder).toHaveBeenCalledWith(expect.objectContaining({ payment_method: 'bold' }), expect.anything())
   })
 })
@@ -296,7 +316,7 @@ describe('POST /api/checkout — seguridad (no bypass de pasarela)', () => {
     await POST(makeRequest({ ...validBody, payment_method: 'mercadopago' }))
 
     // Se usa wompi (activo en el servidor), NO mercadopago (enviado por el cliente)
-    expect(mockGetPaymentGateway).toHaveBeenCalledWith('wompi', expect.anything())
+    expect(mockGatewayFromInstance).toHaveBeenCalledWith('wompi', expect.anything(), expect.anything())
     expect(mockCreateOrder).toHaveBeenCalledWith(expect.objectContaining({ payment_method: 'wompi' }), expect.anything())
   })
 
@@ -308,7 +328,7 @@ describe('POST /api/checkout — seguridad (no bypass de pasarela)', () => {
     const data = await res.json()
 
     expect(data.manual).toBe(true)
-    expect(mockGetPaymentGateway).not.toHaveBeenCalled()
+    expect(mockGatewayFromInstance).not.toHaveBeenCalled()
     expect(mockCreateOrder).toHaveBeenCalledWith(expect.objectContaining({ payment_method: 'manual' }), expect.anything())
   })
 })
@@ -365,7 +385,7 @@ describe('POST /api/checkout — errores internos', () => {
   })
 
   it('retorna 503 si la factory de la pasarela activa lanza (defensivo)', async () => {
-    mockGetPaymentGateway.mockImplementationOnce(() => { throw new Error('Wompi: faltan credenciales') })
+    mockGatewayFromInstance.mockImplementationOnce(() => { throw new Error('Wompi: faltan credenciales') })
 
     const res = await POST(makeRequest(validBody))
     expect(res.status).toBe(503)

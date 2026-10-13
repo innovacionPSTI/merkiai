@@ -18,6 +18,7 @@ const mockQuery = jest.fn()
 jest.mock('@merkiai/database', () => ({
   createServerClient: jest.fn(() => ({ from: mockFrom })),
   getPaymentConfig: jest.fn(),
+  resolveActivePayment: jest.fn(),
   getStoreConfig: jest.fn(),
   applyStockForOrder: jest.fn(),
   BoldGateway: jest.fn().mockImplementation(() => ({ queryStatusByReference: mockQuery })),
@@ -33,15 +34,21 @@ jest.mock('@/lib/shipping/shipments', () => ({
   createShipmentForOrder: jest.fn().mockResolvedValue(null),
 }))
 
-import { getPaymentConfig, getStoreConfig } from '@merkiai/database'
+import { getPaymentConfig, resolveActivePayment, getStoreConfig } from '@merkiai/database'
 import { reconcileBoldOrder } from '../bold-reconcile'
 
 const mockGetPaymentConfig = getPaymentConfig as jest.MockedFunction<typeof getPaymentConfig>
+const mockResolveActivePayment = resolveActivePayment as jest.MockedFunction<typeof resolveActivePayment>
 const mockGetStoreConfig = getStoreConfig as jest.MockedFunction<typeof getStoreConfig>
 
 beforeEach(() => {
   jest.clearAllMocks()
   mockGetPaymentConfig.mockResolvedValue({ bold_api_key: 'k', bold_secret_key: 's', bold_sandbox: false } as never)
+  mockResolveActivePayment.mockImplementation(async () => {
+    const cfg = (await mockGetPaymentConfig(undefined as never, undefined as never)) as Record<string, unknown> | null
+    if (!cfg?.bold_api_key) return null
+    return { provider: 'bold', environment: 'test', credentials: { api_key: cfg.bold_api_key, secret_key: cfg.bold_secret_key }, settings: { sandbox: cfg.bold_sandbox ?? true }, source: 'legacy' } as never
+  })
   mockGetStoreConfig.mockResolvedValue(null as never)
 })
 

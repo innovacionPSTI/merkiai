@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { createOrder, getPaymentConfig, createServerClient, getPaymentGateway, getActiveProvider, getStockForVariants, TuCompraGateway, ensureCustomer } from '@merkiai/database'
+import { createOrder, createServerClient, resolveActivePayment, gatewayFromInstance, getStockForVariants, TuCompraGateway, ensureCustomer } from '@merkiai/database'
 import { stackServerApp } from '@/stack'
 import { baseUrlFromRequest } from '@/lib/base-url'
 import { resolveTenant } from '@/lib/tenant-context';
@@ -174,17 +174,11 @@ export async function POST(req: NextRequest) {
     // interino resolveTenant devuelve el default, en estricto lanza si no resuelve).
     const { tenantId } = await resolveTenant()
 
-    // Cargar configuración de pagos del TENANT (HU-216: no del default)
-    const paymentConfig = await getPaymentConfig(createServerClient(), tenantId)
-    if (!paymentConfig) {
-      console.error('[checkout] 503: no existe fila en payment_config (id=1). Ejecuta el seed local o configura en admin → Configuración → Pagos.')
-      return NextResponse.json({ error: 'Configuración de pagos no disponible' }, { status: 503 })
-    }
-
-    // ── SEGURIDAD: la pasarela se deriva SIEMPRE del servidor (active_provider),
-    // nunca del `payment_method` que envía el cliente. Así no se puede forzar una
-    // pasarela distinta a la activa ni saltarse el pago en la creación del pedido.
-    const activeProvider = getActiveProvider(paymentConfig)
+    // ── SEGURIDAD: la pasarela se deriva SIEMPRE del servidor (instancia activa),
+    // nunca del `payment_method` que envía el cliente. ADR-004: resuelve la
+    // instancia activa (integration_instances) con fallback al legacy payment_config.
+    const active = await resolveActivePayment(createServerClient(), tenantId)
+    const activeProvider = active?.provider ?? 'none'
 
     // E17/HU-157: la base URL (webhook + return de pagos) sale del host del
     // tenant (subdominio/dominio propio), no de una env global. Fallback a
@@ -265,7 +259,7 @@ export async function POST(req: NextRequest) {
       const tc = (tucompra ?? {}) as {
         method?: string; bankCode?: string; bankName?: string; personType?: string; document?: string; docType?: string; phone?: string
       }
-      const methods = (Array.isArray(paymentConfig.tucompra_methods) ? paymentConfig.tucompra_methods : []) as Array<{ tipo: string; id: string; enabled?: boolean }>
+      const methods = (Array.isArray(active?.settings?.methods) ? active!.settings.methods : []) as Array<{ tipo: string; id: string; enabled?: boolean }>
       const cfgMethod = methods.find((m) => m.tipo === tc.method && m.enabled !== false)
       if (!tc.method || !cfgMethod?.id) {
         return NextResponse.json({ error: 'Selecciona un medio de pago de Tu Compra.' }, { status: 400 })
@@ -287,12 +281,13 @@ export async function POST(req: NextRequest) {
       }, getMachineDb(tenantId))
       await autoSaveAddress()
 
+      const tcCreds = active!.credentials
       const gw = new TuCompraGateway({
-        usuario:   paymentConfig.tucompra_user!,
-        clave:     paymentConfig.tucompra_password!,
-        terminal:  paymentConfig.tucompra_terminal!,
-        apiUrl:    paymentConfig.tucompra_api_url ?? undefined,
-        publicKey: paymentConfig.tucompra_public_key ?? undefined,
+        usuario:   tcCreds.user!,
+        clave:     tcCreds.password!,
+        terminal:  tcCreds.terminal!,
+        apiUrl:    (active!.settings.api_url as string | undefined) ?? undefined,
+        publicKey: tcCreds.public_key ?? undefined,
       })
       const returnUrl = `${siteUrl}/checkout/confirmation?order=${order.order_number}`
       const metodo = tc.method === 'pse'
@@ -391,13 +386,13 @@ export async function POST(req: NextRequest) {
       }
     }
 
-    // ── Pasarela activa: resolver el gateway (server-side) antes de crear la orden
+    // ── Pasarela activa: construir el gateway desde la instancia activa
     let gateway
     try {
-      gateway = getPaymentGateway(activeProvider, paymentConfig)
+      gateway = gatewayFromInstance(active!.provider, active!.credentials, active!.settings)
     } catch (err) {
       const reason = err instanceof Error ? err.message : 'Pasarela de pago no disponible'
-      console.error(`[checkout] 503: getPaymentGateway("${activeProvider}") — ${reason}`)
+      console.error(`[checkout] 503: gatewayFromInstance("${activeProvider}") — ${reason}`)
       return NextResponse.json({ error: reason }, { status: 503 })
     }
 
@@ -413,7 +408,7 @@ export async function POST(req: NextRequest) {
       subtotal,
       shipping_cost: shipping_cost ?? 0,
       total,
-      payment_method: activeProvider,
+      payment_method: activeProvider as 'wompi' | 'mercadopago' | 'tucompra' | 'bold',
       skydropx_rate_id,
       carrier_name,
     }, getMachineDb(tenantId))

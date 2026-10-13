@@ -8,7 +8,7 @@
  * solo actúa sobre pedidos `tucompra` en estado `pending`.
  */
 
-import { createServerClient, getPaymentConfig, getStoreConfig, TuCompraGateway, applyStockForOrder } from '@merkiai/database'
+import { createServerClient, resolveActivePayment, getStoreConfig, TuCompraGateway, applyStockForOrder } from '@merkiai/database'
 import type { Order, Database } from '@merkiai/database'
 import { sendOrderConfirmation, buildEmailConfig } from '@/lib/email'
 import { createShipmentForOrder } from '@/lib/shipping/shipments'
@@ -41,16 +41,16 @@ export async function reconcileTuCompraOrder(orderNumber: string): Promise<Recon
     return { ok: true, status: order.payment_status as ReconcileStatus }
   }
 
-  const config = await getPaymentConfig(supabase, order.tenant_id).catch(() => null)
-  if (!config?.tucompra_user || !config.tucompra_password || !config.tucompra_terminal) {
+  const active = await resolveActivePayment(supabase, order.tenant_id).catch(() => null)
+  if (!active || active.provider !== 'tucompra' || !active.credentials.user || !active.credentials.password || !active.credentials.terminal) {
     return { ok: false, reason: 'not_configured' }
   }
 
   const gateway = new TuCompraGateway({
-    usuario:  config.tucompra_user,
-    clave:    config.tucompra_password,
-    terminal: config.tucompra_terminal,
-    apiUrl:   config.tucompra_api_url ?? undefined,
+    usuario:  active.credentials.user,
+    clave:    active.credentials.password,
+    terminal: active.credentials.terminal,
+    apiUrl:   (active.settings.api_url as string | undefined) ?? undefined,
   })
 
   const result = await gateway.queryStatusByReference(orderNumber, order.tucompra_codigo_seguimiento ?? '')

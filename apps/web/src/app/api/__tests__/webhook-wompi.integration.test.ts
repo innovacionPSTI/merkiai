@@ -39,6 +39,7 @@ jest.mock('@/lib/machine-db', () => ({ getMachineDb: jest.fn(() => ({ from: mock
 jest.mock('@merkiai/database', () => ({
   createServerClient: jest.fn(() => ({ from: mockFrom })),
   getPaymentConfig: jest.fn(),
+  resolveActivePayment: jest.fn(),
   getStoreConfig: jest.fn(),
   applyStockForOrder: jest.fn(),
   markWebhookEventProcessed: jest.fn(async () => ({ duplicate: false })),
@@ -62,12 +63,13 @@ jest.mock('@/lib/email', () => ({
   })),
 }))
 
-import { getPaymentConfig, getStoreConfig } from '@merkiai/database'
+import { getPaymentConfig, resolveActivePayment, getStoreConfig } from '@merkiai/database'
 import { verifyWompiWebhook, mapWompiStatus } from '@/lib/wompi'
 import { sendOrderConfirmation } from '@/lib/email'
 import { POST } from '../webhooks/wompi/route'
 
 const mockGetPaymentConfig = getPaymentConfig as jest.MockedFunction<typeof getPaymentConfig>
+const mockResolveActivePayment = resolveActivePayment as jest.MockedFunction<typeof resolveActivePayment>
 const mockGetStoreConfig = getStoreConfig as jest.MockedFunction<typeof getStoreConfig>
 const mockVerifyWebhook = verifyWompiWebhook as jest.MockedFunction<typeof verifyWompiWebhook>
 const mockMapStatus = mapWompiStatus as jest.MockedFunction<typeof mapWompiStatus>
@@ -136,6 +138,7 @@ const mockOrder = {
 beforeEach(() => {
   jest.clearAllMocks()
   mockGetPaymentConfig.mockResolvedValue(paymentConfig as never)
+  mockResolveActivePayment.mockResolvedValue({ provider: 'wompi', environment: 'test', credentials: { events_secret: EVENTS_SECRET, public_key: 'pub_test_x' }, settings: {}, source: 'legacy' } as never)
   mockGetStoreConfig.mockResolvedValue(storeConfig as never)
   mockVerifyWebhook.mockReturnValue(true)
   mockMapStatus.mockReturnValue('approved')

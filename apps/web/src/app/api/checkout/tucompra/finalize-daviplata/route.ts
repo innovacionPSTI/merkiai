@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { createServerClient, getPaymentConfig, TuCompraGateway } from '@merkiai/database'
+import { createServerClient, resolveActivePayment, TuCompraGateway } from '@merkiai/database'
 import { reconcileTuCompraOrder } from '@/lib/tucompra-reconcile'
 import { resolveTenant } from '@/lib/tenant-context'
 import { getMachineDb } from '@/lib/machine-db'
@@ -71,16 +71,16 @@ export async function POST(req: NextRequest) {
     }
 
     const { tenantId } = await resolveTenant()
-    const config = await getPaymentConfig(getMachineDb(tenantId), tenantId).catch(() => null)
-    if (!config?.tucompra_user || !config.tucompra_password || !config.tucompra_terminal) {
+    const active = await resolveActivePayment(getMachineDb(tenantId), tenantId).catch(() => null)
+    if (!active || active.provider !== 'tucompra' || !active.credentials.user || !active.credentials.password || !active.credentials.terminal) {
       return NextResponse.json({ error: 'Tu Compra no está configurado.' }, { status: 503 })
     }
 
     const gateway = new TuCompraGateway({
-      usuario: config.tucompra_user,
-      clave: config.tucompra_password,
-      terminal: config.tucompra_terminal,
-      apiUrl: config.tucompra_api_url ?? undefined,
+      usuario: active.credentials.user,
+      clave: active.credentials.password,
+      terminal: active.credentials.terminal,
+      apiUrl: (active.settings.api_url as string | undefined) ?? undefined,
     })
 
     const result = await gateway.finalizarPagoDaviplata(ord.tucompra_codigo_seguimiento, otp.trim())

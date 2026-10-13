@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { getPaymentConfig, getStoreConfig, TuCompraGateway, applyStockForOrder, markWebhookEventProcessed } from '@merkiai/database'
+import { resolveActivePayment, getStoreConfig, TuCompraGateway, applyStockForOrder, markWebhookEventProcessed } from '@merkiai/database'
 import { resolveTenant } from '@/lib/tenant-context'
 import { getMachineDb } from '@/lib/machine-db'
 import { amountCoversOrder } from '@/lib/payment-guards'
@@ -31,19 +31,20 @@ export async function POST(req: NextRequest) {
   // HU-216: config del TENANT resuelto por host (URLs de callback por subdominio).
   const { tenantId } = await resolveTenant()
   const supabase = getMachineDb(tenantId) // HU-227: RLS por tenant (antes service-role)
-  const paymentConfig = await getPaymentConfig(supabase, tenantId).catch(() => null)
-  if (!paymentConfig?.tucompra_user || !paymentConfig.tucompra_password || !paymentConfig.tucompra_terminal) {
-    console.warn('[webhook/tucompra] Tu Compra no configurado')
+  // ADR-004: credenciales desde la instancia activa (fallback legacy interno).
+  const active = await resolveActivePayment(supabase, tenantId).catch(() => null)
+  if (!active || active.provider !== 'tucompra' || !active.credentials.user || !active.credentials.password || !active.credentials.terminal) {
+    console.warn('[webhook/tucompra] Tu Compra no es la pasarela activa o no está configurado')
     return NextResponse.json({ error: 'Gateway not configured' }, { status: 503 })
   }
 
   const gateway = new TuCompraGateway({
-    usuario:   paymentConfig.tucompra_user,
-    clave:     paymentConfig.tucompra_password,
-    terminal:  paymentConfig.tucompra_terminal,
-    apiUrl:    paymentConfig.tucompra_api_url ?? undefined,
-    publicKey: paymentConfig.tucompra_public_key ?? undefined,
-    encryptionKey: paymentConfig.tucompra_encryption_key ?? undefined,
+    usuario:   active.credentials.user,
+    clave:     active.credentials.password,
+    terminal:  active.credentials.terminal,
+    apiUrl:    (active.settings.api_url as string | undefined) ?? undefined,
+    publicKey: active.credentials.public_key ?? undefined,
+    encryptionKey: active.credentials.encryption_key ?? undefined,
   })
 
   const webhookData = gateway.extractWebhookData(rawBody)

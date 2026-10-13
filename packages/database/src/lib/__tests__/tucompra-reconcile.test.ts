@@ -5,18 +5,18 @@
  */
 
 jest.mock('../../client', () => ({ createServerClient: jest.fn() }))
-jest.mock('../../queries/payment-config', () => ({ getPaymentConfig: jest.fn() }))
+jest.mock('../../providers/payment/resolve', () => ({ resolveActivePayment: jest.fn() }))
 jest.mock('../../providers/payment/TuCompraGateway', () => ({ TuCompraGateway: jest.fn() }))
 jest.mock('../stock', () => ({ applyStockForOrder: jest.fn() }))
 
 import { reconcileTuCompraOrder } from '../tucompra-reconcile'
 import { createServerClient } from '../../client'
-import { getPaymentConfig } from '../../queries/payment-config'
+import { resolveActivePayment } from '../../providers/payment/resolve'
 import { TuCompraGateway } from '../../providers/payment/TuCompraGateway'
 import { applyStockForOrder } from '../stock'
 
 const mockCreateServerClient = createServerClient as jest.MockedFunction<typeof createServerClient>
-const mockGetPaymentConfig = getPaymentConfig as jest.MockedFunction<typeof getPaymentConfig>
+const mockResolveActivePayment = resolveActivePayment as jest.MockedFunction<typeof resolveActivePayment>
 const MockGateway = TuCompraGateway as unknown as jest.Mock
 const mockApplyStock = applyStockForOrder as jest.MockedFunction<typeof applyStockForOrder>
 
@@ -35,7 +35,7 @@ function buildClient() {
 beforeEach(() => {
   jest.clearAllMocks()
   mockCreateServerClient.mockReturnValue(buildClient() as never)
-  mockGetPaymentConfig.mockResolvedValue({ tucompra_user: 'u', tucompra_password: 'p', tucompra_terminal: 't' } as never)
+  mockResolveActivePayment.mockResolvedValue({ provider: 'tucompra', environment: 'test', credentials: { user: 'u', password: 'p', terminal: 't' }, settings: {}, source: 'legacy' } as never)
   MockGateway.mockImplementation(() => ({ queryStatusByReference: mockQuery }))
 })
 
@@ -48,7 +48,7 @@ describe('reconcileTuCompraOrder (shared)', () => {
 
   it('not_configured si faltan credenciales', async () => {
     mockSingle.mockResolvedValueOnce({ data: { payment_method: 'tucompra', payment_status: 'pending' } })
-    mockGetPaymentConfig.mockResolvedValueOnce({} as never)
+    mockResolveActivePayment.mockResolvedValueOnce(null)
     expect(await reconcileTuCompraOrder('ORD-1')).toEqual({ ok: false, reason: 'not_configured' })
   })
 

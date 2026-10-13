@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { getPaymentConfig, getStoreConfig, applyStockForOrder, markWebhookEventProcessed } from '@merkiai/database'
+import { resolveActivePayment, getStoreConfig, applyStockForOrder, markWebhookEventProcessed } from '@merkiai/database'
 import { resolveTenant } from '@/lib/tenant-context'
 import { getMachineDb } from '@/lib/machine-db'
 import { verifyWompiWebhook, isWompiTimestampFresh, mapWompiStatus } from '@/lib/wompi'
@@ -37,8 +37,9 @@ export async function POST(req: NextRequest) {
   // HU-227: cliente de máquina acotado por RLS (antes service-role). Todas las
   // lecturas/escrituras de la orden quedan acotadas al tenant del host.
   const supabase = getMachineDb(tenantId)
-  const paymentConfig = await getPaymentConfig(supabase, tenantId).catch(() => null)
-  const eventsSecret = paymentConfig?.wompi_events_secret ?? ''
+  // ADR-004: credenciales desde la instancia activa (fallback legacy interno).
+  const active = await resolveActivePayment(supabase, tenantId).catch(() => null)
+  const eventsSecret = active?.provider === 'wompi' ? (active.credentials.events_secret ?? '') : ''
 
   if (!verifyWompiWebhook(rawBody, timestamp, checksum, eventsSecret)) {
     console.warn('[webhook/wompi] Firma inválida')

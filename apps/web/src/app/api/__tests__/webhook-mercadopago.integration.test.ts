@@ -35,6 +35,7 @@ jest.mock('@/lib/machine-db', () => ({ getMachineDb: jest.fn(() => ({ from: mock
 jest.mock('@merkiai/database', () => ({
   createServerClient: jest.fn(() => ({ from: mockFrom })),
   getPaymentConfig: jest.fn(),
+  resolveActivePayment: jest.fn(),
   getStoreConfig: jest.fn(),
   applyStockForOrder: jest.fn(),
   markWebhookEventProcessed: jest.fn(async () => ({ duplicate: false })),
@@ -58,12 +59,13 @@ jest.mock('@/lib/email', () => ({
   })),
 }))
 
-import { getPaymentConfig, getStoreConfig } from '@merkiai/database'
+import { getPaymentConfig, resolveActivePayment, getStoreConfig } from '@merkiai/database'
 import { getMercadoPagoPayment, mapMercadoPagoStatus } from '@/lib/mercadopago'
 import { sendOrderConfirmation } from '@/lib/email'
 import { POST } from '../webhooks/mercadopago/route'
 
 const mockGetPaymentConfig = getPaymentConfig as jest.MockedFunction<typeof getPaymentConfig>
+const mockResolveActivePayment = resolveActivePayment as jest.MockedFunction<typeof resolveActivePayment>
 const mockGetStoreConfig = getStoreConfig as jest.MockedFunction<typeof getStoreConfig>
 const mockGetMPPayment = getMercadoPagoPayment as jest.MockedFunction<typeof getMercadoPagoPayment>
 const mockMapMPStatus = mapMercadoPagoStatus as jest.MockedFunction<typeof mapMercadoPagoStatus>
@@ -119,6 +121,11 @@ function makeRequest(body: object): NextRequest {
 beforeEach(() => {
   jest.clearAllMocks()
   mockGetPaymentConfig.mockResolvedValue(paymentConfig as never)
+  mockResolveActivePayment.mockImplementation(async () => {
+    const cfg = (await mockGetPaymentConfig(undefined as never, undefined as never)) as Record<string, unknown> | null
+    if (!cfg?.mercadopago_access_token) return null
+    return { provider: 'mercadopago', environment: 'test', credentials: { access_token: cfg.mercadopago_access_token, public_key: cfg.mercadopago_public_key, webhook_secret: (cfg as Record<string, unknown>).mercadopago_webhook_secret }, settings: {}, source: 'legacy' } as never
+  })
   mockGetStoreConfig.mockResolvedValue(storeConfig as never)
   mockGetMPPayment.mockResolvedValue(mockMPPayment)
   mockMapMPStatus.mockReturnValue('approved')

@@ -4,18 +4,18 @@
  */
 
 jest.mock('../../client', () => ({ createServerClient: jest.fn() }))
-jest.mock('../../queries/payment-config', () => ({ getPaymentConfig: jest.fn() }))
+jest.mock('../../providers/payment/resolve', () => ({ resolveActivePayment: jest.fn() }))
 jest.mock('../../providers/payment/BoldGateway', () => ({ BoldGateway: jest.fn() }))
 jest.mock('../stock', () => ({ applyStockForOrder: jest.fn() }))
 
 import { reconcileBoldOrder } from '../bold-reconcile'
 import { createServerClient } from '../../client'
-import { getPaymentConfig } from '../../queries/payment-config'
+import { resolveActivePayment } from '../../providers/payment/resolve'
 import { BoldGateway } from '../../providers/payment/BoldGateway'
 import { applyStockForOrder } from '../stock'
 
 const mockCreateServerClient = createServerClient as jest.MockedFunction<typeof createServerClient>
-const mockGetPaymentConfig = getPaymentConfig as jest.MockedFunction<typeof getPaymentConfig>
+const mockResolveActivePayment = resolveActivePayment as jest.MockedFunction<typeof resolveActivePayment>
 const MockBoldGateway = BoldGateway as unknown as jest.Mock
 const mockApplyStock = applyStockForOrder as jest.MockedFunction<typeof applyStockForOrder>
 
@@ -34,7 +34,7 @@ function buildClient() {
 beforeEach(() => {
   jest.clearAllMocks()
   mockCreateServerClient.mockReturnValue(buildClient() as never)
-  mockGetPaymentConfig.mockResolvedValue({ bold_api_key: 'k', bold_secret_key: 's', bold_sandbox: false } as never)
+  mockResolveActivePayment.mockResolvedValue({ provider: 'bold', environment: 'test', credentials: { api_key: 'k', secret_key: 's' }, settings: { sandbox: false }, source: 'legacy' } as never)
   MockBoldGateway.mockImplementation(() => ({ queryStatusByReference: mockQuery }))
 })
 
@@ -47,7 +47,7 @@ describe('reconcileBoldOrder (shared)', () => {
 
   it('not_configured si falta bold_api_key', async () => {
     mockSingle.mockResolvedValueOnce({ data: { payment_method: 'bold', payment_status: 'pending' } })
-    mockGetPaymentConfig.mockResolvedValueOnce({} as never)
+    mockResolveActivePayment.mockResolvedValueOnce(null)
     expect(await reconcileBoldOrder('ORD-1')).toEqual({ ok: false, reason: 'not_configured' })
   })
 

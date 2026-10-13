@@ -13,7 +13,7 @@
  */
 
 import { createServerClient } from '../client'
-import { getPaymentConfig } from '../queries/payment-config'
+import { resolveActivePayment } from '../providers/payment/resolve'
 import { BoldGateway } from '../providers/payment/BoldGateway'
 import { applyStockForOrder } from './stock'
 import type { Database } from '../types'
@@ -44,14 +44,14 @@ export async function reconcileBoldOrder(orderNumber: string): Promise<Reconcile
     return { ok: true, status: order.payment_status as ReconcileStatus }
   }
 
-  // Config del TENANT del pedido (no del default) — bootstrap por order_number.
-  const config = await getPaymentConfig(supabase, order.tenant_id).catch(() => null)
-  if (!config?.bold_api_key) return { ok: false, reason: 'not_configured' }
+  // ADR-004: credenciales desde la instancia activa (fallback legacy interno).
+  const active = await resolveActivePayment(supabase, order.tenant_id).catch(() => null)
+  if (!active || active.provider !== 'bold' || !active.credentials.api_key) return { ok: false, reason: 'not_configured' }
 
   const gateway = new BoldGateway({
-    apiKey:    config.bold_api_key,
-    secretKey: config.bold_secret_key ?? '',
-    sandbox:   config.bold_sandbox ?? true,
+    apiKey:    active.credentials.api_key,
+    secretKey: active.credentials.secret_key ?? '',
+    sandbox:   (active.settings.sandbox as boolean | undefined) ?? true,
   })
 
   const result = await gateway.queryStatusByReference(orderNumber)

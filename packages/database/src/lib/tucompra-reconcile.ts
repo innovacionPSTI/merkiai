@@ -12,7 +12,7 @@
  */
 
 import { createServerClient } from '../client'
-import { getPaymentConfig } from '../queries/payment-config'
+import { resolveActivePayment } from '../providers/payment/resolve'
 import { TuCompraGateway } from '../providers/payment/TuCompraGateway'
 import { applyStockForOrder } from './stock'
 import type { Database } from '../types'
@@ -43,17 +43,17 @@ export async function reconcileTuCompraOrder(orderNumber: string): Promise<TuCom
     return { ok: true, status: order.payment_status as ReconcileStatus }
   }
 
-  // Config del TENANT del pedido (no del default) — bootstrap por order_number.
-  const config = await getPaymentConfig(supabase, order.tenant_id).catch(() => null)
-  if (!config?.tucompra_user || !config.tucompra_password || !config.tucompra_terminal) {
+  // ADR-004: credenciales desde la instancia activa (fallback legacy interno).
+  const active = await resolveActivePayment(supabase, order.tenant_id).catch(() => null)
+  if (!active || active.provider !== 'tucompra' || !active.credentials.user || !active.credentials.password || !active.credentials.terminal) {
     return { ok: false, reason: 'not_configured' }
   }
 
   const gateway = new TuCompraGateway({
-    usuario:  config.tucompra_user,
-    clave:    config.tucompra_password,
-    terminal: config.tucompra_terminal,
-    apiUrl:   config.tucompra_api_url ?? undefined,
+    usuario:  active.credentials.user,
+    clave:    active.credentials.password,
+    terminal: active.credentials.terminal,
+    apiUrl:   (active.settings.api_url as string | undefined) ?? undefined,
   })
 
   const result = await gateway.queryStatusByReference(orderNumber, order.tucompra_codigo_seguimiento ?? '')

@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server'
-import { getPaymentConfig, getActiveGateways } from '@merkiai/database';
+import { resolveActivePayment } from '@merkiai/database';
 import { resolveTenant } from '@/lib/tenant-context';
 import { getMachineDb } from '@/lib/machine-db'
 
@@ -18,9 +18,9 @@ const GATEWAY_META: Record<string, { label: string; desc: string }> = {
 export async function GET() {
   try {
     const { tenantId } = await resolveTenant();
-    const config = await getPaymentConfig(getMachineDb(tenantId), tenantId)
-    if (!config) throw new Error('No payment config')
-    const names  = getActiveGateways(config)
+    // ADR-004: la pasarela activa viene de la instancia activa (fallback legacy).
+    const active = await resolveActivePayment(getMachineDb(tenantId), tenantId)
+    const names: string[] = active ? [active.provider] : []
 
     const gateways = names.map((name) => ({
       value: name,
@@ -29,8 +29,8 @@ export async function GET() {
     }))
 
     // Tu Compra (integrador): medios habilitados para el selector del checkout.
-    const tucompraMethods = names.includes('tucompra')
-      ? ((Array.isArray(config.tucompra_methods) ? config.tucompra_methods : []) as Array<{ tipo: string; enabled?: boolean }>)
+    const tucompraMethods = active?.provider === 'tucompra'
+      ? ((Array.isArray(active.settings.methods) ? active.settings.methods : []) as Array<{ tipo: string; enabled?: boolean }>)
           .filter((m) => m.enabled !== false)
           .map((m) => m.tipo)
       : []

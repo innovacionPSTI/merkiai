@@ -13,7 +13,7 @@
  */
 
 import { createServerClient } from '../client'
-import { getPaymentConfig } from '../queries/payment-config'
+import { resolveActivePayment } from '../providers/payment/resolve'
 import { WompiGateway } from '../providers/payment/WompiGateway'
 import { applyStockForOrder } from './stock'
 import type { Database } from '../types'
@@ -57,14 +57,15 @@ export async function reconcileWompiOrder(
   const txnId = transactionId || (order.payment_id as string | null) || null
   if (!txnId) return { ok: true, status: 'pending', reason: 'no_txn' }
 
-  const config = await getPaymentConfig(supabase, order.tenant_id).catch(() => null)
-  if (!config?.wompi_public_key) return { ok: false, reason: 'not_configured' }
+  // ADR-004: credenciales desde la instancia activa (fallback legacy interno).
+  const active = await resolveActivePayment(supabase, order.tenant_id).catch(() => null)
+  if (!active || active.provider !== 'wompi' || !active.credentials.public_key) return { ok: false, reason: 'not_configured' }
 
   const gateway = new WompiGateway({
-    publicKey: config.wompi_public_key,
-    integritySecret: config.wompi_integrity_secret ?? '',
-    eventsSecret: config.wompi_events_secret ?? undefined,
-    privateKey: config.wompi_private_key ?? undefined,
+    publicKey: active.credentials.public_key,
+    integritySecret: active.credentials.integrity_secret ?? '',
+    eventsSecret: active.credentials.events_secret ?? undefined,
+    privateKey: active.credentials.private_key ?? undefined,
   })
 
   const result = await gateway.queryTransaction(txnId)

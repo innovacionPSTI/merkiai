@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { getPaymentConfig, getStoreConfig, applyStockForOrder, markWebhookEventProcessed } from '@merkiai/database'
+import { resolveActivePayment, getStoreConfig, applyStockForOrder, markWebhookEventProcessed } from '@merkiai/database'
 import { resolveTenant } from '@/lib/tenant-context'
 import { getMachineDb } from '@/lib/machine-db'
 import { getMercadoPagoPayment, mapMercadoPagoStatus, verifyMercadoPagoSignature } from '@/lib/mercadopago'
@@ -39,9 +39,10 @@ export async function POST(req: NextRequest) {
   const { tenantId } = await resolveTenant()
   // HU-227: cliente de máquina acotado por RLS (antes service-role).
   const supabase = getMachineDb(tenantId)
-  const paymentConfig = await getPaymentConfig(supabase, tenantId).catch(() => null)
-  if (!paymentConfig?.mercadopago_access_token) {
-    console.error('[webhook/mercadopago] access_token no configurado en BD')
+  // ADR-004: credenciales desde la instancia activa (fallback legacy interno).
+  const active = await resolveActivePayment(supabase, tenantId).catch(() => null)
+  if (!active || active.provider !== 'mercadopago' || !active.credentials.access_token) {
+    console.error('[webhook/mercadopago] MercadoPago no es la pasarela activa o falta el access_token')
     return NextResponse.json({ error: 'MP not configured' }, { status: 503 })
   }
 
@@ -51,7 +52,7 @@ export async function POST(req: NextRequest) {
     xSignature: req.headers.get('x-signature'),
     xRequestId: req.headers.get('x-request-id'),
     dataId: paymentId,
-    secret: paymentConfig.mercadopago_webhook_secret,
+    secret: active.credentials.webhook_secret ?? null,
   })
   if (sigValid === false) {
     console.warn('[webhook/mercadopago] Firma x-signature inválida')
@@ -65,7 +66,7 @@ export async function POST(req: NextRequest) {
 
   let payment: Awaited<ReturnType<typeof getMercadoPagoPayment>>
   try {
-    payment = await getMercadoPagoPayment(paymentConfig.mercadopago_access_token, paymentId)
+    payment = await getMercadoPagoPayment(active.credentials.access_token, paymentId)
   } catch (err) {
     console.error('[webhook/mercadopago] Error consultando pago:', err)
     return NextResponse.json({ error: 'MP fetch error' }, { status: 500 })
