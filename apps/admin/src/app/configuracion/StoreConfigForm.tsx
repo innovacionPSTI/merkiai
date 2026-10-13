@@ -118,8 +118,9 @@ export default function StoreConfigForm({ initialConfig }: Props) {
   return (
     <div className="space-y-6">
 
-      {/* Logo */}
-      <div>
+      {/* Marca: logo + favicon */}
+      <div className="bg-white rounded-2xl p-6 shadow-sm">
+        <h2 className="font-display text-brand-primary text-lg mb-4">Marca</h2>
         <p className="font-brand text-xs font-semibold text-brand-primary mb-1">Logo de la tienda</p>
         <p className="font-brand text-xs text-brand-primary/40 mb-3">
           Aparece en la barra de navegación y el pie de página. PNG o WebP con fondo transparente recomendado.
@@ -134,10 +135,9 @@ export default function StoreConfigForm({ initialConfig }: Props) {
             sizeClass="w-48 h-48"
           />
         </div>
-      </div>
 
-      {/* Favicon */}
-      <div className="border-t border-gray-100 pt-5">
+        {/* Favicon (dentro de la tarjeta Marca) */}
+        <div className="border-t border-gray-100 pt-5 mt-5">
         <p className="font-brand text-xs font-semibold text-brand-primary mb-1">Favicon</p>
         <p className="font-brand text-xs text-brand-primary/40 mb-3">
           Icono que aparece en la pestaña del navegador y en marcadores. PNG cuadrado recomendado.
@@ -159,9 +159,11 @@ export default function StoreConfigForm({ initialConfig }: Props) {
             <img src={faviconUrl} alt="favicon" className="inline-block w-6 h-6 align-middle rounded" />
           </p>
         )}
+        </div>
       </div>
 
-      <div className="border-t border-gray-100 pt-5 space-y-4">
+      <div className="bg-white rounded-2xl p-6 shadow-sm space-y-4">
+        <h2 className="font-display text-brand-primary text-lg">Información de la tienda</h2>
         {/* WhatsApp */}
         <div>
           <label className="font-brand text-xs font-semibold text-brand-primary block mb-1">
@@ -265,9 +267,9 @@ export default function StoreConfigForm({ initialConfig }: Props) {
       </div>
 
       {/* Redes sociales */}
-      <div className="border-t border-gray-100 pt-5 space-y-4">
+      <div className="bg-white rounded-2xl p-6 shadow-sm space-y-4">
         <div>
-          <p className="font-brand text-xs font-semibold text-brand-primary mb-0.5">Redes sociales</p>
+          <h2 className="font-display text-brand-primary text-lg mb-0.5">Redes sociales</h2>
           <p className="font-brand text-xs text-brand-primary/40">
             Los iconos aparecen en el footer solo si están habilitados y tienen URL.
           </p>
@@ -331,9 +333,9 @@ export default function StoreConfigForm({ initialConfig }: Props) {
       </div>
 
       {/* Operaciones del sitio */}
-      <div className="border-t border-gray-100 pt-5 space-y-4">
+      <div className="bg-white rounded-2xl p-6 shadow-sm space-y-4">
         <div>
-          <p className="font-brand text-xs font-semibold text-brand-primary mb-0.5">Operaciones</p>
+          <h2 className="font-display text-brand-primary text-lg mb-0.5">Operaciones</h2>
           <p className="font-brand text-xs text-brand-primary/40">
             Ajustes que afectan la disponibilidad y el comportamiento global del sitio.
           </p>
@@ -392,9 +394,9 @@ export default function StoreConfigForm({ initialConfig }: Props) {
       </div>
 
       {/* Navbar */}
-      <div className="border-t border-gray-100 pt-5 space-y-4">
+      <div className="bg-white rounded-2xl p-6 shadow-sm space-y-4">
         <div>
-          <p className="font-brand text-xs font-semibold text-brand-primary mb-0.5">Navbar</p>
+          <h2 className="font-display text-brand-primary text-lg mb-0.5">Barra de navegación</h2>
           <p className="font-brand text-xs text-brand-primary/40">
             Los ítems del menú se configuran desde{' '}
             <a href="/nav" className="underline hover:text-brand-primary">Navegación</a>.
@@ -427,9 +429,9 @@ export default function StoreConfigForm({ initialConfig }: Props) {
       </div>
 
       {/* Columnas del footer */}
-      <div className="border-t border-gray-100 pt-5 space-y-4">
+      <div className="bg-white rounded-2xl p-6 shadow-sm space-y-4">
         <div>
-          <p className="font-brand text-xs font-semibold text-brand-primary mb-0.5">Columnas del footer</p>
+          <h2 className="font-display text-brand-primary text-lg mb-0.5">Pie de página</h2>
           <p className="font-brand text-xs text-brand-primary/40">
             Las columnas de Servicios y Nosotros se controlan desde <strong>Páginas</strong>. Aquí puedes mostrar u ocultar las columnas estáticas.
           </p>
@@ -461,9 +463,9 @@ export default function StoreConfigForm({ initialConfig }: Props) {
       </div>
 
       {/* Badges de confianza */}
-      <div className="border-t border-gray-100 pt-5 space-y-4">
+      <div className="bg-white rounded-2xl p-6 shadow-sm space-y-4">
         <div>
-          <p className="font-brand text-xs font-semibold text-brand-primary mb-0.5">Badges de confianza</p>
+          <h2 className="font-display text-brand-primary text-lg mb-0.5">Badges de confianza</h2>
           <p className="font-brand text-xs text-brand-primary/40">
             Se muestran en la página de cada producto. Incluye emoji si quieres (ej: 🚚 Envío gratis · ✓ Garantía).
           </p>
@@ -531,7 +533,7 @@ export default function StoreConfigForm({ initialConfig }: Props) {
       </div>
 
       {/* Actions — barra fija al pie para que "Guardar" esté siempre a la vista */}
-      <div className="sticky bottom-0 -mx-6 -mb-6 mt-2 px-6 py-4 bg-white/95 backdrop-blur border-t border-gray-100 flex items-center gap-4">
+      <div className="sticky bottom-4 mt-2 px-6 py-4 bg-white/95 backdrop-blur border border-gray-100 rounded-2xl shadow-sm flex items-center gap-4">
         <button
           onClick={handleSave}
           disabled={status === 'saving'}

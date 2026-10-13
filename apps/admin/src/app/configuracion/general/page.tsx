@@ -26,9 +26,7 @@ export default async function ConfigGeneralPage() {
         <PageHeader title="General" description="Datos de contacto y nombre de la tienda." />
       </div>
 
-      <div className="bg-white rounded-2xl p-6 shadow-sm">
-        <StoreConfigForm initialConfig={storeConfig} />
-      </div>
+      <StoreConfigForm initialConfig={storeConfig} />
 
       <div className="mt-8">
         <h2 className="font-display text-brand-primary text-xl mb-1">Contenido del sitio</h2>
