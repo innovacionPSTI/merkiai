@@ -1,62 +1,37 @@
 import { redirect } from 'next/navigation'
 import type { Metadata } from 'next'
 import { PageHeader } from '@merkiai/ui'
-import { getPaymentConfig } from '@merkiai/database'
+import { listInstances, getProviderDef, PAYMENT_PROVIDERS } from '@merkiai/database'
 import { getAdminUser } from '@/lib/auth'
 import { getAdminDb } from '@/lib/admin-db'
 import { canAccess } from '@/lib/roles'
 import { resolveStoreBaseUrl } from '@/lib/store-url'
-import PaymentConfigForm from '../PaymentConfigForm'
+import { maskInstance, publicProviders } from '@/lib/mask-instance'
+import PaymentInstancesForm from '../PaymentInstancesForm'
 
 export const metadata: Metadata = { title: 'Pagos · Configuración' }
 export const dynamic = 'force-dynamic'
 
 export default async function ConfigPagosPage() {
   const adminUser = await getAdminUser()
-  if (!adminUser || !canAccess(adminUser.role, 'configuracion')) {
-    redirect('/no-autorizado')
-  }
+  if (!adminUser || !canAccess(adminUser.role, 'configuracion')) redirect('/no-autorizado')
 
   const fullAccess = adminUser.role === 'super_admin' || adminUser.role === 'admin'
   if (!fullAccess) redirect('/configuracion/general')
 
-  const paymentConfig = await getPaymentConfig(getAdminDb(adminUser.tenantId), adminUser.tenantId).catch(() => null)
-  // URL pública de la tienda (dominio propio o subdominio) para las URLs de webhook.
+  // ADR-004: instancias de pago (varias por pasarela, una activa). Credenciales
+  // enmascaradas antes de pasar al cliente.
+  const raw = await listInstances(getAdminDb(adminUser.tenantId), adminUser.tenantId, 'payment').catch(() => [])
+  const instances = raw.map((i) => maskInstance(i, getProviderDef('payment', i.provider)))
+  const providers = publicProviders(PAYMENT_PROVIDERS)
   const storeBaseUrl = await resolveStoreBaseUrl(adminUser.tenantId).catch(() => null)
-
-  const paymentConfigData = paymentConfig
-    ? {
-        ...paymentConfig,
-        wompi_private_key: null,
-        wompi_integrity_secret: null,
-        wompi_events_secret: null,
-        mercadopago_access_token: null,
-        mercadopago_webhook_secret: null,
-        tucompra_password: null,
-        tucompra_public_key: null,
-        tucompra_encryption_key: null,
-        bold_secret_key: null,
-        has_wompi_private_key: !!paymentConfig.wompi_private_key,
-        has_wompi_integrity_secret: !!paymentConfig.wompi_integrity_secret,
-        has_wompi_events_secret: !!paymentConfig.wompi_events_secret,
-        has_mercadopago_access_token: !!paymentConfig.mercadopago_access_token,
-        has_mercadopago_webhook_secret: !!paymentConfig.mercadopago_webhook_secret,
-        has_tucompra_password: !!paymentConfig.tucompra_password,
-        has_tucompra_public_key: !!paymentConfig.tucompra_public_key,
-        has_tucompra_encryption_key: !!paymentConfig.tucompra_encryption_key,
-        has_bold_secret_key: !!paymentConfig.bold_secret_key,
-      }
-    : null
 
   return (
     <div>
       <div className="mb-8">
-        <PageHeader title="Pagos" description="Credenciales de Wompi, MercadoPago y Tu Compra. Los secrets nunca se exponen al cliente." />
+        <PageHeader title="Pagos" description="Agrega los medios de pago que uses. Puedes tener varias configuraciones por pasarela (p. ej. Pruebas y Producción); solo una cobra a la vez. Los secretos nunca se exponen al cliente." />
       </div>
-
-      <div className="bg-white rounded-2xl p-6 shadow-sm">
-        <PaymentConfigForm initialConfig={paymentConfigData} storeBaseUrl={storeBaseUrl} />
-      </div>
+      <PaymentInstancesForm instances={instances} providers={providers} storeBaseUrl={storeBaseUrl} />
     </div>
   )
 }
