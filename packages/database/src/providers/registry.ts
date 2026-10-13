@@ -112,6 +112,7 @@ export const SHIPPING_PROVIDERS: ProviderDef[] = [
       { key: 'client_id',       label: 'Client ID',           type: 'text',   placeholder: 'Client ID de Skydropx', required: true },
       { key: 'client_secret',   label: 'Client Secret',       type: 'secret', placeholder: 'Client Secret de Skydropx', required: true },
       { key: 'address_from_id', label: 'ID dirección de origen', type: 'text', placeholder: 'ID de la dirección de recogida' },
+      { key: 'webhook_secret',  label: 'Secreto del webhook (firma)', type: 'secret', hint: 'Verifica la firma de los webhooks de seguimiento. Skydropx → Configuración → Webhooks.' },
     ],
     // El entorno de Skydropx se define por la URL base (en settings).
     detectEnv: (_c, s) => {

@@ -6,6 +6,7 @@ import { getAdminUser } from '@/lib/auth'
 import { getAdminDb } from '@/lib/admin-db'
 import { canAccess } from '@/lib/roles'
 import { maskInstance, publicProviders } from '@/lib/mask-instance'
+import { resolveStoreBaseUrl } from '@/lib/store-url'
 import ShippingConfigForm from '../ShippingConfigForm'
 import IntegrationInstancesForm from '../IntegrationInstancesForm'
 
@@ -23,6 +24,7 @@ export default async function ConfigEnviosPage() {
   const raw = await listInstances(getAdminDb(adminUser.tenantId), adminUser.tenantId, 'shipping').catch(() => [])
   const instances = raw.map((i) => maskInstance(i, getProviderDef('shipping', i.provider)))
   const providers = publicProviders(SHIPPING_PROVIDERS)
+  const storeBaseUrl = await resolveStoreBaseUrl(adminUser.tenantId).catch(() => null)
 
   return (
     <div className="space-y-8">
@@ -43,6 +45,8 @@ export default async function ConfigEnviosPage() {
           emptyText="Aún no has conectado una transportadora. Se usará la tarifa fija de abajo."
           instances={instances}
           providers={providers}
+          storeBaseUrl={storeBaseUrl}
+          showWebhook
         />
       </div>
 
