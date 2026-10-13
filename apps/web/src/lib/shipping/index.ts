@@ -23,6 +23,7 @@
 
 import { getShippingConfig, resolveShippingCreds } from '@merkiai/database'
 import { getStoreContext } from '../store-context'
+import { getMachineDb } from '../machine-db'
 import { FixedRateProvider } from './providers/fixed-rate'
 import { SkydropxProvider } from './providers/skydropx'
 import type { ShippingProvider } from './types'
@@ -41,8 +42,11 @@ export async function getShippingProvider(): Promise<ShippingProvider> {
   try {
     const ctx = await getStoreContext()
     config = await getShippingConfig(ctx.db, ctx.tenantId)
-    // ADR-004: credenciales del carrier desde la instancia activa (fallback legacy).
-    creds = await resolveShippingCreds(ctx.db, ctx.tenantId)
+    // ADR-004: las credenciales del carrier viven en integration_instances (RLS
+    // admin_all). El storefront usa un cliente ANON que NO puede leerlas, así que
+    // se resuelven con el cliente de MÁQUINA (server-side; los secretos nunca
+    // salen al navegador). Fallback legacy a shipping_config.
+    creds = await resolveShippingCreds(getMachineDb(ctx.tenantId), ctx.tenantId)
   } catch {
     console.warn('[shipping] Could not load shipping config — using fixed rate fallback')
     return new FixedRateProvider(8000)

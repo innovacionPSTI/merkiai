@@ -11,6 +11,7 @@ jest.mock('@merkiai/database', () => ({
 }))
 // HU-232: getShippingProvider resuelve el contexto (db + tenantId) del tenant.
 jest.mock('../../store-context', () => ({ getStoreContext: jest.fn(async () => ({ db: {}, tenantId: 't1' })) }))
+jest.mock('../../machine-db', () => ({ getMachineDb: jest.fn(() => ({})) }))
 
 import { getShippingConfig, resolveShippingCreds } from '@merkiai/database'
 import { getShippingProvider } from '../index'
