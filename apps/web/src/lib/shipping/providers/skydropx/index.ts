@@ -59,10 +59,13 @@ interface ProRate {
   provider_name: string
   provider_display_name: string
   provider_service_name: string
+  provider_service_code?: string
+  status?: string
   currency_code: string
   total: string | number
   days: number
   estimated_delivery?: string
+  error_messages?: Array<{ module?: string; error_type?: string; error_message?: string }>
 }
 
 // ─── Provider ─────────────────────────────────────────────────────────────────
@@ -80,13 +83,18 @@ export class SkydropxProvider implements ShippingProvider {
       const proRates = await this._pollRates(quotationId)
       const successful = proRates.filter((r) => r.success)
       if (successful.length === 0) {
-        // Diagnóstico: la cotización completó pero no hay tarifas exitosas. Causa
-        // típica: la cuenta de Skydropx no tiene transportadoras/contratos
-        // habilitados para esa ruta, o la dirección no es cotizable.
-        console.warn(
-          `[SkydropxProvider] quotation ${quotationId}: 0 tarifas exitosas de ${proRates.length} recibidas.`,
-          proRates.length ? JSON.stringify(proRates).slice(0, 800) : '(sin rates en la respuesta)',
+        // Diagnóstico compacto: peso/dimensiones enviados + motivo de CADA
+        // transportadora (status + error). Así se ve por qué fallan las 8.
+        const reasons = proRates.map((r) =>
+          `${r.provider_name}/${r.provider_service_code ?? r.provider_service_name}: ${r.status ?? '?'}` +
+          (r.error_messages?.length ? ` — ${r.error_messages.map((e) => e.error_message).join('; ')}` : ''),
         )
+        console.warn(
+          `[SkydropxProvider] quotation ${quotationId}: 0/${proRates.length} tarifas. ` +
+          `parcel=${JSON.stringify({ w: parcel.weight, l: parcel.length, an: parcel.width, h: parcel.height, declared: parcel.declaredAmount })} ` +
+          `origen=${this.config.origin.department}/${this.config.origin.city} destino=${address.area_level1}/${address.area_level2}`,
+        )
+        reasons.forEach((r) => console.warn('  ·', r))
       }
       return successful
         .map((r) => ({
