@@ -25,13 +25,19 @@ export async function GET(req: NextRequest) {
   if (!isValidHost(host)) {
     return NextResponse.json({ error: 'host inválido' }, { status: 400 })
   }
-  const subdomain = host.split('.')[0]
+  // `www.` es un alias del apex: www.merkiai.com debe resolver al tenant cuyo
+  // primary_domain es merkiai.com (y viceversa). El subdominio de plataforma se
+  // toma de la primera etiqueta, salvo que sea 'www' (que no es un subdominio).
+  const bareHost = host.replace(/^www\./, '')
+  const firstLabel = host.split('.')[0]
+  const orParts = [`primary_domain.eq.${host}`, `primary_domain.eq.${bareHost}`]
+  if (firstLabel && firstLabel !== 'www') orParts.push(`subdomain.eq.${firstLabel}`)
 
   const db = platformDb()
   const { data, error } = await db
     .from('tenants')
     .select('id, subdomain, primary_domain, db_ref, plan, status')
-    .or(`primary_domain.eq.${host},subdomain.eq.${subdomain}`)
+    .or(orParts.join(','))
     .limit(1)
     .maybeSingle()
 
