@@ -28,6 +28,10 @@ export default function ShippingConfigForm({ initialConfig }: Props) {
   const [freeShippingMin, setFreeShippingMin] = useState(String(initialConfig?.free_shipping_min_amount ?? 100000))
 
   // ── Cargo adicional de envío (sobre tarifas de transportadora) ────────────
+  // Solo uno activo: monto fijo O porcentaje (nunca ambos).
+  const [feeMode, setFeeMode] = useState<'fixed' | 'percent'>(
+    (initialConfig?.handling_fee_percent ?? 0) > 0 ? 'percent' : 'fixed'
+  )
   const [feeFixed, setFeeFixed]     = useState(String(initialConfig?.handling_fee_fixed ?? 0))
   const [feePercent, setFeePercent] = useState(String(initialConfig?.handling_fee_percent ?? 0))
 
@@ -52,8 +56,9 @@ export default function ShippingConfigForm({ initialConfig }: Props) {
     const body: Record<string, unknown> = {
       free_shipping_enabled: freeShippingEnabled,
       free_shipping_min_amount: Number(freeShippingMin),
-      handling_fee_fixed: Math.max(0, Math.round(Number(feeFixed) || 0)),
-      handling_fee_percent: Math.max(0, Number(feePercent) || 0),
+      // Solo se guarda el modo activo; el otro queda en 0 (así solo ese aplica).
+      handling_fee_fixed:   feeMode === 'fixed'   ? Math.max(0, Math.round(Number(feeFixed) || 0)) : 0,
+      handling_fee_percent: feeMode === 'percent' ? Math.max(0, Number(feePercent) || 0)           : 0,
       origin_name:         originName         || null,
       origin_street:       originStreet       || null,
       origin_neighborhood: originNeighborhood || null,
@@ -74,8 +79,8 @@ export default function ShippingConfigForm({ initialConfig }: Props) {
     } catch { setErrorMsg('Error de red al guardar'); setStatus('error') }
   }
 
-  const feeFixedN = Math.max(0, Number(feeFixed) || 0)
-  const feePercentN = Math.max(0, Number(feePercent) || 0)
+  const feeFixedN = feeMode === 'fixed' ? Math.max(0, Number(feeFixed) || 0) : 0
+  const feePercentN = feeMode === 'percent' ? Math.max(0, Number(feePercent) || 0) : 0
   const exampleBase = 15000
   const exampleTotal = Math.round(exampleBase * (1 + feePercentN / 100) + feeFixedN)
 
@@ -105,21 +110,34 @@ export default function ShippingConfigForm({ initialConfig }: Props) {
         <div>
           <p className="font-brand text-sm font-semibold text-brand-primary">Cargo adicional de envío</p>
           <p className="font-brand text-xs text-brand-primary/40 mt-0.5">
-            Se suma a la tarifa que calcula la transportadora (manejo, empaque…). Es transparente para el comprador: se incluye en el precio de envío mostrado, sin desglose. No aplica a la tarifa fija.
+            Se suma a la tarifa que calcula la transportadora (manejo, empaque…). Es transparente para el comprador: se incluye en el precio de envío mostrado, sin desglose. No aplica a la tarifa fija. Elige <strong>un</strong> tipo de cargo.
           </p>
         </div>
-        <div className="flex flex-wrap gap-4">
+
+        {/* Selector de tipo: solo uno activo */}
+        <div className="inline-flex rounded-xl border border-brand-primary/20 p-1 bg-brand-cream/40">
+          {([['fixed', 'Monto fijo'], ['percent', 'Porcentaje']] as const).map(([m, label]) => (
+            <button key={m} type="button" onClick={() => setFeeMode(m)}
+              className={`px-4 py-1.5 rounded-lg font-brand text-sm font-medium transition-colors ${
+                feeMode === m ? 'bg-brand-primary text-brand-cream' : 'text-brand-primary/60 hover:text-brand-primary'
+              }`}>{label}</button>
+          ))}
+        </div>
+
+        {feeMode === 'fixed' ? (
           <div>
             <label className="font-brand text-xs font-semibold text-brand-primary block mb-1">Monto fijo (COP)</label>
             <input type="number" min={0} step={500} value={feeFixed} onChange={(e) => setFeeFixed(e.target.value)}
               className="w-40 border border-gray-200 rounded-xl px-4 py-2.5 font-brand text-sm focus:outline-none focus:border-brand-primary" />
           </div>
+        ) : (
           <div>
             <label className="font-brand text-xs font-semibold text-brand-primary block mb-1">Porcentaje (%)</label>
             <input type="number" min={0} max={100} step={0.5} value={feePercent} onChange={(e) => setFeePercent(e.target.value)}
               className="w-32 border border-gray-200 rounded-xl px-4 py-2.5 font-brand text-sm focus:outline-none focus:border-brand-primary" />
           </div>
-        </div>
+        )}
+
         {(feeFixedN > 0 || feePercentN > 0) && (
           <p className="font-brand text-xs text-brand-primary/50">
             Ejemplo: una tarifa de {fmt(exampleBase)} se mostraría como <strong>{fmt(exampleTotal)}</strong>.
