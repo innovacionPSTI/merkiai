@@ -112,7 +112,7 @@ export const SHIPPING_PROVIDERS: ProviderDef[] = [
       { key: 'client_id',       label: 'Client ID',           type: 'text',   placeholder: 'Client ID de Skydropx', required: true },
       { key: 'client_secret',   label: 'Client Secret',       type: 'secret', placeholder: 'Client Secret de Skydropx', required: true },
       { key: 'address_from_id', label: 'ID dirección de origen', type: 'text', placeholder: 'ID de la dirección de recogida' },
-      { key: 'webhook_token',   label: 'Token del webhook (autenticación)', type: 'secret', hint: 'Autentica los webhooks de Envíos. En Skydropx → Webhooks usa método "Token" y pega este valor; se envía como Authorization: Bearer.' },
+      { key: 'webhook_token',   label: 'Token del webhook (autenticación)', type: 'secret', hint: 'En Skydropx → Webhooks (sección Envíos) elige método "Token"; Skydropx genera el token, cópialo y pégalo aquí. Deja el header en "Authorization" (llega como Bearer).' },
     ],
     // El entorno de Skydropx se define por la URL base (en settings).
     detectEnv: (_c, s) => {
