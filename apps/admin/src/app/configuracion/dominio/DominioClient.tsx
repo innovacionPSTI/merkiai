@@ -1,7 +1,7 @@
 'use client'
 
 import { useActionState, useState } from 'react'
-import { Icon, StatusBadge, type BadgeTone } from '@merkiai/ui'
+import { Icon, StatusBadge, Pipeline, ResourceItem, ResourceAction, type BadgeTone } from '@merkiai/ui'
 import type { DomainState, DnsRecord, ProvisionState } from '@/lib/domains'
 import { requestDomainAction, verifyDomainAction, activateDomainAction, removeDomainAction, type DomainActionState } from './actions'
 
@@ -65,30 +65,6 @@ function CopyRow({ label, value }: { label: string; value: string }) {
   )
 }
 
-function Pipeline({ current, error }: { current: number; error?: boolean }) {
-  return (
-    <div className="flex items-center flex-wrap gap-y-2">
-      {PIPE.map((label, i) => {
-        const done = i < current
-        const active = i === current
-        return (
-          <div key={label} className="flex items-center">
-            <span className={`inline-flex items-center gap-1.5 font-brand text-sm ${done ? 'text-green-600' : active ? 'text-brand-primary' : 'text-brand-primary/40'}`}>
-              <span className={`w-5 h-5 rounded-full flex items-center justify-center text-[11px] ${
-                done ? 'bg-green-600 text-white' : active ? (error ? 'bg-red-500 text-white' : 'bg-brand-primary text-brand-cream') : 'bg-gray-200 text-brand-primary/50'
-              }`}>
-                {done ? <Icon name="check" size={12} /> : i + 1}
-              </span>
-              {label}
-            </span>
-            {i < PIPE.length - 1 && <span className="mx-2 text-brand-primary/20">→</span>}
-          </div>
-        )
-      })}
-    </div>
-  )
-}
-
 export default function DominioClient({ state: initial }: { state: DomainState | null }) {
   const [reqState, reqAction] = useActionState(requestDomainAction, init)
   const [verState, verAction] = useActionState(verifyDomainAction, init)
@@ -132,17 +108,24 @@ export default function DominioClient({ state: initial }: { state: DomainState |
         </p>
       </div>
 
-      {/* Estado + pipeline */}
-      <div className="bg-white rounded-2xl p-6 shadow-sm space-y-4">
-        <div className="flex items-center justify-between">
-          <div>
-            <p className="font-brand text-xs text-brand-primary/40 uppercase tracking-wide mb-1">Estado</p>
-            <p className="font-brand text-brand-primary">{initial.primary_domain ?? (domain || '—')}</p>
-          </div>
-          <StatusBadge tone={status.tone}>{status.label}</StatusBadge>
+      {/* Estado + pipeline (tarjeta de recurso compartida) */}
+      {inProcess && (
+        <div>
+          <ResourceItem
+            icon={<Icon name="domain" size={18} />}
+            title={initial.primary_domain ?? (domain || '—')}
+            accent={providerActive}
+            badges={<StatusBadge tone={status.tone}>{status.label}</StatusBadge>}
+            pipeline={<Pipeline steps={PIPE} current={pIdx} error={provision?.state === 'error'} />}
+            actions={
+              <form action={rmAction}>
+                <ResourceAction icon="trash" label="Quitar" tone="danger" type="submit" />
+              </form>
+            }
+          />
+          <Msg s={rmState} />
         </div>
-        {inProcess && <Pipeline current={pIdx} error={provision?.state === 'error'} />}
-      </div>
+      )}
 
       {/* Paso 1 · Registrar dominio */}
       <div className="bg-white rounded-2xl p-6 shadow-sm">
@@ -222,15 +205,6 @@ export default function DominioClient({ state: initial }: { state: DomainState |
         </div>
       )}
 
-      {/* Quitar dominio */}
-      {inProcess && (
-        <form action={rmAction}>
-          <button type="submit" className="font-brand text-sm text-red-500 hover:text-red-600 inline-flex items-center gap-1.5">
-            <Icon name="trash" size={15} /> Quitar dominio propio
-          </button>
-          <Msg s={rmState} />
-        </form>
-      )}
     </div>
   )
 }
