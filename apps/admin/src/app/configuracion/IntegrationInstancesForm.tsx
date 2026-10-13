@@ -6,9 +6,17 @@ import { ResourceList, ResourceItem, ResourceAction, EnvBadge, StatusBadge, Wiza
 import type { MaskedInstance, PublicProviderDef } from '@/lib/mask-instance'
 
 interface Props {
+  kind: 'payment' | 'shipping' | 'email'
+  apiBase: string
+  addLabel: string
+  emptyText: string
   instances: MaskedInstance[]
   providers: PublicProviderDef[]
   storeBaseUrl?: string | null
+  /** Mostrar el toggle de entorno (pagos/envíos sí; correo no). */
+  showEnv?: boolean
+  /** Mostrar la URL de webhook (solo pagos). */
+  showWebhook?: boolean
 }
 
 type Env = 'test' | 'production'
@@ -77,8 +85,9 @@ function WebhookUrl({ provider, base }: { provider: string; base?: string | null
   )
 }
 
-export default function PaymentInstancesForm({ instances, providers, storeBaseUrl }: Props) {
+export default function IntegrationInstancesForm({ kind, apiBase, addLabel, emptyText, instances, providers, storeBaseUrl, showEnv = true, showWebhook = false }: Props) {
   const router = useRouter()
+  const defaultEnv: Env = showEnv ? 'test' : 'production'
   const [busy, setBusy] = useState(false)
   const [verifying, setVerifying] = useState<string | null>(null)
   const [msg, setMsg] = useState<{ type: 'ok' | 'err'; text: string } | null>(null)
@@ -90,7 +99,7 @@ export default function PaymentInstancesForm({ instances, providers, storeBaseUr
   const anyActive = instances.some((i) => i.isActive)
 
   async function api(path: string, method: string, body?: unknown): Promise<{ ok: boolean; data: Record<string, unknown> }> {
-    const res = await fetch(`/api/admin/payment-instances${path}`, {
+    const res = await fetch(`${apiBase}${path}`, {
       method, headers: { 'Content-Type': 'application/json' }, ...(body ? { body: JSON.stringify(body) } : {}),
     })
     const data = await res.json().catch(() => ({}))
@@ -107,7 +116,7 @@ export default function PaymentInstancesForm({ instances, providers, storeBaseUr
   // ── Draft helpers ───────────────────────────────────────────────────────────
   function newDraft(provider: string): Draft {
     return {
-      mode: 'add', provider, label: '', environment: 'test',
+      mode: 'add', provider, label: '', environment: defaultEnv,
       creds: {}, secretSet: {},
       tcMethods: TC_METHODS.map((m) => ({ tipo: m.tipo, id: TC_IDS.test[m.tipo], enabled: false })),
       boldSandbox: true,
@@ -184,17 +193,19 @@ export default function PaymentInstancesForm({ instances, providers, storeBaseUr
     return (
       <div className="space-y-4">
         {/* Entorno */}
-        <div>
-          <label className="font-brand text-sm font-semibold text-brand-primary block mb-1.5">Entorno</label>
-          <div className="inline-flex rounded-xl border border-brand-primary/20 p-1 bg-brand-cream/40">
-            {(['test', 'production'] as Env[]).map((e) => (
-              <button key={e} type="button" onClick={() => setEnv(e)}
-                className={`px-4 py-1.5 rounded-lg font-brand text-sm font-medium transition-colors ${
-                  d.environment === e ? (e === 'production' ? 'bg-amber-500 text-white' : 'bg-sky-500 text-white') : 'text-brand-primary/60 hover:text-brand-primary'
-                }`}>{e === 'production' ? '● Producción' : '○ Pruebas'}</button>
-            ))}
+        {showEnv && (
+          <div>
+            <label className="font-brand text-sm font-semibold text-brand-primary block mb-1.5">Entorno</label>
+            <div className="inline-flex rounded-xl border border-brand-primary/20 p-1 bg-brand-cream/40">
+              {(['test', 'production'] as Env[]).map((e) => (
+                <button key={e} type="button" onClick={() => setEnv(e)}
+                  className={`px-4 py-1.5 rounded-lg font-brand text-sm font-medium transition-colors ${
+                    d.environment === e ? (e === 'production' ? 'bg-amber-500 text-white' : 'bg-sky-500 text-white') : 'text-brand-primary/60 hover:text-brand-primary'
+                  }`}>{e === 'production' ? '● Producción' : '○ Pruebas'}</button>
+              ))}
+            </div>
           </div>
-        </div>
+        )}
 
         {/* Etiqueta interna */}
         <div>
@@ -243,7 +254,7 @@ export default function PaymentInstancesForm({ instances, providers, storeBaseUr
           </div>
         )}
 
-        <WebhookUrl provider={d.provider} base={storeBaseUrl} />
+        {showWebhook && <WebhookUrl provider={d.provider} base={storeBaseUrl} />}
       </div>
     )
   }
@@ -271,21 +282,21 @@ export default function PaymentInstancesForm({ instances, providers, storeBaseUr
   return (
     <div>
       <ResourceList
-        addLabel="Agregar medio de pago"
-        onAdd={() => setDraft({ mode: 'add', provider: '', label: '', environment: 'test', creds: {}, secretSet: {}, tcMethods: TC_METHODS.map((m) => ({ tipo: m.tipo, id: TC_IDS.test[m.tipo], enabled: false })), boldSandbox: true })}
+        addLabel={addLabel}
+        onAdd={() => setDraft({ mode: 'add', provider: '', label: '', environment: defaultEnv, creds: {}, secretSet: {}, tcMethods: TC_METHODS.map((m) => ({ tipo: m.tipo, id: TC_IDS.test[m.tipo], enabled: false })), boldSandbox: true })}
         isEmpty={instances.length === 0}
-        emptyIcon="money"
-        emptyText="Aún no has agregado un medio de pago. Mientras tanto, cada pedido queda en pago manual."
+        emptyIcon={kind === 'shipping' ? 'truck' : kind === 'email' ? 'bell' : 'money'}
+        emptyText={emptyText}
       >
         {instances.map((inst) => (
           <ResourceItem
             key={inst.id}
-            icon={<Icon name="money" size={18} />}
+            icon={<Icon name={kind === 'shipping' ? 'truck' : kind === 'email' ? 'bell' : 'money'} size={18} />}
             title={inst.label || labelOf(inst.provider)}
             subtitle={descOf(inst.provider)}
             accent={inst.isActive}
             badges={<>
-              <EnvBadge env={inst.environment === 'production' ? 'prod' : 'demo'} />
+              {showEnv && <EnvBadge env={inst.environment === 'production' ? 'prod' : 'demo'} />}
               {inst.isActive && <StatusBadge tone="success">Activa</StatusBadge>}
             </>}
             actions={<>
@@ -298,7 +309,7 @@ export default function PaymentInstancesForm({ instances, providers, storeBaseUr
         ))}
       </ResourceList>
 
-      {anyActive && (
+      {anyActive && kind === 'payment' && (
         <button type="button" onClick={() => activate(null)} disabled={busy}
           className="mt-4 font-brand text-xs text-brand-primary/50 hover:text-brand-primary underline disabled:opacity-40">
           Desactivar cobro en línea (usar pago manual)
@@ -309,7 +320,7 @@ export default function PaymentInstancesForm({ instances, providers, storeBaseUr
 
       <WizardModal
         open={draft !== null}
-        title={draft?.mode === 'edit' ? `Editar ${draft?.provider ? labelOf(draft.provider) : ''}` : 'Agregar medio de pago'}
+        title={draft?.mode === 'edit' ? `Editar ${draft?.provider ? labelOf(draft.provider) : ''}` : addLabel}
         steps={steps}
         onClose={() => setDraft(null)}
         onFinish={save}

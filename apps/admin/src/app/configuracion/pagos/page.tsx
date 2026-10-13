@@ -7,7 +7,7 @@ import { getAdminDb } from '@/lib/admin-db'
 import { canAccess } from '@/lib/roles'
 import { resolveStoreBaseUrl } from '@/lib/store-url'
 import { maskInstance, publicProviders } from '@/lib/mask-instance'
-import PaymentInstancesForm from '../PaymentInstancesForm'
+import IntegrationInstancesForm from '../IntegrationInstancesForm'
 
 export const metadata: Metadata = { title: 'Pagos · Configuración' }
 export const dynamic = 'force-dynamic'
@@ -31,7 +31,17 @@ export default async function ConfigPagosPage() {
       <div className="mb-8">
         <PageHeader title="Pagos" description="Agrega los medios de pago que uses. Puedes tener varias configuraciones por pasarela (p. ej. Pruebas y Producción); solo una cobra a la vez. Los secretos nunca se exponen al cliente." />
       </div>
-      <PaymentInstancesForm instances={instances} providers={providers} storeBaseUrl={storeBaseUrl} />
+      <IntegrationInstancesForm
+        kind="payment"
+        apiBase="/api/admin/payment-instances"
+        addLabel="Agregar medio de pago"
+        emptyText="Aún no has agregado un medio de pago. Mientras tanto, cada pedido queda en pago manual."
+        instances={instances}
+        providers={providers}
+        storeBaseUrl={storeBaseUrl}
+        showEnv
+        showWebhook
+      />
     </div>
   )
 }
