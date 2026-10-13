@@ -14,6 +14,7 @@ interface NavbarProps {
   navItems?: NavItemWithChildren[]
   showCart?: boolean
   showAuth?: boolean
+  showWishlist?: boolean
 }
 
 // ── Dropdown (desktop) ────────────────────────────────────────────────────────
@@ -86,6 +87,7 @@ export default function Navbar({
   navItems = [],
   showCart = true,
   showAuth = true,
+  showWishlist = true,
 }: NavbarProps) {
   const [scrolled, setScrolled]   = useState(false)
   const [menuOpen, setMenuOpen]   = useState(false)
@@ -150,7 +152,7 @@ export default function Navbar({
                 </Suspense>
               )}
 
-              <WishlistNavLink />
+              {showWishlist && <WishlistNavLink />}
 
               {showCart && (
                 <button

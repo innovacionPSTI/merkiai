@@ -25,6 +25,7 @@ export default async function StoreShell({ children }: { children: React.ReactNo
         navItems={navItems}
         showCart={config?.nav_show_cart ?? true}
         showAuth={config?.nav_show_auth ?? true}
+        showWishlist={config?.nav_show_wishlist ?? true}
       />
       {children}
       <Footer

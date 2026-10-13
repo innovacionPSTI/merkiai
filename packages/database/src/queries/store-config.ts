@@ -44,6 +44,7 @@ export type StoreConfig = {
   /** Toggles del navbar. */
   nav_show_cart: boolean
   nav_show_auth: boolean
+  nav_show_wishlist: boolean
   /** Proveedor de email activo ('resend' por defecto). */
   email_provider: string
   /** Estado del onboarding reanudable (HU-236 v2). null = sin empezar. */
@@ -109,6 +110,7 @@ const DEFAULT_CONFIG: StoreConfig = {
   footer_show_legal: true,
   nav_show_cart: true,
   nav_show_auth: true,
+  nav_show_wishlist: true,
   email_provider: 'resend',
   onboarding_state: null,
   updated_at: new Date().toISOString(),

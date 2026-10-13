@@ -33,6 +33,7 @@ export default function StoreConfigForm({ initialConfig }: Props) {
   // Navbar
   const [navShowCart, setNavShowCart] = useState(initialConfig?.nav_show_cart ?? true)
   const [navShowAuth, setNavShowAuth] = useState(initialConfig?.nav_show_auth ?? true)
+  const [navShowWishlist, setNavShowWishlist] = useState(initialConfig?.nav_show_wishlist ?? true)
 
   // Footer
   const [footerShowStore, setFooterShowStore] = useState(initialConfig?.footer_show_store ?? true)
@@ -93,6 +94,7 @@ export default function StoreConfigForm({ initialConfig }: Props) {
           analytics_enabled:  analyticsEnabled,
           nav_show_cart:      navShowCart,
           nav_show_auth:      navShowAuth,
+          nav_show_wishlist:  navShowWishlist,
           footer_show_store:  footerShowStore,
           footer_show_blog:   footerShowBlog,
           footer_show_legal:  footerShowLegal,
@@ -406,6 +408,7 @@ export default function StoreConfigForm({ initialConfig }: Props) {
         {[
           { label: 'Mostrar carrito', val: navShowCart, set: setNavShowCart },
           { label: 'Mostrar acceso / cuenta', val: navShowAuth, set: setNavShowAuth },
+          { label: 'Mostrar lista de deseos', val: navShowWishlist, set: setNavShowWishlist },
         ].map((col) => (
           <div key={col.label} className="flex items-center gap-3">
             <button

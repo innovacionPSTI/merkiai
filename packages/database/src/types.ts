@@ -576,6 +576,7 @@ export type Database = {
           footer_show_legal: boolean
           nav_show_cart: boolean
           nav_show_auth: boolean
+          nav_show_wishlist: boolean
           email_provider: string
           order_prefix: string
           updated_at: string
@@ -605,6 +606,7 @@ export type Database = {
           footer_show_legal?: boolean
           nav_show_cart?: boolean
           nav_show_auth?: boolean
+          nav_show_wishlist?: boolean
           email_provider?: string
           order_prefix?: string
           updated_at?: string
@@ -633,6 +635,7 @@ export type Database = {
           footer_show_legal?: boolean
           nav_show_cart?: boolean
           nav_show_auth?: boolean
+          nav_show_wishlist?: boolean
           email_provider?: string
           order_prefix?: string
           updated_at?: string
