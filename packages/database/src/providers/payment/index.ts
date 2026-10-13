@@ -110,6 +110,49 @@ export function getPaymentGateway(
   }
 }
 
+/**
+ * Construye un PaymentGateway desde las credenciales GENÉRICAS de una instancia
+ * (ADR-004). Las claves son las del registry ('public_key', 'access_token', …).
+ */
+export function gatewayFromInstance(
+  provider: string,
+  creds: Record<string, string | undefined>,
+  settings: Record<string, unknown> = {},
+): PaymentGateway {
+  switch (provider) {
+    case 'wompi':
+      if (!creds.public_key || !creds.integrity_secret) throw new Error('Wompi: faltan credenciales (public_key o integrity_secret).')
+      return new WompiGateway({ publicKey: creds.public_key, integritySecret: creds.integrity_secret, eventsSecret: creds.events_secret, privateKey: creds.private_key })
+    case 'mercadopago':
+      if (!creds.access_token) throw new Error('MercadoPago: falta el access token.')
+      return new MercadoPagoGateway({ accessToken: creds.access_token, publicKey: creds.public_key })
+    case 'tucompra':
+      if (!creds.user || !creds.password || !creds.terminal) throw new Error('Tu Compra: faltan credenciales (usuario, clave o terminal).')
+      return new TuCompraGateway({ usuario: creds.user, clave: creds.password, terminal: creds.terminal, apiUrl: (settings.api_url as string | undefined) ?? undefined, publicKey: creds.public_key, encryptionKey: creds.encryption_key })
+    case 'bold':
+      if (!creds.api_key) throw new Error('Bold: falta la API key.')
+      return new BoldGateway({ apiKey: creds.api_key, secretKey: creds.secret_key ?? '', sandbox: (settings.sandbox as boolean | undefined) ?? true })
+    default:
+      throw new Error(`Pasarela de pago desconocida: "${provider}"`)
+  }
+}
+
+/** Mapea payment_config (legacy, columnas fijas) → credenciales genéricas por proveedor. */
+export function legacyCredentials(provider: string, cfg: PaymentConfig): { credentials: Record<string, string | undefined>; settings: Record<string, unknown> } {
+  switch (provider) {
+    case 'wompi':
+      return { credentials: { public_key: cfg.wompi_public_key ?? undefined, private_key: cfg.wompi_private_key ?? undefined, integrity_secret: cfg.wompi_integrity_secret ?? undefined, events_secret: cfg.wompi_events_secret ?? undefined }, settings: {} }
+    case 'mercadopago':
+      return { credentials: { access_token: cfg.mercadopago_access_token ?? undefined, public_key: cfg.mercadopago_public_key ?? undefined, webhook_secret: cfg.mercadopago_webhook_secret ?? undefined }, settings: {} }
+    case 'tucompra':
+      return { credentials: { user: cfg.tucompra_user ?? undefined, password: cfg.tucompra_password ?? undefined, terminal: cfg.tucompra_terminal ?? undefined, public_key: cfg.tucompra_public_key ?? undefined, encryption_key: cfg.tucompra_encryption_key ?? undefined }, settings: { api_url: cfg.tucompra_api_url ?? undefined, methods: cfg.tucompra_methods ?? [] } }
+    case 'bold':
+      return { credentials: { api_key: cfg.bold_api_key ?? undefined, secret_key: cfg.bold_secret_key ?? undefined }, settings: { sandbox: cfg.bold_sandbox ?? true } }
+    default:
+      return { credentials: {}, settings: {} }
+  }
+}
+
 export type ActivePaymentProvider = 'none' | 'wompi' | 'mercadopago' | 'tucompra' | 'bold'
 
 /**

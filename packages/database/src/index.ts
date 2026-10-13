@@ -18,5 +18,7 @@ export * from './lib/blog-import'
 
 // ─── Provider abstractions ────────────────────────────────────────────────────
 export * from './providers/payment/index'
+export * from './providers/payment/resolve'
+export * from './providers/registry'
 export * from './providers/email/index'
 export * from './providers/storage/index'
