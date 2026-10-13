@@ -360,6 +360,47 @@ export type Database = {
         }
         Relationships: []
       }
+      integration_instances: {
+        Row: {
+          id: string
+          tenant_id: string
+          kind: 'payment' | 'shipping' | 'email'
+          provider: string
+          label: string | null
+          environment: 'test' | 'production'
+          credentials: Record<string, unknown>
+          settings: Record<string, unknown>
+          enabled: boolean
+          is_active: boolean
+          created_at: string
+          updated_at: string
+        }
+        Insert: {
+          id?: string
+          tenant_id?: string
+          kind: 'payment' | 'shipping' | 'email'
+          provider: string
+          label?: string | null
+          environment?: 'test' | 'production'
+          credentials?: Record<string, unknown>
+          settings?: Record<string, unknown>
+          enabled?: boolean
+          is_active?: boolean
+          created_at?: string
+          updated_at?: string
+        }
+        Update: {
+          provider?: string
+          label?: string | null
+          environment?: 'test' | 'production'
+          credentials?: Record<string, unknown>
+          settings?: Record<string, unknown>
+          enabled?: boolean
+          is_active?: boolean
+          updated_at?: string
+        }
+        Relationships: []
+      }
       blog_posts: {
         Row: {
           tenant_id: string
