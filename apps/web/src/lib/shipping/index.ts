@@ -26,6 +26,7 @@ import { getStoreContext } from '../store-context'
 import { getMachineDb } from '../machine-db'
 import { FixedRateProvider } from './providers/fixed-rate'
 import { SkydropxProvider } from './providers/skydropx'
+import { skydropxApiBase } from './providers/skydropx/auth'
 import type { ShippingProvider } from './types'
 
 export type { ShippingProvider, ShippingRate, ShippingAddress, ShippingParcel, ParcelItem } from './types'
@@ -71,7 +72,9 @@ export async function getShippingProvider(): Promise<ShippingProvider> {
     return new SkydropxProvider({
       clientId: creds.clientId,
       clientSecret: creds.clientSecret,
-      baseUrl: creds.baseUrl ?? 'https://api-pro.skydropx.com',
+      // El host del API se deriva del entorno (producción/sandbox); un base_url de
+      // dashboard guardado por error se ignora en resolveShippingCreds.
+      baseUrl: skydropxApiBase(creds.environment, creds.baseUrl),
       origin: {
         name: origin_name!,
         street: origin_street!,

@@ -15,6 +15,18 @@ export interface SkydropxCredentials {
   baseUrl?: string
 }
 
+/**
+ * Host del API de Skydropx PRO según el entorno (doc oficial CO):
+ *   producción → api-pro.skydropx.com · sandbox → sb-pro.skydropx.com
+ * Un `override` solo se respeta si parece un host de API (no de dashboard).
+ */
+export function skydropxApiBase(environment?: 'test' | 'production', override?: string): string {
+  if (override && /^https?:\/\//i.test(override) && !/app\.skydropx\.com|\/users\/|merchant_stores/i.test(override)) {
+    return override.replace(/\/$/, '')
+  }
+  return environment === 'test' ? 'https://sb-pro.skydropx.com' : 'https://api-pro.skydropx.com'
+}
+
 // Module-level cache: Map<clientId, { access_token, expires_at }>
 const tokenCache = new Map<string, { access_token: string; expires_at: number }>()
 

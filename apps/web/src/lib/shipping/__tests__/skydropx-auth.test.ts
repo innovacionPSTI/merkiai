@@ -3,9 +3,24 @@
  * Now tests credential injection (no env vars).
  */
 
-import { _clearTokenCacheForTests } from '../providers/skydropx/auth'
+import { _clearTokenCacheForTests, skydropxApiBase } from '../providers/skydropx/auth'
 
 const BASE_URL = 'https://api-pro.skydropx.com'
+
+describe('skydropxApiBase — host por entorno', () => {
+  it('producción → api-pro.skydropx.com', () => {
+    expect(skydropxApiBase('production')).toBe('https://api-pro.skydropx.com')
+  })
+  it('sandbox/test → sb-pro.skydropx.com', () => {
+    expect(skydropxApiBase('test')).toBe('https://sb-pro.skydropx.com')
+  })
+  it('ignora un host de dashboard guardado por error', () => {
+    expect(skydropxApiBase('production', 'https://app.skydropx.com')).toBe('https://api-pro.skydropx.com')
+  })
+  it('respeta un override que sí es host de API', () => {
+    expect(skydropxApiBase('production', 'https://api-pro.skydropx.com/')).toBe('https://api-pro.skydropx.com')
+  })
+})
 
 const CREDS = {
   clientId: 'client-abc',
