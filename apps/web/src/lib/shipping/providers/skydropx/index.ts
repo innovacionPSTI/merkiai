@@ -78,8 +78,17 @@ export class SkydropxProvider implements ShippingProvider {
     try {
       const quotationId = await this._createQuotation(address, parcel)
       const proRates = await this._pollRates(quotationId)
-      return proRates
-        .filter((r) => r.success)
+      const successful = proRates.filter((r) => r.success)
+      if (successful.length === 0) {
+        // Diagnóstico: la cotización completó pero no hay tarifas exitosas. Causa
+        // típica: la cuenta de Skydropx no tiene transportadoras/contratos
+        // habilitados para esa ruta, o la dirección no es cotizable.
+        console.warn(
+          `[SkydropxProvider] quotation ${quotationId}: 0 tarifas exitosas de ${proRates.length} recibidas.`,
+          proRates.length ? JSON.stringify(proRates).slice(0, 800) : '(sin rates en la respuesta)',
+        )
+      }
+      return successful
         .map((r) => ({
           id: r.id,
           provider: this.name,
@@ -240,9 +249,13 @@ export class SkydropxProvider implements ShippingProvider {
       // PRO API: { id, is_completed, rates: [...] }
       // Legacy:  { data: { attributes: { is_completed, rates: [...] } } }
       const isCompleted = data.is_completed ?? data.data?.attributes?.is_completed
-      const rates = data.rates ?? data.data?.attributes?.rates
+      const rates = data.rates ?? data.data?.attributes?.rates ?? data.included
 
       if (isCompleted) {
+        if (!rates) {
+          // Diagnóstico: completó sin rates en las claves conocidas → log de claves.
+          console.warn(`[SkydropxProvider] quotation ${quotationId} completó sin 'rates'. Claves:`, Object.keys(data), JSON.stringify(data).slice(0, 800))
+        }
         return (rates ?? []) as ProRate[]
       }
 

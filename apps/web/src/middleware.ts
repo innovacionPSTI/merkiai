@@ -19,14 +19,14 @@ const MAINTENANCE_TTL_MS = 60_000
 // si no, no hace nada (single-tenant sin cambios).
 // `found`: true = tenant resuelto · false = 404 definitivo (host sin tenant) ·
 // null = desconocido (sin control plane o error transitorio → no redirigir).
-type TenantResolution = { found: boolean | null; status: string | null }
+type TenantResolution = { found: boolean | null; status: string | null; primaryDomain: string | null; subdomain: string | null }
 const tenantStatusCache = new Map<string, { value: TenantResolution; expiresAt: number }>()
 const TENANT_STATUS_TTL_MS = 30_000
 
 async function resolveTenantInfo(host: string): Promise<TenantResolution> {
   const base = process.env.CONTROL_PLANE_URL
   const secret = process.env.INTERNAL_API_SECRET
-  if (!base || !secret) return { found: null, status: null }
+  if (!base || !secret) return { found: null, status: null, primaryDomain: null, subdomain: null }
   const key = host.toLowerCase()
   const now = Date.now()
   const cached = tenantStatusCache.get(key)
@@ -38,18 +38,21 @@ async function resolveTenantInfo(host: string): Promise<TenantResolution> {
     )
     let value: TenantResolution
     if (res.ok) {
-      value = { found: true, status: ((await res.json())?.status as string) ?? null }
+      const d = await res.json()
+      value = { found: true, status: (d?.status as string) ?? null, primaryDomain: (d?.primaryDomain as string) ?? null, subdomain: (d?.subdomain as string) ?? null }
     } else if (res.status === 404) {
-      value = { found: false, status: null } // host sin tenant (definitivo)
+      value = { found: false, status: null, primaryDomain: null, subdomain: null } // host sin tenant (definitivo)
     } else {
-      value = { found: null, status: null } // 401/5xx/etc → desconocido, no redirigir
+      value = { found: null, status: null, primaryDomain: null, subdomain: null } // 401/5xx/etc → desconocido, no redirigir
     }
     tenantStatusCache.set(key, { value, expiresAt: now + TENANT_STATUS_TTL_MS })
     return value
   } catch {
-    return { found: null, status: null }
+    return { found: null, status: null, primaryDomain: null, subdomain: null }
   }
 }
+
+const ROOT_DOMAIN = process.env.NEXT_PUBLIC_ROOT_DOMAIN ?? 'merkiai.com'
 
 /** Hosts que NUNCA se redirigen (evita loop del apex/landing). */
 const NO_REDIRECT_HOSTS = new Set(['merkiai.com'])
@@ -107,6 +110,25 @@ export async function middleware(request: NextRequest) {
     // HU-194: tenant suspendido/cancelado → "servicio pausado".
     if (info.status === 'suspended' || info.status === 'canceled') {
       return NextResponse.rewrite(new URL('/servicio-pausado', request.url))
+    }
+
+    // HU-279: dominio canónico. Si el tenant tiene dominio propio y la tienda se
+    // abre por su subdominio de plataforma (<sub>.merkiai.com), se redirige 301
+    // al dominio propio para unificar canónicas, cookies y SEO. Las rutas /api/*
+    // ya quedan excluidas (bypassMaintenance) → webhooks por subdominio siguen
+    // funcionando. Nunca redirige si ya se está en el dominio propio.
+    if (
+      info.found === true &&
+      info.primaryDomain &&
+      info.subdomain &&
+      host === `${info.subdomain}.${ROOT_DOMAIN}` &&
+      host !== info.primaryDomain
+    ) {
+      const url = new URL(request.url)
+      url.host = info.primaryDomain
+      url.port = ''
+      url.protocol = 'https:'
+      return NextResponse.redirect(url, 301)
     }
   }
 
