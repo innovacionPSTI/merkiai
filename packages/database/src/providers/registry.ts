@@ -102,9 +102,55 @@ export const PAYMENT_PROVIDERS: ProviderDef[] = [
   },
 ]
 
+export const SHIPPING_PROVIDERS: ProviderDef[] = [
+  {
+    kind: 'shipping',
+    provider: 'skydropx',
+    label: 'Skydropx',
+    description: 'Cotización y generación de guías con múltiples transportadoras',
+    fields: [
+      { key: 'client_id',       label: 'Client ID',           type: 'text',   placeholder: 'Client ID de Skydropx', required: true },
+      { key: 'client_secret',   label: 'Client Secret',       type: 'secret', placeholder: 'Client Secret de Skydropx', required: true },
+      { key: 'address_from_id', label: 'ID dirección de origen', type: 'text', placeholder: 'ID de la dirección de recogida' },
+    ],
+    // El entorno de Skydropx se define por la URL base (en settings).
+    detectEnv: (_c, s) => {
+      const url = (s?.base_url as string | undefined) ?? ''
+      if (/sandbox|demo/i.test(url)) return 'test'
+      if (url) return 'production'
+      return 'unknown'
+    },
+    requiredKeys: ['client_id', 'client_secret'],
+  },
+]
+
+export const EMAIL_PROVIDERS: ProviderDef[] = [
+  {
+    kind: 'email',
+    provider: 'resend',
+    label: 'Resend',
+    description: 'Envío de correos transaccionales (confirmaciones, guías, bienvenida)',
+    fields: [
+      { key: 'api_key',    label: 'API Key (re_…)',       type: 'secret', placeholder: 're_…', hint: 'Panel Resend → API Keys.', required: true },
+      { key: 'from_email', label: 'Correo remitente (from)', type: 'text', placeholder: 'pedidos@mitienda.com', hint: 'Debe ser de un dominio verificado en Resend.', required: true },
+    ],
+    detectEnv: () => 'production',
+    requiredKeys: ['api_key', 'from_email'],
+  },
+]
+
+const ALL_PROVIDERS: Record<ProviderDef['kind'], ProviderDef[]> = {
+  payment: PAYMENT_PROVIDERS,
+  shipping: SHIPPING_PROVIDERS,
+  email: EMAIL_PROVIDERS,
+}
+
+export function providersFor(kind: ProviderDef['kind']): ProviderDef[] {
+  return ALL_PROVIDERS[kind] ?? []
+}
+
 export function getProviderDef(kind: ProviderDef['kind'], provider: string): ProviderDef | undefined {
-  const list = kind === 'payment' ? PAYMENT_PROVIDERS : []
-  return list.find((p) => p.provider === provider)
+  return providersFor(kind).find((p) => p.provider === provider)
 }
 
 /** ¿Las credenciales cumplen los requeridos para activar? Devuelve las faltantes. */

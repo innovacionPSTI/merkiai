@@ -1,7 +1,7 @@
 /**
  * Unit tests — registry + gatewayFromInstance (ADR-004 · HU-276/277).
  */
-import { PAYMENT_PROVIDERS, getProviderDef, missingRequired } from '../registry'
+import { PAYMENT_PROVIDERS, getProviderDef, missingRequired, providersFor } from '../registry'
 import { gatewayFromInstance } from '../payment/index'
 
 describe('registry · detección de entorno', () => {
@@ -31,6 +31,22 @@ describe('registry · requeridos', () => {
   })
   it('hay 4 pasarelas registradas', () => {
     expect(PAYMENT_PROVIDERS.map((p) => p.provider).sort()).toEqual(['bold', 'mercadopago', 'tucompra', 'wompi'])
+  })
+})
+
+describe('registry · envíos y correo (HU-278)', () => {
+  it('providersFor devuelve el catálogo por tipo', () => {
+    expect(providersFor('shipping').map((p) => p.provider)).toEqual(['skydropx'])
+    expect(providersFor('email').map((p) => p.provider)).toEqual(['resend'])
+  })
+  it('Skydropx exige client_id + client_secret', () => {
+    const s = getProviderDef('shipping', 'skydropx')!
+    expect(missingRequired(s, { client_id: 'x' })).toEqual(['client_secret'])
+  })
+  it('Resend exige api_key + from_email', () => {
+    const e = getProviderDef('email', 'resend')!
+    expect(missingRequired(e, {})).toEqual(['api_key', 'from_email'])
+    expect(e.detectEnv({})).toBe('production')
   })
 })
 

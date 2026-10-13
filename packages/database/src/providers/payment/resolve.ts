@@ -11,7 +11,7 @@ import { getActiveInstance } from '../../queries/integration-instances'
 import { getPaymentConfig } from '../../queries/payment-config'
 import { getActiveProvider, legacyCredentials } from './index'
 import { getProviderDef } from '../registry'
-import type { IntegrationEnv } from '../../queries/integration-instances'
+import type { IntegrationEnv, IntegrationKind } from '../../queries/integration-instances'
 
 export interface ActivePayment {
   provider: string
@@ -19,6 +19,25 @@ export interface ActivePayment {
   credentials: Record<string, string | undefined>
   settings: Record<string, unknown>
   source: 'instance' | 'legacy'
+}
+
+/**
+ * Resolución GENÉRICA de la instancia activa de cualquier tipo (pago/envío/
+ * correo). Sin fallback legacy (cada tipo añade el suyo cuando se hace su
+ * cutover). Devuelve null si no hay instancia activa.
+ */
+export async function resolveActiveInstance(db: Db, tenantId: string, kind: IntegrationKind): Promise<ActivePayment | null> {
+  const inst = await getActiveInstance(db, tenantId, kind).catch(() => null)
+  if (inst && inst.enabled) {
+    return {
+      provider: inst.provider,
+      environment: inst.environment,
+      credentials: inst.credentials as Record<string, string | undefined>,
+      settings: inst.settings,
+      source: 'instance',
+    }
+  }
+  return null
 }
 
 export async function resolveActivePayment(db: Db, tenantId: string): Promise<ActivePayment | null> {
