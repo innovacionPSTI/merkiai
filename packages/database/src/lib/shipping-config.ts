@@ -15,7 +15,9 @@ export interface ResolvedShippingCreds {
   clientSecret: string
   baseUrl?: string
   addressFromId?: string
-  /** Token para autenticar los webhooks de seguimiento (Authorization: Bearer). */
+  /** Clave secreta HMAC para verificar la firma de los webhooks (recomendado). */
+  webhookSecret?: string
+  /** Token estático para autenticar los webhooks (Authorization: Bearer). */
   webhookToken?: string
 }
 
@@ -24,7 +26,7 @@ export async function resolveShippingCreds(db: Db, tenantId: string): Promise<Re
   const c = (inst?.credentials ?? {}) as Record<string, string | undefined>
   const s = (inst?.settings ?? {}) as Record<string, unknown>
   if (inst && inst.enabled && inst.provider === 'skydropx' && c.client_id && c.client_secret) {
-    return { provider: 'skydropx', clientId: c.client_id, clientSecret: c.client_secret, baseUrl: (s.base_url as string | undefined) ?? undefined, addressFromId: c.address_from_id, webhookToken: c.webhook_token }
+    return { provider: 'skydropx', clientId: c.client_id, clientSecret: c.client_secret, baseUrl: (s.base_url as string | undefined) ?? undefined, addressFromId: c.address_from_id, webhookSecret: c.webhook_secret, webhookToken: c.webhook_token }
   }
   // Legacy: columnas de shipping_config.
   const cfg = await getShippingConfig(db, tenantId).catch(() => null)

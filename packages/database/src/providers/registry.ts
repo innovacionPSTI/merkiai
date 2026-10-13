@@ -112,7 +112,8 @@ export const SHIPPING_PROVIDERS: ProviderDef[] = [
       { key: 'client_id',       label: 'Client ID',           type: 'text',   placeholder: 'Client ID de Skydropx', required: true },
       { key: 'client_secret',   label: 'Client Secret',       type: 'secret', placeholder: 'Client Secret de Skydropx', required: true },
       { key: 'address_from_id', label: 'ID dirección de origen', type: 'text', placeholder: 'ID de la dirección de recogida' },
-      { key: 'webhook_token',   label: 'Token del webhook (autenticación)', type: 'secret', hint: 'En Skydropx → Webhooks (sección Envíos) elige método "Token"; Skydropx genera el token, cópialo y pégalo aquí. Deja el header en "Authorization" (llega como Bearer).' },
+      { key: 'webhook_secret',  label: 'Clave secreta HMAC del webhook (recomendado)', type: 'secret', hint: 'Skydropx → Webhooks (Envíos), método "HMAC": pega aquí la MISMA clave secreta. Firma HMAC-SHA512 del cuerpo. Deja el header en "Authorization".' },
+      { key: 'webhook_token',   label: 'Token Bearer del webhook (alternativa)', type: 'secret', hint: 'Solo si usas el método "Token" en Skydropx (menos seguro): copia el token que genera Skydropx y pégalo aquí. Usa esto O la clave HMAC, no ambos.' },
     ],
     // El entorno de Skydropx se define por la URL base (en settings).
     detectEnv: (_c, s) => {

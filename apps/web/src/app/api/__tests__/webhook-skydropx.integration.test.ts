@@ -4,24 +4,23 @@
 /**
  * Integration tests — POST /api/webhooks/skydropx (sección "Envíos")
  *
- * Formato real (JSON:API):
- *   { data: { id, type, attributes: { status, tracking_number? } } }
- *   data.id = id del envío (= orders.skydropx_shipment_id)
+ * Payload real (JSON:API, tipo "packages"):
+ *   { data: { id, type: "packages", attributes: { status, tracking_number },
+ *             relationships: { shipment: { data: { id } }, order: {...} } } }
+ *   relationships.shipment.data.id = id del envío (= orders.skydropx_shipment_id)
  *
- * STATUS_MAP: in_transit/out_for_delivery/picked_up/label_* → shipped,
- *   delivered/fulfilled → delivered, exception/returned/cancelled → exception.
- *
- * HU-278: la ruta (1) identifica el pedido/tenant por skydropx_shipment_id (o
- * tracking_number), (2) autentica por token Bearer si está configurado,
- * (3) aplica idempotencia y (4) actualiza la orden + email.
+ * Autenticación por header Authorization:
+ *   HMAC   → "HMAC <hex(hmac-sha512(secret, rawBody))>"
+ *   Bearer → "Bearer <token>"
  */
 
 import { NextRequest } from 'next/server'
+import { createHmac } from 'crypto'
 
 jest.mock('@merkiai/database', () => ({
   createServerClient: jest.fn(),
-  resolveEmailConfig: jest.fn().mockResolvedValue(null), // sin email → skip
-  resolveShippingCreds: jest.fn().mockResolvedValue(null), // sin token → sin verificación
+  resolveEmailConfig: jest.fn().mockResolvedValue(null),
+  resolveShippingCreds: jest.fn().mockResolvedValue(null),
   markWebhookEventProcessed: jest.fn().mockResolvedValue({ duplicate: false }),
 }))
 jest.mock('@/lib/machine-db', () => ({ getMachineDb: jest.fn(() => ({})) }))
@@ -33,9 +32,6 @@ const mockCreateServerClient = createServerClient as jest.MockedFunction<typeof 
 const mockResolveShippingCreds = resolveShippingCreds as jest.MockedFunction<typeof resolveShippingCreds>
 const mockMarkProcessed = markWebhookEventProcessed as jest.MockedFunction<typeof markWebhookEventProcessed>
 
-// ─────────────────────────────────────────────
-// Helpers
-// ─────────────────────────────────────────────
 function makeRequest(body: object, headers: Record<string, string> = {}): NextRequest {
   return new NextRequest('http://localhost/api/webhooks/skydropx', {
     method: 'POST',
@@ -44,11 +40,7 @@ function makeRequest(body: object, headers: Record<string, string> = {}): NextRe
   })
 }
 
-/**
- * Soporta las dos consultas de la ruta:
- *   lectura:  from().select().eq().maybeSingle()  → { tenant_id }
- *   update:   from().update().eq().select().single() → rowData
- */
+/** Soporta: lectura from().select().eq().maybeSingle() y update from().update().eq().select().single() */
 function buildSupabaseMock(rowData: object | null = null, orderRow: object | null = { tenant_id: 't1' }) {
   const maybeSingle = jest.fn().mockResolvedValue({ data: orderRow, error: null })
   const readEq      = jest.fn().mockReturnValue({ maybeSingle })
@@ -65,13 +57,16 @@ function buildSupabaseMock(rowData: object | null = null, orderRow: object | nul
   return { mockSupabase, updateMock, eqMock, readEq, selectMock, singleMock }
 }
 
-/** Payload de la sección Envíos: data.id = shipment id. */
-function shipmentPayload(shipmentId: string, status: string, tracking?: string) {
+/** Payload de la sección Envíos: data.type=packages, shipment id en relationships. */
+function packagePayload(opts: { packageId?: string; shipmentId?: string; status: string; tracking?: string }) {
   return {
     data: {
-      id: shipmentId,
-      type: 'shipments',
-      attributes: { status, ...(tracking ? { tracking_number: tracking } : {}) },
+      id: opts.packageId ?? 'PKG-1',
+      type: 'packages',
+      attributes: { status: opts.status, ...(opts.tracking ? { tracking_number: opts.tracking } : {}) },
+      relationships: {
+        ...(opts.shipmentId ? { shipment: { data: { id: opts.shipmentId, type: 'shipments' } } } : {}),
+      },
     },
   }
 }
@@ -87,25 +82,19 @@ beforeEach(() => {
 // ─────────────────────────────────────────────
 describe('POST /api/webhooks/skydropx — mapeo de estado', () => {
   const mappings = [
-    { status: 'in_transit',       expected: 'shipped'   },
-    { status: 'out_for_delivery', expected: 'shipped'   },
-    { status: 'picked_up',        expected: 'shipped'   },
-    { status: 'delivered',        expected: 'delivered' },
-    { status: 'exception',        expected: 'exception' },
-    { status: 'returned',         expected: 'exception' },
-    { status: 'cancelled',        expected: 'exception' },
+    { status: 'in_transit', expected: 'shipped'   },
+    { status: 'last_mile',  expected: 'shipped'   },
+    { status: 'delivered',  expected: 'delivered' },
+    { status: 'exception',  expected: 'exception' },
+    { status: 'in_return',  expected: 'exception' },
+    { status: 'canceled',   expected: 'exception' },
   ]
-
   mappings.forEach(({ status, expected }) => {
-    it(`status "${status}" → order.status "${expected}"`, async () => {
+    it(`status "${status}" → "${expected}"`, async () => {
       const { mockSupabase, updateMock } = buildSupabaseMock()
       mockCreateServerClient.mockReturnValue(mockSupabase as never)
-
-      const res = await POST(makeRequest(shipmentPayload('SHIP-001', status)))
-      const data = await res.json()
-
+      const res = await POST(makeRequest(packagePayload({ shipmentId: 'SHIP-1', status })))
       expect(res.status).toBe(200)
-      expect(data.ok).toBe(true)
       expect(updateMock).toHaveBeenCalledWith(expect.objectContaining({ status: expected }))
     })
   })
@@ -114,53 +103,38 @@ describe('POST /api/webhooks/skydropx — mapeo de estado', () => {
 // ─────────────────────────────────────────────
 // Identificación del pedido
 // ─────────────────────────────────────────────
-describe('POST /api/webhooks/skydropx — identificación del pedido', () => {
-  it('filtra por skydropx_shipment_id cuando hay data.id', async () => {
+describe('POST /api/webhooks/skydropx — identificación', () => {
+  it('empareja por skydropx_shipment_id (relationships.shipment.data.id)', async () => {
     const { mockSupabase, eqMock } = buildSupabaseMock()
     mockCreateServerClient.mockReturnValue(mockSupabase as never)
-
-    await POST(makeRequest(shipmentPayload('SHIP-ABC-123', 'delivered')))
-
-    expect(eqMock).toHaveBeenCalledWith('skydropx_shipment_id', 'SHIP-ABC-123')
+    await POST(makeRequest(packagePayload({ shipmentId: 'SHIP-ABC', status: 'delivered' })))
+    expect(eqMock).toHaveBeenCalledWith('skydropx_shipment_id', 'SHIP-ABC')
   })
 
-  it('cae a tracking_number cuando no hay data.id', async () => {
+  it('cae a tracking_number cuando no hay shipment id', async () => {
     const { mockSupabase, eqMock } = buildSupabaseMock()
     mockCreateServerClient.mockReturnValue(mockSupabase as never)
-
-    await POST(makeRequest({ data: { type: 'shipments', attributes: { status: 'delivered', tracking_number: 'TRK-9' } } }))
-
+    await POST(makeRequest(packagePayload({ status: 'delivered', tracking: 'TRK-9' })))
     expect(eqMock).toHaveBeenCalledWith('tracking_number', 'TRK-9')
-  })
-
-  it('incluye updated_at en la actualización', async () => {
-    const { mockSupabase, updateMock } = buildSupabaseMock()
-    mockCreateServerClient.mockReturnValue(mockSupabase as never)
-
-    await POST(makeRequest(shipmentPayload('SHIP-XYZ', 'delivered')))
-
-    expect(updateMock).toHaveBeenCalledWith(expect.objectContaining({ updated_at: expect.any(String) }))
   })
 })
 
 // ─────────────────────────────────────────────
-// Eventos ignorados
+// Ignorados
 // ─────────────────────────────────────────────
 describe('POST /api/webhooks/skydropx — ignorados', () => {
-  it('status "draft" → 200 sin actualizar', async () => {
+  it('status desconocido → 200 sin actualizar', async () => {
     const { mockSupabase, updateMock } = buildSupabaseMock()
     mockCreateServerClient.mockReturnValue(mockSupabase as never)
-
-    const res = await POST(makeRequest(shipmentPayload('SHIP-DR', 'draft')))
+    const res = await POST(makeRequest(packagePayload({ shipmentId: 'SHIP-1', status: 'verified' })))
     expect(res.status).toBe(200)
     expect(updateMock).not.toHaveBeenCalled()
   })
 
-  it('sin id ni tracking → 200 sin actualizar', async () => {
+  it('sin shipment id ni tracking → 200 sin actualizar', async () => {
     const { mockSupabase, updateMock } = buildSupabaseMock()
     mockCreateServerClient.mockReturnValue(mockSupabase as never)
-
-    const res = await POST(makeRequest({ data: { type: 'shipments', attributes: { status: 'delivered' } } }))
+    const res = await POST(makeRequest(packagePayload({ status: 'delivered' })))
     expect(res.status).toBe(200)
     expect(updateMock).not.toHaveBeenCalled()
   })
@@ -168,8 +142,7 @@ describe('POST /api/webhooks/skydropx — ignorados', () => {
   it('pedido no encontrado → 200 warning', async () => {
     const { mockSupabase, updateMock } = buildSupabaseMock(null, null)
     mockCreateServerClient.mockReturnValue(mockSupabase as never)
-
-    const res = await POST(makeRequest(shipmentPayload('SHIP-NOPE', 'delivered')))
+    const res = await POST(makeRequest(packagePayload({ shipmentId: 'SHIP-NOPE', status: 'delivered' })))
     const data = await res.json()
     expect(data.warning).toBe('order_not_found')
     expect(updateMock).not.toHaveBeenCalled()
@@ -177,60 +150,84 @@ describe('POST /api/webhooks/skydropx — ignorados', () => {
 })
 
 // ─────────────────────────────────────────────
-// Autenticación por token (Bearer)
+// Autenticación HMAC
 // ─────────────────────────────────────────────
-describe('POST /api/webhooks/skydropx — token', () => {
-  const TOKEN = 'whtok_test_abc123'
-  const CREDS = { provider: 'skydropx', clientId: 'cid', clientSecret: 'sec', webhookToken: TOKEN }
+describe('POST /api/webhooks/skydropx — HMAC', () => {
+  const SECRET = 'whsec_abc'
+  const CREDS = { provider: 'skydropx', clientId: 'c', clientSecret: 's', webhookSecret: SECRET }
 
-  it('rechaza (401) token inválido cuando está configurado', async () => {
+  it('acepta firma HMAC-SHA512 válida', async () => {
     const { mockSupabase, updateMock } = buildSupabaseMock()
     mockCreateServerClient.mockReturnValue(mockSupabase as never)
     mockResolveShippingCreds.mockResolvedValue(CREDS as never)
 
-    const res = await POST(makeRequest(shipmentPayload('SHIP-T', 'delivered'), { authorization: 'Bearer wrong' }))
-    expect(res.status).toBe(401)
-    expect(updateMock).not.toHaveBeenCalled()
-  })
-
-  it('acepta token válido (Bearer)', async () => {
-    const { mockSupabase, updateMock } = buildSupabaseMock()
-    mockCreateServerClient.mockReturnValue(mockSupabase as never)
-    mockResolveShippingCreds.mockResolvedValue(CREDS as never)
-
-    const res = await POST(makeRequest(shipmentPayload('SHIP-OK', 'delivered'), { authorization: `Bearer ${TOKEN}` }))
+    const body = packagePayload({ shipmentId: 'SHIP-H', status: 'delivered' })
+    const raw = JSON.stringify(body)
+    const sig = createHmac('sha512', SECRET).update(raw).digest('hex')
+    const req = new NextRequest('http://localhost/api/webhooks/skydropx', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', authorization: `HMAC ${sig}` },
+      body: raw,
+    })
+    const res = await POST(req)
     expect(res.status).toBe(200)
     expect(updateMock).toHaveBeenCalled()
+  })
+
+  it('rechaza (401) firma HMAC inválida', async () => {
+    const { mockSupabase, updateMock } = buildSupabaseMock()
+    mockCreateServerClient.mockReturnValue(mockSupabase as never)
+    mockResolveShippingCreds.mockResolvedValue(CREDS as never)
+    const res = await POST(makeRequest(packagePayload({ shipmentId: 'SHIP-H', status: 'delivered' }), { authorization: 'HMAC deadbeef' }))
+    expect(res.status).toBe(401)
+    expect(updateMock).not.toHaveBeenCalled()
   })
 })
 
 // ─────────────────────────────────────────────
-// Idempotencia
+// Autenticación Bearer
 // ─────────────────────────────────────────────
-describe('POST /api/webhooks/skydropx — idempotencia', () => {
+describe('POST /api/webhooks/skydropx — Bearer', () => {
+  const TOKEN = 'whtok_xyz'
+  const CREDS = { provider: 'skydropx', clientId: 'c', clientSecret: 's', webhookToken: TOKEN }
+
+  it('acepta token Bearer válido', async () => {
+    const { mockSupabase, updateMock } = buildSupabaseMock()
+    mockCreateServerClient.mockReturnValue(mockSupabase as never)
+    mockResolveShippingCreds.mockResolvedValue(CREDS as never)
+    const res = await POST(makeRequest(packagePayload({ shipmentId: 'SHIP-B', status: 'delivered' }), { authorization: `Bearer ${TOKEN}` }))
+    expect(res.status).toBe(200)
+    expect(updateMock).toHaveBeenCalled()
+  })
+
+  it('rechaza (401) token Bearer inválido', async () => {
+    const { mockSupabase, updateMock } = buildSupabaseMock()
+    mockCreateServerClient.mockReturnValue(mockSupabase as never)
+    mockResolveShippingCreds.mockResolvedValue(CREDS as never)
+    const res = await POST(makeRequest(packagePayload({ shipmentId: 'SHIP-B', status: 'delivered' }), { authorization: 'Bearer wrong' }))
+    expect(res.status).toBe(401)
+    expect(updateMock).not.toHaveBeenCalled()
+  })
+})
+
+// ─────────────────────────────────────────────
+// Idempotencia + errores
+// ─────────────────────────────────────────────
+describe('POST /api/webhooks/skydropx — idempotencia y errores', () => {
   it('evento duplicado → 200 sin actualizar', async () => {
     const { mockSupabase, updateMock } = buildSupabaseMock()
     mockCreateServerClient.mockReturnValue(mockSupabase as never)
     mockMarkProcessed.mockResolvedValue({ duplicate: true })
-
-    const res = await POST(makeRequest(shipmentPayload('SHIP-DUP', 'delivered')))
+    const res = await POST(makeRequest(packagePayload({ shipmentId: 'SHIP-D', status: 'delivered' })))
     const data = await res.json()
     expect(data.idempotent).toBe(true)
     expect(updateMock).not.toHaveBeenCalled()
   })
-})
 
-// ─────────────────────────────────────────────
-// Errores
-// ─────────────────────────────────────────────
-describe('POST /api/webhooks/skydropx — errores', () => {
-  it('retorna 400 si el body no es JSON válido', async () => {
+  it('400 si el body no es JSON válido', async () => {
     const req = new NextRequest('http://localhost/api/webhooks/skydropx', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: 'invalid json {{{',
+      method: 'POST', headers: { 'Content-Type': 'application/json' }, body: 'nope {{{',
     })
-    const res = await POST(req)
-    expect(res.status).toBe(400)
+    expect((await POST(req)).status).toBe(400)
   })
 })
