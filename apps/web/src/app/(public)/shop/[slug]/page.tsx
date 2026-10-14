@@ -64,6 +64,10 @@ export default async function ProductPage({ params }: Props) {
 
   const trustBadges = (storeConfig?.trust_badges ?? []).filter((b) => b.enabled)
   const pdpVariant = getTemplateVariant(ctx?.template, 'product_detail')
+  // HU-283/284: ampliación de galería y tipo de CTA resueltos por la plantilla
+  // activa (se "visten" por tienda; cero lógica específica de nicho).
+  const galleryVariant = getTemplateVariant(ctx?.template, 'product_gallery')
+  const ctaVariant = getTemplateVariant(ctx?.template, 'product_cta')
   // HU-264: mapa de colores de swatch de la tienda.
   const colorMap = buildSwatchColorMap(await getVariantTypes(true, db).catch(() => []))
 
@@ -85,7 +89,7 @@ export default async function ProductPage({ params }: Props) {
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
       />
-      <ProductDetail product={product} related={related} trustBadges={trustBadges} layoutVariant={pdpVariant} colorMap={colorMap} />
+      <ProductDetail product={product} related={related} trustBadges={trustBadges} layoutVariant={pdpVariant} galleryVariant={galleryVariant} ctaVariant={ctaVariant} colorMap={colorMap} />
       <Reviews productId={product.id} stats={stats} initialReviews={reviews} />
     </>
   )

@@ -193,4 +193,13 @@ describe('variantes de PDP y carrito (HU-122b/c)', () => {
     expect(SURFACE_VARIANTS.product_detail.options.map((o) => o.value)).toEqual(['gallery-left', 'gallery-top'])
     expect(SURFACE_VARIANTS.cart.options.map((o) => o.value)).toEqual(['comfortable', 'compact'])
   })
+
+  it('HU-283/284: product_gallery y product_cta registradas con defaults seguros', () => {
+    expect(SURFACE_VARIANTS.product_gallery.options.map((o) => o.value)).toEqual(['lightbox', 'inline-zoom', 'off'])
+    expect(SURFACE_VARIANTS.product_cta.options.map((o) => o.value)).toEqual(['sticky-mobile', 'inline'])
+    expect(getTemplateVariant('default', 'product_gallery')).toBe('lightbox')
+    expect(getTemplateVariant('default', 'product_cta')).toBe('sticky-mobile')
+    // Variante inválida en la plantilla cae al default.
+    expect(getTemplateVariant('inexistente', 'product_gallery')).toBe('lightbox')
+  })
 })

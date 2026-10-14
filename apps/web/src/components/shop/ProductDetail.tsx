@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useMemo, useCallback, useEffect } from 'react'
+import { useState, useMemo, useCallback, useEffect, useRef } from 'react'
 import Link from 'next/link'
 import { useCartStore } from '@/store/cart'
 import type { ProductWithVariants, TrustBadge } from '@merkiai/database'
@@ -14,11 +14,15 @@ interface Props {
   trustBadges?: TrustBadge[]
   /** HU-122b: disposición de la PDP resuelta desde la plantilla ('gallery-left' | 'gallery-top'). */
   layoutVariant?: string
+  /** HU-283: ampliación de la galería resuelta por la plantilla ('lightbox' | 'inline-zoom' | 'off'). */
+  galleryVariant?: string
+  /** HU-284: tipo de CTA resuelto por la plantilla ('sticky-mobile' | 'inline'). */
+  ctaVariant?: string
   /** HU-264: mapa de colores de swatch de la tienda (valor→hex). */
   colorMap?: Record<string, string>
 }
 
-export default function ProductDetail({ product, related, trustBadges = [], layoutVariant = 'gallery-left', colorMap }: Props) {
+export default function ProductDetail({ product, related, trustBadges = [], layoutVariant = 'gallery-left', galleryVariant = 'lightbox', ctaVariant = 'sticky-mobile', colorMap }: Props) {
   const variantOpts = getProductOptions(product)
   const activeVariants = product.variants.filter((v) => v.active)
 
@@ -160,26 +164,65 @@ export default function ProductDetail({ product, related, trustBadges = [], layo
     ? selectedVariant.compare_at_price
     : null
 
-  // HU-262 · imagen principal. Hay dos fuentes que compiten: la imagen de la
-  // variante seleccionada y la miniatura elegida de la galería del producto.
-  // `imgSource` decide cuál gana según la última interacción del usuario:
-  //   • Al elegir una variante con imagen → se muestra la de la variante.
-  //   • Al hacer clic en una miniatura → se muestra esa imagen de galería.
-  // Sin este control, la imagen de variante ganaba siempre y las miniaturas
-  // quedaban "muertas" (clic sin efecto).
-  const [imgSource, setImgSource] = useState<'variant' | 'gallery'>('variant')
+  // HU-262/283 · Galería unificada: imágenes del producto + imágenes propias de
+  // variante (como miniaturas reales y distintas). `selectedImage` indexa esta
+  // lista. Elegir una variante con imagen salta a su miniatura; hacer clic en
+  // cualquier miniatura muestra esa imagen. Una sola fuente de verdad (sin el
+  // doble estado anterior que dejaba miniaturas "muertas").
+  const thumbs = useMemo<{ url: string; alt: string; variantId?: number }[]>(() => {
+    const list = product.images.map((img, i) => ({
+      url: img.url,
+      alt: img.alt ?? `${product.name} ${i + 1}`,
+    })) as { url: string; alt: string; variantId?: number }[]
+    const seen = new Set(list.map((t) => t.url))
+    for (const v of activeVariants) {
+      if (v.image_url && !seen.has(v.image_url)) {
+        seen.add(v.image_url)
+        list.push({ url: v.image_url, alt: `${product.name} — ${getVariantLabel(v, variantOpts)}`, variantId: v.id })
+      }
+    }
+    return list
+  }, [product.images, product.variants, product.name, variantOpts])
 
-  // Al cambiar de variante, si la nueva tiene imagen propia, se prioriza.
+  // Al cambiar de variante con imagen propia, enfoca su miniatura.
   useEffect(() => {
-    if (selectedVariant?.image_url) setImgSource('variant')
+    if (!selectedVariant?.image_url) return
+    const idx = thumbs.findIndex((t) => t.url === selectedVariant.image_url)
+    if (idx >= 0) setSelectedImage(idx)
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [selectedVariant?.id])
 
-  const galleryUrl = product.images[selectedImage]?.url ?? null
-  const heroImage =
-    imgSource === 'gallery'
-      ? (galleryUrl ?? selectedVariant?.image_url ?? null)
-      : (selectedVariant?.image_url ?? galleryUrl ?? null)
+  const heroImage = thumbs[selectedImage]?.url ?? product.images[0]?.url ?? null
+
+  // HU-283 · lightbox (ampliar en ventana). Solo cuando la plantilla lo pide.
+  const [lightboxOpen, setLightboxOpen] = useState(false)
+  const canZoom = galleryVariant !== 'off' && !!heroImage
+  const isLightbox = galleryVariant === 'lightbox'
+  const isInlineZoom = galleryVariant === 'inline-zoom'
+
+  // Cierra el lightbox con Escape y bloquea el scroll del fondo mientras está abierto.
+  useEffect(() => {
+    if (!lightboxOpen) return
+    const onKey = (e: KeyboardEvent) => { if (e.key === 'Escape') setLightboxOpen(false) }
+    document.addEventListener('keydown', onKey)
+    const prevOverflow = document.body.style.overflow
+    document.body.style.overflow = 'hidden'
+    return () => { document.removeEventListener('keydown', onKey); document.body.style.overflow = prevOverflow }
+  }, [lightboxOpen])
+
+  // HU-284 · barra de compra pegajosa en móvil: aparece cuando el CTA principal
+  // sale de la vista. Solo cuando la plantilla elige 'sticky-mobile'.
+  const ctaRef = useRef<HTMLDivElement | null>(null)
+  const [showSticky, setShowSticky] = useState(false)
+  const stickyEnabled = ctaVariant === 'sticky-mobile'
+  useEffect(() => {
+    if (!stickyEnabled) return
+    const el = ctaRef.current
+    if (!el || typeof IntersectionObserver === 'undefined') return
+    const obs = new IntersectionObserver(([entry]) => setShowSticky(!entry.isIntersecting), { rootMargin: '0px' })
+    obs.observe(el)
+    return () => obs.disconnect()
+  }, [stickyEnabled])
 
   const allowBackorder = !!product.allow_backorder
   const stockWarning =
@@ -243,33 +286,51 @@ export default function ProductDetail({ product, related, trustBadges = [], layo
 
           {/* ── Galería ─────────────────────────────────────────── */}
           <div>
-            <div className="aspect-square rounded-3xl overflow-hidden bg-brand-cream-warm mb-4 shadow-card">
+            <div className="aspect-square rounded-3xl overflow-hidden bg-brand-cream-warm mb-4 shadow-card group">
               {heroImage ? (
-                <img
-                  src={heroImage}
-                  alt={product.images[selectedImage]?.alt ?? product.name}
-                  className="w-full h-full object-cover"
-                />
+                canZoom ? (
+                  <button
+                    type="button"
+                    onClick={() => { if (isLightbox) setLightboxOpen(true) }}
+                    aria-label={isLightbox ? 'Ampliar imagen' : undefined}
+                    className={`w-full h-full block ${isLightbox ? 'cursor-zoom-in' : isInlineZoom ? 'cursor-zoom-in overflow-hidden' : ''}`}
+                  >
+                    <img
+                      src={heroImage}
+                      alt={thumbs[selectedImage]?.alt ?? product.name}
+                      className={`w-full h-full object-cover transition-transform duration-300 motion-reduce:transition-none ${
+                        isInlineZoom ? 'group-hover:scale-150' : ''
+                      }`}
+                    />
+                  </button>
+                ) : (
+                  <img
+                    src={heroImage}
+                    alt={thumbs[selectedImage]?.alt ?? product.name}
+                    className="w-full h-full object-cover"
+                  />
+                )
               ) : (
                 <div className="w-full h-full flex items-center justify-center">
                   <span className="font-display text-brand-primary/10 text-8xl">▲</span>
                 </div>
               )}
             </div>
-            {product.images.length > 1 && (
+            {thumbs.length > 1 && (
               <div className="flex gap-3 flex-wrap">
-                {product.images.map((img, i) => (
+                {thumbs.map((t, i) => (
                   <button
-                    key={i}
-                    onClick={() => { setSelectedImage(i); setImgSource('gallery') }}
-                    aria-label={`Ver imagen ${i + 1}`}
+                    key={`${t.url}-${i}`}
+                    onClick={() => setSelectedImage(i)}
+                    aria-label={t.variantId ? t.alt : `Ver imagen ${i + 1}`}
+                    aria-pressed={i === selectedImage}
                     className={`w-16 h-16 rounded-xl overflow-hidden border-2 transition-colors ${
-                      imgSource === 'gallery' && i === selectedImage
+                      i === selectedImage
                         ? 'border-brand-primary shadow-sm'
                         : 'border-transparent hover:border-brand-primary/40'
                     }`}
                   >
-                    <img src={img.url} alt={img.alt ?? ''} className="w-full h-full object-cover" />
+                    <img src={t.url} alt={t.alt} className="w-full h-full object-cover" />
                   </button>
                 ))}
               </div>
@@ -445,7 +506,7 @@ export default function ProductDetail({ product, related, trustBadges = [], layo
             </div>
 
             {/* CTAs */}
-            <div className="flex flex-col gap-3 mb-8">
+            <div ref={ctaRef} className="flex flex-col gap-3 mb-8">
               <button
                 onClick={handleAddToCart}
                 disabled={!isFullySelected || !!isOutOfStock}
@@ -547,6 +608,60 @@ export default function ProductDetail({ product, related, trustBadges = [], layo
           </div>
         )}
       </div>
+
+      {/* HU-283 · Lightbox de la galería */}
+      {isLightbox && lightboxOpen && heroImage && (
+        <div
+          role="dialog"
+          aria-modal="true"
+          aria-label={`Imagen ampliada de ${product.name}`}
+          onClick={() => setLightboxOpen(false)}
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 p-4"
+        >
+          <button
+            type="button"
+            onClick={() => setLightboxOpen(false)}
+            aria-label="Cerrar"
+            autoFocus
+            className="absolute top-4 right-4 w-11 h-11 rounded-full bg-white/10 text-white text-2xl leading-none flex items-center justify-center hover:bg-white/20 focus:outline-none focus:ring-2 focus:ring-white"
+          >
+            ×
+          </button>
+          <img
+            src={heroImage}
+            alt={thumbs[selectedImage]?.alt ?? product.name}
+            onClick={(e) => e.stopPropagation()}
+            className="max-w-full max-h-[90vh] object-contain rounded-lg"
+          />
+        </div>
+      )}
+
+      {/* HU-284 · Barra de compra pegajosa en móvil */}
+      {stickyEnabled && showSticky && (
+        <div className="lg:hidden fixed bottom-0 inset-x-0 z-40 bg-brand-cream/95 backdrop-blur border-t border-brand-primary/10 shadow-[0_-4px_12px_rgba(0,0,0,0.06)] px-4 py-3 flex items-center gap-3">
+          <div className="min-w-0 flex-1">
+            <p className="font-brand text-xs text-brand-primary/60 truncate">{product.name}</p>
+            <p className="font-brand font-bold text-brand-price text-lg leading-tight">{priceDisplay}</p>
+          </div>
+          <button
+            onClick={handleAddToCart}
+            disabled={!isFullySelected || !!isOutOfStock}
+            className={`shrink-0 rounded-full px-6 py-3 font-brand font-medium transition-all ${
+              addedFeedback
+                ? 'bg-green-600 text-white'
+                : 'bg-brand-primary text-brand-cream hover:bg-brand-dark disabled:opacity-40 disabled:cursor-not-allowed'
+            }`}
+          >
+            {addedFeedback
+              ? 'Agregado'
+              : isOutOfStock
+                ? 'Sin stock'
+                : !isFullySelected
+                  ? `Selecciona ${missingAttrs[0] ?? 'opción'}`
+                  : 'Agregar'}
+          </button>
+        </div>
+      )}
     </div>
   )
 }

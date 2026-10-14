@@ -1280,7 +1280,7 @@
 
 **Estimación:** M (5 puntos)
 **Módulo:** `apps/web` (`ProductDetail` galería), framework de variantes de superficie (HU-122a), tokens de tema (HU-247)
-**Estado:** 🔲 Pendiente (priorizado — ola PDP)
+**Estado:** ✅ **Implementada.** Superficie `product_gallery` (`lightbox` default / `inline-zoom` / `off`) en `SURFACE_VARIANTS`, resuelta por la plantilla activa (`getTemplateVariant`) y pasada a `ProductDetail`. **Lightbox** accesible (role dialog, Escape, click-fuera, foco al cerrar, bloqueo de scroll, `motion-reduce`); **inline-zoom** por `group-hover:scale-150`. **Galería unificada:** `thumbs` = imágenes del producto + imágenes de variante distintas → la variante aparece como **miniatura real** y elegirla salta a su thumbnail (fin del doble estado `imgSource`). Estilos solo con tokens de tema. Tests: database +1 (registro superficie). tsc/web OK.
 **Reutilización / builder:** la imagen de variante se expone como **miniatura seleccionable** en la tira (cierra el fix de `imgSource` ya aplicado). El **zoom** se ofrece como **variante de superficie** `product_gallery` (`inline-zoom` hover / `lightbox` modal / `off`) resuelta por la plantilla activa, estilable solo con tokens de tema; el gesto en móvil es pinch/tap. Nada específico de café: sirve para ropa, joyería, etc. Viaja en el paquete de plantilla.
 
 | # | Escenario | Resultado esperado |
@@ -1298,7 +1298,7 @@
 
 **Estimación:** S (3 puntos)
 **Módulo:** `apps/web` (`ProductDetail`), variante de superficie (HU-122a), tokens de tema, `store_config`
-**Estado:** 🔲 Pendiente (priorizado — ola PDP)
+**Estado:** ✅ **Implementada.** Superficie `product_cta` (`sticky-mobile` default / `inline`) en `SURFACE_VARIANTS`, resuelta por la plantilla. Barra inferior fija **solo en móvil** (`lg:hidden`) que aparece cuando el CTA principal sale de vista (`IntersectionObserver` sobre su contenedor); muestra nombre + precio **reactivo a la variante** + botón que **reusa `handleAddToCart`** y el mismo estado deshabilitado (selección incompleta / agotado, lógica de HU-099/100). Estilos por tokens. *Nota:* control fino por `store_config` (apagar por tienda independiente de plantilla) queda para v2; hoy lo gobierna la variante de plantilla. Tests: database +1. tsc/web OK.
 **Reutilización / builder:** barra inferior fija en móvil con nombre corto + precio (reactivo a la variante) + CTA, **activable por tienda** (`store_config.pdp_sticky_cta`, default on) y presentada como **variante de superficie** `product_cta` (`sticky-mobile` / `inline`). Estilos 100% por tokens; respeta estado agotado/selección incompleta (reusa la lógica de HU-099/100). Portátil a cualquier nicho; viaja en plantilla/preset.
 
 | # | Escenario | Resultado esperado |

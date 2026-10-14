@@ -550,6 +550,27 @@ export const SURFACE_VARIANTS: Record<string, SurfaceVariant> = {
     ],
     default: 'comfortable',
   },
+  // HU-283 · galería de la página de producto (zoom/ampliación)
+  product_gallery: {
+    surface: 'product_gallery',
+    label: 'Ampliación de la galería de producto',
+    options: [
+      { value: 'lightbox', label: 'Ampliar en ventana (lightbox)' },
+      { value: 'inline-zoom', label: 'Zoom al pasar el cursor' },
+      { value: 'off', label: 'Sin ampliación' },
+    ],
+    default: 'lightbox',
+  },
+  // HU-284 · botón de compra de la página de producto
+  product_cta: {
+    surface: 'product_cta',
+    label: 'Botón de compra en la página de producto',
+    options: [
+      { value: 'sticky-mobile', label: 'Barra fija en móvil' },
+      { value: 'inline', label: 'Solo en línea' },
+    ],
+    default: 'sticky-mobile',
+  },
 }
 
 /** Variante de disposición resuelta para una superficie (fallback al default). */
