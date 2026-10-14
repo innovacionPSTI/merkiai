@@ -160,9 +160,26 @@ export default function ProductDetail({ product, related, trustBadges = [], layo
     ? selectedVariant.compare_at_price
     : null
 
-  // HU-262 · imagen principal: la de la variante seleccionada si la tiene,
-  // si no, la miniatura elegida de las imágenes del producto.
-  const heroImage = selectedVariant?.image_url || product.images[selectedImage]?.url || null
+  // HU-262 · imagen principal. Hay dos fuentes que compiten: la imagen de la
+  // variante seleccionada y la miniatura elegida de la galería del producto.
+  // `imgSource` decide cuál gana según la última interacción del usuario:
+  //   • Al elegir una variante con imagen → se muestra la de la variante.
+  //   • Al hacer clic en una miniatura → se muestra esa imagen de galería.
+  // Sin este control, la imagen de variante ganaba siempre y las miniaturas
+  // quedaban "muertas" (clic sin efecto).
+  const [imgSource, setImgSource] = useState<'variant' | 'gallery'>('variant')
+
+  // Al cambiar de variante, si la nueva tiene imagen propia, se prioriza.
+  useEffect(() => {
+    if (selectedVariant?.image_url) setImgSource('variant')
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [selectedVariant?.id])
+
+  const galleryUrl = product.images[selectedImage]?.url ?? null
+  const heroImage =
+    imgSource === 'gallery'
+      ? (galleryUrl ?? selectedVariant?.image_url ?? null)
+      : (selectedVariant?.image_url ?? galleryUrl ?? null)
 
   const allowBackorder = !!product.allow_backorder
   const stockWarning =
@@ -244,10 +261,10 @@ export default function ProductDetail({ product, related, trustBadges = [], layo
                 {product.images.map((img, i) => (
                   <button
                     key={i}
-                    onClick={() => setSelectedImage(i)}
+                    onClick={() => { setSelectedImage(i); setImgSource('gallery') }}
                     aria-label={`Ver imagen ${i + 1}`}
                     className={`w-16 h-16 rounded-xl overflow-hidden border-2 transition-colors ${
-                      i === selectedImage
+                      imgSource === 'gallery' && i === selectedImage
                         ? 'border-brand-primary shadow-sm'
                         : 'border-transparent hover:border-brand-primary/40'
                     }`}
