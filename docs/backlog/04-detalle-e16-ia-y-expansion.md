@@ -316,7 +316,7 @@
 
 **Estimación:** M (5 puntos)
 **Módulo:** admin (dashboard/reportes), export CSV/XLSX
-**Estado:** 🔲 Pendiente (roadmap v17)
+**Estado:** ✅ **Implementada (v1 · CSV).** `getSalesReport(db,{from,to})` agrega los pedidos del rango (excluye cancelados) → **ingresos, pedidos, ticket promedio, detalle por día y top productos**; `salesReportToCsv` reusa el serializador común. **Endpoint** `GET /api/admin/reports/sales?from&to&format=json|csv` acotado por tenant (RLS) y **gated por acceso a Pedidos**. **Página** `/reportes` (en el menú **Ventas**) con selector de rango (default últimos 30 días), tarjetas de métricas, tabla de top productos y botón **Exportar CSV** (detalle diario). Tests: database +3. **Pendiente v2:** XLSX con formato + gráfico de tendencia + comparativa de períodos.
 
 | # | Escenario | Resultado esperado |
 |---|-----------|-------------------|

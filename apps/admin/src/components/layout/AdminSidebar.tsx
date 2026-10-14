@@ -89,6 +89,7 @@ const NAV: NavNode[] = [
     sections: ['pedidos', 'clientes', 'cupones'],
     children: [
       { kind: 'leaf', href: '/pedidos',  icon: <Icon name="order" />,    label: 'Pedidos',  section: 'pedidos' },
+      { kind: 'leaf', href: '/reportes', icon: <Icon name="chart" />,    label: 'Reportes', section: 'pedidos' },
       { kind: 'leaf', href: '/clientes', icon: <Icon name="customer" />, label: 'Clientes', section: 'clientes' },
       { kind: 'leaf', href: '/cupones',  icon: <Icon name="coupon" />,   label: 'Cupones',  section: 'cupones' },
     ],
