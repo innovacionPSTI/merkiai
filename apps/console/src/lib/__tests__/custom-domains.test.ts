@@ -1,4 +1,4 @@
-import { addDomain, setPrimaryDomain } from '../custom-domains'
+import { addDomain, setPrimaryDomain, activateDomain } from '../custom-domains'
 
 const T = 'tenant-1'
 
@@ -55,5 +55,18 @@ describe('setPrimaryDomain (HU-279)', () => {
     const updates = calls.filter((c) => c.op === 'update')
     expect(updates[0].payload).toEqual({ is_primary: false })
     expect(updates[1].payload).toEqual({ is_primary: true, status: 'active' })
+  })
+})
+
+describe('activateDomain (HU-279)', () => {
+  it('no activa si sigue pending', async () => {
+    const { db } = fakeDb({ maybeSingle: { data: { status: 'pending' } } })
+    expect(await activateDomain(db, T, 'd1')).toMatchObject({ ok: false })
+  })
+  it('marca status=active (alias) sin tocar is_primary', async () => {
+    const { db, calls } = fakeDb({ maybeSingle: { data: { status: 'verified' } } })
+    expect(await activateDomain(db, T, 'd1')).toEqual({ ok: true })
+    const upd = calls.find((c) => c.op === 'update')!
+    expect(upd.payload).toEqual({ status: 'active' })
   })
 })

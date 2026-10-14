@@ -3,64 +3,64 @@
 import { revalidatePath } from 'next/cache'
 import { getAdminUser } from '@/lib/auth'
 import { userCanAccess } from '@/lib/roles'
-import { requestDomain, verifyDomain, activateDomain, removeDomain, provisionMessage, type DomainInstructions } from '@/lib/domains'
+import {
+  addCustomDomain, verifyCustomDomain, activateCustomDomain,
+  setPrimaryCustomDomain, removeCustomDomain, getDomainProvision,
+  type DomainProvision,
+} from '@/lib/custom-domains'
 
-export interface DomainActionState {
-  ok: boolean
-  error?: string
-  message?: string
-  instructions?: DomainInstructions
-}
+export interface DomainResult { ok: boolean; error?: string; message?: string }
 
-async function guard() {
+async function tenant() {
   const u = await getAdminUser()
   if (!u || !userCanAccess(u, 'configuracion')) return null
-  return u
+  return u.tenantId
 }
 
-/** Solicita el dominio propio → deja pending y devuelve las instrucciones TXT. */
-export async function requestDomainAction(_prev: DomainActionState, formData: FormData): Promise<DomainActionState> {
-  const u = await guard()
-  if (!u) return { ok: false, error: 'No autorizado.' }
-  const domain = String(formData.get('domain') ?? '').trim()
-  if (!domain) return { ok: false, error: 'Ingresa un dominio.' }
-  const res = await requestDomain(u.tenantId, domain)
-  if (!res.ok) return { ok: false, error: res.error ?? 'No se pudo registrar el dominio.' }
+/** Agrega un dominio nuevo (queda pendiente de verificar con un TXT). */
+export async function addDomainAction(domain: string): Promise<DomainResult> {
+  const tid = await tenant(); if (!tid) return { ok: false, error: 'No autorizado.' }
+  if (!domain.trim()) return { ok: false, error: 'Ingresa un dominio.' }
+  const res = await addCustomDomain(tid, domain.trim())
+  if (!res.ok) return { ok: false, error: res.error ?? 'No se pudo agregar el dominio.' }
   revalidatePath('/configuracion/dominio')
-  return { ok: true, instructions: res, message: 'Dominio registrado. Crea el registro TXT y luego verifica.' }
+  return { ok: true, message: 'Dominio agregado. Crea el registro TXT y verifica.' }
 }
 
-/** Verifica la propiedad (resuelve el TXT). */
-export async function verifyDomainAction(_prev: DomainActionState): Promise<DomainActionState> {
-  const u = await guard()
-  if (!u) return { ok: false, error: 'No autorizado.' }
-  const res = await verifyDomain(u.tenantId)
+export async function verifyDomainAction(domainId: string): Promise<DomainResult> {
+  const tid = await tenant(); if (!tid) return { ok: false, error: 'No autorizado.' }
+  const res = await verifyCustomDomain(tid, domainId)
   revalidatePath('/configuracion/dominio')
-  if (!res.ok) return { ok: false, error: res.error ?? 'Aún no se verifica el dominio.' }
-  return { ok: true, message: 'Dominio verificado. Ya puedes activarlo.' }
+  if (!res.ok) return { ok: false, error: res.error ?? 'Aún no se verifica (el TXT puede estar propagando).' }
+  return { ok: true, message: 'Dominio verificado. Apunta el A/CNAME y actívalo.' }
 }
 
-/** Activa el dominio verificado como dominio principal de la tienda. */
-export async function activateDomainAction(_prev: DomainActionState, formData: FormData): Promise<DomainActionState> {
-  const u = await guard()
-  if (!u) return { ok: false, error: 'No autorizado.' }
-  const domain = String(formData.get('domain') ?? '').trim()
-  const res = await activateDomain(u.tenantId, domain)
+export async function activateDomainAction(domainId: string): Promise<DomainResult> {
+  const tid = await tenant(); if (!tid) return { ok: false, error: 'No autorizado.' }
+  const res = await activateCustomDomain(tid, domainId)
   revalidatePath('/configuracion/dominio')
-  if (!res.ok) return { ok: false, error: res.error ?? 'No se pudo activar el dominio.' }
-  // Mensaje GENÉRICO para el comerciante (sin detalles de infraestructura).
-  if (res.provision && res.provision.ok === false) {
-    return { ok: true, message: provisionMessage(res.provision.code) }
-  }
-  return { ok: true, message: 'Dominio activado. El certificado HTTPS puede tardar unos minutos en habilitarse.' }
+  if (!res.ok) return { ok: false, error: res.error ?? 'No se pudo activar.' }
+  return { ok: true, message: 'Dominio activo. El certificado HTTPS puede tardar unos minutos.' }
 }
 
-/** Quita el dominio propio: la tienda vuelve a su subdominio *.merkiai.com. */
-export async function removeDomainAction(_prev: DomainActionState): Promise<DomainActionState> {
-  const u = await guard()
-  if (!u) return { ok: false, error: 'No autorizado.' }
-  const res = await removeDomain(u.tenantId)
+export async function setPrimaryDomainAction(domainId: string): Promise<DomainResult> {
+  const tid = await tenant(); if (!tid) return { ok: false, error: 'No autorizado.' }
+  const res = await setPrimaryCustomDomain(tid, domainId)
   revalidatePath('/configuracion/dominio')
-  if (!res.ok) return { ok: false, error: res.error ?? 'No se pudo quitar el dominio.' }
-  return { ok: true, message: 'Dominio quitado. Tu tienda responde en tu subdominio *.merkiai.com.' }
+  if (!res.ok) return { ok: false, error: res.error ?? 'No se pudo marcar como principal.' }
+  return { ok: true, message: 'Dominio principal actualizado (canónico de la tienda).' }
+}
+
+export async function removeDomainAction(domainId: string): Promise<DomainResult> {
+  const tid = await tenant(); if (!tid) return { ok: false, error: 'No autorizado.' }
+  const res = await removeCustomDomain(tid, domainId)
+  revalidatePath('/configuracion/dominio')
+  if (!res.ok) return { ok: false, error: res.error ?? 'No se pudo quitar.' }
+  return { ok: true, message: 'Dominio quitado.' }
+}
+
+/** Instrucciones DNS + estado de aprovisionamiento de un dominio (bajo demanda). */
+export async function domainProvisionAction(domainId: string): Promise<DomainProvision | null> {
+  const tid = await tenant(); if (!tid) return null
+  return getDomainProvision(tid, domainId)
 }

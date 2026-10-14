@@ -105,6 +105,25 @@ export async function setPrimaryDomain(db: Db, tenantId: string, domainId: strin
   return { ok: true }
 }
 
+/** Activa un dominio verificado (resuelve al tenant) SIN marcarlo primario (alias). */
+export async function activateDomain(db: Db, tenantId: string, domainId: string): Promise<{ ok: boolean; error?: string }> {
+  const { data: d } = await db
+    .from('tenant_custom_domains')
+    .select('status').eq('id', domainId).eq('tenant_id', tenantId).maybeSingle()
+  if (!d) return { ok: false, error: 'Dominio no encontrado.' }
+  if (d.status === 'pending') return { ok: false, error: 'Verifica el dominio antes de activarlo.' }
+  const { error } = await db.from('tenant_custom_domains').update({ status: 'active' }).eq('id', domainId).eq('tenant_id', tenantId)
+  if (error) return { ok: false, error: error.message }
+  return { ok: true }
+}
+
+/** Dominio por id (para operaciones de hosting / sync). */
+export async function getDomainById(db: Db, tenantId: string, domainId: string): Promise<CustomDomain | null> {
+  const { data } = await db
+    .from('tenant_custom_domains').select('*').eq('id', domainId).eq('tenant_id', tenantId).maybeSingle()
+  return data ? toModel(data as Row) : null
+}
+
 /** Quita un dominio. */
 export async function removeDomain(db: Db, tenantId: string, domainId: string): Promise<{ ok: boolean; error?: string }> {
   const { error } = await db.from('tenant_custom_domains').delete().eq('tenant_id', tenantId).eq('id', domainId)

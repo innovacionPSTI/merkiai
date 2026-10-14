@@ -24,8 +24,8 @@
 - 🟡 **Seguridad** (HU-216): auditoría anti service-role + enforcement por lint en el storefront. Ver `docs/HU-216-service-role-audit.md`.
 - ✅ **Integraciones por instancia — ADR-004** (HU-275…278): pagos, correo y envíos en `integration_instances` (registry data-driven, resolvers instance-first con fallback legacy, admin lista+wizard consistente). Ver `docs/adr/ADR-004`.
 - ✅ **Envíos: métodos unificados + cargo adicional + webhook Skydropx** (HU-278/280): tarifa fija como método activable junto a transportadoras; cargo adicional excluyente (fijo/%); webhook con HMAC-SHA512/Bearer + idempotencia; host del API por entorno; cotización robusta.
-- 🟡 **Dominio canónico + fix `www`** (HU-279 parcial): resolución `www`/subdominio/apex + redirect 301 subdominio→dominio propio. **Falta:** CRUD de dominios por tenant + elegir activo + cutover de resolución por tabla.
-- 🔲 **Pendiente mayor:** admin tenant-scoped con cliente RLS (HU-158, epic por etapas) · **billing** (HU-192/193/194) · **aislamiento por plan** (HU-200) · completar multi-dominio (HU-279) · preparación a servicios (HU-195…199) · rediseños pendientes.
+- ✅ **Multi-dominio por tenant** (HU-279): tabla `tenant_custom_domains`, resolución por tabla (dominios `active`) con fallback legacy, redirect canónico `www`/subdominio→dominio propio, API interna multi-dominio (add/verify/activate/primary/remove + hosting link/unlink + sync de la columna legacy) y UI admin de lista de dominios (agregar/verificar/activar/hacer principal/quitar con instrucciones DNS).
+- 🔲 **Pendiente mayor:** admin tenant-scoped con cliente RLS (HU-158, epic por etapas) · **billing** (HU-192/193/194) · **aislamiento por plan** (HU-200) · preparación a servicios (HU-195…199) · rediseños pendientes.
 - 🔲 **Ops pendiente:** retirar columnas legacy (`payment_config`, `skydropx_*` en `shipping_config`) tras verificar instancias en prod · revisar email de confirmación de pago (capturar log `[webhook/wompi] Error email confirmación:`).
 
 > **Changelog / progreso de implementación:** `PROGRESS.md` (entradas por versión, más recientes arriba).
