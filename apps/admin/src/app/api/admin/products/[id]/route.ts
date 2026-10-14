@@ -25,15 +25,32 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
   const adminUser = await getAdminUser()
   if (!adminUser) return NextResponse.json({ error: 'No autorizado' }, { status: 401 })
   const body = await req.json()
-  // tenant_id no se acepta del cliente (RLS lo protege igual, pero se elimina por claridad).
-  const { variants, tenant_id: _ignoredTenant, ...productData } = body
+  const { variants } = body
+
+  // Whitelist de columnas del producto: nunca se hace spread del body porque el
+  // form del admin incluye campos solo-UI (selectedTypeIds, category, created_at,
+  // min_price/max_price, …) que no son columnas y hacen fallar el update
+  // ("Could not find the 'X' column of 'products'"). tenant_id tampoco se acepta
+  // del cliente (RLS lo protege). Se omite cada campo que no venga en el body.
+  const productData: ProductUpdate = {}
+  if ('name' in body)            productData.name = String(body.name ?? '').trim()
+  if ('slug' in body)            productData.slug = String(body.slug ?? '').trim()
+  if ('description' in body)     productData.description = body.description || null
+  if ('category_id' in body)     productData.category_id = body.category_id ? Number(body.category_id) : null
+  if ('featured' in body)        productData.featured = !!body.featured
+  if ('active' in body)          productData.active = !!body.active
+  if ('allow_backorder' in body) productData.allow_backorder = !!body.allow_backorder
+  if ('seo_title' in body)       productData.seo_title = body.seo_title || null
+  if ('seo_desc' in body)        productData.seo_desc = body.seo_desc || null
+  if ('images' in body)          productData.images = Array.isArray(body.images) ? body.images : []
+  if ('variant_options' in body) productData.variant_options = Array.isArray(body.variant_options) && body.variant_options.length > 0 ? body.variant_options : null
 
   const supabase = getAdminDb(adminUser.tenantId)
 
   // Actualizar datos del producto
   const { data: product, error: productError } = await supabase
     .from('products')
-    .update(productData as ProductUpdate)
+    .update(productData)
     .eq('id', Number(id))
     .select()
     .single()
