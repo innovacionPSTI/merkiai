@@ -201,6 +201,61 @@ export async function suggestProducts(db: Db, search: string, limit = 6): Promis
   })
 }
 
+export interface CartVariantInfo {
+  variant_id: number
+  product_id: number
+  slug: string
+  product_name: string
+  price: number
+  stock: number
+  allow_backorder: boolean
+  image_url: string | null
+  weight: string | null
+  weight_kg: number | null
+  length_cm: number | null
+  width_cm: number | null
+  height_cm: number | null
+}
+
+/**
+ * HU-112 · Datos actuales de variantes para re-agregar al carrito (repetir
+ * pedido). Solo variantes activas de productos activos (RLS por tenant). Las
+ * que no aparezcan están descontinuadas → se omiten en el reorder.
+ */
+export async function getVariantsForCart(db: Db, variantIds: number[]): Promise<CartVariantInfo[]> {
+  const ids = [...new Set(variantIds.filter((n) => Number.isInteger(n) && n > 0))]
+  if (ids.length === 0) return []
+  const { data } = await db
+    .from('product_variants')
+    .select('id, price, stock, active, image_url, weight, weight_kg, length_cm, width_cm, height_cm, products!inner(id, slug, name, active, allow_backorder, images)')
+    .in('id', ids)
+    .eq('active', true)
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const rows = (data ?? []) as any[]
+  const out: CartVariantInfo[] = []
+  for (const r of rows) {
+    const p = Array.isArray(r.products) ? r.products[0] : r.products
+    if (!p || p.active === false) continue
+    const imgs = Array.isArray(p.images) ? (p.images as Array<{ url?: string }>) : []
+    out.push({
+      variant_id: r.id,
+      product_id: p.id,
+      slug: p.slug,
+      product_name: p.name,
+      price: Number(r.price),
+      stock: Number(r.stock ?? 0),
+      allow_backorder: !!p.allow_backorder,
+      image_url: r.image_url ?? imgs[0]?.url ?? null,
+      weight: r.weight ?? null,
+      weight_kg: r.weight_kg ?? null,
+      length_cm: r.length_cm ?? null,
+      width_cm: r.width_cm ?? null,
+      height_cm: r.height_cm ?? null,
+    })
+  }
+  return out
+}
+
 export async function getProductBySlug(slug: string, db: Db) {
   const supabase = db
   const { data, error } = await supabase

@@ -3,7 +3,9 @@ import Link from 'next/link'
 import { notFound, redirect } from 'next/navigation'
 import { stackServerApp } from '@/stack'
 import { getOrderById } from '@merkiai/database'
+import type { OrderItem } from '@merkiai/database'
 import { getRequestUserDb } from '@/lib/tenant-db'
+import ReorderButton from '@/components/account/ReorderButton'
 
 export const metadata: Metadata = { title: 'Detalle del pedido' }
 export const dynamic = 'force-dynamic'
@@ -95,6 +97,15 @@ export default async function PedidoDetailPage({ params }: Props) {
            order.status === 'cancelled' ? 'Cancelado' : 'Excepción'}
         </span>
       </div>
+
+      {/* HU-112 · repetir pedido */}
+      {Array.isArray(order.items) && (order.items as OrderItem[]).length > 0 && (
+        <ReorderButton
+          items={(order.items as OrderItem[]).map((i) => ({
+            variant_id: i.variant_id, qty: i.qty, variant_label: i.variant_label, product_name: i.product_name,
+          }))}
+        />
+      )}
 
       {/* Timeline */}
       {!isCancelled && (

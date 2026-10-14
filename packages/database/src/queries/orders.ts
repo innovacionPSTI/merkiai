@@ -76,6 +76,60 @@ export async function getOrdersByCustomerEmail(email: string, db: Db): Promise<O
   return (data ?? []) as unknown as Order[]
 }
 
+export interface GuestOrderView {
+  order_number: string
+  status: string
+  payment_status: string | null
+  created_at: string
+  tracking_number: string | null
+  carrier_name: string | null
+  items: { product_name: string; variant_label: string; qty: number }[]
+  total: number
+}
+
+/**
+ * HU-150 · Consulta de pedido como invitado. Devuelve un subconjunto SEGURO del
+ * pedido solo si el número y el email coinciden exactamente (verificación
+ * server-side, sin enumeración). No expone dirección, teléfono ni correo.
+ * `db` debe poder leer el pedido (service-role/machine-db del plano de tienda).
+ */
+export async function getOrderForGuest(
+  db: Db,
+  orderNumber: string,
+  email: string,
+  tenantId: string,
+): Promise<GuestOrderView | null> {
+  const num = orderNumber.trim()
+  const mail = email.trim().toLowerCase()
+  if (!num || !mail) return null
+  const { data, error } = await db
+    .from('orders')
+    .select('order_number, status, payment_status, created_at, tracking_number, carrier_name, items, total')
+    .eq('tenant_id', tenantId)
+    .eq('order_number', num)
+    .eq('customer_email', mail)
+    .maybeSingle()
+  if (error || !data) return null
+
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const d = data as any
+  const items = Array.isArray(d.items) ? d.items : []
+  return {
+    order_number: d.order_number,
+    status: d.status,
+    payment_status: d.payment_status ?? null,
+    created_at: d.created_at,
+    tracking_number: d.tracking_number ?? null,
+    carrier_name: d.carrier_name ?? null,
+    items: items.map((i: { product_name?: string; variant_label?: string; qty?: number }) => ({
+      product_name: i.product_name ?? '',
+      variant_label: i.variant_label ?? '',
+      qty: Number(i.qty) || 0,
+    })),
+    total: Number(d.total) || 0,
+  }
+}
+
 export async function getOrderById(id: number, db: Db) {
   const supabase = db
   const { data, error } = await supabase

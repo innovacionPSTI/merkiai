@@ -220,7 +220,7 @@
 
 **Estimación:** S (3 puntos)
 **Módulo:** `/account/orders/[id]`, store del carrito
-**Estado:** 🔲 Pendiente (roadmap v17)
+**Estado:** ✅ **Implementada.** Botón "Repetir pedido" (`ReorderButton`) en el detalle del pedido: `getVariantsForCart` (datos actuales de variantes, solo activas de productos activos, RLS por tenant) vía `GET /api/catalog/variants`; re-agrega al carrito los ítems **disponibles** (activos + stock o backorder) respetando los **topes de stock** (reusa `addItem`/`clampQty`), omite descontinuados/agotados con aviso y lleva a `/cart`. Tests: database +2.
 
 | # | Escenario | Resultado esperado |
 |---|-----------|-------------------|
@@ -1176,7 +1176,7 @@
 
 **Estimación:** S (3 puntos)
 **Módulo:** `apps/web` (búsqueda de pedido), verificación por número + email
-**Estado:** 🔲 Pendiente (roadmap v17)
+**Estado:** ✅ **Implementada.** Página pública `/pedido` (formulario número + correo) → `POST /api/orders/lookup`. `getOrderForGuest` verifica **server-side** que número + email + tenant coinciden (lectura con machine-db) y devuelve un **subconjunto seguro** (estado, pago, fecha, tracking/carrier, ítems [nombre/variante/cantidad] y total) — **sin** dirección, teléfono, correo ni precios por ítem. Si no coincide, mensaje **neutro** (no revela si el número existe). Tests: database +3.
 
 | # | Escenario | Resultado esperado |
 |---|-----------|-------------------|
