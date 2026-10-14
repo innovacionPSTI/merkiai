@@ -36,7 +36,11 @@ export async function PATCH(
       void (async () => {
         try {
           // Config de correo instancia-first (ADR-004); cae a store_config legacy.
-          const ec = await resolveEmailConfig(supabase, adminUser.tenantId).catch(() => null)
+          const ec = await resolveEmailConfig(supabase, adminUser.tenantId).catch((e) => {
+            console.error('[status/route] resolveEmailConfig throw:', e)
+            return null
+          })
+          console.warn(`[status/route] status=${status} tenant=${adminUser.tenantId} emailConfig=${ec ? `ok(${ec.provider}, from=${ec.fromEmail})` : 'NULL → no se envía'}`)
           if (!ec) return
 
           const emailConfig = {
@@ -46,6 +50,7 @@ export async function PATCH(
           }
 
           if (status === 'shipped') {
+            console.warn('[status/route] enviando sendShippingNotification…')
             await sendShippingNotification(
               {
                 order_number:    order.order_number,
@@ -61,6 +66,7 @@ export async function PATCH(
               emailConfig,
             )
           } else if (status === 'delivered' || status === 'cancelled') {
+            console.warn(`[status/route] enviando sendStatusNotification (${status})…`)
             await sendStatusNotification(
               {
                 order_number:   order.order_number,
