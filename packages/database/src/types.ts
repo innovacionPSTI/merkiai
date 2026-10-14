@@ -366,6 +366,28 @@ export type Database = {
         }
         Relationships: []
       }
+      stock_notifications: {
+        Row: {
+          id: number
+          tenant_id: string
+          variant_id: number
+          email: string
+          created_at: string
+          notified_at: string | null
+        }
+        Insert: {
+          id?: number
+          tenant_id?: string
+          variant_id: number
+          email: string
+          created_at?: string
+          notified_at?: string | null
+        }
+        Update: {
+          notified_at?: string | null
+        }
+        Relationships: []
+      }
       integration_instances: {
         Row: {
           id: string
@@ -1519,6 +1541,7 @@ export type Order = Omit<Database['public']['Tables']['orders']['Row'], 'shippin
 }
 export type BlogPost = Database['public']['Tables']['blog_posts']['Row']
 export type ProductReview = Database['public']['Tables']['product_reviews']['Row']
+export type StockNotification = Database['public']['Tables']['stock_notifications']['Row']
 export type NewsletterSubscriber = Database['public']['Tables']['newsletter_subscribers']['Row']
 export type StoreConfigRow = Database['public']['Tables']['store_config']['Row']
 export type PaymentConfig = Database['public']['Tables']['payment_config']['Row']

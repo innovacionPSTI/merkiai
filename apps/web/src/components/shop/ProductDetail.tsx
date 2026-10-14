@@ -8,6 +8,7 @@ import { getProductOptions, getVariantAttrs, getVariantLabel, isColorValue, swat
 import WishlistButton from './WishlistButton'
 import ShareButton from './ShareButton'
 import ShippingEstimator from './ShippingEstimator'
+import BackInStock from './BackInStock'
 
 interface Props {
   product: ProductWithVariants
@@ -510,6 +511,11 @@ export default function ProductDetail({ product, related, trustBadges = [], layo
                 </button>
               </div>
             </div>
+
+            {/* HU-105 · avísame cuando vuelva (variante agotada sin backorder) */}
+            {isOutOfStock && selectedVariant && (
+              <BackInStock variantId={selectedVariant.id} />
+            )}
 
             {/* HU-285 · estimador de envío (activable por tienda) */}
             {showEstimator && (

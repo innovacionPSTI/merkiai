@@ -175,3 +175,36 @@ export async function sendStatusNotification(
     html: baseTemplate(content, config),
   })
 }
+
+/** HU-105 · aviso de reposición de stock ("avísame cuando vuelva"). */
+export async function sendBackInStock(
+  data: {
+    to: string
+    productName: string
+    productUrl?: string | null
+    variantLabel?: string | null
+  },
+  config: EmailConfig,
+): Promise<void> {
+  const name = config.storeName ?? 'Mi Tienda'
+  const label = data.variantLabel ? ` (${data.variantLabel})` : ''
+
+  const content = `
+    <h2 style="margin: 0 0 8px; color: #614a2a; font-size: 20px; font-family: sans-serif;">¡Volvió a estar disponible!</h2>
+    <p style="margin: 0 0 24px; color: #8a6a4a; font-size: 14px; font-family: sans-serif;">
+      <strong>${data.productName}</strong>${label} ya tiene stock. Si todavía lo quieres, consíguelo antes de que se agote de nuevo.
+    </p>
+    ${data.productUrl ? `
+    <div style="text-align: center; margin-bottom: 24px;">
+      <a href="${data.productUrl}" style="display: inline-block; background: #614a2a; color: #fff8ec; text-decoration: none; padding: 12px 28px; border-radius: 50px; font-size: 14px; font-weight: 600; font-family: sans-serif;">
+        Ver producto
+      </a>
+    </div>` : ''}`
+
+  await sendEmail(config, {
+    from: `${name} <${config.fromEmail}>`,
+    to: [data.to],
+    subject: `Ya disponible: ${data.productName} — ${name}`,
+    html: baseTemplate(content, config),
+  })
+}

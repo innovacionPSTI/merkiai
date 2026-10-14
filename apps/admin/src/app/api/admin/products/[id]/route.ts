@@ -1,5 +1,6 @@
 import type { Database } from '@merkiai/database'
 import { NextRequest, NextResponse } from 'next/server'
+import { resolveEmailConfig, notifyBackInStock } from '@merkiai/database'
 import { getAdminUser } from '@/lib/auth'
 import { getAdminDb } from '@/lib/admin-db'
 
@@ -64,6 +65,18 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
       await supabase.from('product_variants').delete().eq('id', v.id)
     }
 
+    // HU-105: stock ANTES del upsert, para detectar reposición (0 → >0) por
+    // variante existente y avisar a los suscriptores de "avísame cuando vuelva".
+    const existingIds = variants.filter((v: any) => !v._delete && v.id).map((v: any) => Number(v.id))
+    const prevStock = new Map<number, number>()
+    if (existingIds.length > 0) {
+      const { data: prev } = await supabase
+        .from('product_variants')
+        .select('id, stock')
+        .in('id', existingIds)
+      for (const r of prev ?? []) prevStock.set(r.id as number, Number(r.stock ?? 0))
+    }
+
     // Upsert el resto
     const toUpsert: VariantUpsert[] = variants
       .filter((v: any) => !v._delete)
@@ -90,6 +103,34 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
         .from('product_variants')
         .upsert(toUpsert, { onConflict: 'id' })
       if (variantError) return NextResponse.json({ error: variantError.message }, { status: 500 })
+    }
+
+    // HU-105: variantes que pasaron de agotadas (≤0) a con stock (>0) → avisar a
+    // los suscriptores pendientes (idempotente). Se AWAITea (serverless) pero no
+    // tumba la respuesta si el correo falla.
+    const replenished = variants.filter((v: any) => {
+      if (v._delete || !v.id) return false
+      const before = prevStock.get(Number(v.id)) ?? 0
+      const after = Number(v.stock ?? 0)
+      return before <= 0 && after > 0
+    })
+    if (replenished.length > 0) {
+      const ec = await resolveEmailConfig(supabase, adminUser.tenantId).catch(() => null)
+      if (ec) {
+        const emailConfig = { apiKey: ec.apiKey, fromEmail: ec.fromEmail, storeName: ec.storeName, emailProvider: ec.provider }
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const options: string[] = Array.isArray((product as any).variant_options) ? (product as any).variant_options : []
+        for (const v of replenished) {
+          const attrs = (v.attributes ?? {}) as Record<string, string>
+          const variantLabel = options.map((o) => attrs[o]).filter(Boolean).join(' · ') || null
+          await notifyBackInStock(
+            supabase,
+            Number(v.id),
+            { productName: product.name, productUrl: null, variantLabel },
+            emailConfig,
+          ).catch((e) => console.error('[products PATCH] back-in-stock:', e instanceof Error ? e.message : e))
+        }
+      }
     }
   }
 

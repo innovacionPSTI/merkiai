@@ -88,8 +88,7 @@
 
 **Estimación:** M (5 puntos)
 **Módulo:** `packages/database` (`stock_notifications`), PDP, hook de reposición de stock, email
-**Estado:** 🔲 Pendiente (**priorizado — ola PDP, P1**)
-**Reutilización / builder:** form en la PDP activable por tienda (`store_config`, default on), estilado por tokens de tema; el email reusa la config de correo por instancia (`resolveEmailConfig`, ADR-004). Lógica agnóstica de nicho; el ajuste viaja en el paquete de plantilla/preset.
+**Estado:** ✅ **Implementada.** Tabla `stock_notifications` (migración `e17/33`, RLS: alta pública en su tenant siempre sin notificar, gestión/aviso solo is_admin; **índice único parcial** por (tenant, variante, correo) no-notificados = idempotencia). Capa de datos `subscribeStockNotification` / `getPendingStockSubscribers` / `markStockNotified` / `notifyBackInStock` (envía 1 correo por suscriptor y marca `notified_at`; no reenvía). **PDP:** `BackInStock` aparece cuando la variante seleccionada está **agotada sin backorder** → `POST /api/stock-notifications` (anon RLS). **Reposición:** el `PATCH` de producto detecta variantes que pasan de **≤0 a >0** (compara stock previo) y dispara el aviso con `resolveEmailConfig` (instancia-first, ADR-004); correo `sendBackInStock`. Estilos por tokens. Tests: database +7, web/admin OK. **Ops:** aplicar `e17/33`.
 
 | # | Escenario | Resultado esperado |
 |---|-----------|-------------------|
