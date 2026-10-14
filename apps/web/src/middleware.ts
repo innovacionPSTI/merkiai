@@ -117,7 +117,13 @@ export async function middleware(request: NextRequest) {
     // al dominio propio para unificar canónicas, cookies y SEO. Las rutas /api/*
     // ya quedan excluidas (bypassMaintenance) → webhooks por subdominio siguen
     // funcionando. Nunca redirige si ya se está en el dominio propio.
+    // EXCEPCIÓN: la vista previa del admin (cookie __merkiai_preview) debe
+    // permanecer en el subdominio, porque el CSP frame-src del admin solo permite
+    // *.merkiai.com (no el dominio propio). Sin esto, el preview del Constructor
+    // se 301-redirige al dominio propio y el iframe queda bloqueado.
+    const inPreview = request.cookies.has('__merkiai_preview')
     if (
+      !inPreview &&
       info.found === true &&
       info.primaryDomain &&
       info.subdomain &&

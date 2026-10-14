@@ -295,8 +295,8 @@ export default function IntegrationInstancesForm({ kind, apiBase, addLabel, empt
                   <div key={m.tipo} className="flex items-center gap-3 rounded-xl border border-brand-primary/15 px-3 py-2.5 bg-white">
                     <button type="button" role="switch" aria-checked={m.enabled}
                       onClick={() => setDraft((x) => x ? { ...x, tcMethods: x.tcMethods.map((y, j) => j === i ? { ...y, enabled: !y.enabled } : y) } : x)}
-                      className={`relative shrink-0 h-6 w-11 rounded-full transition-colors ${m.enabled ? 'bg-green-500' : 'bg-brand-primary/20'}`}>
-                      <span className={`absolute top-0.5 h-5 w-5 rounded-full bg-white shadow transition-transform ${m.enabled ? 'translate-x-[22px]' : 'translate-x-0.5'}`} />
+                      className={`relative inline-flex shrink-0 h-6 w-11 items-center rounded-full transition-colors ${m.enabled ? 'bg-green-500' : 'bg-brand-primary/20'}`}>
+                      <span className={`inline-block h-5 w-5 transform rounded-full bg-white shadow transition-transform ${m.enabled ? 'translate-x-[22px]' : 'translate-x-0.5'}`} />
                     </button>
                     <div className="min-w-0 flex-1">
                       <span className="font-brand text-sm font-semibold text-brand-primary">{meta.label}</span>

@@ -8,6 +8,7 @@ const STATUSES = [
   { value: 'processing', label: 'Procesando' },
   { value: 'shipped',    label: 'Enviado' },
   { value: 'delivered',  label: 'Entregado' },
+  { value: 'exception',  label: 'Incidencia (novedad en entrega)' },
   { value: 'cancelled',  label: 'Cancelado' },
 ]
 
