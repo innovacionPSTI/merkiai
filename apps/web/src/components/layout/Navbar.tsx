@@ -2,10 +2,12 @@
 
 import { Suspense, useEffect, useRef, useState } from 'react'
 import Link from 'next/link'
+import { useRouter } from 'next/navigation'
 import { useCartStore } from '@/store/cart'
 import CartDrawer from '@/components/cart/CartDrawer'
 import WishlistNavLink from '@/components/layout/WishlistNavLink'
 import NavAuthButton from '@/components/auth/NavAuthButton'
+import SearchBox from '@/components/shop/SearchBox'
 import type { NavItemWithChildren } from '@merkiai/database'
 
 interface NavbarProps {
@@ -93,6 +95,14 @@ export default function Navbar({
   const [menuOpen, setMenuOpen]   = useState(false)
   const [cartOpen, setCartOpen]   = useState(false)
   const itemCount = useCartStore((s) => s.items.reduce((acc, i) => acc + i.qty, 0))
+  const router = useRouter()
+
+  // HU-102 · buscar desde el navbar global → página de resultados (/shop?q=).
+  function handleSearch(term: string) {
+    const t = term.trim()
+    router.push(t ? `/shop?q=${encodeURIComponent(t)}` : '/shop')
+    setMenuOpen(false)
+  }
 
   useEffect(() => {
     const onScroll = () => setScrolled(window.scrollY > 20)
@@ -146,6 +156,11 @@ export default function Navbar({
 
             {/* Íconos */}
             <div className="flex items-center gap-3">
+              {/* HU-102 · buscador global (desktop) */}
+              <div className="hidden md:block">
+                <SearchBox onSearch={handleSearch} />
+              </div>
+
               {showAuth && (
                 <Suspense fallback={<div className="w-8 h-8" />}>
                   <NavAuthButton />
@@ -192,6 +207,10 @@ export default function Navbar({
         {/* Mobile drawer */}
         {menuOpen && (
           <div className="lg:hidden bg-brand-cream border-t border-brand-primary/10 px-4 py-4">
+            {/* HU-102 · buscador global (móvil) */}
+            <div className="mb-3">
+              <SearchBox onSearch={handleSearch} />
+            </div>
             {navItems.map((item) => (
               <div key={item.id}>
                 {/* Ítem top-level */}

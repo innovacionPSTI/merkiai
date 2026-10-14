@@ -39,7 +39,7 @@
 
 **Estimación:** M (5 puntos)
 **Módulo:** `apps/web` (`SearchBox`, `/api/search/suggest`), `packages/database` (`suggestProducts`)
-**Estado:** ✅ **Implementada (v1).** Buscador con **autocompletado** en `/shop`: `SearchBox` con debounce (200 ms), navegación por teclado (↑/↓/Enter/Esc), dropdown con nombre + imagen + precio. `suggestProducts` (consulta ligera `ilike` name/descr, mín. 2 chars, sin variantes) + `GET /api/search/suggest` acotado por tenant (RLS). Clic en sugerencia → PDP; Enter / "Ver todos los resultados" → `?q` (SSR, reusa el grid de HU-270). Tests: database +2. **Pendiente/mejoras:** llevar el `SearchBox` al **navbar** global; índice `pg_trgm`/`tsvector` para `<300ms` en catálogos grandes (hoy `ilike` + índice de texto simple).
+**Estado:** ✅ **Implementada (v2).** Buscador con **autocompletado**: `SearchBox` con debounce (200 ms), navegación por teclado (↑/↓/Enter/Esc), dropdown con nombre + imagen + precio. `suggestProducts` (consulta ligera `ilike` name/descr, mín. 2 chars, sin variantes) + `GET /api/search/suggest` acotado por tenant (RLS). Clic en sugerencia → PDP; Enter / "Ver todos los resultados" → `/shop?q=` (SSR, reusa el grid de HU-270). **v2 (v124):** el `SearchBox` vive ahora en el **navbar global** (desktop + drawer móvil) → disponible en todas las páginas; y se añadió **índice `pg_trgm` + GIN** sobre `products.name`/`description` (migración `e17/36`) para que los `ILIKE %q%` usen índice en catálogos grandes. Tests: database +2. **Mejora futura:** `tsvector`/ranking por relevancia + búsqueda por categoría.
 
 | # | Escenario | Resultado esperado |
 |---|-----------|-------------------|
