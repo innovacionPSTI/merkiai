@@ -61,14 +61,31 @@ describe('getProductOptions', () => {
     expect(getProductOptions(product)).toEqual(['Color', 'Talla'])
   })
 
-  it('empty variant_options array → [] (HU-260: sin fallback de café)', () => {
+  it('variant_options vacío y variantes sin atributos → []', () => {
     const product = makeProduct([makeVariant()], [])
     expect(getProductOptions(product)).toEqual([])
   })
 
-  it('null variant_options → []', () => {
+  it('null variant_options sin atributos → []', () => {
     const product = makeProduct([makeVariant()], undefined)
     expect(getProductOptions(product)).toEqual([])
+  })
+
+  it('fallback: deriva dimensiones de attributes cuando falta variant_options', () => {
+    const product = makeProduct([
+      makeVariant({ id: 1, attributes: { Molienda: 'Grano', Peso: '500g' } as never }),
+      makeVariant({ id: 2, attributes: { Molienda: 'Molido', Peso: '250g' } as never }),
+    ], undefined)
+    // Orden de aparición; no duplica llaves.
+    expect(getProductOptions(product)).toEqual(['Molienda', 'Peso'])
+  })
+
+  it('fallback: ignora variantes inactivas y valores vacíos', () => {
+    const product = makeProduct([
+      makeVariant({ id: 1, active: false, attributes: { Color: 'Rojo' } as never }),
+      makeVariant({ id: 2, active: true, attributes: { Talla: 'M', Nota: '' } as never }),
+    ], [])
+    expect(getProductOptions(product)).toEqual(['Talla'])
   })
 })
 

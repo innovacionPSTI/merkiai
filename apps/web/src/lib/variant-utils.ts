@@ -1,13 +1,33 @@
 import type { ProductVariant, ProductWithVariants } from '@merkiai/database'
 
 /**
- * Returns the ordered list of variant option names for a product,
- * desde `variant_options` (sistema genérico de atributos). HU-260: se eliminó el
- * fallback a campos de café; los productos declaran sus dimensiones aquí.
+ * Returns the ordered list of variant option names for a product.
+ *
+ * Fuente primaria: `variant_options` (el admin lo declara al editar variantes).
+ * Fallback genérico: si no está declarado (p. ej. productos creados antes de que
+ * se guardara `variant_options`, o migrados desde un modelo anterior), se derivan
+ * las dimensiones de las llaves presentes en `attributes` de las variantes
+ * activas, en orden de aparición. Es agnóstico al nicho — no asume ningún campo
+ * específico — y evita que la PDP se quede sin selectores cuando las variantes sí
+ * traen atributos pero el producto no tiene `variant_options` persistido.
  */
 export function getProductOptions(product: ProductWithVariants): string[] {
   const opts = product.variant_options
-  return Array.isArray(opts) && opts.length > 0 ? (opts as string[]) : []
+  if (Array.isArray(opts) && opts.length > 0) return opts as string[]
+
+  // Fallback: unión ordenada de llaves de atributos de las variantes activas.
+  const derived: string[] = []
+  for (const v of product.variants) {
+    if (!v.active) continue
+    const attrs =
+      v.attributes && typeof v.attributes === 'object' && !Array.isArray(v.attributes)
+        ? (v.attributes as Record<string, unknown>)
+        : {}
+    for (const k of Object.keys(attrs)) {
+      if (attrs[k] != null && attrs[k] !== '' && !derived.includes(k)) derived.push(k)
+    }
+  }
+  return derived
 }
 
 /**
