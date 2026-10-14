@@ -4,6 +4,7 @@ import { StackProvider, StackTheme } from '@stackframe/stack'
 import { Analytics } from '@vercel/analytics/react'
 import { stackServerApp } from '../stack'
 import CartSyncOnLogin from '@/components/auth/CartSyncOnLogin'
+import WishlistSyncOnLogin from '@/components/auth/WishlistSyncOnLogin'
 import { buildThemeCSS } from '@/lib/theme-css'
 import { getStoreContext } from '@/lib/store-context'
 import { headers } from 'next/headers'
@@ -113,6 +114,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
         <StackProvider app={stackServerApp}>
           <StackTheme>
             <Suspense fallback={null}><CartSyncOnLogin /></Suspense>
+            <Suspense fallback={null}><WishlistSyncOnLogin /></Suspense>
             {children}
           </StackTheme>
         </StackProvider>

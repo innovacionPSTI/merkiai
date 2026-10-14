@@ -56,7 +56,7 @@
 
 **Estimación:** M (5 puntos)
 **Módulo:** `apps/web` (`store/wishlist`, `WishlistButton`, `/wishlist`, `WishlistNavLink`)
-**Estado:** 🔶 **v1 (client-side).** `useWishlistStore` (zustand + persist en localStorage, por origen = por tenant). Corazón (`WishlistButton`) en tarjetas de `/shop` y botón "Guardar" en la PDP; página `/wishlist` (quitar/vaciar/ver) + contador en el navbar. Guard de hidratación para no desajustar el SSR. Tests: web +3. **Pendiente v2:** persistir por `customer_id` en BD y **fusionar** el localStorage al iniciar sesión; indicar sin-stock + enlace a HU-105.
+**Estado:** ✅ **Implementada (v1 + v2).** v1 client-side: `useWishlistStore` (zustand + persist en localStorage, por origen) + `WishlistButton` en tarjetas/PDP + página `/wishlist` + contador en navbar. **v2 (v125):** **(a) persistencia por cuenta** — tabla `wishlist_items` (migración `e17/37`, RLS `wishlist_own` por `customer_id` del `stack_id` del JWT) + `queries/wishlist` (getWishlist con disponibilidad, addWishlistItems bulk idempotente, removeWishlistItem) + `/api/account/wishlist` (GET/POST merge/DELETE, patrón `ensureCustomer`+RLS como el carrito). **(b) merge al iniciar sesión** — `WishlistSyncOnLogin` (sube local → cuenta y baja+fusiona), add/remove hacen push best-effort a la cuenta. **(c) sin-stock** — `getProductsStockMap` + `GET /api/catalog/stock` → la página de favoritos marca "Agotado" y el CTA cambia a **"Avísame cuando vuelva"** (enlace a la PDP, HU-105). Tests: database +7. **Ops:** aplicar `e17/37`.
 
 | # | Escenario | Resultado esperado |
 |---|-----------|-------------------|

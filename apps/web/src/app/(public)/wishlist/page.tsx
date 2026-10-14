@@ -16,7 +16,20 @@ export default function WishlistPage() {
   const remove = useWishlistStore((s) => s.remove)
   const clear = useWishlistStore((s) => s.clear)
   const [mounted, setMounted] = useState(false)
+  const [stock, setStock] = useState<Record<number, boolean>>({})
   useEffect(() => setMounted(true), [])
+
+  // HU-103 v2 · disponibilidad de los favoritos (para marcar "agotado" + "avísame").
+  useEffect(() => {
+    if (!mounted || items.length === 0) return
+    const ids = items.map((i) => i.id).join(',')
+    const ctrl = new AbortController()
+    fetch(`/api/catalog/stock?ids=${ids}`, { signal: ctrl.signal })
+      .then((r) => r.json())
+      .then((d) => setStock(d.stock ?? {}))
+      .catch(() => {})
+    return () => ctrl.abort()
+  }, [mounted, items])
 
   return (
     <div className="min-h-screen bg-brand-cream pt-24">
@@ -46,8 +59,13 @@ export default function WishlistPage() {
               <div key={p.id} className="relative bg-white rounded-2xl overflow-hidden shadow-card">
                 <Link href={`/shop/${p.slug}`} className="block relative overflow-hidden bg-brand-cream-warm h-48">
                   {p.imageUrl
-                    ? <img src={p.imageUrl} alt={p.name} className="w-full h-full object-cover" />
+                    ? <img src={p.imageUrl} alt={p.name} className={`w-full h-full object-cover ${stock[p.id] === false ? 'opacity-60' : ''}`} />
                     : <span className="flex items-center justify-center w-full h-full font-display text-brand-primary/10 text-6xl">▲</span>}
+                  {stock[p.id] === false && (
+                    <span className="absolute top-3 left-3 bg-brand-primary/90 text-brand-cream font-brand text-[11px] font-medium rounded-full px-2.5 py-1">
+                      Agotado
+                    </span>
+                  )}
                 </Link>
                 <button
                   onClick={() => remove(p.id)}
@@ -65,7 +83,7 @@ export default function WishlistPage() {
                     href={`/shop/${p.slug}`}
                     className="mt-3 inline-block w-full text-center border border-brand-primary text-brand-primary rounded-full py-2 font-brand text-sm hover:bg-brand-primary hover:text-brand-cream transition-colors"
                   >
-                    Ver producto
+                    {stock[p.id] === false ? 'Avísame cuando vuelva' : 'Ver producto'}
                   </Link>
                 </div>
               </div>

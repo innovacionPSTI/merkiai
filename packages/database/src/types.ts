@@ -369,6 +369,26 @@ export type Database = {
         }
         Relationships: []
       }
+      wishlist_items: {
+        Row: {
+          id: number
+          tenant_id: string
+          customer_id: string
+          product_id: number
+          created_at: string
+        }
+        Insert: {
+          id?: number
+          tenant_id?: string
+          customer_id: string
+          product_id: number
+          created_at?: string
+        }
+        Update: {
+          product_id?: number
+        }
+        Relationships: []
+      }
       stock_notifications: {
         Row: {
           id: number
