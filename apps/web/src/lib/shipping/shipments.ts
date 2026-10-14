@@ -124,6 +124,9 @@ export async function createShipmentForOrder(
     const { error: updateErr } = await supabase
       .from('orders')
       .update({
+        // Columnas genéricas (HU-282) + legacy skydropx_* por compatibilidad.
+        shipment_provider:    provider.name,
+        shipment_external_id: result.shipmentId,
         skydropx_shipment_id: result.shipmentId,
         tracking_number:      result.trackingNumber,
         label_url:            result.labelUrl,

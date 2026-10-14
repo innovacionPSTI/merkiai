@@ -22,6 +22,15 @@ jest.mock('@merkiai/database', () => ({
   resolveEmailConfig: jest.fn().mockResolvedValue(null),
   resolveShippingCreds: jest.fn().mockResolvedValue(null),
   markWebhookEventProcessed: jest.fn().mockResolvedValue({ duplicate: false }),
+  // HU-282: normalización agnóstica de estados (capa compartida).
+  normalizeShipmentStatus: (_p: string, raw?: string) => {
+    const MAP: Record<string, string> = {
+      in_transit: 'shipped', last_mile: 'shipped', picked_up: 'shipped', out_for_delivery: 'shipped',
+      delivered: 'delivered', fulfilled: 'delivered',
+      exception: 'exception', in_return: 'exception', canceled: 'exception', cancelled: 'exception', returned: 'exception',
+    }
+    return raw ? (MAP[raw.toLowerCase()] ?? null) : null
+  },
 }))
 jest.mock('@/lib/machine-db', () => ({ getMachineDb: jest.fn(() => ({})) }))
 
@@ -40,21 +49,23 @@ function makeRequest(body: object, headers: Record<string, string> = {}): NextRe
   })
 }
 
-/** Soporta: lectura from().select().eq().maybeSingle() y update from().update().eq().select().single() */
+/** Soporta: lectura from().select().{or|eq}().maybeSingle() y update from().update().{or|eq}().select().single() */
 function buildSupabaseMock(rowData: object | null = null, orderRow: object | null = { tenant_id: 't1' }) {
   const maybeSingle = jest.fn().mockResolvedValue({ data: orderRow, error: null })
   const readEq      = jest.fn().mockReturnValue({ maybeSingle })
-  const readSelect  = jest.fn().mockReturnValue({ eq: readEq })
+  const readOr      = jest.fn().mockReturnValue({ maybeSingle })
+  const readSelect  = jest.fn().mockReturnValue({ eq: readEq, or: readOr })
 
   const singleMock  = jest.fn().mockResolvedValue({ data: rowData, error: null })
   const selectMock  = jest.fn().mockReturnValue({ single: singleMock })
   const eqMock      = jest.fn().mockReturnValue({ select: selectMock })
-  const updateMock  = jest.fn().mockReturnValue({ eq: eqMock })
+  const orMock      = jest.fn().mockReturnValue({ select: selectMock })
+  const updateMock  = jest.fn().mockReturnValue({ eq: eqMock, or: orMock })
 
   const mockSupabase = {
     from: jest.fn().mockReturnValue({ select: readSelect, update: updateMock }),
   }
-  return { mockSupabase, updateMock, eqMock, readEq, selectMock, singleMock }
+  return { mockSupabase, updateMock, eqMock, orMock, readEq, readOr, selectMock, singleMock }
 }
 
 /** Payload de la sección Envíos: data.type=packages, shipment id en relationships. */
@@ -104,11 +115,12 @@ describe('POST /api/webhooks/skydropx — mapeo de estado', () => {
 // Identificación del pedido
 // ─────────────────────────────────────────────
 describe('POST /api/webhooks/skydropx — identificación', () => {
-  it('empareja por skydropx_shipment_id (relationships.shipment.data.id)', async () => {
-    const { mockSupabase, eqMock } = buildSupabaseMock()
+  it('empareja por shipment_external_id (con fallback a skydropx_shipment_id)', async () => {
+    const { mockSupabase, orMock } = buildSupabaseMock()
     mockCreateServerClient.mockReturnValue(mockSupabase as never)
     await POST(makeRequest(packagePayload({ shipmentId: 'SHIP-ABC', status: 'delivered' })))
-    expect(eqMock).toHaveBeenCalledWith('skydropx_shipment_id', 'SHIP-ABC')
+    expect(orMock).toHaveBeenCalledWith(expect.stringContaining('shipment_external_id.eq.SHIP-ABC'))
+    expect(orMock).toHaveBeenCalledWith(expect.stringContaining('skydropx_shipment_id.eq.SHIP-ABC'))
   })
 
   it('cae a tracking_number cuando no hay shipment id', async () => {

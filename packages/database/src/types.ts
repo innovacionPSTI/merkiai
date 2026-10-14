@@ -231,6 +231,8 @@ export type Database = {
           skydropx_quotation_id: string | null
           skydropx_rate_id: string | null
           skydropx_shipment_id: string | null
+          shipment_provider: string | null
+          shipment_external_id: string | null
           tracking_number: string | null
           carrier_name: string | null
           label_url: string | null
@@ -267,6 +269,8 @@ export type Database = {
           skydropx_quotation_id?: string | null
           skydropx_rate_id?: string | null
           skydropx_shipment_id?: string | null
+          shipment_provider?: string | null
+          shipment_external_id?: string | null
           tracking_number?: string | null
           carrier_name?: string | null
           label_url?: string | null
@@ -303,6 +307,8 @@ export type Database = {
           skydropx_quotation_id?: string | null
           skydropx_rate_id?: string | null
           skydropx_shipment_id?: string | null
+          shipment_provider?: string | null
+          shipment_external_id?: string | null
           tracking_number?: string | null
           carrier_name?: string | null
           label_url?: string | null

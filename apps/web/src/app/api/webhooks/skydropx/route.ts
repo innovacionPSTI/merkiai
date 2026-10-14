@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createHmac, timingSafeEqual } from 'crypto'
-import { createServerClient, resolveEmailConfig, resolveShippingCreds, markWebhookEventProcessed } from '@merkiai/database'
+import { createServerClient, resolveEmailConfig, resolveShippingCreds, markWebhookEventProcessed, normalizeShipmentStatus } from '@merkiai/database'
 import { getMachineDb } from '@/lib/machine-db'
 import { sendShippingNotification, buildEmailConfig } from '@/lib/email'
 import type { Order } from '@merkiai/database'
@@ -23,21 +23,10 @@ import type { Order } from '@merkiai/database'
  * (fail-closed). Sin credencial configurada, se procesa (compatibilidad inicial).
  */
 
-/** Estados de Skydropx → estado interno de la orden. */
-const STATUS_MAP: Record<string, 'shipped' | 'delivered' | 'exception'> = {
-  // Tracking oficial (enum doc legacy)
-  created: 'shipped', picked_up: 'shipped', in_transit: 'shipped',
-  last_mile: 'shipped', delivery_attempt: 'shipped', delivered_to_branch: 'shipped',
-  delivered: 'delivered',
-  exception: 'exception', in_return: 'exception', canceled: 'exception',
-  destroyed: 'exception', retained: 'exception',
-  // Variantes de envío
-  label_created: 'shipped', label_printed: 'shipped', out_for_delivery: 'shipped',
-  returned: 'exception', cancelled: 'exception',
-  // Órdenes (por si se suscribe esa sección)
-  sent: 'shipped', partially_sent: 'shipped', fulfilled: 'delivered',
-  // draft / verified / pending → se ignoran
-}
+// HU-282: el mapeo "estado del carrier → estado interno" vive en la capa
+// compartida `normalizeShipmentStatus` (packages/database), no aquí. Cada carrier
+// aporta su mapa; esta ruta solo pasa su slug ('skydropx').
+const PROVIDER = 'skydropx'
 
 function safeEq(expected: string, received: string): boolean {
   const a = Buffer.from(expected, 'utf-8')
@@ -81,18 +70,24 @@ export async function POST(req: NextRequest) {
   const packageId = payload.data?.id ?? ''
   const shipmentId = payload.data?.relationships?.shipment?.data?.id ?? ''
   const trackingNumber = attrs.tracking_number ?? ''
-  const rawStatus = (attrs.status ?? attrs.tracking_status ?? '').toLowerCase()
-  const newStatus = STATUS_MAP[rawStatus] ?? null
+  const rawStatus = attrs.status ?? attrs.tracking_status ?? ''
+  const newStatus = normalizeShipmentStatus(PROVIDER, rawStatus)
 
   if (!newStatus || (!shipmentId && !trackingNumber)) {
     return NextResponse.json({ ok: true, skipped: true })
   }
 
-  // Bootstrap: identificar el pedido (y su tenant) por id de envío o tracking.
+  // Empareja por la columna GENÉRICA (shipment_external_id), con fallback a la
+  // legacy (skydropx_shipment_id) para órdenes previas; si no hay id, por tracking.
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const matchOrder = (q: any) =>
+    shipmentId
+      ? q.or(`shipment_external_id.eq.${shipmentId},skydropx_shipment_id.eq.${shipmentId}`)
+      : q.eq('tracking_number', trackingNumber)
+
+  // Bootstrap: identificar el pedido (y su tenant).
   const supabase = createServerClient()
-  const readCol = shipmentId ? 'skydropx_shipment_id' : 'tracking_number'
-  const readVal = shipmentId || trackingNumber
-  const { data: order0 } = await supabase.from('orders').select('tenant_id').eq(readCol, readVal).maybeSingle()
+  const { data: order0 } = await matchOrder(supabase.from('orders').select('tenant_id')).maybeSingle()
   if (!order0?.tenant_id) return NextResponse.json({ ok: true, warning: 'order_not_found' })
   const tenantId = order0.tenant_id as string
 
@@ -110,12 +105,9 @@ export async function POST(req: NextRequest) {
   const { duplicate } = await markWebhookEventProcessed('skydropx', `${eventId}:${newStatus}`)
   if (duplicate) return NextResponse.json({ ok: true, idempotent: true })
 
-  const { data: updatedOrder, error } = await supabase
-    .from('orders')
-    .update({ status: newStatus, updated_at: new Date().toISOString() })
-    .eq(readCol, readVal)
-    .select()
-    .single()
+  const { data: updatedOrder, error } = await matchOrder(
+    supabase.from('orders').update({ status: newStatus, updated_at: new Date().toISOString() }),
+  ).select().single()
   if (error) {
     console.error('[webhook/skydropx] Error actualizando orden:', error)
     return NextResponse.json({ ok: true, warning: 'order_not_updated' })
