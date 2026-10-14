@@ -47,6 +47,10 @@ export type StoreConfig = {
   nav_show_wishlist: boolean
   /** Proveedor de email activo ('resend' por defecto). */
   email_provider: string
+  /** Ola PDP (HU-285/286/287): flags por tienda de la página de producto. */
+  pdp_shipping_estimator: boolean
+  pdp_recommendations: boolean
+  pdp_share_enabled: boolean
   /** Estado del onboarding reanudable (HU-236 v2). null = sin empezar. */
   onboarding_state: OnboardingState | null
   updated_at: string
@@ -112,6 +116,9 @@ const DEFAULT_CONFIG: StoreConfig = {
   nav_show_auth: true,
   nav_show_wishlist: true,
   email_provider: 'resend',
+  pdp_shipping_estimator: false,
+  pdp_recommendations: true,
+  pdp_share_enabled: true,
   onboarding_state: null,
   updated_at: new Date().toISOString(),
 }

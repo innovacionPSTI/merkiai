@@ -1316,7 +1316,7 @@
 
 **Estimación:** M (5 puntos)
 **Módulo:** `apps/web` (`ProductDetail`), `lib/shipping` (reusa tarifas + handling fee), `store_config`, tokens de tema
-**Estado:** 🔲 Pendiente (roadmap — ola PDP)
+**Estado:** ✅ **Implementada.** Componente `ShippingEstimator` que reusa `POST /api/shipping/rates` (mismo motor que el checkout: tarifa fija / transportadora activa + cargo adicional, agnóstico de proveedor). Input ciudad/depto/CP; muestra las 3 tarifas más baratas (carrier · servicio · días · precio) o "Sin cobertura"/error legible. **Activable por tienda** (`store_config.pdp_shipping_estimator`, **default off**) + toggle en admin → Configuración. Estilos por tokens. Tests: web/db OK.
 **Reutilización / builder:** widget opcional (`store_config.pdp_shipping_estimator`, gating por plan) que **reutiliza el motor de tarifas ya existente** (tarifa fija / transportadora activa + cargo adicional, HU-280/handling) sin lógica nueva de proveedor — agnóstico a Skydropx u otra. Input de ciudad/código postal, resultado estilado por tokens. Default off para no exponer costos donde el comerciante no lo desee. Viaja en el paquete de plantilla/preset.
 
 | # | Escenario | Resultado esperado |
@@ -1334,7 +1334,7 @@
 
 **Estimación:** M (5 puntos)
 **Módulo:** `apps/web` (bloque reutilizable sobre el registry CMS), `store/recentlyViewed` (localStorage por origen), tokens de tema
-**Estado:** 🔲 Pendiente (roadmap — ola PDP)
+**Estado:** 🔶 **v1 (vistos recientemente).** `useRecentlyViewedStore` (zustand + persist por origen, sin PII, máx. 12, dedup, más reciente al frente) + componente `RecentlyViewed` en la PDP (carrusel horizontal, excluye el actual, guard de hidratación). **Activable por tienda** (`store_config.pdp_recommendations`, default on) + toggle en admin. Los relacionados ("También te puede gustar") ya existen en la PDP. **Pendiente v2:** generalizar cross-sell a un bloque del registry CMS (`product_carousel`) con fuente configurable (categoría/manual/top-rated) insertable por el Constructor, base para bundles/kits. Tests: web OK.
 **Reutilización / builder:** "Vistos recientemente" por `localStorage` (por origen = por tenant, sin PII). "También te puede gustar" se generaliza a un **bloque del registro CMS** (`section_type: 'product_carousel'`) con fuente configurable (misma categoría / manuales / mejor valorados), insertable por el Constructor en PDP u otras páginas y estilado por tokens/variante de densidad (HU-122). Base para bundles/kits (roadmap E4). Viaja como sección en el paquete de página/preset.
 
 | # | Escenario | Resultado esperado |
@@ -1352,7 +1352,7 @@
 
 **Estimación:** S (3 puntos)
 **Módulo:** `apps/web` (`ProductDetail`), `store_config`, tokens de tema
-**Estado:** 🔲 Pendiente (roadmap — ola PDP)
+**Estado:** ✅ **Implementada.** Componente `ShareButton`: **Web Share API** nativa cuando existe; fallback a menú con **WhatsApp** (`wa.me` con título + enlace) y **copiar enlace** (clipboard, con feedback). Usa la URL actual (canónica), sin datos del comprador. **Activable por tienda** (`store_config.pdp_share_enabled`, default on) + toggle en admin. Estilos por tokens. Tests: web OK.
 **Reutilización / builder:** botón "Compartir" con **Web Share API** nativa (móvil) y fallback a copiar enlace + WhatsApp en escritorio. Canales activables por `store_config.pdp_share_channels` (lista), icono/estilo por tokens de tema. Reutiliza los metadatos OG/JSON-LD que la PDP ya genera. Agnóstico de nicho; viaja en el paquete de plantilla.
 
 | # | Escenario | Resultado esperado |

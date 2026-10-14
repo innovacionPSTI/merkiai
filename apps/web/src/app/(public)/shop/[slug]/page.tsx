@@ -4,6 +4,7 @@ import { notFound } from 'next/navigation'
 import type { Metadata } from 'next'
 import ProductDetail from '@/components/shop/ProductDetail'
 import Reviews from '@/components/shop/Reviews'
+import RecentlyViewed from '@/components/shop/RecentlyViewed'
 import { buildProductJsonLd } from '@/lib/json-ld'
 import { getRequestCatalogDb } from '@/lib/tenant-db'
 
@@ -89,8 +90,29 @@ export default async function ProductPage({ params }: Props) {
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
       />
-      <ProductDetail product={product} related={related} trustBadges={trustBadges} layoutVariant={pdpVariant} galleryVariant={galleryVariant} ctaVariant={ctaVariant} colorMap={colorMap} />
+      <ProductDetail
+        product={product}
+        related={related}
+        trustBadges={trustBadges}
+        layoutVariant={pdpVariant}
+        galleryVariant={galleryVariant}
+        ctaVariant={ctaVariant}
+        colorMap={colorMap}
+        showEstimator={!!storeConfig?.pdp_shipping_estimator}
+        showShare={storeConfig?.pdp_share_enabled ?? true}
+      />
       <Reviews productId={product.id} stats={stats} initialReviews={reviews} />
+      {(storeConfig?.pdp_recommendations ?? true) && (
+        <RecentlyViewed
+          current={{
+            id: product.id,
+            slug: product.slug,
+            name: product.name,
+            imageUrl: product.images?.[0]?.url ?? null,
+            price: product.variants?.filter((v) => v.active).map((v) => v.price).sort((a, b) => a - b)[0] ?? null,
+          }}
+        />
+      )}
     </>
   )
 }

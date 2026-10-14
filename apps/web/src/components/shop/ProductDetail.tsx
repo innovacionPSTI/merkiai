@@ -6,6 +6,8 @@ import { useCartStore } from '@/store/cart'
 import type { ProductWithVariants, TrustBadge } from '@merkiai/database'
 import { getProductOptions, getVariantAttrs, getVariantLabel, isColorValue, swatchColor } from '@/lib/variant-utils'
 import WishlistButton from './WishlistButton'
+import ShareButton from './ShareButton'
+import ShippingEstimator from './ShippingEstimator'
 
 interface Props {
   product: ProductWithVariants
@@ -20,9 +22,13 @@ interface Props {
   ctaVariant?: string
   /** HU-264: mapa de colores de swatch de la tienda (valor→hex). */
   colorMap?: Record<string, string>
+  /** HU-285: muestra el estimador de envío (store_config.pdp_shipping_estimator). */
+  showEstimator?: boolean
+  /** HU-287: muestra el botón de compartir (store_config.pdp_share_enabled). */
+  showShare?: boolean
 }
 
-export default function ProductDetail({ product, related, trustBadges = [], layoutVariant = 'gallery-left', galleryVariant = 'lightbox', ctaVariant = 'sticky-mobile', colorMap }: Props) {
+export default function ProductDetail({ product, related, trustBadges = [], layoutVariant = 'gallery-left', galleryVariant = 'lightbox', ctaVariant = 'sticky-mobile', colorMap, showEstimator = false, showShare = true }: Props) {
   const variantOpts = getProductOptions(product)
   const activeVariants = product.variants.filter((v) => v.active)
 
@@ -505,6 +511,20 @@ export default function ProductDetail({ product, related, trustBadges = [], layo
               </div>
             </div>
 
+            {/* HU-285 · estimador de envío (activable por tienda) */}
+            {showEstimator && (
+              <ShippingEstimator
+                item={selectedVariant ? {
+                  price: selectedVariant.price,
+                  qty: 1,
+                  weight_kg: selectedVariant.weight_kg ?? null,
+                  length_cm: selectedVariant.length_cm ?? null,
+                  width_cm:  selectedVariant.width_cm  ?? null,
+                  height_cm: selectedVariant.height_cm ?? null,
+                } : (activeVariants[0] ? { price: activeVariants[0].price, qty: 1, weight_kg: activeVariants[0].weight_kg ?? null } : null)}
+              />
+            )}
+
             {/* CTAs */}
             <div ref={ctaRef} className="flex flex-col gap-3 mb-8">
               <button
@@ -541,6 +561,8 @@ export default function ProductDetail({ product, related, trustBadges = [], layo
                 className="w-full justify-center py-3"
                 item={{ id: product.id, slug: product.slug, name: product.name, imageUrl: product.images[0]?.url ?? null, price: selectedVariant?.price ?? (activeVariants.length ? Math.min(...activeVariants.map((v) => v.price)) : null) }}
               />
+              {/* HU-287 · compartir producto (activable por tienda) */}
+              {showShare && <ShareButton title={product.name} />}
             </div>
 
             {/* Badges de confianza — configurados en admin → Configuración → General */}

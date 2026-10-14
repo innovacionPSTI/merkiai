@@ -591,6 +591,9 @@ export type Database = {
           nav_show_wishlist: boolean
           email_provider: string
           order_prefix: string
+          pdp_shipping_estimator: boolean
+          pdp_recommendations: boolean
+          pdp_share_enabled: boolean
           updated_at: string
         }
         Insert: {
@@ -621,6 +624,9 @@ export type Database = {
           nav_show_wishlist?: boolean
           email_provider?: string
           order_prefix?: string
+          pdp_shipping_estimator?: boolean
+          pdp_recommendations?: boolean
+          pdp_share_enabled?: boolean
           updated_at?: string
         }
         Update: {
@@ -650,6 +656,9 @@ export type Database = {
           nav_show_wishlist?: boolean
           email_provider?: string
           order_prefix?: string
+          pdp_shipping_estimator?: boolean
+          pdp_recommendations?: boolean
+          pdp_share_enabled?: boolean
           updated_at?: string
         }
         Relationships: []

@@ -40,6 +40,11 @@ export default function StoreConfigForm({ initialConfig }: Props) {
   const [footerShowBlog,  setFooterShowBlog]  = useState(initialConfig?.footer_show_blog  ?? true)
   const [footerShowLegal, setFooterShowLegal] = useState(initialConfig?.footer_show_legal ?? true)
 
+  // Página de producto (ola PDP · HU-285/286/287)
+  const [pdpShippingEstimator, setPdpShippingEstimator] = useState(initialConfig?.pdp_shipping_estimator ?? false)
+  const [pdpRecommendations,  setPdpRecommendations]  = useState(initialConfig?.pdp_recommendations  ?? true)
+  const [pdpShareEnabled,     setPdpShareEnabled]     = useState(initialConfig?.pdp_share_enabled     ?? true)
+
   // Badges de confianza
   const [badges, setBadges] = useState<TrustBadge[]>(initialConfig?.trust_badges ?? [])
   const [newBadgeText, setNewBadgeText] = useState('')
@@ -98,6 +103,9 @@ export default function StoreConfigForm({ initialConfig }: Props) {
           footer_show_store:  footerShowStore,
           footer_show_blog:   footerShowBlog,
           footer_show_legal:  footerShowLegal,
+          pdp_shipping_estimator: pdpShippingEstimator,
+          pdp_recommendations:    pdpRecommendations,
+          pdp_share_enabled:      pdpShareEnabled,
           trust_badges:       badges,
         }),
       })
@@ -461,6 +469,43 @@ export default function StoreConfigForm({ initialConfig }: Props) {
             <span className={`font-brand text-sm font-semibold ${col.val ? 'text-brand-primary' : 'text-brand-primary/30'}`}>
               {col.label}
             </span>
+          </div>
+        ))}
+      </div>
+
+      {/* Página de producto (ola PDP · HU-285/286/287) */}
+      <div className="bg-white rounded-2xl p-6 shadow-sm space-y-4">
+        <div>
+          <h2 className="font-display text-brand-primary text-lg mb-0.5">Página de producto</h2>
+          <p className="font-brand text-xs text-brand-primary/40">
+            Funciones opcionales de la ficha de producto. El diseño se adapta a tu plantilla.
+          </p>
+        </div>
+        {[
+          { label: 'Estimador de envío', hint: 'El comprador calcula costo y tiempo a su ciudad desde la ficha.', val: pdpShippingEstimator, set: setPdpShippingEstimator },
+          { label: 'Vistos recientemente', hint: 'Muestra un carrusel con los últimos productos que vio el comprador.', val: pdpRecommendations, set: setPdpRecommendations },
+          { label: 'Botón de compartir', hint: 'Compartir por WhatsApp o copiar el enlace del producto.', val: pdpShareEnabled, set: setPdpShareEnabled },
+        ].map((row) => (
+          <div key={row.label} className="flex items-start gap-3">
+            <button
+              type="button"
+              role="switch"
+              aria-checked={row.val}
+              onClick={() => row.set((v: boolean) => !v)}
+              className={`relative flex-shrink-0 mt-0.5 inline-flex h-5 w-9 items-center rounded-full transition-colors ${
+                row.val ? 'bg-brand-primary' : 'bg-brand-primary/20'
+              }`}
+            >
+              <span className={`inline-block h-3.5 w-3.5 transform rounded-full bg-white shadow transition-transform ${
+                row.val ? 'translate-x-4' : 'translate-x-0.5'
+              }`} />
+            </button>
+            <div>
+              <span className={`font-brand text-sm font-semibold ${row.val ? 'text-brand-primary' : 'text-brand-primary/30'}`}>
+                {row.label}
+              </span>
+              <p className="font-brand text-xs text-brand-primary/40">{row.hint}</p>
+            </div>
           </div>
         ))}
       </div>
