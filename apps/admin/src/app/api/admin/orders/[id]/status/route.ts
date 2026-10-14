@@ -31,22 +31,18 @@ export async function PATCH(
       await restoreStockForOrder(order.order_number).catch((e) => console.error('[status] stock restore:', e))
     }
 
-    // ── Email al cliente ────────────────────────────────────────────────────
-    // La config se resuelve en el path (lectura rápida) para poder REPORTAR el
-    // resultado en la respuesta (_debug); el envío real va async (no demora).
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const _debug: Record<string, any> = { status, notifiable: NOTIFIABLE_STATUSES.has(status), orderFound: !!order }
+    // ── Email al cliente — no bloquea la respuesta si falla ──────────────────
+    // La config se resuelve en el path (lectura rápida) y se registra en los logs
+    // del proyecto ADMIN; el envío real va async (no demora la respuesta).
     if (NOTIFIABLE_STATUSES.has(status) && order) {
       const ec = await resolveEmailConfig(supabase, adminUser.tenantId).catch((e) => {
-        _debug.resolveError = e instanceof Error ? e.message : String(e)
+        console.error('[status/route] resolveEmailConfig throw:', e instanceof Error ? e.message : String(e))
         return null
       })
-      _debug.emailConfig = ec ? `ok(${ec.provider}, from=${ec.fromEmail})` : 'NULL'
-      console.warn(`[status/route] status=${status} tenant=${adminUser.tenantId} emailConfig=${_debug.emailConfig}`)
+      console.warn(`[status/route] status=${status} tenant=${adminUser.tenantId} emailConfig=${ec ? `ok(${ec.provider}, from=${ec.fromEmail})` : 'NULL → no envía'}`)
 
       if (ec) {
         const emailConfig = { apiKey: ec.apiKey, fromEmail: ec.fromEmail, storeName: ec.storeName }
-        _debug.notify = status === 'shipped' ? 'shipping' : status
         void (async () => {
           try {
             if (status === 'shipped') {
@@ -78,7 +74,7 @@ export async function PATCH(
       }
     }
 
-    return NextResponse.json({ ...order, _debug })
+    return NextResponse.json(order)
   } catch (err) {
     return NextResponse.json({ error: 'Error actualizando estado' }, { status: 500 })
   }
