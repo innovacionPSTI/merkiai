@@ -37,12 +37,7 @@ export async function PATCH(
     // la respuesta y el fetch a Resend puede no completarse → correos intermitentes).
     // Awaitear agrega ~1 s pero garantiza el envío; nunca tumba el cambio de estado.
     if (NOTIFIABLE_STATUSES.has(status) && order) {
-      const ec = await resolveEmailConfig(supabase, adminUser.tenantId).catch((e) => {
-        console.error('[status/route] resolveEmailConfig throw:', e instanceof Error ? e.message : String(e))
-        return null
-      })
-      console.warn(`[status/route] status=${status} tenant=${adminUser.tenantId} emailConfig=${ec ? `ok(${ec.provider}, from=${ec.fromEmail})` : 'NULL → no envía'}`)
-
+      const ec = await resolveEmailConfig(supabase, adminUser.tenantId).catch(() => null)
       if (ec) {
         const emailConfig = { apiKey: ec.apiKey, fromEmail: ec.fromEmail, storeName: ec.storeName }
         try {
