@@ -1,4 +1,5 @@
 import { requireAdminDb } from '@/lib/admin-context'
+import { getReturnsForOrder } from '@merkiai/database'
 import { notFound } from 'next/navigation'
 import Link from 'next/link'
 import type { Metadata } from 'next'
@@ -6,6 +7,7 @@ import OrderStatusUpdater from './OrderStatusUpdater'
 import OrderNotes from './OrderNotes'
 import ReconcileBoldButton from './ReconcileBoldButton'
 import PaymentStatusValidator from './PaymentStatusValidator'
+import ReturnsManager from './ReturnsManager'
 
 export const metadata: Metadata = { title: 'Detalle de pedido' }
 
@@ -27,6 +29,9 @@ export default async function PedidoDetailPage({ params }: { params: Promise<{ i
     .single()
 
   if (!order) notFound()
+
+  // HU-107a · devoluciones del pedido (historial + gestión).
+  const returns = await getReturnsForOrder(supabase, order.id).catch(() => [])
 
   const fmt = (n: number) =>
     new Intl.NumberFormat('es-CO', { style: 'currency', currency: 'COP', maximumFractionDigits: 0 }).format(n)
@@ -176,6 +181,14 @@ export default async function PedidoDetailPage({ params }: { params: Promise<{ i
 
           {/* Notas internas */}
           <OrderNotes orderId={order.id} initialNotes={(order as any).internal_notes ?? null} />
+
+          {/* HU-107a · devoluciones */}
+          <ReturnsManager
+            orderId={order.id}
+            orderNumber={order.order_number}
+            canStart={order.payment_status === 'approved' || order.status === 'delivered'}
+            initialReturns={returns}
+          />
         </div>
       </div>
     </div>

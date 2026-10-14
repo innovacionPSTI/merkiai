@@ -124,7 +124,7 @@
 
 **Estimación:** M (5 puntos)
 **Módulo:** `packages/database` (`returns`), admin (pedido → devolución), inventario
-**Estado:** 🔲 Pendiente (roadmap v17)
+**Estado:** ✅ **Implementada (v1 · nivel pedido).** Tabla `order_returns` (migración `e17/38`, RLS solo panel is_admin, FK compuesta al pedido, índice por pedido). Capa de datos `returns` (`validateReturn`, `createReturn` [estado `requested`], `getReturnsForOrder` [historial, AC-3], `listReturns`, `setReturnStatus`). **Admin:** `ReturnsManager` en el detalle del pedido — registrar devolución (motivo + nota) **solo si el pedido es elegible** (pago aprobado o entregado, AC-1), y aprobar/rechazar las solicitadas con opción **"Reponer stock"** (AC-2: reusa `restoreStockForOrder`, idempotente). Endpoints `POST /api/admin/returns` + `PATCH /api/admin/returns/[id]` (gated por acceso a Pedidos). Tests: database +7. **Pendiente v2:** devolución **por ítem** (hoy a nivel pedido) y auditoría formal (HU-146). Depende de ella **HU-107b** (reembolso vía pasarela / saldo a favor).
 
 | # | Escenario | Resultado esperado |
 |---|-----------|-------------------|

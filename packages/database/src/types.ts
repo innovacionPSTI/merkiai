@@ -369,6 +369,40 @@ export type Database = {
         }
         Relationships: []
       }
+      order_returns: {
+        Row: {
+          id: number
+          tenant_id: string
+          order_id: number
+          order_number: string
+          reason: string | null
+          status: 'requested' | 'approved' | 'rejected'
+          restocked: boolean
+          note: string | null
+          created_at: string
+          resolved_at: string | null
+        }
+        Insert: {
+          id?: number
+          tenant_id?: string
+          order_id: number
+          order_number: string
+          reason?: string | null
+          status?: 'requested' | 'approved' | 'rejected'
+          restocked?: boolean
+          note?: string | null
+          created_at?: string
+          resolved_at?: string | null
+        }
+        Update: {
+          reason?: string | null
+          status?: 'requested' | 'approved' | 'rejected'
+          restocked?: boolean
+          note?: string | null
+          resolved_at?: string | null
+        }
+        Relationships: []
+      }
       wishlist_items: {
         Row: {
           id: number
@@ -1569,6 +1603,7 @@ export type Order = Omit<Database['public']['Tables']['orders']['Row'], 'shippin
 export type BlogPost = Database['public']['Tables']['blog_posts']['Row']
 export type ProductReview = Database['public']['Tables']['product_reviews']['Row']
 export type StockNotification = Database['public']['Tables']['stock_notifications']['Row']
+export type OrderReturn = Database['public']['Tables']['order_returns']['Row']
 export type NewsletterSubscriber = Database['public']['Tables']['newsletter_subscribers']['Row']
 export type StoreConfigRow = Database['public']['Tables']['store_config']['Row']
 export type PaymentConfig = Database['public']['Tables']['payment_config']['Row']
