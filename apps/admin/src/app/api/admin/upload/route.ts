@@ -1,6 +1,7 @@
 import { createServerClient, getStorageProvider } from '@merkiai/database'
 import { NextRequest, NextResponse } from 'next/server'
 import { getAdminUser } from '@/lib/auth'
+import { getAdminDb } from '@/lib/admin-db'
 
 const ALLOWED_TYPES = ['image/jpeg', 'image/png', 'image/webp', 'image/gif']
 const MAX_SIZE = 5 * 1024 * 1024 // 5 MB
@@ -45,7 +46,9 @@ export async function POST(req: NextRequest) {
   const register = formData.get('register') === 'true'
   if (register) {
     const altText = (formData.get('alt_text') as string | null) ?? ''
-    const db = createServerClient()
+    // HU-158: el registro de datos del tenant va por el cliente RLS-scoped del
+    // admin (no service-role), para que la política admin_all acote por tenant.
+    const db = getAdminDb(adminUser.tenantId)
     await db.from('media_assets').insert({
       key:        object.key,
       url:        object.url,
