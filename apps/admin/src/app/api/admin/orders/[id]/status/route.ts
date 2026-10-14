@@ -31,60 +31,54 @@ export async function PATCH(
       await restoreStockForOrder(order.order_number).catch((e) => console.error('[status] stock restore:', e))
     }
 
-    // ── Email al cliente — no bloquea la respuesta si falla ──────────────────
+    // ── Email al cliente ────────────────────────────────────────────────────
+    // La config se resuelve en el path (lectura rápida) para poder REPORTAR el
+    // resultado en la respuesta (_debug); el envío real va async (no demora).
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const _debug: Record<string, any> = { status, notifiable: NOTIFIABLE_STATUSES.has(status), orderFound: !!order }
     if (NOTIFIABLE_STATUSES.has(status) && order) {
-      void (async () => {
-        try {
-          // Config de correo instancia-first (ADR-004); cae a store_config legacy.
-          const ec = await resolveEmailConfig(supabase, adminUser.tenantId).catch((e) => {
-            console.error('[status/route] resolveEmailConfig throw:', e)
-            return null
-          })
-          console.warn(`[status/route] status=${status} tenant=${adminUser.tenantId} emailConfig=${ec ? `ok(${ec.provider}, from=${ec.fromEmail})` : 'NULL → no se envía'}`)
-          if (!ec) return
+      const ec = await resolveEmailConfig(supabase, adminUser.tenantId).catch((e) => {
+        _debug.resolveError = e instanceof Error ? e.message : String(e)
+        return null
+      })
+      _debug.emailConfig = ec ? `ok(${ec.provider}, from=${ec.fromEmail})` : 'NULL'
+      console.warn(`[status/route] status=${status} tenant=${adminUser.tenantId} emailConfig=${_debug.emailConfig}`)
 
-          const emailConfig = {
-            apiKey:     ec.apiKey,
-            fromEmail:  ec.fromEmail,
-            storeName:  ec.storeName,
+      if (ec) {
+        const emailConfig = { apiKey: ec.apiKey, fromEmail: ec.fromEmail, storeName: ec.storeName }
+        _debug.notify = status === 'shipped' ? 'shipping' : status
+        void (async () => {
+          try {
+            if (status === 'shipped') {
+              await sendShippingNotification(
+                {
+                  order_number:    order.order_number,
+                  customer_email:  order.customer_email,
+                  customer_name:   order.customer_name,
+                  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                  tracking_number: (order as any).tracking_number ?? null,
+                  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                  carrier_name:    (order as any).carrier_name    ?? null,
+                  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                  label_url:       (order as any).label_url       ?? null,
+                },
+                emailConfig,
+              )
+            } else if (status === 'delivered' || status === 'cancelled') {
+              await sendStatusNotification(
+                { order_number: order.order_number, customer_email: order.customer_email, customer_name: order.customer_name },
+                status,
+                emailConfig,
+              )
+            }
+          } catch (emailErr) {
+            console.error('[status/route] email error:', emailErr)
           }
-
-          if (status === 'shipped') {
-            console.warn('[status/route] enviando sendShippingNotification…')
-            await sendShippingNotification(
-              {
-                order_number:    order.order_number,
-                customer_email:  order.customer_email,
-                customer_name:   order.customer_name,
-                // eslint-disable-next-line @typescript-eslint/no-explicit-any
-                tracking_number: (order as any).tracking_number ?? null,
-                // eslint-disable-next-line @typescript-eslint/no-explicit-any
-                carrier_name:    (order as any).carrier_name    ?? null,
-                // eslint-disable-next-line @typescript-eslint/no-explicit-any
-                label_url:       (order as any).label_url       ?? null,
-              },
-              emailConfig,
-            )
-          } else if (status === 'delivered' || status === 'cancelled') {
-            console.warn(`[status/route] enviando sendStatusNotification (${status})…`)
-            await sendStatusNotification(
-              {
-                order_number:   order.order_number,
-                customer_email: order.customer_email,
-                customer_name:  order.customer_name,
-              },
-              status,
-              emailConfig,
-            )
-          }
-        } catch (emailErr) {
-          // Email errors son silenciosos — el cambio de estado ya fue guardado
-          console.error('[status/route] email error:', emailErr)
-        }
-      })()
+        })()
+      }
     }
 
-    return NextResponse.json(order)
+    return NextResponse.json({ ...order, _debug })
   } catch (err) {
     return NextResponse.json({ error: 'Error actualizando estado' }, { status: 500 })
   }
