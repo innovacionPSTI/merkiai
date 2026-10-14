@@ -1,4 +1,4 @@
-import { getProductBySlug, getProducts, getTemplateVariant, getVariantTypes, buildSwatchColorMap, getApprovedReviews, reviewStats } from '@merkiai/database'
+import { getProductBySlug, getProducts, getTemplateVariant, getVariantTypes, buildSwatchColorMap, getApprovedRatings, getApprovedReviewsPage, reviewStats, REVIEWS_PAGE_SIZE } from '@merkiai/database'
 import { getStoreContext } from '@/lib/store-context'
 import { notFound } from 'next/navigation'
 import type { Metadata } from 'next'
@@ -59,9 +59,11 @@ export default async function ProductPage({ params }: Props) {
     .then((all) => all.filter((p) => p.id !== product.id && p.category_id === product.category_id).slice(0, 3))
     .catch(() => [])
 
-  // HU-101 · reseñas aprobadas + estadística (para estrellas y JSON-LD).
-  const reviews = await getApprovedReviews(db, product.id).catch(() => [])
-  const stats = reviewStats(reviews)
+  // HU-101 · estadística (estrellas/JSON-LD) desde ratings ligeros + primera
+  // página de reseñas (HU-101 v2: paginación).
+  const ratings = await getApprovedRatings(db, product.id).catch(() => [])
+  const stats = reviewStats(ratings.map((rating) => ({ rating })))
+  const firstPage = await getApprovedReviewsPage(db, product.id, REVIEWS_PAGE_SIZE, 0).catch(() => ({ reviews: [], total: 0 }))
 
   const trustBadges = (storeConfig?.trust_badges ?? []).filter((b) => b.enabled)
   const pdpVariant = getTemplateVariant(ctx?.template, 'product_detail')
@@ -101,7 +103,7 @@ export default async function ProductPage({ params }: Props) {
         showEstimator={!!storeConfig?.pdp_shipping_estimator}
         showShare={storeConfig?.pdp_share_enabled ?? true}
       />
-      <Reviews productId={product.id} stats={stats} initialReviews={reviews} />
+      <Reviews productId={product.id} stats={stats} initialReviews={firstPage.reviews} total={firstPage.total} />
       {(storeConfig?.pdp_recommendations ?? true) && (
         <RecentlyViewed
           current={{

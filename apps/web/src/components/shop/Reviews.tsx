@@ -8,6 +8,8 @@
 import { useState } from 'react'
 import type { ProductReview, ReviewStats } from '@merkiai/database'
 
+const PAGE = 5
+
 function Stars({ value, size = 16, onPick }: { value: number; size?: number; onPick?: (n: number) => void }) {
   return (
     <span className="inline-flex" role={onPick ? 'radiogroup' : undefined} aria-label="Calificación">
@@ -31,10 +33,12 @@ function Stars({ value, size = 16, onPick }: { value: number; size?: number; onP
   )
 }
 
-export default function Reviews({ productId, stats, initialReviews }: {
+export default function Reviews({ productId, stats, initialReviews, total = initialReviews.length }: {
   productId: number
   stats: ReviewStats
   initialReviews: ProductReview[]
+  /** HU-101 v2 · total de reseñas aprobadas (para "Cargar más"). */
+  total?: number
 }) {
   const [showForm, setShowForm] = useState(false)
   const [name, setName] = useState('')
@@ -43,6 +47,50 @@ export default function Reviews({ productId, stats, initialReviews }: {
   const [sending, setSending] = useState(false)
   const [done, setDone] = useState(false)
   const [error, setError] = useState('')
+
+  // HU-101 v2 · lista paginada + votos "útil".
+  const [reviews, setReviews] = useState<ProductReview[]>(initialReviews)
+  const [loadingMore, setLoadingMore] = useState(false)
+  const [voted, setVoted] = useState<Record<number, boolean>>({})
+  const [helpful, setHelpful] = useState<Record<number, number>>(
+    () => Object.fromEntries(initialReviews.map((r) => [r.id, r.helpful_count ?? 0])),
+  )
+
+  async function loadMore() {
+    setLoadingMore(true)
+    try {
+      const res = await fetch(`/api/reviews?product_id=${productId}&offset=${reviews.length}&limit=${PAGE}`)
+      const data = await res.json()
+      if (res.ok && Array.isArray(data.reviews)) {
+        setReviews((prev) => [...prev, ...data.reviews])
+        setHelpful((prev) => ({ ...prev, ...Object.fromEntries(data.reviews.map((r: ProductReview) => [r.id, r.helpful_count ?? 0])) }))
+      }
+    } finally { setLoadingMore(false) }
+  }
+
+  async function voteHelpful(id: number) {
+    if (voted[id]) return
+    const key = `merkiai-review-helpful`
+    try {
+      const store = JSON.parse(localStorage.getItem(key) ?? '{}') as Record<string, boolean>
+      if (store[id]) { setVoted((v) => ({ ...v, [id]: true })); return }
+      setVoted((v) => ({ ...v, [id]: true }))
+      setHelpful((h) => ({ ...h, [id]: (h[id] ?? 0) + 1 }))
+      const res = await fetch('/api/reviews/helpful', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ id }),
+      })
+      const data = await res.json().catch(() => ({}))
+      if (res.ok) {
+        store[id] = true
+        localStorage.setItem(key, JSON.stringify(store))
+        if (typeof data.helpful_count === 'number') setHelpful((h) => ({ ...h, [id]: data.helpful_count }))
+      } else {
+        // revertir si falló
+        setVoted((v) => ({ ...v, [id]: false }))
+        setHelpful((h) => ({ ...h, [id]: Math.max(0, (h[id] ?? 1) - 1) }))
+      }
+    } catch { /* no-op */ }
+  }
 
   async function submit(e: React.FormEvent) {
     e.preventDefault()
@@ -123,9 +171,9 @@ export default function Reviews({ productId, stats, initialReviews }: {
         </form>
       )}
 
-      {initialReviews.length > 0 && (
+      {reviews.length > 0 && (
         <ul className="space-y-5">
-          {initialReviews.map((r) => (
+          {reviews.map((r) => (
             <li key={r.id} className="bg-white rounded-2xl shadow-sm p-5">
               <div className="flex items-center justify-between gap-3">
                 <div className="flex items-center gap-2">
@@ -136,9 +184,38 @@ export default function Reviews({ productId, stats, initialReviews }: {
               </div>
               {r.title && <p className="font-brand text-sm font-semibold text-brand-primary mt-2">{r.title}</p>}
               {r.body && <p className="font-brand text-sm text-brand-primary/70 mt-1 whitespace-pre-line">{r.body}</p>}
+              {/* HU-101 v2 · voto útil */}
+              <button
+                type="button"
+                onClick={() => voteHelpful(r.id)}
+                disabled={!!voted[r.id]}
+                aria-pressed={!!voted[r.id]}
+                className={`mt-3 inline-flex items-center gap-1.5 font-brand text-xs rounded-full px-3 py-1.5 border transition-colors ${
+                  voted[r.id]
+                    ? 'border-brand-primary/30 text-brand-primary/50 cursor-default'
+                    : 'border-brand-primary/20 text-brand-primary hover:border-brand-primary hover:bg-brand-primary/5'
+                }`}
+              >
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden>
+                  <path d="M7 10v11M2 11h5v10H2zM20 10h-6l1-5a2 2 0 0 0-2-2l-3 7v9h9a2 2 0 0 0 2-2l1-6a2 2 0 0 0-2-2z" strokeLinejoin="round" />
+                </svg>
+                {voted[r.id] ? 'Gracias' : 'Útil'}{(helpful[r.id] ?? 0) > 0 ? ` · ${helpful[r.id]}` : ''}
+              </button>
             </li>
           ))}
         </ul>
+      )}
+
+      {reviews.length < total && (
+        <div className="text-center mt-6">
+          <button
+            onClick={loadMore}
+            disabled={loadingMore}
+            className="font-brand text-sm border border-brand-primary text-brand-primary rounded-full px-6 py-2.5 hover:bg-brand-primary hover:text-brand-cream transition-colors disabled:opacity-50"
+          >
+            {loadingMore ? 'Cargando…' : `Cargar más (${total - reviews.length})`}
+          </button>
+        </div>
       )}
     </section>
   )

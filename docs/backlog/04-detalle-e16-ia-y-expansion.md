@@ -22,7 +22,7 @@
 
 **Estimación:** L (8 puntos)
 **Módulo:** `packages/database` (`product_reviews`, `queries/reviews`), `apps/web` (PDP `Reviews` + `/api/reviews` + JSON-LD), `apps/admin` (`/resenas` + `/api/admin/reviews`)
-**Estado:** ✅ **Implementada (v1).** Tabla `product_reviews` (migración `e17/25`, RLS: público ve `approved`, alta pública forzada a `pending`, moderación solo `is_admin`). PDP: estrellas + promedio + lista + formulario (envío a moderación) y `aggregateRating` en JSON-LD. Admin `/resenas`: pestañas por estado + aprobar/rechazar/eliminar. Tests: database +7, admin +4, web +2. **Pendiente v2:** "compra verificada" (ligar a `orders`), paginación de reseñas, voto útil.
+**Estado:** ✅ **Implementada (v1 + v2 parcial).** v1: tabla `product_reviews` (migración `e17/25`, RLS: público ve `approved`, alta pública forzada a `pending`, moderación solo `is_admin`). PDP: estrellas + promedio + lista + formulario (a moderación) + `aggregateRating` en JSON-LD. Admin `/resenas`: moderación. **v2 (v123):** **(a) paginación** — `getApprovedReviewsPage` (range + count) + `getApprovedRatings` (promedio ligero, desacoplado de la lista) + `GET /api/reviews` (page) + botón "Cargar más" en la PDP (5 por página). **(b) voto "útil"** — columna `helpful_count` + **RPC** `increment_review_helpful` (migración `e17/35`, SECURITY DEFINER acotado a tenant+approved; `grant` a anon/auth) + `POST /api/reviews/helpful`; en la PDP botón con guard de doble-voto por `localStorage`. Tests: database +3. **Pendiente v3:** "compra verificada" (ligar a `orders` — requiere auth del comprador + lectura de pedidos por RLS).
 
 | # | Escenario | Resultado esperado |
 |---|-----------|-------------------|

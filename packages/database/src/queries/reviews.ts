@@ -30,6 +30,50 @@ export function reviewStats(reviews: Pick<ProductReview, 'rating'>[]): ReviewSta
   return { count: reviews.length, average: Math.round((sum / reviews.length) * 10) / 10 }
 }
 
+/** HU-101 v2 · Solo las calificaciones aprobadas (ligero, para promedio/estrellas). */
+export async function getApprovedRatings(db: Db, productId: number): Promise<number[]> {
+  const { data } = await db
+    .from('product_reviews')
+    .select('rating')
+    .eq('product_id', productId)
+    .eq('status', 'approved')
+  return (data ?? []).map((r: { rating: number }) => r.rating)
+}
+
+export const REVIEWS_PAGE_SIZE = 5
+
+/**
+ * HU-101 v2 · Página de reseñas aprobadas (más recientes primero) + total.
+ * Orden estable para paginar; `total` permite el botón "Cargar más".
+ */
+export async function getApprovedReviewsPage(
+  db: Db,
+  productId: number,
+  limit = REVIEWS_PAGE_SIZE,
+  offset = 0,
+): Promise<{ reviews: ProductReview[]; total: number }> {
+  const { data, count } = await db
+    .from('product_reviews')
+    .select('*', { count: 'exact' })
+    .eq('product_id', productId)
+    .eq('status', 'approved')
+    .order('created_at', { ascending: false })
+    .range(offset, offset + limit - 1)
+  return { reviews: (data ?? []) as ProductReview[], total: count ?? 0 }
+}
+
+/**
+ * HU-101 v2 · Suma 1 al contador "útil" de una reseña vía RPC (acotado por
+ * tenant + aprobada en la función SECURITY DEFINER). Devuelve el nuevo total o
+ * null si la reseña no existe/visible.
+ */
+export async function incrementReviewHelpful(db: Db, reviewId: number): Promise<number | null> {
+  if (!Number.isInteger(reviewId)) return null
+  const { data, error } = await db.rpc('increment_review_helpful', { p_id: reviewId })
+  if (error) return null
+  return typeof data === 'number' ? data : null
+}
+
 export interface CreateReviewInput {
   product_id: number
   author_name: string

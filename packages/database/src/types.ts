@@ -343,6 +343,7 @@ export type Database = {
           title: string | null
           body: string | null
           status: 'pending' | 'approved' | 'rejected'
+          helpful_count: number
           created_at: string
         }
         Insert: {
@@ -355,6 +356,7 @@ export type Database = {
           title?: string | null
           body?: string | null
           status?: 'pending' | 'approved' | 'rejected'
+          helpful_count?: number
           created_at?: string
         }
         Update: {
@@ -363,6 +365,7 @@ export type Database = {
           title?: string | null
           body?: string | null
           status?: 'pending' | 'approved' | 'rejected'
+          helpful_count?: number
         }
         Relationships: []
       }
@@ -1480,6 +1483,10 @@ export type Database = {
       generate_order_number: {
         Args: Record<string, never>
         Returns: string
+      }
+      increment_review_helpful: {
+        Args: { p_id: number }
+        Returns: number
       }
     }
     Enums: {
