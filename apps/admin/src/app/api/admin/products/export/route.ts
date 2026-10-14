@@ -2,15 +2,17 @@ import { productsToCsv, type ExportProduct } from '@merkiai/database'
 import { NextResponse } from 'next/server'
 import { getAdminUser } from '@/lib/auth'
 import { getAdminDb } from '@/lib/admin-db'
+import { userCanManageData } from '@/lib/roles'
 
 /**
  * GET → exporta el catálogo del tenant a CSV (HU-130). El formato coincide con
  * el importador (HU-124): una fila por variante, agrupadas por `slug`. Acotado
- * por tenant vía RLS (getAdminDb).
+ * por tenant vía RLS (getAdminDb). HU-134: operación de datos → gated por rol.
  */
 export async function GET() {
   const adminUser = await getAdminUser()
   if (!adminUser) return NextResponse.json({ error: 'No autorizado' }, { status: 401 })
+  if (!userCanManageData(adminUser)) return NextResponse.json({ error: 'Permisos insuficientes para exportar datos' }, { status: 403 })
 
   const supabase = getAdminDb(adminUser.tenantId)
   const { data, error } = await supabase

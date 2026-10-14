@@ -2,6 +2,7 @@ import { parseCategoriesCsv, CATEGORY_IMPORT_TEMPLATE } from '@merkiai/database'
 import { NextRequest, NextResponse } from 'next/server'
 import { getAdminUser } from '@/lib/auth'
 import { getAdminDb } from '@/lib/admin-db'
+import { userCanManageData } from '@/lib/roles'
 
 /** GET → plantilla CSV de categorías. */
 export async function GET() {
@@ -24,6 +25,7 @@ export async function GET() {
 export async function POST(req: NextRequest) {
   const adminUser = await getAdminUser()
   if (!adminUser) return NextResponse.json({ error: 'No autorizado' }, { status: 401 })
+  if (!userCanManageData(adminUser)) return NextResponse.json({ error: 'Permisos insuficientes para importar datos' }, { status: 403 })
   const tenantId = adminUser.tenantId
 
   const body = await req.json().catch(() => ({}))

@@ -2,7 +2,7 @@ import { productsToCsv, objectsToCsv, type ExportProduct } from '@merkiai/databa
 import { NextRequest, NextResponse } from 'next/server'
 import { getAdminUser } from '@/lib/auth'
 import { getAdminDb } from '@/lib/admin-db'
-import { userCanAccess } from '@/lib/roles'
+import { userCanAccess, userCanManageData } from '@/lib/roles'
 
 /**
  * GET → respaldo de datos de negocio por dominio (HU-125).
@@ -17,6 +17,10 @@ export async function GET(req: NextRequest) {
   const user = await getAdminUser()
   if (!user || !userCanAccess(user, 'configuracion')) {
     return NextResponse.json({ error: 'No autorizado' }, { status: 401 })
+  }
+  // HU-134: respaldar es una operación de datos en volumen → solo roles con permiso.
+  if (!userCanManageData(user)) {
+    return NextResponse.json({ error: 'Permisos insuficientes para esta operación de datos' }, { status: 403 })
   }
 
   const domain = (req.nextUrl.searchParams.get('domain') ?? '') as Domain

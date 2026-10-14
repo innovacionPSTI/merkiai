@@ -50,6 +50,13 @@ interface RoleConfig {
   sections: AdminSection[]
   canManageUsers: boolean
   canAccessFullConfig: boolean
+  /**
+   * HU-134 · Operaciones de datos en volumen (importar / exportar / respaldar /
+   * borrado masivo). Mueven información sensible, así que se restringen a los
+   * roles de administración por defecto. (La auditoría de cada operación es
+   * HU-146.)
+   */
+  canManageData: boolean
 }
 
 export const ROLE_CONFIG: Record<AdminRole, RoleConfig> = {
@@ -59,6 +66,7 @@ export const ROLE_CONFIG: Record<AdminRole, RoleConfig> = {
     sections: ['dashboard', 'productos', 'categorias', 'variantes', 'pedidos', 'clientes', 'contenido', 'blog', 'newsletter', 'cupones', 'apariencia', 'media', 'configuracion', 'usuarios', 'sistema'],
     canManageUsers: true,
     canAccessFullConfig: true,
+    canManageData: true,
   },
   admin: {
     label: 'Admin',
@@ -66,6 +74,7 @@ export const ROLE_CONFIG: Record<AdminRole, RoleConfig> = {
     sections: ['dashboard', 'productos', 'categorias', 'variantes', 'pedidos', 'clientes', 'contenido', 'blog', 'newsletter', 'cupones', 'apariencia', 'media', 'configuracion', 'usuarios', 'sistema'],
     canManageUsers: true,
     canAccessFullConfig: true,
+    canManageData: true,
   },
   vendedor: {
     label: 'Vendedor',
@@ -74,6 +83,7 @@ export const ROLE_CONFIG: Record<AdminRole, RoleConfig> = {
     sections: ['dashboard', 'productos', 'categorias', 'variantes', 'pedidos', 'clientes', 'cupones'],
     canManageUsers: false,
     canAccessFullConfig: false,
+    canManageData: false,
   },
   gestor_tienda: {
     label: 'Gestor de Tienda',
@@ -82,6 +92,7 @@ export const ROLE_CONFIG: Record<AdminRole, RoleConfig> = {
     sections: ['dashboard', 'contenido', 'blog', 'newsletter', 'apariencia', 'media', 'cupones', 'configuracion'],
     canManageUsers: false,
     canAccessFullConfig: false, // Solo ve config general y legal (no pagos ni envíos)
+    canManageData: false,
   },
 }
 
@@ -122,6 +133,17 @@ export function userCanAccess(
 ): boolean {
   const secs = user.allowedSections ?? (user.role ? ROLE_CONFIG[user.role].sections : [])
   return secs.includes(section)
+}
+
+/**
+ * HU-134 · ¿El usuario puede ejecutar operaciones de datos en volumen
+ * (importar / exportar / respaldar / borrado masivo)? Restringido a roles de
+ * administración. Se evalúa por rol (no por sección): un vendedor puede ver
+ * Productos pero no exportar/importar/borrar en masa.
+ */
+export function userCanManageData(user: { role?: AdminRole | string }): boolean {
+  const role = user.role as AdminRole | undefined
+  return !!role && ROLE_CONFIG[role]?.canManageData === true
 }
 
 /**

@@ -7,6 +7,7 @@ import ImportProductsModal from './ImportProductsModal'
 import ProductsTable from './ProductsTable'
 import { getAdminUser } from '@/lib/auth'
 import { getAdminDb } from '@/lib/admin-db'
+import { userCanManageData } from '@/lib/roles'
 
 export const metadata: Metadata = { title: 'Productos' }
 export const dynamic = 'force-dynamic'
@@ -46,13 +47,18 @@ export default async function ProductosPage({
           description="Administra el catálogo de productos de tu tienda."
           action={
             <div className="flex items-center gap-3">
-              <a
-                href="/api/admin/products/export"
-                className="border border-brand-primary/20 text-brand-primary rounded-full px-5 py-2 font-brand text-sm hover:bg-brand-cream transition-colors inline-flex items-center gap-2"
-              >
-                <Icon name="external" size={16} /> Exportar CSV
-              </a>
-              <ImportProductsModal />
+              {/* HU-134 · exportar/importar solo para roles con permiso de datos */}
+              {userCanManageData(adminUser) && (
+                <>
+                  <a
+                    href="/api/admin/products/export"
+                    className="border border-brand-primary/20 text-brand-primary rounded-full px-5 py-2 font-brand text-sm hover:bg-brand-cream transition-colors inline-flex items-center gap-2"
+                  >
+                    <Icon name="external" size={16} /> Exportar CSV
+                  </a>
+                  <ImportProductsModal />
+                </>
+              )}
               <Link
                 href="/productos/nuevo"
                 className="bg-brand-primary text-brand-cream rounded-full px-5 py-2 font-brand text-sm hover:bg-brand-dark transition-colors inline-flex items-center gap-2"

@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { getAdminUser } from '@/lib/auth'
 import { getAdminDb } from '@/lib/admin-db'
+import { userCanManageData } from '@/lib/roles'
 
 type BatchAction = 'activate' | 'deactivate' | 'feature' | 'unfeature' | 'set_category' | 'delete'
 
@@ -12,6 +13,7 @@ type BatchAction = 'activate' | 'deactivate' | 'feature' | 'unfeature' | 'set_ca
 export async function POST(req: NextRequest) {
   const adminUser = await getAdminUser()
   if (!adminUser) return NextResponse.json({ error: 'No autorizado' }, { status: 401 })
+  if (!userCanManageData(adminUser)) return NextResponse.json({ error: 'Permisos insuficientes para acciones masivas' }, { status: 403 })
 
   const body = await req.json().catch(() => ({}))
   const ids: number[] = Array.isArray(body?.ids) ? body.ids.filter((n: unknown) => Number.isInteger(n)) : []

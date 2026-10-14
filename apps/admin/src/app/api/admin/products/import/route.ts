@@ -4,6 +4,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { getTenantEntitlements, resolveLimit, LIMITS } from '@/lib/entitlements'
 import { getAdminUser } from '@/lib/auth'
 import { getAdminDb } from '@/lib/admin-db'
+import { userCanManageData } from '@/lib/roles'
 
 type VariantInsert = Database['public']['Tables']['product_variants']['Insert']
 
@@ -28,6 +29,7 @@ export async function GET() {
 export async function POST(req: NextRequest) {
   const adminUser = await getAdminUser()
   if (!adminUser) return NextResponse.json({ error: 'No autorizado' }, { status: 401 })
+  if (!userCanManageData(adminUser)) return NextResponse.json({ error: 'Permisos insuficientes para importar datos' }, { status: 403 })
   const tenantId = adminUser.tenantId
 
   const body = await req.json().catch(() => ({}))

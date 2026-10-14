@@ -873,7 +873,7 @@
 
 **Estimación:** S (3 puntos)
 **Módulo:** `roles.ts`, guards de las rutas de import/export/backup, admin
-**Estado:** 🔲 Pendiente (roadmap v17)
+**Estado:** ✅ **Implementada (AC-1/AC-2).** Nueva capacidad por rol `canManageData` en `ROLE_CONFIG` (super_admin/admin **sí**; vendedor/gestor_tienda **no**) + helper `userCanManageData`. **Guard server-side** (403) en las operaciones de datos en volumen: **respaldo** (`/api/admin/backup`), **import** (products/categories/customers/blog — cupones y los genéricos ya restringían a admin) y **export/borrado masivo** (products export + `/products/batch`); los genéricos `/api/admin/{import,export}` ya exigían admin. **UI** oculta el widget de Respaldos y los botones Importar/Exportar de Productos para roles sin permiso. Tests: admin +4. **Pendiente (AC-3):** registrar cada operación (actor/entidad/fecha) — depende del registro de auditoría **HU-146**.
 
 | # | Escenario | Resultado esperado |
 |---|-----------|-------------------|

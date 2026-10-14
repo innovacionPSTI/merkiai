@@ -4,7 +4,7 @@ import { PageHeader } from '@merkiai/ui'
 import { getStoreConfig } from '@merkiai/database'
 import { getAdminUser } from '@/lib/auth'
 import { getAdminDb } from '@/lib/admin-db'
-import { userCanAccess } from '@/lib/roles'
+import { userCanAccess, userCanManageData } from '@/lib/roles'
 import StoreConfigForm from '../StoreConfigForm'
 import DataTransferWidget from '../DataTransferWidget'
 import BackupWidget from '../BackupWidget'
@@ -44,7 +44,7 @@ export default async function ConfigGeneralPage() {
           Descarga una copia de tus productos, pedidos y clientes.
         </p>
         <div className="bg-white rounded-2xl p-6 shadow-sm">
-          <BackupWidget />
+          {userCanManageData(adminUser) && <BackupWidget />}
         </div>
       </div>
     </div>
