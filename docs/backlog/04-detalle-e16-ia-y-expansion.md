@@ -88,7 +88,8 @@
 
 **Estimación:** M (5 puntos)
 **Módulo:** `packages/database` (`stock_notifications`), PDP, hook de reposición de stock, email
-**Estado:** 🔲 Pendiente (roadmap v17)
+**Estado:** 🔲 Pendiente (**priorizado — ola PDP, P1**)
+**Reutilización / builder:** form en la PDP activable por tienda (`store_config`, default on), estilado por tokens de tema; el email reusa la config de correo por instancia (`resolveEmailConfig`, ADR-004). Lógica agnóstica de nicho; el ajuste viaja en el paquete de plantilla/preset.
 
 | # | Escenario | Resultado esperado |
 |---|-----------|-------------------|
@@ -1264,6 +1265,102 @@
 | AC-1 | Métricas reales de usuario | Se capturan LCP/INP/CLS y se reportan por página |
 | AC-2 | Presupuesto | Umbrales de rendimiento verificables (alerta si se degradan) |
 | AC-3 | Acción | Panel/reporte que prioriza las páginas más lentas |
+
+---
+
+## 🛒 Ola PDP — mejoras de la vista de producto (HU-283…287) · E4/E3
+
+> **Principio transversal (multi-tenant / "vestir en otras tiendas").** Toda HU de esta ola es **reutilizable y configurable por tienda**, nunca cableada a un nicho ni a un cliente. En concreto: **(a) lógica** gobernada por flags en `store_config` (por tenant, con default seguro y gating por plan vía entitlements); **(b) visual** con **tokens de tema** (HU-247, sin colores/tipografías fijos) y, cuando aplica, **variante por superficie** sobre el framework de HU-122a (`Template.variants` + `getTemplateVariant`), para que cada plantilla/preset "vista" la PDP distinto; **(c) portabilidad**: cualquier ajuste nuevo viaja en los paquetes de **Plantilla/Preset/Sitio** (HU-129/256/123) para re-aplicarse en otra tienda. Los bloques se montan sobre el motor CMS existente (`page_sections`/`section_items`, schema-driven) siempre que sea posible, no como componentes a medida. **Prioridad de la ola:** P1 = HU-283, HU-284, HU-105 (ya existía, se sube a esta ola); P2 = HU-285, HU-286, HU-287.
+
+---
+
+### HU-283 — Galería de producto avanzada: zoom/lightbox + miniatura de variante · E4 (toca E3)  · **P1**
+
+> Como comprador, quiero ampliar las fotos del producto y volver fácilmente a la imagen de la variante que elegí, para ver el detalle antes de comprar.
+
+**Estimación:** M (5 puntos)
+**Módulo:** `apps/web` (`ProductDetail` galería), framework de variantes de superficie (HU-122a), tokens de tema (HU-247)
+**Estado:** 🔲 Pendiente (priorizado — ola PDP)
+**Reutilización / builder:** la imagen de variante se expone como **miniatura seleccionable** en la tira (cierra el fix de `imgSource` ya aplicado). El **zoom** se ofrece como **variante de superficie** `product_gallery` (`inline-zoom` hover / `lightbox` modal / `off`) resuelta por la plantilla activa, estilable solo con tokens de tema; el gesto en móvil es pinch/tap. Nada específico de café: sirve para ropa, joyería, etc. Viaja en el paquete de plantilla.
+
+| # | Escenario | Resultado esperado |
+|---|-----------|-------------------|
+| AC-1 | Clic/tap en la imagen principal | Se amplía según la variante de plantilla (`lightbox` o `inline-zoom`); cerrable por teclado/gesto, con foco atrapado y `alt` correcto |
+| AC-2 | Variante con imagen propia | Aparece como miniatura; al elegir variante se muestra su imagen y la miniatura queda activa; se puede volver a la galería |
+| AC-3 | Plantilla sin zoom | Con `off` la galería funciona sin ampliar (cero regresión); el ajuste viaja en el paquete de plantilla/preset |
+| AC-4 | A11y | Operable por teclado, respeta `prefers-reduced-motion`, objetivos táctiles AA |
+
+---
+
+### HU-284 — Barra de compra pegajosa en móvil (sticky add-to-cart) · E3 (toca E4)  · **P1**
+
+> Como comprador en móvil, quiero tener siempre a la vista el precio y "Agregar al carrito" mientras desplazo la ficha, para comprar sin volver arriba.
+
+**Estimación:** S (3 puntos)
+**Módulo:** `apps/web` (`ProductDetail`), variante de superficie (HU-122a), tokens de tema, `store_config`
+**Estado:** 🔲 Pendiente (priorizado — ola PDP)
+**Reutilización / builder:** barra inferior fija en móvil con nombre corto + precio (reactivo a la variante) + CTA, **activable por tienda** (`store_config.pdp_sticky_cta`, default on) y presentada como **variante de superficie** `product_cta` (`sticky-mobile` / `inline`). Estilos 100% por tokens; respeta estado agotado/selección incompleta (reusa la lógica de HU-099/100). Portátil a cualquier nicho; viaja en plantilla/preset.
+
+| # | Escenario | Resultado esperado |
+|---|-----------|-------------------|
+| AC-1 | Scroll en móvil | La barra aparece al salir de vista el CTA principal; muestra precio de la variante seleccionada |
+| AC-2 | Selección incompleta / agotado | El CTA refleja el mismo estado que el botón principal (deshabilitado + motivo) |
+| AC-3 | Config por tienda | Se puede desactivar por `store_config`; en escritorio no se muestra; el ajuste viaja en el paquete de plantilla |
+| AC-4 | A11y | No tapa contenido crítico, foco y contraste AA, no duplica el anuncio para lectores de pantalla |
+
+---
+
+### HU-285 — Estimador de envío y tiempo de entrega en la PDP · E4 (toca E7 envíos)  · **P2**
+
+> Como comprador, quiero estimar el costo y el tiempo de envío a mi ciudad desde la ficha, para decidir antes de llegar al checkout.
+
+**Estimación:** M (5 puntos)
+**Módulo:** `apps/web` (`ProductDetail`), `lib/shipping` (reusa tarifas + handling fee), `store_config`, tokens de tema
+**Estado:** 🔲 Pendiente (roadmap — ola PDP)
+**Reutilización / builder:** widget opcional (`store_config.pdp_shipping_estimator`, gating por plan) que **reutiliza el motor de tarifas ya existente** (tarifa fija / transportadora activa + cargo adicional, HU-280/handling) sin lógica nueva de proveedor — agnóstico a Skydropx u otra. Input de ciudad/código postal, resultado estilado por tokens. Default off para no exponer costos donde el comerciante no lo desee. Viaja en el paquete de plantilla/preset.
+
+| # | Escenario | Resultado esperado |
+|---|-----------|-------------------|
+| AC-1 | Ingresar destino | Devuelve costo estimado y rango de entrega usando el método de envío activo de la tienda |
+| AC-2 | Tarifa fija / sin cobertura | Muestra el valor fijo o un estado "sin cobertura" claro, sin romper la ficha |
+| AC-3 | Config por tienda/plan | Activable por `store_config` y gated por plan; oculto si está apagado |
+| AC-4 | Consistencia | El estimado coincide con lo que calcula el checkout para el mismo destino |
+
+---
+
+### HU-286 — Bloques de recomendación: "vistos recientemente" + cross-sell · E4  · **P2**
+
+> Como comprador, quiero ver productos relacionados y los que vi hace poco, para descubrir más y comprar en conjunto.
+
+**Estimación:** M (5 puntos)
+**Módulo:** `apps/web` (bloque reutilizable sobre el registry CMS), `store/recentlyViewed` (localStorage por origen), tokens de tema
+**Estado:** 🔲 Pendiente (roadmap — ola PDP)
+**Reutilización / builder:** "Vistos recientemente" por `localStorage` (por origen = por tenant, sin PII). "También te puede gustar" se generaliza a un **bloque del registro CMS** (`section_type: 'product_carousel'`) con fuente configurable (misma categoría / manuales / mejor valorados), insertable por el Constructor en PDP u otras páginas y estilado por tokens/variante de densidad (HU-122). Base para bundles/kits (roadmap E4). Viaja como sección en el paquete de página/preset.
+
+| # | Escenario | Resultado esperado |
+|---|-----------|-------------------|
+| AC-1 | Visitar productos | Se registran los últimos vistos (por origen) y se muestran en un carrusel, excluyendo el actual |
+| AC-2 | Relacionados configurables | El comerciante elige la fuente (categoría / manual / top-rated) desde el Constructor; sin datos → se oculta |
+| AC-3 | Reutilizable | El mismo bloque se puede colocar en home/landing; estilo por tokens y variante de densidad |
+| AC-4 | Privacidad/SSR | Sin PII; guard de hidratación para no desajustar el SSR |
+
+---
+
+### HU-287 — Compartir producto (Web Share + enlaces) · E4  · **P2**
+
+> Como comprador, quiero compartir un producto por WhatsApp o copiando el enlace, para enviárselo a alguien o guardarlo.
+
+**Estimación:** S (3 puntos)
+**Módulo:** `apps/web` (`ProductDetail`), `store_config`, tokens de tema
+**Estado:** 🔲 Pendiente (roadmap — ola PDP)
+**Reutilización / builder:** botón "Compartir" con **Web Share API** nativa (móvil) y fallback a copiar enlace + WhatsApp en escritorio. Canales activables por `store_config.pdp_share_channels` (lista), icono/estilo por tokens de tema. Reutiliza los metadatos OG/JSON-LD que la PDP ya genera. Agnóstico de nicho; viaja en el paquete de plantilla.
+
+| # | Escenario | Resultado esperado |
+|---|-----------|-------------------|
+| AC-1 | Móvil con Web Share | Abre la hoja nativa con título + URL canónica del producto |
+| AC-2 | Escritorio | Copiar enlace (feedback) + abrir WhatsApp con el enlace prellenado |
+| AC-3 | Config por tienda | Los canales se activan/ordenan por `store_config`; sin canales → botón oculto |
+| AC-4 | Metadatos | El enlace compartido muestra OG correcto (reusa metadatos de la PDP) |
 
 ---
 

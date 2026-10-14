@@ -94,7 +94,7 @@ Consolidar todo el contenido gestionable (banners, secciones del home, testimoni
 | Épica (v2) | Alcance | HU / códigos |
 |-----------|---------|--------------|
 | **E3 · Sitio público: layout, home y navegación** | Navbar, footer, 404, mantenimiento, hero, secciones del home, newsletter · *(roadmap: plantillas de diseño, variantes de disposición [122a/b/c], preview/publish, paquetes de plantilla, accesibilidad)* | N-01…07, H-01…08, HU-121, HU-122a/b/c, HU-128/129/154 🔲 |
-| **E4 · Tienda y catálogo** | Grid, filtros dinámicos, PDP, variantes genéricas · *(roadmap: reseñas, búsqueda, wishlist, filtro de precio, bundles/kits)* | T-01…15, HU-101…104, HU-168 🔲 |
+| **E4 · Tienda y catálogo** | Grid, filtros dinámicos, PDP, variantes genéricas · *(roadmap: reseñas, búsqueda, wishlist, filtro de precio, bundles/kits · **ola PDP:** galería/zoom, sticky CTA, avísame, estimador de envío, recomendaciones, compartir)* | T-01…15, HU-101…104, HU-168, HU-283…287 (+HU-105) 🔲 |
 | **E5 · Carrito** | Store Zustand, drawer, cupón, envío gratis, sync con BD · *(roadmap: carrito abandonado, motor de descuentos/promociones)* | C-01…08, HU-109/147 🔲 |
 | **E10 · Blog** | Listado, artículo, SEO por post, draft mode | B-01…08 |
 | **E11 · Páginas de contenido y servicios** | Landing configurables vía CMS (maquila/asesorías como instancia de ejemplo) | SV-01…06 |
