@@ -135,10 +135,11 @@ describe('PATCH /api/admin/orders/[id]/status — happy path', () => {
     )
   })
 
-  it('responde inmediatamente sin esperar al email (fire-and-forget)', async () => {
-    // El email tarda en resolverse pero la respuesta HTTP debe llegar antes
+  it('ESPERA el envío del email antes de responder (confiable en serverless)', async () => {
+    // En Vercel el fire-and-forget tras responder no está garantizado; por eso se
+    // awaitea. La respuesta no debe volver antes de que el email termine.
     ;(sendShippingNotification as jest.Mock).mockImplementation(
-      () => new Promise((resolve) => setTimeout(resolve, 500)),
+      () => new Promise((resolve) => setTimeout(resolve, 300)),
     )
     const { mockSupabase } = buildSupabaseMock({ data: mockOrder, error: null })
     mockCreateServerClient.mockReturnValue(mockSupabase as never)
@@ -148,8 +149,9 @@ describe('PATCH /api/admin/orders/[id]/status — happy path', () => {
     const elapsed = Date.now() - start
 
     expect(res.status).toBe(200)
-    // La respuesta no debe haber esperado los 500ms del email
-    expect(elapsed).toBeLessThan(400)
+    expect(sendShippingNotification).toHaveBeenCalled()
+    // Esperó el envío (≥300ms del mock), no respondió antes.
+    expect(elapsed).toBeGreaterThanOrEqual(250)
   })
 })
 

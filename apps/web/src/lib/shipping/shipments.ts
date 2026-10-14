@@ -49,6 +49,14 @@ export async function createShipmentForOrder(
 
     // 2. Load shipping config (ajustes/origen) + credenciales del carrier activo.
     const config = await getShippingConfig(supabase, order.tenant_id)
+
+    // HU-280/282: el método activo lo decide shipping_config.provider. Si es
+    // 'fixed' (tarifa fija), NO se genera guía aunque exista una instancia de
+    // transportadora activa — así el webhook de pago no intenta crear un envío.
+    if (config.provider === 'fixed') {
+      return null
+    }
+
     // ADR-004: credenciales del carrier desde la instancia activa (fallback legacy).
     const creds = await resolveShippingCreds(supabase, order.tenant_id)
     if (!creds) {

@@ -31,9 +31,11 @@ export async function PATCH(
       await restoreStockForOrder(order.order_number).catch((e) => console.error('[status] stock restore:', e))
     }
 
-    // ── Email al cliente — no bloquea la respuesta si falla ──────────────────
-    // La config se resuelve en el path (lectura rápida) y se registra en los logs
-    // del proyecto ADMIN; el envío real va async (no demora la respuesta).
+    // ── Email al cliente ────────────────────────────────────────────────────
+    // Se AWAITea el envío: en Vercel serverless el trabajo "fire-and-forget"
+    // después de responder NO está garantizado (la función se congela al devolver
+    // la respuesta y el fetch a Resend puede no completarse → correos intermitentes).
+    // Awaitear agrega ~1 s pero garantiza el envío; nunca tumba el cambio de estado.
     if (NOTIFIABLE_STATUSES.has(status) && order) {
       const ec = await resolveEmailConfig(supabase, adminUser.tenantId).catch((e) => {
         console.error('[status/route] resolveEmailConfig throw:', e instanceof Error ? e.message : String(e))
@@ -43,34 +45,32 @@ export async function PATCH(
 
       if (ec) {
         const emailConfig = { apiKey: ec.apiKey, fromEmail: ec.fromEmail, storeName: ec.storeName }
-        void (async () => {
-          try {
-            if (status === 'shipped') {
-              await sendShippingNotification(
-                {
-                  order_number:    order.order_number,
-                  customer_email:  order.customer_email,
-                  customer_name:   order.customer_name,
-                  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-                  tracking_number: (order as any).tracking_number ?? null,
-                  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-                  carrier_name:    (order as any).carrier_name    ?? null,
-                  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-                  label_url:       (order as any).label_url       ?? null,
-                },
-                emailConfig,
-              )
-            } else if (status === 'delivered' || status === 'cancelled') {
-              await sendStatusNotification(
-                { order_number: order.order_number, customer_email: order.customer_email, customer_name: order.customer_name },
-                status,
-                emailConfig,
-              )
-            }
-          } catch (emailErr) {
-            console.error('[status/route] email error:', emailErr)
+        try {
+          if (status === 'shipped') {
+            await sendShippingNotification(
+              {
+                order_number:    order.order_number,
+                customer_email:  order.customer_email,
+                customer_name:   order.customer_name,
+                // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                tracking_number: (order as any).tracking_number ?? null,
+                // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                carrier_name:    (order as any).carrier_name    ?? null,
+                // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                label_url:       (order as any).label_url       ?? null,
+              },
+              emailConfig,
+            )
+          } else if (status === 'delivered' || status === 'cancelled') {
+            await sendStatusNotification(
+              { order_number: order.order_number, customer_email: order.customer_email, customer_name: order.customer_name },
+              status,
+              emailConfig,
+            )
           }
-        })()
+        } catch (emailErr) {
+          console.error('[status/route] email error:', emailErr instanceof Error ? emailErr.message : emailErr)
+        }
       }
     }
 

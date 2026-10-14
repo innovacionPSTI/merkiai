@@ -72,13 +72,12 @@ export async function PATCH(
     await restoreStockForOrder(order.order_number).catch((e) => console.error('[payment-status] stock:', e))
   }
 
-  // Email de confirmación al cliente — fire-and-forget, no bloquea la respuesta.
-  // Config de correo instancia-first (ADR-004); cae a store_config legacy.
+  // Email de confirmación al cliente. Se AWAITea: en serverless el trabajo tras
+  // responder no está garantizado (la función se congela). Config instancia-first.
   if (payment_status === 'approved') {
-    void (async () => {
-      try {
-        const ec = await resolveEmailConfig(supabase, user!.tenantId).catch(() => null)
-        if (!ec) return
+    try {
+      const ec = await resolveEmailConfig(supabase, user!.tenantId).catch(() => null)
+      if (ec) {
         await sendPaymentConfirmed(
           {
             order_number:   order.order_number,
@@ -87,10 +86,10 @@ export async function PATCH(
           },
           { apiKey: ec.apiKey, fromEmail: ec.fromEmail, storeName: ec.storeName },
         )
-      } catch (emailErr) {
-        console.error('[payment-status] email error:', emailErr)
       }
-    })()
+    } catch (emailErr) {
+      console.error('[payment-status] email error:', emailErr instanceof Error ? emailErr.message : emailErr)
+    }
   }
 
   return NextResponse.json({ payment_status: order.payment_status, status: order.status })
