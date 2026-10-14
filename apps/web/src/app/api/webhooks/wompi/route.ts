@@ -28,8 +28,15 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: 'Invalid body' }, { status: 400 })
   }
 
-  const timestamp = req.headers.get('x-timestamp') ?? ''
-  const checksum = req.headers.get('x-checksum') ?? ''
+  // Wompi CO firma en el BODY (signature.properties/checksum + timestamp) y en el
+  // header X-Event-Checksum. Se parsea primero y se verifica con esos datos.
+  let event: Record<string, unknown>
+  try {
+    event = JSON.parse(rawBody)
+  } catch {
+    return NextResponse.json({ error: 'Invalid JSON' }, { status: 400 })
+  }
+  const headerChecksum = req.headers.get('x-event-checksum') ?? undefined
 
   // Cargar credenciales desde la BD
   // HU-216: config del TENANT resuelto por host (URLs de callback por subdominio).
@@ -41,22 +48,15 @@ export async function POST(req: NextRequest) {
   const active = await resolveActivePayment(supabase, tenantId).catch(() => null)
   const eventsSecret = active?.provider === 'wompi' ? (active.credentials.events_secret ?? '') : ''
 
-  if (!verifyWompiWebhook(rawBody, timestamp, checksum, eventsSecret)) {
+  if (!verifyWompiWebhook(event, eventsSecret, headerChecksum)) {
     console.warn('[webhook/wompi] Firma inválida')
     return NextResponse.json({ error: 'Invalid signature' }, { status: 401 })
   }
 
-  // Ventana de replay: rechaza eventos con timestamp fuera de ±5 min.
-  if (!isWompiTimestampFresh(timestamp)) {
+  // Ventana de replay: rechaza eventos con timestamp (del body) fuera de ±5 min.
+  if (!isWompiTimestampFresh(event.timestamp as number | undefined)) {
     console.warn('[webhook/wompi] Timestamp fuera de ventana (posible replay)')
     return NextResponse.json({ error: 'Stale timestamp' }, { status: 401 })
-  }
-
-  let event: Record<string, unknown>
-  try {
-    event = JSON.parse(rawBody)
-  } catch {
-    return NextResponse.json({ error: 'Invalid JSON' }, { status: 400 })
   }
 
   if (event.event !== 'transaction.updated') {
