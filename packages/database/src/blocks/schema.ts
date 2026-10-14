@@ -219,6 +219,31 @@ export const blockSchemas: Record<string, BlockSchema> = {
     },
   },
 
+  // HU-286 v2 · carrusel de productos reutilizable (cross-sell / recomendaciones).
+  // Insertable en cualquier página; la fuente se elige por tienda. Base para bundles.
+  product_carousel: {
+    type: 'product_carousel',
+    label: 'Carrusel de productos',
+    description: 'Fila de productos elegidos por fuente: destacados, más vendidos, nuevos, una categoría o manuales.',
+    category: 'commerce',
+    fields: {
+      title: { label: 'Título de la sección', type: 'text', storage: 'column' },
+      source: {
+        label: 'Fuente', type: 'select', storage: 'settings', default: 'featured',
+        options: [
+          { value: 'featured',     label: 'Destacados' },
+          { value: 'best_selling', label: 'Más vendidos' },
+          { value: 'newest',       label: 'Más nuevos' },
+          { value: 'category',     label: 'De una categoría' },
+          { value: 'manual',       label: 'Selección manual' },
+        ],
+      },
+      category_slug: { label: 'Categoría (slug)', type: 'text', storage: 'settings', help: 'Solo si la fuente es "De una categoría". Ej: cafe-medio' },
+      product_slugs: { label: 'Productos (slugs)', type: 'textarea', storage: 'settings', help: 'Solo si la fuente es "Selección manual". Slugs separados por coma, en orden.' },
+      limit: { label: 'Cantidad', type: 'number', storage: 'settings', default: 8 },
+    },
+  },
+
   historia: {
     type: 'historia',
     label: 'Bloque de historia',

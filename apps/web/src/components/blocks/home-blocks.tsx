@@ -27,6 +27,7 @@ import CardsSection from '@/components/sections/CardsSection'
 import FaqSection from '@/components/sections/FaqSection'
 import CtaSection from '@/components/sections/CtaSection'
 import TestimonialsSection from '@/components/sections/TestimonialsSection'
+import ProductCarousel from '@/components/sections/ProductCarousel'
 
 export type HomeData = Awaited<ReturnType<typeof getWebHomeData>>
 export type HomeSection = HomeData['homeSections'][number]
@@ -194,6 +195,10 @@ function CtaBlock({ section }: BlockProps) {
 function TestimonialsBlock({ section }: BlockProps) {
   return section ? <TestimonialsSection section={section} items={section.items ?? []} /> : null
 }
+// HU-286 v2 · carrusel de productos (server component async: fetchea su fuente).
+async function ProductCarouselBlock({ section, template }: BlockProps) {
+  return <ProductCarousel section={section as never} template={template} />
+}
 
 // ── Registry + preset ────────────────────────────────────────────────────────
 
@@ -216,6 +221,8 @@ const DEFAULT_BLOCKS: Record<string, HomeBlock> = {
   faq:               FaqBlock,
   cta:               CtaBlock,
   testimonials:      TestimonialsBlock,
+  // HU-286 v2 · carrusel de productos (async server component)
+  product_carousel:  ProductCarouselBlock as unknown as HomeBlock,
 }
 
 /** Registry de bloques para un template (hoy solo 'default'). */

@@ -26,6 +26,7 @@ import ContentSection      from './ContentSection'
 import ColumnsSection      from './ColumnsSection'
 import MediaBanner         from './MediaBanner'
 import SpacerSection       from './SpacerSection'
+import ProductCarousel     from './ProductCarousel'
 import SectionShell        from './SectionShell'
 
 interface Props {
@@ -80,6 +81,10 @@ function renderSection(
 
     case 'spacer':
       return <SpacerSection section={section} />
+
+    // HU-286 v2 · carrusel de productos (cross-sell / recomendaciones)
+    case 'product_carousel':
+      return <ProductCarousel section={section} />
 
     default:
       // Tipo desconocido: renderizar como texto plano para no perder contenido

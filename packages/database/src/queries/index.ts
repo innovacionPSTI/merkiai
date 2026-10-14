@@ -1,6 +1,7 @@
 export * from './products'
 export * from './reviews'
 export * from './stock-notifications'
+export * from './carousel'
 export * from './orders'
 export * from './customers'
 export * from './blog'

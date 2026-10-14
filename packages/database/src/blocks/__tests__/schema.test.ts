@@ -23,6 +23,8 @@ const ALLOWED_TYPES = [
   'blog_preview', 'newsletter',
   // HU-252 · bloques genéricos de layout
   'content_section', 'columns', 'media_banner', 'spacer',
+  // HU-286 v2 · carrusel de productos
+  'product_carousel',
 ]
 
 describe('blockSchemas', () => {
