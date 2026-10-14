@@ -380,7 +380,7 @@
 
 **Estimación:** M (5 puntos)
 **Módulo:** admin (editor de páginas), `page_sections.order_index`, endpoint de reordenamiento
-**Estado:** 🔲 Pendiente (roadmap v17)
+**Estado:** ✅ **Cubierta por HU-251** (Constructor UX): drag-and-drop nativo de secciones (handle ⠿, `draggable`/`onDrop`) que persiste `order_index` por lote, con los ▲▼ como fallback accesible por teclado; la web pública renderiza en el nuevo orden. Los ítems/menú/imágenes/categorías (drag generalizado) siguen en HU-126.
 
 | # | Escenario | Resultado esperado |
 |---|-----------|-------------------|
