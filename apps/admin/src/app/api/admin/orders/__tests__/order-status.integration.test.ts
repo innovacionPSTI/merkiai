@@ -15,6 +15,8 @@ import { NextRequest } from 'next/server'
 jest.mock('@merkiai/database', () => ({
   createServerClient: jest.fn(),
   restoreStockForOrder: jest.fn().mockResolvedValue(undefined),
+  // ADR-004: la ruta resuelve la config de correo por instancia/legacy.
+  resolveEmailConfig: jest.fn().mockResolvedValue({ apiKey: 're_test_key', fromEmail: 'noreply@tienda.example.com', storeName: 'Tienda', provider: 'resend' }),
 }))
 
 // HU-158: la ruta usa getAdminUser + getAdminDb (RLS por tenant).
@@ -31,6 +33,7 @@ jest.mock('@/lib/email', () => ({
 
 import { createServerClient } from '@merkiai/database'
 import { sendShippingNotification, sendStatusNotification } from '@/lib/email'
+import { resolveEmailConfig } from '@merkiai/database'
 import { PATCH } from '../[id]/status/route'
 
 const mockCreateServerClient = createServerClient as jest.MockedFunction<typeof createServerClient>
@@ -193,7 +196,8 @@ describe('PATCH /api/admin/orders/[id]/status — email triggers', () => {
     )
   })
 
-  it('no envía email si store_config no tiene resend_api_key', async () => {
+  it('no envía email si no hay configuración de correo', async () => {
+    ;(resolveEmailConfig as jest.Mock).mockResolvedValueOnce(null)
     const { mockSupabase } = buildSupabaseMock(
       { data: mockOrder, error: null },
       { data: { resend_api_key: null, resend_from_email: null, store_name: null }, error: null },

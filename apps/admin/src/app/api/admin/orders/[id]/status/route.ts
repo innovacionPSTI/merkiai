@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { restoreStockForOrder } from '@merkiai/database'
+import { restoreStockForOrder, resolveEmailConfig } from '@merkiai/database'
 import { sendShippingNotification, sendStatusNotification } from '@/lib/email'
 import { getAdminUser } from '@/lib/auth'
 import { getAdminDb } from '@/lib/admin-db'
@@ -35,17 +35,14 @@ export async function PATCH(
     if (NOTIFIABLE_STATUSES.has(status) && order) {
       void (async () => {
         try {
-          const { data: cfg } = await supabase
-            .from('store_config')
-            .select('resend_api_key, resend_from_email, store_name')
-            .single()
-
-          if (!cfg?.resend_api_key || !cfg?.resend_from_email) return
+          // Config de correo instancia-first (ADR-004); cae a store_config legacy.
+          const ec = await resolveEmailConfig(supabase, adminUser.tenantId).catch(() => null)
+          if (!ec) return
 
           const emailConfig = {
-            apiKey:     cfg.resend_api_key,
-            fromEmail:  cfg.resend_from_email,
-            storeName:  cfg.store_name ?? undefined,
+            apiKey:     ec.apiKey,
+            fromEmail:  ec.fromEmail,
+            storeName:  ec.storeName,
           }
 
           if (status === 'shipped') {

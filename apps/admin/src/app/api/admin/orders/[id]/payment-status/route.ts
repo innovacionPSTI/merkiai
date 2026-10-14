@@ -7,7 +7,7 @@
  * Seguridad: guard admin (super_admin/admin/vendedor); solo acepta 'approved' o
  * 'rejected'; nunca accesible desde el sitio público.
  */
-import { applyStockForOrder, restoreStockForOrder } from '@merkiai/database'
+import { applyStockForOrder, restoreStockForOrder, resolveEmailConfig } from '@merkiai/database'
 import { getAdminDb } from '@/lib/admin-db'
 import type { Database } from '@merkiai/database'
 import { NextRequest, NextResponse } from 'next/server'
@@ -72,22 +72,20 @@ export async function PATCH(
     await restoreStockForOrder(order.order_number).catch((e) => console.error('[payment-status] stock:', e))
   }
 
-  // Email de confirmación al cliente — fire-and-forget, no bloquea la respuesta
+  // Email de confirmación al cliente — fire-and-forget, no bloquea la respuesta.
+  // Config de correo instancia-first (ADR-004); cae a store_config legacy.
   if (payment_status === 'approved') {
     void (async () => {
       try {
-        const { data: cfg } = await supabase
-          .from('store_config')
-          .select('resend_api_key, resend_from_email, store_name')
-          .single()
-        if (!cfg?.resend_api_key || !cfg?.resend_from_email) return
+        const ec = await resolveEmailConfig(supabase, user!.tenantId).catch(() => null)
+        if (!ec) return
         await sendPaymentConfirmed(
           {
             order_number:   order.order_number,
             customer_email: order.customer_email,
             customer_name:  order.customer_name,
           },
-          { apiKey: cfg.resend_api_key, fromEmail: cfg.resend_from_email, storeName: cfg.store_name ?? undefined },
+          { apiKey: ec.apiKey, fromEmail: ec.fromEmail, storeName: ec.storeName },
         )
       } catch (emailErr) {
         console.error('[payment-status] email error:', emailErr)
