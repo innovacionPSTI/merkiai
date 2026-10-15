@@ -229,7 +229,7 @@ export default function ShopClient({ products, total, pageSize, facets, state, g
     <div className="min-h-screen bg-brand-cream pt-24">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
 
-        <div className="flex items-center justify-between mb-8">
+        <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between mb-8">
           <div>
             <h1 className="font-display text-brand-primary text-section">Catálogo</h1>
             <p className="font-brand text-sm text-brand-primary/50 mt-1">
@@ -238,9 +238,11 @@ export default function ShopClient({ products, total, pageSize, facets, state, g
             </p>
           </div>
 
-          <div className="flex items-center gap-3">
+          <div className="flex flex-wrap items-center gap-2 sm:gap-3 w-full sm:w-auto">
             {/* Búsqueda con autocompletado (HU-102) → URL → SSR */}
-            <SearchBox initialQuery={state.q} onSearch={(q) => nav({ q })} />
+            <div className="flex-1 min-w-0 sm:flex-initial">
+              <SearchBox initialQuery={state.q} onSearch={(q) => nav({ q })} fullWidth />
+            </div>
 
             {hasAnyFilters && (
               <button onClick={() => setMobileFiltersOpen(true)}

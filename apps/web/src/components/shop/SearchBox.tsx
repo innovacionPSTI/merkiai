@@ -21,7 +21,7 @@ interface Suggestion {
 const fmt = (n: number) =>
   new Intl.NumberFormat('es-CO', { style: 'currency', currency: 'COP', maximumFractionDigits: 0 }).format(n)
 
-export default function SearchBox({ initialQuery = '', onSearch }: { initialQuery?: string; onSearch: (q: string) => void }) {
+export default function SearchBox({ initialQuery = '', onSearch, fullWidth = false }: { initialQuery?: string; onSearch: (q: string) => void; fullWidth?: boolean }) {
   const router = useRouter()
   const [q, setQ] = useState(initialQuery)
   const [items, setItems] = useState<Suggestion[]>([])
@@ -81,12 +81,12 @@ export default function SearchBox({ initialQuery = '', onSearch }: { initialQuer
           aria-label="Buscar productos"
           aria-autocomplete="list"
           aria-expanded={open}
-          className="font-brand text-sm border border-brand-primary/20 rounded-full pl-9 pr-4 py-2 bg-white text-brand-primary focus:outline-none focus:border-brand-primary w-44 sm:w-64 transition-all"
+          className={`font-brand text-sm border border-brand-primary/20 rounded-full pl-9 pr-4 py-2 bg-white text-brand-primary focus:outline-none focus:border-brand-primary transition-all ${fullWidth ? 'w-full' : 'w-44 sm:w-64'}`}
         />
       </form>
 
       {open && items.length > 0 && (
-        <ul className="absolute z-30 mt-2 right-0 w-72 sm:w-80 max-h-[70vh] overflow-y-auto bg-white rounded-2xl shadow-xl border border-gray-100 p-1.5" role="listbox">
+        <ul className="absolute z-30 mt-2 left-0 right-0 w-auto sm:left-auto sm:w-80 max-h-[70vh] overflow-y-auto bg-white rounded-2xl shadow-xl border border-gray-100 p-1.5" role="listbox">
           {items.map((s, i) => (
             <li key={s.id} role="option" aria-selected={i === active}>
               <Link
