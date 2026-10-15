@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation'
 import ImageUpload from '@/components/ImageUpload'
 import { Icon } from '@merkiai/ui'
 import type { VariantType } from '@merkiai/database'
+import { useDragReorder } from '@/lib/useDragReorder'
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
 
@@ -128,6 +129,11 @@ export default function ProductForm({ product, categories, variantTypes }: Props
   const [uploadsInProgress, setUploadsInProgress] = useState(0)
   const [error, setError]             = useState('')
   const [showDims, setShowDims]       = useState(false)
+
+  // HU-126 · reordenar imágenes por arrastre (la primera = principal, posición 0).
+  const imgDnd = useDragReorder((from, to) =>
+    setForm((f) => ({ ...f, images: imgDnd.arrayMove(f.images, from, to) })),
+  )
 
   // Auto-slug
   useEffect(() => {
@@ -464,7 +470,7 @@ export default function ProductForm({ product, categories, variantTypes }: Props
             <div className="flex items-center justify-between">
               <h2 className="font-brand font-semibold text-brand-primary">
                 Imágenes
-                <span className="ml-2 text-xs text-brand-primary/40 font-normal">La primera es la imagen principal</span>
+                <span className="ml-2 text-xs text-brand-primary/40 font-normal">Arrastra para reordenar · la primera es la principal</span>
               </h2>
               {form.images.length < 4 && (
                 <button
@@ -479,7 +485,25 @@ export default function ProductForm({ product, categories, variantTypes }: Props
 
             <div className="grid grid-cols-2 gap-4">
               {form.images.map((url, idx) => (
-                <div key={idx} className="relative">
+                <div
+                  key={idx}
+                  {...imgDnd.dropProps(idx)}
+                  className={`relative rounded-xl transition-all ${
+                    imgDnd.dragIdx === idx ? 'opacity-40' : ''
+                  } ${imgDnd.overIdx === idx && imgDnd.dragIdx !== null && imgDnd.dragIdx !== idx ? 'ring-2 ring-indigo-400 ring-offset-2' : ''}`}
+                >
+                  {/* Handle de arrastre (HU-126) */}
+                  <div
+                    {...imgDnd.handleProps(idx)}
+                    className="absolute top-1 left-1 z-10 cursor-grab active:cursor-grabbing rounded-md bg-white/85 p-1 text-slate-400 hover:text-slate-700 shadow-sm"
+                    title="Arrastra para reordenar"
+                    aria-label="Arrastrar imagen para reordenar"
+                  ><Icon name="grid" size={14} /></div>
+                  {idx === 0 && (
+                    <span className="absolute bottom-1 left-1 z-10 rounded-full bg-brand-primary/90 text-brand-cream text-[10px] font-medium px-2 py-0.5">
+                      Principal
+                    </span>
+                  )}
                   <ImageUpload
                     value={url}
                     onChange={(newUrl) => setForm((f) => {
