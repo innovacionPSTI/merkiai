@@ -23,13 +23,15 @@ create table if not exists public.order_returns (
   resolved_at   timestamptz
 );
 
--- FK compuesta con tenant (patrón e17/04). Borra devoluciones si se borra el pedido.
+-- FK al pedido. `orders.id` es PK (único por sí solo); NO existe UNIQUE en
+-- (id, tenant_id), así que la FK es simple sobre `id`. El aislamiento por tenant
+-- lo garantiza la columna `tenant_id` + la RLS de esta tabla.
 do $$ begin
   if not exists (select 1 from pg_constraint where conname = 'order_returns_order_fk') then
     alter table public.order_returns
       add constraint order_returns_order_fk
-      foreign key (order_id, tenant_id)
-      references public.orders (id, tenant_id) on delete cascade;
+      foreign key (order_id)
+      references public.orders (id) on delete cascade;
   end if;
 end $$;
 
