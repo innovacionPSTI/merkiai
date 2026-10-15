@@ -451,8 +451,8 @@ function ProductCard({ product, fmt, addItem, colorMap }: {
           </div>
         )}
 
-        <div className="flex items-center justify-between mt-3">
-          <div>
+        <div className="flex flex-wrap items-center justify-between gap-x-2 gap-y-2 mt-3">
+          <div className="min-w-0">
             {hasMultiplePrices && <span className="font-brand text-[10px] text-brand-primary/40">Desde</span>}
             <p className="font-brand font-bold text-brand-price leading-tight flex items-baseline gap-2">
               {defaultVariant ? fmt(minPrice) : '—'}
@@ -463,7 +463,7 @@ function ProductCard({ product, fmt, addItem, colorMap }: {
           </div>
           {canQuickAdd ? (
             outOfStock ? (
-              <span className="rounded-full border border-brand-primary/20 text-brand-primary/40 px-3 py-1 text-xs font-brand">Agotado</span>
+              <span className="shrink-0 whitespace-nowrap rounded-full border border-brand-primary/20 text-brand-primary/40 px-3 py-1 text-xs font-brand">Agotado</span>
             ) : (
             <button
               onClick={() => {
@@ -486,13 +486,13 @@ function ProductCard({ product, fmt, addItem, colorMap }: {
                   height_cm: defaultVariant.height_cm ?? null,
                 })
               }}
-              className="rounded-full border border-brand-primary text-brand-primary px-3 py-1 text-xs font-brand hover:bg-brand-primary hover:text-brand-cream transition-colors">
+              className="shrink-0 whitespace-nowrap rounded-full border border-brand-primary text-brand-primary px-3 py-1 text-xs font-brand hover:bg-brand-primary hover:text-brand-cream transition-colors">
               Agregar
             </button>
             )
           ) : (
             <Link href={`/shop/${product.slug}`}
-              className="rounded-full border border-brand-primary text-brand-primary px-3 py-1 text-xs font-brand hover:bg-brand-primary hover:text-brand-cream transition-colors">
+              className="shrink-0 whitespace-nowrap rounded-full border border-brand-primary text-brand-primary px-3 py-1 text-xs font-brand hover:bg-brand-primary hover:text-brand-cream transition-colors">
               Ver opciones
             </Link>
           )}

@@ -132,8 +132,8 @@ export default function FeaturedProducts({ products, title = 'Productos Destacad
                     </div>
                   )}
 
-                  <div className="mt-4 flex items-center justify-between">
-                    <div>
+                  <div className="mt-4 flex flex-wrap items-center justify-between gap-2">
+                    <div className="min-w-0">
                       {hasMultiplePrices && (
                         <span className="font-brand text-[10px] text-brand-primary/40 block">Desde</span>
                       )}
@@ -146,7 +146,7 @@ export default function FeaturedProducts({ products, title = 'Productos Destacad
                     </div>
                     {canQuickAdd ? (
                       outOfStock ? (
-                        <span className="rounded-full border border-brand-primary/20 text-brand-primary/40 px-4 py-1.5 text-sm font-brand">
+                        <span className="shrink-0 whitespace-nowrap rounded-full border border-brand-primary/20 text-brand-primary/40 px-4 py-1.5 text-sm font-brand">
                           Agotado
                         </span>
                       ) : (
@@ -171,7 +171,7 @@ export default function FeaturedProducts({ products, title = 'Productos Destacad
                             height_cm: defaultVariant.height_cm ?? null,
                           })
                         }}
-                        className="rounded-full border border-brand-primary text-brand-primary px-4 py-1.5 text-sm font-brand hover:bg-brand-primary hover:text-brand-cream transition-colors"
+                        className="shrink-0 whitespace-nowrap rounded-full border border-brand-primary text-brand-primary px-4 py-1.5 text-sm font-brand hover:bg-brand-primary hover:text-brand-cream transition-colors"
                       >
                         Agregar
                       </button>
@@ -179,7 +179,7 @@ export default function FeaturedProducts({ products, title = 'Productos Destacad
                     ) : (
                       <Link
                         href={`/shop/${product.slug}`}
-                        className="rounded-full border border-brand-primary text-brand-primary px-4 py-1.5 text-sm font-brand hover:bg-brand-primary hover:text-brand-cream transition-colors"
+                        className="shrink-0 whitespace-nowrap rounded-full border border-brand-primary text-brand-primary px-4 py-1.5 text-sm font-brand hover:bg-brand-primary hover:text-brand-cream transition-colors"
                       >
                         Ver opciones
                       </Link>
