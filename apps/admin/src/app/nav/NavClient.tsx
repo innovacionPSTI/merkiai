@@ -55,6 +55,31 @@ export default function NavClient({ initialItems }: Props) {
   const [items, setItems] = useState<NavItem[]>(initialItems)
   const [saving, setSaving] = useState<number | null>(null)
   const [error, setError] = useState('')
+  // HU-126 · reordenar por arrastre dentro del mismo nivel (mismo parent_id).
+  const [dragId, setDragId] = useState<number | null>(null)
+  const [overId, setOverId] = useState<number | null>(null)
+  const dragParent = dragId !== null ? (items.find((i) => i.id === dragId)?.parent_id ?? null) : undefined
+
+  async function moveNav(targetId: number) {
+    const from = items.find((i) => i.id === dragId)
+    const target = items.find((i) => i.id === targetId)
+    if (!from || !target || from.id === target.id || from.parent_id !== target.parent_id) return
+    const sibs = items.filter((i) => i.parent_id === from.parent_id).sort((a, b) => a.order_index - b.order_index)
+    const fi = sibs.findIndex((s) => s.id === from.id)
+    const ti = sibs.findIndex((s) => s.id === target.id)
+    const next = [...sibs]
+    const [moved] = next.splice(fi, 1)
+    next.splice(ti, 0, moved)
+    const reindexed = next.map((s, i) => ({ ...s, order_index: i }))
+    setItems((prev) => prev.map((it) => {
+      const r = reindexed.find((s) => s.id === it.id)
+      return r ? { ...it, order_index: r.order_index } : it
+    }))
+    const changed = reindexed.filter((s) => sibs.find((o) => o.id === s.id)?.order_index !== s.order_index)
+    await Promise.all(changed.map((s) =>
+      fetch('/api/admin/nav', { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ id: s.id, order_index: s.order_index }) }),
+    ))
+  }
 
   // New item form state (top-level)
   const [newLabel, setNewLabel] = useState('')
@@ -165,15 +190,27 @@ export default function NavClient({ initialItems }: Props) {
     }
 
     const isSaving = saving === item.id
+    const sameLevel = dragId !== null && item.parent_id === dragParent
+    const isDragged = dragId === item.id
+    const isOver = sameLevel && overId === item.id && !isDragged
 
     return (
       <div
-        className={`flex items-center gap-3 px-4 py-3 border-b border-gray-100 last:border-0 ${
+        onDragOver={(e) => { if (sameLevel) { e.preventDefault(); if (overId !== item.id) setOverId(item.id) } }}
+        onDrop={(e) => { if (sameLevel) { e.preventDefault(); void moveNav(item.id) } setDragId(null); setOverId(null) }}
+        className={`flex items-center gap-3 px-4 py-3 border-b border-gray-100 last:border-0 transition-all ${
           indent ? 'bg-gray-50 pl-10' : 'bg-white'
-        }`}
+        } ${isDragged ? 'opacity-40' : ''} ${isOver ? 'shadow-[inset_0_2px_0_0_#818cf8]' : ''}`}
       >
-        {/* Drag handle (visual only) */}
-        <span className="text-gray-300 cursor-grab select-none text-sm">⠿</span>
+        {/* Drag handle (HU-126) */}
+        <span
+          className="text-gray-300 hover:text-gray-500 cursor-grab active:cursor-grabbing select-none text-sm"
+          draggable
+          onDragStart={() => { setDragId(item.id); setOverId(item.id) }}
+          onDragEnd={() => { setDragId(null); setOverId(null) }}
+          title="Arrastra para reordenar"
+          aria-label="Arrastrar para reordenar"
+        >⠿</span>
 
         {/* Toggle enabled */}
         <Toggle
