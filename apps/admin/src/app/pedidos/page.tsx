@@ -108,8 +108,8 @@ export default async function PedidosAdminPage({
       </div>
 
       {/* Tabla */}
-      <div className="bg-white rounded-2xl shadow-sm overflow-hidden">
-        <table className="w-full">
+      <div className="bg-white rounded-2xl shadow-sm overflow-hidden overflow-x-auto">
+        <table className="w-full min-w-[640px]">
           <thead>
             <tr className="bg-gray-50">
               {['#', 'Cliente', 'Fecha', 'Total', 'Estado', 'Tracking', ''].map((h) => (

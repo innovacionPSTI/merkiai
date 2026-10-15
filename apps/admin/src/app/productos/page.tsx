@@ -46,7 +46,7 @@ export default async function ProductosPage({
           title="Productos"
           description="Administra el catálogo de productos de tu tienda."
           action={
-            <div className="flex items-center gap-3">
+            <div className="flex flex-wrap items-center gap-2 sm:gap-3">
               {/* HU-134 · exportar/importar solo para roles con permiso de datos */}
               {userCanManageData(adminUser) && (
                 <>

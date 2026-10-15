@@ -151,8 +151,8 @@ export default function VariantTypesClient({ variantTypes: initial }: Props) {
           </p>
         </div>
       ) : (
-        <div className="bg-white rounded-2xl shadow-sm overflow-hidden">
-          <table className="w-full">
+        <div className="bg-white rounded-2xl shadow-sm overflow-hidden overflow-x-auto">
+          <table className="w-full min-w-[640px]">
             <thead>
               <tr className="border-b border-gray-100">
                 <th className="text-left font-brand text-xs text-brand-primary/40 px-6 py-3">Nombre</th>

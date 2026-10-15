@@ -109,7 +109,7 @@ export function PanelSidebar({ brand, groups, footer }: { brand?: ReactNode; gro
 export function PageHeader({ title, description, action }: { title: ReactNode; description?: ReactNode; action?: ReactNode }) {
   return (
     <div style={{
-      display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: 16, marginBottom: 18,
+      display: 'flex', flexWrap: 'wrap', justifyContent: 'space-between', alignItems: 'flex-start', gap: 16, marginBottom: 18,
       background: 'var(--ui-surface)', border: '1px solid var(--ui-border)', borderLeft: '5px solid var(--ui-primary)',
       borderRadius: 'var(--ui-radius-lg)', boxShadow: 'var(--ui-shadow)', padding: '20px 24px',
     }}>

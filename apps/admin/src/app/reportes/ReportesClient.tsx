@@ -88,7 +88,8 @@ export default function ReportesClient() {
             {report.topProducts.length === 0 ? (
               <p className="font-brand text-sm text-brand-primary/40">Sin ventas en el rango seleccionado.</p>
             ) : (
-              <table className="w-full font-brand text-sm">
+              <div className="overflow-x-auto">
+              <table className="w-full min-w-[520px] font-brand text-sm">
                 <thead>
                   <tr className="text-brand-primary/50 text-left border-b border-brand-primary/10">
                     <th className="py-2">Producto</th><th className="py-2 text-right">Unidades</th><th className="py-2 text-right">Ingresos</th>
@@ -104,6 +105,7 @@ export default function ReportesClient() {
                   ))}
                 </tbody>
               </table>
+              </div>
             )}
           </div>
         </>

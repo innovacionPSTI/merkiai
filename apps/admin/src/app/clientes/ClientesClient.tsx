@@ -125,8 +125,8 @@ export default function ClientesClient({ clients }: Props) {
       </div>
 
       {/* Tabla */}
-      <div className="bg-white rounded-2xl shadow-sm overflow-hidden">
-        <table className="w-full">
+      <div className="bg-white rounded-2xl shadow-sm overflow-hidden overflow-x-auto">
+        <table className="w-full min-w-[640px]">
           <thead>
             <tr className="border-b border-gray-100">
               <th className="font-brand text-xs text-brand-primary/40 text-left px-6 py-4 uppercase tracking-wide">

@@ -63,7 +63,8 @@ export default function ProductsTable({ products, categories, emptyQ }: Props) {
 
   return (
     <div className="relative">
-      <table className="w-full">
+      <div className="overflow-x-auto">
+        <table className="w-full min-w-[720px]">
         <thead>
           <tr className="bg-gray-50">
             <th className="px-4 py-3 pl-6 w-10">
@@ -116,6 +117,7 @@ export default function ProductsTable({ products, categories, emptyQ }: Props) {
           })}
         </tbody>
       </table>
+      </div>
 
       {/* Barra flotante de acciones masivas */}
       {someChecked && (

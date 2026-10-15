@@ -238,13 +238,13 @@ export default function CuponesClient({ initialCoupons }: Props) {
       )}
 
       {/* Table */}
-      <div className="bg-white rounded-2xl shadow-sm overflow-hidden">
+      <div className="bg-white rounded-2xl shadow-sm overflow-hidden overflow-x-auto">
         {coupons.length === 0 ? (
           <div className="p-12 text-center">
             <p className="font-brand text-brand-primary/40 text-sm">No hay cupones creados aún</p>
           </div>
         ) : (
-          <table className="w-full">
+          <table className="w-full min-w-[640px]">
             <thead>
               <tr className="border-b border-gray-100">
                 {['Código', 'Descuento', 'Mín. pedido', 'Usos', 'Expira', 'Estado', ''].map((h) => (

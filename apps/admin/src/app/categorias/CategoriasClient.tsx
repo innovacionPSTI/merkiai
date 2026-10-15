@@ -119,7 +119,7 @@ export default function CategoriasClient({ categories: initial }: { categories: 
           }
         />
 
-        <div className="bg-white rounded-2xl shadow-sm overflow-hidden">
+        <div className="bg-white rounded-2xl shadow-sm overflow-hidden overflow-x-auto">
           {categories.length === 0 ? (
             <div className="px-6 py-16 text-center">
               <p className="font-brand text-sm text-brand-primary/30 mb-3">No hay categorías.</p>
@@ -131,7 +131,7 @@ export default function CategoriasClient({ categories: initial }: { categories: 
               </button>
             </div>
           ) : (
-            <table className="w-full">
+            <table className="w-full min-w-[560px]">
               <thead>
                 <tr className="border-b border-gray-100">
                   <th className="w-8 px-4 py-4" />

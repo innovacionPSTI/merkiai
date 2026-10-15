@@ -55,29 +55,51 @@ export default function NavClient({ initialItems }: Props) {
   const [items, setItems] = useState<NavItem[]>(initialItems)
   const [saving, setSaving] = useState<number | null>(null)
   const [error, setError] = useState('')
-  // HU-126 · reordenar por arrastre dentro del mismo nivel (mismo parent_id).
+  // HU-126 · reordenar por arrastre. Permite mover DENTRO del mismo nivel y
+  // también CAMBIAR DE NIVEL (soltar junto a un ítem adopta su parent_id). Se
+  // respeta el máximo de 1 nivel: un ítem con sub-ítems no puede anidarse.
   const [dragId, setDragId] = useState<number | null>(null)
   const [overId, setOverId] = useState<number | null>(null)
-  const dragParent = dragId !== null ? (items.find((i) => i.id === dragId)?.parent_id ?? null) : undefined
+  const dragHasChildren = dragId !== null && items.some((i) => i.parent_id === dragId)
+
+  /** ¿Se puede soltar el ítem arrastrado junto a `target`? */
+  function canDropOn(target: NavItem): boolean {
+    if (dragId === null || target.id === dragId) return false
+    if (target.parent_id === dragId) return false            // no anidarse bajo sí mismo
+    if (target.parent_id !== null && dragHasChildren) return false // un padre no puede volverse hijo (máx 1 nivel)
+    return true
+  }
 
   async function moveNav(targetId: number) {
     const from = items.find((i) => i.id === dragId)
     const target = items.find((i) => i.id === targetId)
-    if (!from || !target || from.id === target.id || from.parent_id !== target.parent_id) return
-    const sibs = items.filter((i) => i.parent_id === from.parent_id).sort((a, b) => a.order_index - b.order_index)
-    const fi = sibs.findIndex((s) => s.id === from.id)
+    if (!from || !target || from.id === target.id || !canDropOn(target)) return
+    const newParent = target.parent_id ?? null
+
+    // Hermanos del NIVEL DESTINO (excluyendo el arrastrado), en orden.
+    const sibs = items
+      .filter((i) => i.parent_id === newParent && i.id !== from.id)
+      .sort((a, b) => a.order_index - b.order_index)
     const ti = sibs.findIndex((s) => s.id === target.id)
-    const next = [...sibs]
-    const [moved] = next.splice(fi, 1)
-    next.splice(ti, 0, moved)
-    const reindexed = next.map((s, i) => ({ ...s, order_index: i }))
+    const inserted = [...sibs]
+    inserted.splice(ti < 0 ? sibs.length : ti, 0, { ...from, parent_id: newParent })
+    const reindexed = inserted.map((s, i) => ({ ...s, order_index: i }))
+
+    // Optimista: el arrastrado cambia parent_id + order; el resto, su order.
     setItems((prev) => prev.map((it) => {
       const r = reindexed.find((s) => s.id === it.id)
+      if (it.id === from.id) return { ...it, parent_id: newParent, order_index: r?.order_index ?? it.order_index }
       return r ? { ...it, order_index: r.order_index } : it
     }))
-    const changed = reindexed.filter((s) => sibs.find((o) => o.id === s.id)?.order_index !== s.order_index)
-    await Promise.all(changed.map((s) =>
-      fetch('/api/admin/nav', { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ id: s.id, order_index: s.order_index }) }),
+
+    // Persistencia: el arrastrado siempre (parent + order); los demás si cambió el order.
+    const patches = reindexed.map((s) => {
+      if (s.id === from.id) return { id: s.id, parent_id: newParent, order_index: s.order_index }
+      const orig = items.find((o) => o.id === s.id)
+      return orig && orig.order_index !== s.order_index ? { id: s.id, order_index: s.order_index } : null
+    }).filter(Boolean) as { id: number; order_index: number; parent_id?: number | null }[]
+    await Promise.all(patches.map((p) =>
+      fetch('/api/admin/nav', { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(p) }),
     ))
   }
 
@@ -190,15 +212,15 @@ export default function NavClient({ initialItems }: Props) {
     }
 
     const isSaving = saving === item.id
-    const sameLevel = dragId !== null && item.parent_id === dragParent
+    const droppable = dragId !== null && canDropOn(item)
     const isDragged = dragId === item.id
-    const isOver = sameLevel && overId === item.id && !isDragged
+    const isOver = droppable && overId === item.id && !isDragged
 
     return (
       <div
-        onDragOver={(e) => { if (sameLevel) { e.preventDefault(); if (overId !== item.id) setOverId(item.id) } }}
-        onDrop={(e) => { if (sameLevel) { e.preventDefault(); void moveNav(item.id) } setDragId(null); setOverId(null) }}
-        className={`flex items-center gap-3 px-4 py-3 border-b border-gray-100 last:border-0 transition-all ${
+        onDragOver={(e) => { if (droppable) { e.preventDefault(); if (overId !== item.id) setOverId(item.id) } }}
+        onDrop={(e) => { if (droppable) { e.preventDefault(); void moveNav(item.id) } setDragId(null); setOverId(null) }}
+        className={`flex flex-wrap items-center gap-3 px-4 py-3 border-b border-gray-100 last:border-0 transition-all ${
           indent ? 'bg-gray-50 pl-10' : 'bg-white'
         } ${isDragged ? 'opacity-40' : ''} ${isOver ? 'shadow-[inset_0_2px_0_0_#818cf8]' : ''}`}
       >
@@ -225,7 +247,7 @@ export default function NavClient({ initialItems }: Props) {
           onChange={(e) => setEditLabel(e.target.value)}
           onBlur={saveLabel}
           onKeyDown={(e) => e.key === 'Enter' && saveLabel()}
-          className="font-brand text-sm text-brand-primary border border-transparent hover:border-gray-200 focus:border-brand-primary rounded-lg px-2 py-1 w-36 focus:outline-none transition-colors"
+          className="font-brand text-sm text-brand-primary border border-transparent hover:border-gray-200 focus:border-brand-primary rounded-lg px-2 py-1 w-28 sm:w-36 min-w-0 focus:outline-none transition-colors"
           placeholder="Etiqueta"
         />
 
@@ -236,7 +258,7 @@ export default function NavClient({ initialItems }: Props) {
           onChange={(e) => setEditHref(e.target.value)}
           onBlur={saveHref}
           onKeyDown={(e) => e.key === 'Enter' && saveHref()}
-          className="font-brand text-sm text-brand-primary/60 border border-transparent hover:border-gray-200 focus:border-brand-primary rounded-lg px-2 py-1 flex-1 focus:outline-none transition-colors"
+          className="font-brand text-sm text-brand-primary/60 border border-transparent hover:border-gray-200 focus:border-brand-primary rounded-lg px-2 py-1 flex-1 min-w-[8rem] focus:outline-none transition-colors"
           placeholder="/ruta"
         />
 
