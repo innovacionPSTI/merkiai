@@ -6,7 +6,7 @@
  * Un formulario por ítem auto-generado desde `schema.items.fields`; persiste vía
  * el CMS API genérico (`/api/admin/cms/items`), ya acotado por tenant vía RLS.
  */
-import { useCallback, useEffect, useState } from 'react'
+import { Fragment, useCallback, useEffect, useState } from 'react'
 import { getBlockSchema } from '@merkiai/database/blocks'
 import { Icon } from '@merkiai/ui'
 import { splitItemFields, resolveItemFields, itemTypeOf } from '@/lib/item-fields'
@@ -40,6 +40,8 @@ export default function ItemsEditor({ sectionId, sectionType, published = false,
   const [loading, setLoading] = useState(true)
   const [draft, setDraft] = useState<Record<number, Record<string, unknown>>>({})
   const [msg, setMsg] = useState<Record<number, string>>({})
+  const [dragIdx, setDragIdx] = useState<number | null>(null) // HU-126 · DnD de ítems
+  const [overIdx, setOverIdx] = useState<number | null>(null)
 
   const load = useCallback(async () => {
     setLoading(true)
@@ -128,6 +130,22 @@ export default function ItemsEditor({ sectionId, sectionType, published = false,
     await load()
   }
 
+  // HU-126 · reordenar ítems por arrastre: persiste order_index = posición.
+  async function reorderTo(from: number, to: number) {
+    if (from === to || from < 0 || to < 0 || from >= items.length || to >= items.length) return
+    const next = [...items]
+    const [moved] = next.splice(from, 1)
+    next.splice(to, 0, moved)
+    setItems(next) // optimista
+    await Promise.all(
+      next.map((it, i) => it.order_index === i
+        ? null
+        : fetch(api, { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ id: it.id, order_index: i }) }),
+      ).filter(Boolean),
+    )
+    await load()
+  }
+
   async function remove(it: ItemRow) {
     if (!confirm('¿Eliminar este ítem?')) return
     await fetch(`${api}?id=${it.id}`, { method: 'DELETE' })
@@ -165,9 +183,29 @@ export default function ItemsEditor({ sectionId, sectionType, published = false,
         <p className="text-sm text-slate-400">Sin {label.toLowerCase()}. Agrega el primero.</p>
       ) : (
         <ul className="space-y-3">
-          {items.map((it, i) => (
-            <li key={it.id} className="overflow-hidden rounded-lg border border-slate-200 bg-white shadow-sm">
+          {items.map((it, i) => {
+            const dragging = dragIdx !== null
+            const isDragged = dragIdx === i
+            const gapAbove = dragging && overIdx === i && dragIdx! > i
+            const gapBelow = dragging && overIdx === i && dragIdx! < i
+            const Indicator = () => <li aria-hidden className="h-0.5 rounded-full bg-indigo-400 my-1 shadow-[0_0_0_3px_rgba(129,140,248,0.25)]" />
+            return (
+            <Fragment key={it.id}>
+            {gapAbove && <Indicator />}
+            <li
+              className={`overflow-hidden rounded-lg border bg-white shadow-sm transition-all duration-150 ${isDragged ? 'border-indigo-400 opacity-40 scale-[0.99]' : 'border-slate-200'}`}
+              onDragOver={(e) => { e.preventDefault(); if (dragging && overIdx !== i) setOverIdx(i) }}
+              onDrop={(e) => { e.preventDefault(); if (dragIdx !== null) void reorderTo(dragIdx, i); setDragIdx(null); setOverIdx(null) }}
+            >
               <div className="flex items-center gap-2 border-b border-slate-100 bg-slate-50 px-3 py-2">
+                <div
+                  className="cursor-grab active:cursor-grabbing text-slate-300 hover:text-slate-600 select-none"
+                  draggable
+                  onDragStart={() => { setDragIdx(i); setOverIdx(i) }}
+                  onDragEnd={() => { setDragIdx(null); setOverIdx(null) }}
+                  title="Arrastra para reordenar"
+                  aria-label="Arrastrar para reordenar"
+                ><Icon name="grid" size={14} /></div>
                 <div className="flex flex-col">
                   <button onClick={() => move(i, -1)} disabled={i === 0} className="text-slate-400 hover:text-slate-700 disabled:opacity-30 leading-none" aria-label="Subir">
                     <Icon name="chevron-right" size={13} className="-rotate-90" />
@@ -214,7 +252,10 @@ export default function ItemsEditor({ sectionId, sectionType, published = false,
                 <span role="status" aria-live="polite" className={`text-xs ${msg[it.id]?.startsWith('Error') ? 'text-red-600' : 'text-green-600'}`}>{msg[it.id] ?? ''}</span>
               </div>
             </li>
-          ))}
+            {gapBelow && <Indicator />}
+            </Fragment>
+            )
+          })}
         </ul>
       )}
     </div>

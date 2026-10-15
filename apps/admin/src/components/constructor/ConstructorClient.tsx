@@ -9,7 +9,7 @@
  * (`/api/admin/cms/sections`), ya acotado por tenant vía RLS. Convive con el
  * editor actual (`/contenido`) tras el flag `pageBuilder`.
  */
-import { useCallback, useEffect, useState } from 'react'
+import { Fragment, useCallback, useEffect, useState } from 'react'
 import { getBlockSchema, listTemplates, getTemplateHomeLayout } from '@merkiai/database/blocks'
 import { Icon } from '@merkiai/ui'
 import SectionEditor from './SectionEditor'
@@ -38,6 +38,7 @@ export default function ConstructorClient({ pages, initialPageKey, initialTempla
   const [expanded, setExpanded] = useState<number | null>(null)
   const [previewKey, setPreviewKey] = useState(Date.now()) // HU-219: bump → refresca iframe
   const [dragIdx, setDragIdx] = useState<number | null>(null) // HU-251 · DnD
+  const [overIdx, setOverIdx] = useState<number | null>(null) // HU-126 · slot destino (efecto de desplazamiento)
   const [device, setDevice] = useState<'desktop' | 'tablet' | 'mobile'>('desktop') // HU-251 · preview
 
   const bump = useCallback(() => setPreviewKey(Date.now()), [])
@@ -274,19 +275,31 @@ export default function ConstructorClient({ pages, initialPageKey, initialTempla
               {sections.map((s, i) => {
                 const schema = getBlockSchema(s.section_type)
                 const open = expanded === s.id
+                // HU-126 · efecto de desplazamiento: se abre un hueco (con línea
+                // punteada) en el slot donde caería el bloque arrastrado. Para
+                // arrastre hacia abajo el hueco va DEBAJO del ítem bajo el cursor;
+                // hacia arriba, ENCIMA — coherente con la semántica de reorderTo.
+                const dragging = dragIdx !== null
+                const isDragged = dragIdx === i
+                const gapAbove = dragging && overIdx === i && dragIdx! > i
+                const gapBelow = dragging && overIdx === i && dragIdx! < i
+                const Indicator = () => (
+                  <li aria-hidden className="h-0.5 rounded-full bg-indigo-400 my-1 shadow-[0_0_0_3px_rgba(129,140,248,0.25)] transition-all" />
+                )
                 return (
+                  <Fragment key={s.id}>
+                    {gapAbove && <Indicator />}
                   <li
-                    key={s.id}
-                    className={`rounded-xl border bg-white ${dragIdx === i ? 'border-indigo-400 opacity-60' : 'border-slate-200'}`}
-                    onDragOver={(e) => e.preventDefault()}
-                    onDrop={(e) => { e.preventDefault(); if (dragIdx !== null) void reorderTo(dragIdx, i); setDragIdx(null) }}
+                    className={`rounded-xl border bg-white transition-all duration-150 ${isDragged ? 'border-indigo-400 opacity-40 scale-[0.99]' : 'border-slate-200'}`}
+                    onDragOver={(e) => { e.preventDefault(); if (dragging && overIdx !== i) setOverIdx(i) }}
+                    onDrop={(e) => { e.preventDefault(); if (dragIdx !== null) void reorderTo(dragIdx, i); setDragIdx(null); setOverIdx(null) }}
                   >
                     <div className="flex items-center gap-3 px-4 py-3">
                       <div
                         className="cursor-grab active:cursor-grabbing text-slate-300 hover:text-slate-600 select-none"
                         draggable
-                        onDragStart={() => setDragIdx(i)}
-                        onDragEnd={() => setDragIdx(null)}
+                        onDragStart={() => { setDragIdx(i); setOverIdx(i) }}
+                        onDragEnd={() => { setDragIdx(null); setOverIdx(null) }}
                         title="Arrastra para reordenar"
                         aria-label="Arrastrar para reordenar"
                       ><Icon name="grid" size={16} /></div>
@@ -313,6 +326,8 @@ export default function ConstructorClient({ pages, initialPageKey, initialTempla
                       </div>
                     )}
                   </li>
+                  {gapBelow && <Indicator />}
+                  </Fragment>
                 )
               })}
             </ul>

@@ -543,7 +543,7 @@
 
 **Estimación:** M (5 puntos)
 **Módulo:** admin (nav, galería de producto, categorías), utilidad de reordenamiento reutilizable
-**Estado:** 🔲 Pendiente (roadmap v17) — generaliza HU-120
+**Estado:** 🔶 **Parcial (Constructor + efecto de desplazamiento).** Se añadió el **efecto de "hueco" durante el arrastre** (indicador punteado que se abre en el slot destino, coherente con la dirección del arrastre) al DnD de **secciones de página** (ConstructorClient) y **se agregó DnD con el mismo efecto a los ítems repetibles** (ItemsEditor: slides/servicios/cards/faq/testimonios), que antes solo tenían ▲▼. Persisten `order_index` por lote (optimista) con fallback accesible por teclado. **Pendiente:** llevar la misma interacción a **imágenes de producto** (AC-2: posición 0 = principal), **menú `nav_items`** y **categorías**, extrayendo una utilidad de DnD reutilizable.
 
 | # | Escenario | Resultado esperado |
 |---|-----------|-------------------|
