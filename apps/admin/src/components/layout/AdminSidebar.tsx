@@ -133,6 +133,7 @@ const NAV: NavNode[] = [
       { href: '/configuracion/envios',  label: 'Envíos',  fullAccessOnly: true },
       { href: '/configuracion/pagos',   label: 'Pagos',   fullAccessOnly: true },
       { href: '/configuracion/emails',  label: 'Emails',  fullAccessOnly: true },
+      { href: '/redirects',             label: 'Redirecciones' },
       { href: '/configuracion/legal',   label: 'Legal' },
     ],
   },

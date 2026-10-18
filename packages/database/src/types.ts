@@ -400,6 +400,39 @@ export type Database = {
         }
         Relationships: []
       }
+      redirects: {
+        Row: {
+          id: number
+          tenant_id: string
+          from_path: string
+          to_path: string
+          status_code: number
+          active: boolean
+          note: string | null
+          created_at: string
+          updated_at: string
+        }
+        Insert: {
+          id?: number
+          tenant_id?: string
+          from_path: string
+          to_path: string
+          status_code?: number
+          active?: boolean
+          note?: string | null
+          created_at?: string
+          updated_at?: string
+        }
+        Update: {
+          from_path?: string
+          to_path?: string
+          status_code?: number
+          active?: boolean
+          note?: string | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
       order_returns: {
         Row: {
           id: number

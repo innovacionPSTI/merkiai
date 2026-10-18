@@ -14,6 +14,38 @@ import { stackServerApp } from './stack'
 let maintenanceCache: { value: boolean; expiresAt: number } | null = null
 const MAINTENANCE_TTL_MS = 60_000
 
+// ── HU-113: redirects 301 por tenant (best-effort, cache en memoria por host) ──
+type RedirectRule = { from_path: string; to_path: string; status_code: number }
+const redirectsCache = new Map<string, { value: RedirectRule[]; expiresAt: number }>()
+const REDIRECTS_TTL_MS = 60_000
+
+/** Normaliza una ruta para comparar (igual criterio que normalizeFromPath en BD). */
+function normPath(raw: string): string {
+  let p = (raw ?? '').trim().split('#')[0].split('?')[0]
+  if (!p.startsWith('/')) p = '/' + p
+  p = p.replace(/\/{2,}/g, '/')
+  if (p.length > 1) p = p.replace(/\/+$/, '')
+  return p.toLowerCase()
+}
+
+async function getRedirects(baseUrl: string, host: string): Promise<RedirectRule[]> {
+  const now = Date.now()
+  const cached = redirectsCache.get(host)
+  if (cached && cached.expiresAt > now) return cached.value
+  try {
+    const res = await fetch(`${baseUrl}/api/redirects`, { cache: 'no-store' })
+    if (res.ok) {
+      const { redirects } = await res.json()
+      const value: RedirectRule[] = Array.isArray(redirects) ? redirects : []
+      redirectsCache.set(host, { value, expiresAt: now + REDIRECTS_TTL_MS })
+      return value
+    }
+  } catch {
+    // no bloquear la navegación si la API falla
+  }
+  return []
+}
+
 // ── HU-194: gate de suspensión por tenant (best-effort) ────────────────────────
 // Solo activo si el control plane está configurado (CONTROL_PLANE_URL + secret);
 // si no, no hace nada (single-tenant sin cambios).
@@ -86,6 +118,23 @@ export async function middleware(request: NextRequest) {
 
   if (!bypassMaintenance) {
     const baseUrl = `${request.nextUrl.protocol}//${request.nextUrl.host}`
+
+    // ── HU-113: redirects 301/302 definidos en el panel ──────────────────────
+    // Se evalúan antes del modo mantenimiento y de la resolución de tenant: una
+    // URL vieja debe resolver a la nueva aunque la tienda esté en mantenimiento.
+    const host = request.nextUrl.host.toLowerCase().replace(/:\d+$/, '')
+    const rules = await getRedirects(baseUrl, host)
+    if (rules.length) {
+      const from = normPath(pathname)
+      const hit = rules.find((r) => r.from_path === from)
+      if (hit) {
+        const target = /^https?:\/\//i.test(hit.to_path)
+          ? hit.to_path
+          : new URL(hit.to_path + request.nextUrl.search, request.url).toString()
+        return NextResponse.redirect(target, hit.status_code === 302 ? 302 : 301)
+      }
+    }
+
     if (await checkMaintenanceMode(baseUrl)) {
       return NextResponse.redirect(new URL('/maintenance', request.url))
     }

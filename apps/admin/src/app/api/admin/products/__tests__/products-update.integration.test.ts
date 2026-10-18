@@ -19,13 +19,20 @@ const mockProductUpdate = jest.fn(() => ({ eq: mockProductEq }))
 
 const mockVariantUpsert = jest.fn(() => Promise.resolve({ error: null }))
 
+// HU-113: el PATCH lee el slug previo antes del update (select→eq→single).
+const mockPrevSlugSingle = jest.fn(() => Promise.resolve({ data: { slug: 'slug-viejo' }, error: null }))
+const mockProductPreSelect = jest.fn(() => ({ eq: () => ({ single: mockPrevSlugSingle }) }))
+
 const mockFrom = jest.fn((table: string) => {
-  if (table === 'products') return { update: mockProductUpdate }
+  if (table === 'products') return { update: mockProductUpdate, select: mockProductPreSelect }
   if (table === 'product_variants') return { upsert: mockVariantUpsert, delete: () => ({ eq: () => Promise.resolve({ error: null }) }) }
   return {}
 })
 
-jest.mock('@merkiai/database', () => ({ createServerClient: jest.fn(() => ({ from: mockFrom })) }))
+jest.mock('@merkiai/database', () => ({
+  createServerClient: jest.fn(() => ({ from: mockFrom })),
+  suggestRedirectOnSlugChange: jest.fn().mockResolvedValue(undefined),
+}))
 jest.mock('@/lib/auth', () => ({
   getAdminUser: jest.fn(async () => ({ email: 'a@x.com', displayName: 'A', role: 'admin', tenantId: 't1', needsWorkspaceSelection: false })),
 }))

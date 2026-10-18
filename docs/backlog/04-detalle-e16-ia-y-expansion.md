@@ -236,13 +236,13 @@
 
 **Estimación:** M (5 puntos)
 **Módulo:** `packages/database` (`redirects`), `apps/web/middleware.ts`, admin
-**Estado:** 🔲 Pendiente (roadmap v17)
+**Estado:** ✅ Hecho (v138) — tabla `redirects` (`e17/41`, RLS lectura pública de activas + gestión is_admin, único por `(tenant, from_path)`). Capa `queries/redirects` con validación pura (normaliza rutas, rechaza iguales/duplicados/bucle directo). El middleware de la web resuelve 301/302 (endpoint `/api/redirects` cacheado 60 s). Admin `/redirects` (alta + activar/desactivar + eliminar) en Configuración. AC-3: al cambiar el slug de un producto, el PATCH auto-crea el redirect `/shop/viejo → /shop/nuevo` (best-effort, no pisa reglas manuales).
 
-| # | Escenario | Resultado esperado |
-|---|-----------|-------------------|
-| AC-1 | Admin crea una regla `origen → destino` | Se persiste y valida (evita loops/duplicados) |
-| AC-2 | Visita a una URL con regla | El middleware responde 301 al destino |
-| AC-3 | Cambio de slug de producto/página | Se sugiere crear el redirect automáticamente |
+| # | Escenario | Resultado esperado | Estado |
+|---|-----------|-------------------|--------|
+| AC-1 | Admin crea una regla `origen → destino` | Se persiste y valida (evita loops/duplicados) | ✅ |
+| AC-2 | Visita a una URL con regla | El middleware responde 301 al destino | ✅ |
+| AC-3 | Cambio de slug de producto/página | Se sugiere crear el redirect automáticamente | ✅ (producto) |
 
 ---
 

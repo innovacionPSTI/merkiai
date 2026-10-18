@@ -1,6 +1,6 @@
 import type { Database } from '@merkiai/database'
 import { NextRequest, NextResponse } from 'next/server'
-import { resolveEmailConfig, notifyBackInStock } from '@merkiai/database'
+import { resolveEmailConfig, notifyBackInStock, suggestRedirectOnSlugChange } from '@merkiai/database'
 import { getAdminUser } from '@/lib/auth'
 import { getAdminDb } from '@/lib/admin-db'
 
@@ -48,6 +48,14 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
 
   const supabase = getAdminDb(adminUser.tenantId)
 
+  // HU-113 (AC-3): si cambia el slug, se auto-sugiere un redirect 301 de la URL
+  // vieja a la nueva. Se lee el slug previo antes del update.
+  let prevSlug: string | null = null
+  if ('slug' in body) {
+    const { data: before } = await supabase.from('products').select('slug').eq('id', Number(id)).single()
+    prevSlug = (before?.slug as string) ?? null
+  }
+
   // Actualizar datos del producto
   const { data: product, error: productError } = await supabase
     .from('products')
@@ -56,6 +64,11 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
     .select()
     .single()
   if (productError) return NextResponse.json({ error: productError.message }, { status: 500 })
+
+  // HU-113: alta best-effort del redirect tras confirmar el cambio de slug.
+  if (prevSlug && product?.slug && prevSlug !== product.slug) {
+    await suggestRedirectOnSlugChange(`/shop/${prevSlug}`, `/shop/${product.slug}`, supabase, adminUser.tenantId)
+  }
 
   // Sincronizar variantes si se enviaron
   if (variants) {
