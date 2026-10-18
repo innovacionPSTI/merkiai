@@ -1,4 +1,4 @@
-import { productsToCsv, objectsToCsv, type ExportProduct } from '@merkiai/database'
+import { productsToCsv, objectsToCsv, logAudit, type ExportProduct } from '@merkiai/database'
 import { NextRequest, NextResponse } from 'next/server'
 import { getAdminUser } from '@/lib/auth'
 import { getAdminDb } from '@/lib/admin-db'
@@ -87,6 +87,12 @@ export async function GET(req: NextRequest) {
     json = data ?? []
     csv = objectsToCsv(['id', 'name', 'email', 'phone', 'created_at'], data ?? [])
   }
+
+  // HU-146 · auditoría de respaldo (operación de datos en volumen).
+  await logAudit(supabase, {
+    tenantId: user.tenantId, actorEmail: user.email, actorRole: user.role,
+    action: 'data.backup', entity: domain, summary: `Respaldo de ${domain} (${format})`, metadata: { format },
+  })
 
   if (format === 'json') {
     return new NextResponse(JSON.stringify(json, null, 2), {

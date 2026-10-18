@@ -369,6 +369,37 @@ export type Database = {
         }
         Relationships: []
       }
+      audit_log: {
+        Row: {
+          id: number
+          tenant_id: string
+          actor_email: string | null
+          actor_role: string | null
+          action: string
+          entity: string | null
+          entity_id: string | null
+          summary: string | null
+          metadata: Record<string, unknown>
+          created_at: string
+        }
+        Insert: {
+          id?: number
+          tenant_id?: string
+          actor_email?: string | null
+          actor_role?: string | null
+          action: string
+          entity?: string | null
+          entity_id?: string | null
+          summary?: string | null
+          metadata?: Record<string, unknown>
+          created_at?: string
+        }
+        Update: {
+          summary?: string | null
+          metadata?: Record<string, unknown>
+        }
+        Relationships: []
+      }
       order_returns: {
         Row: {
           id: number
@@ -1604,6 +1635,7 @@ export type BlogPost = Database['public']['Tables']['blog_posts']['Row']
 export type ProductReview = Database['public']['Tables']['product_reviews']['Row']
 export type StockNotification = Database['public']['Tables']['stock_notifications']['Row']
 export type OrderReturn = Database['public']['Tables']['order_returns']['Row']
+export type AuditLogEntry = Database['public']['Tables']['audit_log']['Row']
 export type NewsletterSubscriber = Database['public']['Tables']['newsletter_subscribers']['Row']
 export type StoreConfigRow = Database['public']['Tables']['store_config']['Row']
 export type PaymentConfig = Database['public']['Tables']['payment_config']['Row']

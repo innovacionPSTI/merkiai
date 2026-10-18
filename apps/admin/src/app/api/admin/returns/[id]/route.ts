@@ -1,4 +1,4 @@
-import { setReturnStatus, restoreStockForOrder } from '@merkiai/database'
+import { setReturnStatus, restoreStockForOrder, logAudit } from '@merkiai/database'
 import { NextRequest, NextResponse } from 'next/server'
 import { getAdminUser } from '@/lib/auth'
 import { getAdminDb } from '@/lib/admin-db'
@@ -27,6 +27,13 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
   const db = getAdminDb(user.tenantId)
   const res = await setReturnStatus(db, returnId, status, { restocked: restock })
   if (!res.ok || !res.returnRow) return NextResponse.json({ error: res.error ?? 'No se pudo actualizar' }, { status: 500 })
+
+  await logAudit(db, {
+    tenantId: user.tenantId, actorEmail: user.email, actorRole: user.role,
+    action: 'return.resolve', entity: 'order', entityId: res.returnRow.order_number,
+    summary: `Devolución de ${res.returnRow.order_number} → ${status}${status === 'approved' && restock ? ' (stock repuesto)' : ''}`,
+    metadata: { return_id: returnId, status, restock },
+  })
 
   // Reposición de stock al aprobar (idempotente: solo repone si se había descontado).
   if (status === 'approved' && restock) {

@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
+import { logAudit } from '@merkiai/database'
 import { getAdminUser } from '@/lib/auth'
 import { getAdminDb } from '@/lib/admin-db'
 import { userCanManageData } from '@/lib/roles'
@@ -51,5 +52,13 @@ export async function POST(req: NextRequest) {
   }
 
   if (error) return NextResponse.json({ error: error.message }, { status: 500 })
+
+  await logAudit(supabase, {
+    tenantId: adminUser.tenantId, actorEmail: adminUser.email, actorRole: adminUser.role,
+    action: 'products.batch', entity: 'products',
+    summary: `Acción masiva "${action}" sobre ${ids.length} producto(s)`,
+    metadata: { action, count: ids.length, ids },
+  })
+
   return NextResponse.json({ ok: true, affected: ids.length, action })
 }

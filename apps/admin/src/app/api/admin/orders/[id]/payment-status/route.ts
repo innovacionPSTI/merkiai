@@ -7,7 +7,7 @@
  * Seguridad: guard admin (super_admin/admin/vendedor); solo acepta 'approved' o
  * 'rejected'; nunca accesible desde el sitio público.
  */
-import { applyStockForOrder, restoreStockForOrder, resolveEmailConfig } from '@merkiai/database'
+import { applyStockForOrder, restoreStockForOrder, resolveEmailConfig, logAudit } from '@merkiai/database'
 import { getAdminDb } from '@/lib/admin-db'
 import type { Database } from '@merkiai/database'
 import { NextRequest, NextResponse } from 'next/server'
@@ -64,6 +64,13 @@ export async function PATCH(
   if (error || !order) {
     return NextResponse.json({ error: 'No se pudo actualizar el pedido' }, { status: 500 })
   }
+
+  // HU-146 · auditoría de la validación manual de pago.
+  await logAudit(supabase, {
+    tenantId: user!.tenantId, actorEmail: user!.email, actorRole: user!.role,
+    action: 'order.payment_status', entity: 'order', entityId: order.order_number,
+    summary: `Pago del pedido ${order.order_number} → ${payment_status}`, metadata: { payment_status },
+  })
 
   // Inventario (idempotente): aprobar descuenta stock; rechazar lo repone si estaba descontado
   if (payment_status === 'approved') {

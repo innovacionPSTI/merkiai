@@ -1,4 +1,4 @@
-import { productsToCsv, type ExportProduct } from '@merkiai/database'
+import { productsToCsv, logAudit, type ExportProduct } from '@merkiai/database'
 import { NextResponse } from 'next/server'
 import { getAdminUser } from '@/lib/auth'
 import { getAdminDb } from '@/lib/admin-db'
@@ -53,6 +53,11 @@ export async function GET() {
 
   const csv = productsToCsv(products)
   const date = new Date().toISOString().slice(0, 10)
+
+  await logAudit(supabase, {
+    tenantId: adminUser.tenantId, actorEmail: adminUser.email, actorRole: adminUser.role,
+    action: 'data.export', entity: 'products', summary: `Exportó ${products.length} productos a CSV`, metadata: { count: products.length },
+  })
 
   return new NextResponse(csv, {
     headers: {

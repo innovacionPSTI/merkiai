@@ -3,6 +3,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { getAdminUser } from '@/lib/auth'
 import { getAdminDb } from '@/lib/admin-db'
 import { userCanAccess, userCanManageData } from '@/lib/roles'
+import { logAudit } from '@merkiai/database'
 
 /** GET → plantilla CSV de clientes. */
 export async function GET() {
@@ -74,5 +75,9 @@ export async function POST(req: NextRequest) {
     else summary.updated++
   }
 
+  await logAudit(db, {
+    tenantId, actorEmail: user.email, actorRole: user.role,
+    action: 'data.import', entity: 'customers', summary: 'Importó clientes (CSV)', metadata: { ...summary },
+  })
   return NextResponse.json(summary, { status: 201 })
 }

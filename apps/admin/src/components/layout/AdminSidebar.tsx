@@ -143,6 +143,7 @@ const NAV: NavNode[] = [
     sections: ['usuarios', 'sistema'],
     children: [
       { kind: 'leaf', href: '/usuarios',          icon: <Icon name="users" />,    label: 'Usuarios',   section: 'usuarios' },
+      { kind: 'leaf', href: '/auditoria',         icon: <Icon name="audit" />,    label: 'Auditoría',  section: 'sistema' },
       { kind: 'leaf', href: '/sistema/apariencia', icon: <Icon name="settings" />, label: 'Apariencia', section: 'sistema' },
     ],
   },

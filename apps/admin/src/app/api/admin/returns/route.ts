@@ -1,4 +1,4 @@
-import { createReturn, validateReturn } from '@merkiai/database'
+import { createReturn, validateReturn, logAudit } from '@merkiai/database'
 import { NextRequest, NextResponse } from 'next/server'
 import { getAdminUser } from '@/lib/auth'
 import { getAdminDb } from '@/lib/admin-db'
@@ -25,5 +25,10 @@ export async function POST(req: NextRequest) {
   const db = getAdminDb(user.tenantId)
   const res = await createReturn(db, input, user.tenantId)
   if (!res.ok) return NextResponse.json({ error: res.error ?? 'No se pudo registrar la devolución' }, { status: 500 })
+  await logAudit(db, {
+    tenantId: user.tenantId, actorEmail: user.email, actorRole: user.role,
+    action: 'return.create', entity: 'order', entityId: input.order_number,
+    summary: `Devolución registrada para ${input.order_number}`, metadata: { return_id: res.id, reason: input.reason },
+  })
   return NextResponse.json({ ok: true, id: res.id }, { status: 201 })
 }

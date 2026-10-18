@@ -873,7 +873,7 @@
 
 **Estimación:** S (3 puntos)
 **Módulo:** `roles.ts`, guards de las rutas de import/export/backup, admin
-**Estado:** ✅ **Implementada (AC-1/AC-2).** Nueva capacidad por rol `canManageData` en `ROLE_CONFIG` (super_admin/admin **sí**; vendedor/gestor_tienda **no**) + helper `userCanManageData`. **Guard server-side** (403) en las operaciones de datos en volumen: **respaldo** (`/api/admin/backup`), **import** (products/categories/customers/blog — cupones y los genéricos ya restringían a admin) y **export/borrado masivo** (products export + `/products/batch`); los genéricos `/api/admin/{import,export}` ya exigían admin. **UI** oculta el widget de Respaldos y los botones Importar/Exportar de Productos para roles sin permiso. Tests: admin +4. **Pendiente (AC-3):** registrar cada operación (actor/entidad/fecha) — depende del registro de auditoría **HU-146**.
+**Estado:** ✅ **Implementada (AC-1/AC-2).** Nueva capacidad por rol `canManageData` en `ROLE_CONFIG` (super_admin/admin **sí**; vendedor/gestor_tienda **no**) + helper `userCanManageData`. **Guard server-side** (403) en las operaciones de datos en volumen: **respaldo** (`/api/admin/backup`), **import** (products/categories/customers/blog — cupones y los genéricos ya restringían a admin) y **export/borrado masivo** (products export + `/products/batch`); los genéricos `/api/admin/{import,export}` ya exigían admin. **UI** oculta el widget de Respaldos y los botones Importar/Exportar de Productos para roles sin permiso. Tests: admin +4. **AC-3 (auditoría)** ✅ cubierto por **HU-146**: cada export/import/backup/acción-masiva queda registrado (actor/entidad/fecha).
 
 | # | Escenario | Resultado esperado |
 |---|-----------|-------------------|
@@ -1110,7 +1110,7 @@
 
 **Estimación:** M (5 puntos)
 **Módulo:** `packages/database` (`audit_log`), hooks en acciones sensibles, vista en admin
-**Estado:** 🔲 Pendiente (roadmap v17) — extraída de HU-117; la consumen HU-133/134/145/107b
+**Estado:** ✅ **Implementada (v1).** Tabla `audit_log` (migración `e17/39`, RLS solo panel is_admin, **append-only** — sin update/delete; índices por tenant+fecha y por acción). Helper `logAudit` (best-effort, nunca lanza) + `listAudit` (paginado, filtro por acción/entidad). **Instrumentadas:** respaldo, export/import de productos, import de categorías/clientes/blog, acción masiva de productos (cierra **AC-3 de HU-134**), cambio de estado de pedido, validación manual de pago y **crear/resolver devolución (cierra AC-3 de HU-107a)**. **Vista admin** `/auditoria` (tabla fecha/acción/entidad/detalle/usuario + paginación), en el menú **Sistema**, gated por el permiso de datos (admin/super_admin). Tests: database +3. **Pendiente v2:** filtros por actor/fecha en la UI; retención configurable; ampliar a cambios de config/rol/precio.
 
 | # | Escenario | Resultado esperado |
 |---|-----------|-------------------|

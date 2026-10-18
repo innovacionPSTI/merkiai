@@ -2,6 +2,7 @@ import type { Database } from '@merkiai/database'
 import { parseProductsCsv, PRODUCT_IMPORT_TEMPLATE } from '@merkiai/database'
 import { NextRequest, NextResponse } from 'next/server'
 import { getTenantEntitlements, resolveLimit, LIMITS } from '@/lib/entitlements'
+import { logAudit } from '@merkiai/database'
 import { getAdminUser } from '@/lib/auth'
 import { getAdminDb } from '@/lib/admin-db'
 import { userCanManageData } from '@/lib/roles'
@@ -203,6 +204,13 @@ export async function POST(req: NextRequest) {
     if (vErr) { summary.updateErrors.push({ slug: p.slug, message: vErr }); continue }
     summary.updated++
   }
+
+  await logAudit(supabase, {
+    tenantId, actorEmail: adminUser.email, actorRole: adminUser.role,
+    action: 'data.import', entity: 'products',
+    summary: `Importó productos (CSV): ${summary.created} creados, ${summary.updated} actualizados`,
+    metadata: { created: summary.created, updated: summary.updated },
+  })
 
   return NextResponse.json(summary, { status: 201 })
 }

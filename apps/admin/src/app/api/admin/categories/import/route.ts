@@ -1,5 +1,6 @@
 import { parseCategoriesCsv, CATEGORY_IMPORT_TEMPLATE } from '@merkiai/database'
 import { NextRequest, NextResponse } from 'next/server'
+import { logAudit } from '@merkiai/database'
 import { getAdminUser } from '@/lib/auth'
 import { getAdminDb } from '@/lib/admin-db'
 import { userCanManageData } from '@/lib/roles'
@@ -104,5 +105,9 @@ export async function POST(req: NextRequest) {
     await supabase.from('categories').update({ parent_id: parentId ?? null }).eq('id', id)
   }
 
+  await logAudit(supabase, {
+    tenantId, actorEmail: adminUser.email, actorRole: adminUser.role,
+    action: 'data.import', entity: 'categories', summary: 'Importó categorías (CSV)', metadata: { ...summary },
+  })
   return NextResponse.json(summary, { status: 201 })
 }

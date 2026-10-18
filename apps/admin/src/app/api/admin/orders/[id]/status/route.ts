@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { restoreStockForOrder, resolveEmailConfig } from '@merkiai/database'
+import { restoreStockForOrder, resolveEmailConfig, logAudit } from '@merkiai/database'
 import { sendShippingNotification, sendStatusNotification } from '@/lib/email'
 import { getAdminUser } from '@/lib/auth'
 import { getAdminDb } from '@/lib/admin-db'
@@ -25,6 +25,13 @@ export async function PATCH(
       .single()
 
     if (error) throw error
+
+    // HU-146 · auditoría del cambio de estado.
+    await logAudit(supabase, {
+      tenantId: adminUser.tenantId, actorEmail: adminUser.email, actorRole: adminUser.role,
+      action: 'order.status', entity: 'order', entityId: order?.order_number ?? id,
+      summary: `Estado del pedido ${order?.order_number ?? id} → ${status}`, metadata: { status },
+    })
 
     // Inventario: al cancelar un pedido se repone el stock descontado (idempotente)
     if (status === 'cancelled' && order) {
