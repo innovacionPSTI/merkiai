@@ -1,6 +1,7 @@
 import type { Metadata } from 'next'
 import Link from 'next/link'
 import { PageHeader, IconTile, Icon, type IconName } from '@merkiai/ui'
+import { getStoreConfig } from '@merkiai/database'
 import { getAdminUser } from '@/lib/auth'
 import { requireAdminDb } from '@/lib/admin-context'
 import type { AdminRole } from '@/lib/roles'
@@ -36,7 +37,8 @@ const STATUS_COLOR: Record<string, string> = {
 // ── Queries por rol ───────────────────────────────────────────────────────────
 
 async function getAdminData() {
-  const { db } = await requireAdminDb()
+  const { db, adminUser } = await requireAdminDb()
+  const lowStockThreshold = (await getStoreConfig(db, adminUser.tenantId)).low_stock_threshold
   const now = new Date()
 
   const startOfDay = new Date(now); startOfDay.setHours(0, 0, 0, 0)
@@ -60,7 +62,7 @@ async function getAdminData() {
     db.from('customers').select('*', { count: 'exact', head: true }).gte('created_at', startOfWeek.toISOString()),
     db.from('product_variants')
       .select('label, stock, product:products(name)')
-      .lte('stock', 5)
+      .lte('stock', lowStockThreshold)
       .order('stock', { ascending: true })
       .limit(5),
     db.from('orders')
@@ -97,7 +99,8 @@ async function getAdminData() {
 }
 
 async function getVendedorData() {
-  const { db } = await requireAdminDb()
+  const { db, adminUser } = await requireAdminDb()
+  const lowStockThreshold = (await getStoreConfig(db, adminUser.tenantId)).low_stock_threshold
   const now = new Date()
   const startOfDay = new Date(now); startOfDay.setHours(0, 0, 0, 0)
 
@@ -110,7 +113,7 @@ async function getVendedorData() {
       .gte('created_at', startOfDay.toISOString()),
     db.from('product_variants')
       .select('label, stock, product:products(name, slug)')
-      .lte('stock', 5)
+      .lte('stock', lowStockThreshold)
       .order('stock', { ascending: true })
       .limit(8),
     db.from('orders')

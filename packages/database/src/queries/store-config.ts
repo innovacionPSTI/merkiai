@@ -51,6 +51,8 @@ export type StoreConfig = {
   pdp_shipping_estimator: boolean
   pdp_recommendations: boolean
   pdp_share_enabled: boolean
+  /** HU-106: umbral de stock bajo (alertas de inventario). */
+  low_stock_threshold: number
   /** Estado del onboarding reanudable (HU-236 v2). null = sin empezar. */
   onboarding_state: OnboardingState | null
   updated_at: string
@@ -119,6 +121,7 @@ const DEFAULT_CONFIG: StoreConfig = {
   pdp_shipping_estimator: false,
   pdp_recommendations: true,
   pdp_share_enabled: true,
+  low_stock_threshold: 5,
   onboarding_state: null,
   updated_at: new Date().toISOString(),
 }

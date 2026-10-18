@@ -704,6 +704,7 @@ export type Database = {
           pdp_shipping_estimator: boolean
           pdp_recommendations: boolean
           pdp_share_enabled: boolean
+          low_stock_threshold: number
           updated_at: string
         }
         Insert: {
@@ -737,6 +738,7 @@ export type Database = {
           pdp_shipping_estimator?: boolean
           pdp_recommendations?: boolean
           pdp_share_enabled?: boolean
+          low_stock_threshold?: number
           updated_at?: string
         }
         Update: {
@@ -769,6 +771,7 @@ export type Database = {
           pdp_shipping_estimator?: boolean
           pdp_recommendations?: boolean
           pdp_share_enabled?: boolean
+          low_stock_threshold?: number
           updated_at?: string
         }
         Relationships: []

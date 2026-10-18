@@ -45,6 +45,9 @@ export default function StoreConfigForm({ initialConfig }: Props) {
   const [pdpRecommendations,  setPdpRecommendations]  = useState(initialConfig?.pdp_recommendations  ?? true)
   const [pdpShareEnabled,     setPdpShareEnabled]     = useState(initialConfig?.pdp_share_enabled     ?? true)
 
+  // Inventario (HU-106): umbral de stock bajo.
+  const [lowStockThreshold, setLowStockThreshold] = useState<number>(initialConfig?.low_stock_threshold ?? 5)
+
   // Badges de confianza
   const [badges, setBadges] = useState<TrustBadge[]>(initialConfig?.trust_badges ?? [])
   const [newBadgeText, setNewBadgeText] = useState('')
@@ -106,6 +109,7 @@ export default function StoreConfigForm({ initialConfig }: Props) {
           pdp_shipping_estimator: pdpShippingEstimator,
           pdp_recommendations:    pdpRecommendations,
           pdp_share_enabled:      pdpShareEnabled,
+          low_stock_threshold:    lowStockThreshold,
           trust_badges:       badges,
         }),
       })
@@ -508,6 +512,35 @@ export default function StoreConfigForm({ initialConfig }: Props) {
             </div>
           </div>
         ))}
+      </div>
+
+      {/* Inventario (HU-106) */}
+      <div className="bg-white rounded-2xl p-6 shadow-sm space-y-4">
+        <div>
+          <h2 className="font-display text-brand-primary text-lg mb-0.5">Inventario</h2>
+          <p className="font-brand text-xs text-brand-primary/40">
+            Alertas de stock bajo. Los productos con reposición automática (backorder) no se avisan.
+          </p>
+        </div>
+        <div className="flex items-start gap-3">
+          <input
+            type="number"
+            min={0}
+            step={1}
+            value={lowStockThreshold}
+            onChange={(e) => {
+              const n = parseInt(e.target.value, 10)
+              setLowStockThreshold(Number.isFinite(n) ? Math.max(0, n) : 0)
+            }}
+            className="w-24 rounded-lg border border-brand-primary/15 px-3 py-2 font-brand text-sm text-brand-primary focus:border-brand-primary focus:outline-none"
+          />
+          <div>
+            <span className="font-brand text-sm font-semibold text-brand-primary">Umbral de stock bajo</span>
+            <p className="font-brand text-xs text-brand-primary/40">
+              Una variante se marca en bajo stock cuando su existencia es igual o menor a este número.
+            </p>
+          </div>
+        </div>
       </div>
 
       {/* Badges de confianza */}

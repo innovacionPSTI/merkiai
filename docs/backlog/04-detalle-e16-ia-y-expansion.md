@@ -103,14 +103,14 @@
 > Como operador, quiero que el panel me avise cuando un producto cae por debajo de un umbral, para reponer a tiempo.
 
 **Estimación:** S (3 puntos)
-**Módulo:** admin (dashboard/badge), `products.low_stock_threshold`
-**Estado:** 🔲 Pendiente (roadmap v17)
+**Módulo:** admin (dashboard/badge), `store_config.low_stock_threshold`
+**Estado:** ✅ Hecho (v137) — umbral **global** por tienda (`store_config.low_stock_threshold`, `e17/40`), configurable en **Configuración → Inventario**. El dashboard (admin y vendedor) usa el umbral; el listado `/productos` muestra badge "Bajo" por producto y filtro `?stock=bajo`. Excluye variantes con reposición automática (backorder). Query `getLowStockVariants(db, threshold)`.
 
-| # | Escenario | Resultado esperado |
-|---|-----------|-------------------|
-| AC-1 | Umbral configurable por producto (o global) | Se guarda en BD |
-| AC-2 | Stock ≤ umbral | Badge/indicador en el dashboard y en el listado de productos |
-| AC-3 | Filtro "stock bajo" | El admin puede listar solo los productos por debajo del umbral |
+| # | Escenario | Resultado esperado | Estado |
+|---|-----------|-------------------|--------|
+| AC-1 | Umbral configurable (global por tienda) | Se guarda en `store_config.low_stock_threshold` | ✅ |
+| AC-2 | Stock ≤ umbral | Badge/indicador en el dashboard y en el listado de productos | ✅ |
+| AC-3 | Filtro "stock bajo" | `?stock=bajo` lista solo los productos por debajo del umbral | ✅ |
 
 ---
 

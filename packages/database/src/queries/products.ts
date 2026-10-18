@@ -256,6 +256,40 @@ export async function getVariantsForCart(db: Db, variantIds: number[]): Promise<
   return out
 }
 
+export interface LowStockVariant {
+  variant_id: number
+  product_id: number
+  product_name: string
+  slug: string
+  sku: string | null
+  stock: number
+}
+
+/**
+ * HU-106 · Variantes con stock bajo: activas, de productos activos que NO
+ * permiten backorder, con `stock <= threshold`. Más baja primero. RLS por tenant.
+ */
+export async function getLowStockVariants(db: Db, threshold: number): Promise<LowStockVariant[]> {
+  const t = Number.isFinite(threshold) ? Math.max(0, Math.floor(threshold)) : 5
+  const { data } = await db
+    .from('product_variants')
+    .select('id, sku, stock, products!inner(id, slug, name, active, allow_backorder)')
+    .eq('active', true)
+    .lte('stock', t)
+    .eq('products.active', true)
+    .eq('products.allow_backorder', false)
+    .order('stock', { ascending: true })
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const rows = (data ?? []) as any[]
+  const out: LowStockVariant[] = []
+  for (const r of rows) {
+    const p = Array.isArray(r.products) ? r.products[0] : r.products
+    if (!p) continue
+    out.push({ variant_id: r.id, product_id: p.id, product_name: p.name, slug: p.slug, sku: r.sku ?? null, stock: Number(r.stock ?? 0) })
+  }
+  return out
+}
+
 export async function getProductBySlug(slug: string, db: Db) {
   const supabase = db
   const { data, error } = await supabase

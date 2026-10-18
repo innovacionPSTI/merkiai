@@ -11,12 +11,12 @@ import { useRouter } from 'next/navigation'
 import { Icon } from '@merkiai/ui'
 
 interface Category { id: number; name: string }
-interface Props { products: any[]; categories: Category[]; emptyQ?: string }
+interface Props { products: any[]; categories: Category[]; emptyQ?: string; lowStockThreshold?: number }
 
 const fmt = (n: number) =>
   new Intl.NumberFormat('es-CO', { style: 'currency', currency: 'COP', maximumFractionDigits: 0 }).format(n)
 
-export default function ProductsTable({ products, categories, emptyQ }: Props) {
+export default function ProductsTable({ products, categories, emptyQ, lowStockThreshold = 5 }: Props) {
   const router = useRouter()
   const [selected, setSelected] = useState<Set<number>>(new Set())
   const [busy, setBusy] = useState(false)
@@ -81,6 +81,8 @@ export default function ProductsTable({ products, categories, emptyQ }: Props) {
             const minPrice = prices.length ? Math.min(...prices) : 0
             const maxPrice = prices.length ? Math.max(...prices) : 0
             const totalStock = product.variants?.reduce((s: number, v: any) => s + v.stock, 0) ?? 0
+            const low = !product.allow_backorder &&
+              (product.variants ?? []).some((v: any) => v.active !== false && (v.stock ?? 0) <= lowStockThreshold)
             const checked = selected.has(product.id)
             return (
               <tr key={product.id} className={`transition-colors ${checked ? 'bg-indigo-50/40' : 'hover:bg-gray-50'}`}>
@@ -104,7 +106,14 @@ export default function ProductsTable({ products, categories, emptyQ }: Props) {
                   {prices.length ? (minPrice === maxPrice ? fmt(minPrice) : `${fmt(minPrice)} – ${fmt(maxPrice)}`) : '—'}
                 </td>
                 <td className="px-4 py-3">
-                  <span className={`font-brand text-xs font-semibold rounded-full px-2 py-1 ${totalStock > 5 ? 'bg-green-100 text-green-700' : totalStock > 0 ? 'bg-yellow-100 text-yellow-700' : 'bg-red-100 text-red-700'}`}>{totalStock}u</span>
+                  <div className="flex items-center gap-1.5">
+                    <span className={`font-brand text-xs font-semibold rounded-full px-2 py-1 ${totalStock > lowStockThreshold ? 'bg-green-100 text-green-700' : totalStock > 0 ? 'bg-yellow-100 text-yellow-700' : 'bg-red-100 text-red-700'}`}>{totalStock}u</span>
+                    {low && (
+                      <span className="font-brand text-xs font-semibold rounded-full px-2 py-1 bg-orange-100 text-orange-700 inline-flex items-center gap-1" title="Al menos una variante en stock bajo">
+                        <Icon name="alert" size={12} /> Bajo
+                      </span>
+                    )}
+                  </div>
                 </td>
                 <td className="px-4 py-3">
                   <span className={`font-brand text-xs rounded-full px-2 py-1 ${product.active ? 'bg-green-100 text-green-600' : 'bg-gray-100 text-gray-500'}`}>{product.active ? 'Publicado' : 'Borrador'}</span>
