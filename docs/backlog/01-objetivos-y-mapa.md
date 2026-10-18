@@ -108,6 +108,7 @@ Consolidar todo el contenido gestionable (banners, secciones del home, testimoni
 | **E8 · Emails y newsletter** | Resend, plantillas, proveedor intercambiable, newsletter broadcast · *(roadmap: notificaciones multicanal WhatsApp/SMS, EmailProvider multi-proveedor [SES/Postmark/SMTP], plantillas editables, entregabilidad/DKIM + suppression, email_log, newsletter externo Beehiiv y similares)* | E-01…05, PRV-08/09, HU-153/159/160/161/162/163 🔲 |
 | **E9 · Inventario y stock** | Descuento/reposición por estado de pago, backorder, topes de cantidad en el front · *(roadmap: back-in-stock, alertas de stock bajo)* | HU-097…100, HU-105/106 🔲 |
 | **E18 · Inventario multi-ubicación y fulfillment** *(roadmap)* | Ubicaciones (bodegas/tiendas/puntos de retiro), stock por `(variante, ubicación)`, ruteo de fulfillment, transferencias, click & collect por ubicación; incluye migración del stock único actual | HU-176…183 🔲 |
+| **E19 · Marketing, fidelización y ventas exclusivas** *(roadmap)* | **Club VIP y acceso anticipado por tiempo limitado** (early access / "compra VIP por horas"): segmentos de clientes (reglas CRM + manual), campañas con ventana horaria + alcance (productos/categorías), *gating* de acceso en el storefront para miembros, urgencia/escasez (countdown, cupo), avisos directos (correo/WhatsApp), precio de campaña y reportes. **Opt-in por plan (entitlement) + config por tienda + builder-aware.** Reúne y extiende piezas hoy dispersas (fidelización HU-167, descuentos HU-147, multicanal HU-153). | HU-288…296 🔲 |
 
 **Cuentas y administración**
 

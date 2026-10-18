@@ -1363,3 +1363,169 @@
 
 ---
 
+## 🏆 E19 · Marketing, fidelización y ventas exclusivas — Club VIP / Early Access (HU-288…296)
+
+> **Concepto.** "Compra VIP por horas": las mejores ofertas o los lanzamientos se abren **solo durante una ventana de tiempo reducida** (p. ej. 24 h antes) para **clientes de alto valor** o del **Club VIP**. Claves: **acceso anticipado** (early access), **segmentación** de clientes (volumen/frecuencia/ticket o manual), **canales directos** (correo/WhatsApp) y **urgencia/escasez** (countdown, cupo) para acelerar la decisión y subir el LTV.
+>
+> **Cómo se agrega como OPCIÓN (patrón del repo).** (a) **Entitlement por plan** (`@merkiai/tenancy`, feature `vip_early_access`): la sección solo aparece/activa en los planes que lo incluyan (gating transversal como HU-239/173). (b) **Config por tienda** (tabla propia + flags): nace **apagada**; el comerciante crea y enciende sus campañas. (c) **Builder-aware**: los componentes del storefront (banner de countdown, badge "VIP", estado "disponible pronto") usan **tokens de tema** y una **variante de superficie** (framework HU-122a), así se "visten" por plantilla y viajan en los paquetes de plantilla/preset. (d) **Sección admin dedicada** ("Ventas VIP") gated por rol + plan.
+>
+> **Dependencias / reutilización.** Comprador autenticado (Stack Auth, ya en storefront) + membresía por segmento; **E8** para avisos (correo HU-159/160, **WhatsApp/multicanal HU-153**); **E5** motor de descuentos (HU-147) para el precio de campaña; **E13** reportes (HU-116); **E16** (opcional) para segmentación automática. **MVP** sin WhatsApp (empieza por correo); HU-153 habilita el canal directo.
+>
+> **Modelo de datos (conceptual).** `customer_segments` (reglas + manual) + `customer_segment_members`; `vip_campaigns` (ventana inicio/fin, audiencia=segmento, estado) + `vip_campaign_scope` (productos/categorías) + oferta/cupo opcionales. RLS por tenant en todas.
+>
+> **Olas.** MVP = HU-288→289→290→291 (segmento + campaña + gating + countdown, ya demostrable). Luego HU-292→294 (activación + medición). HU-295/296 = roadmap avanzado.
+
+---
+
+### HU-288 — Segmentos de clientes (Club VIP) · E19 (toca E12)
+
+> Como comerciante, quiero agrupar a mis clientes en segmentos (manuales y por reglas de compra) para dirigirles ventas y comunicaciones exclusivas.
+
+**Estimación:** M (5 puntos)
+**Módulo:** `packages/database` (`customer_segments`, `customer_segment_members`), admin (CRUD de segmentos), reusa `customers`+histórico de pedidos
+**Estado:** 🔲 Pendiente (roadmap · E19 MVP)
+**Opción/builder:** sección gated por plan (`vip_early_access`) + rol. RLS por tenant.
+
+| # | Escenario | Resultado esperado |
+|---|-----------|-------------------|
+| AC-1 | Segmento manual | El admin crea un segmento y agrega/quita clientes a mano |
+| AC-2 | Segmento por reglas | Reglas simples sobre histórico: nº de pedidos ≥ N, ticket ≥ X, última compra ≤ D días; vista de miembros resultante |
+| AC-3 | Recálculo | Los segmentos por reglas se recalculan (bajo demanda o programado) sin duplicar miembros |
+| AC-4 | Aislamiento | Segmentos y miembros acotados por tenant (RLS); nunca cruzan tiendas |
+
+---
+
+### HU-289 — Campaña de acceso anticipado (VIP) · E19
+
+> Como comerciante, quiero programar una campaña con una ventana horaria y un alcance de productos/categorías, dirigida a un segmento, para abrir ofertas o lanzamientos solo a mis clientes VIP durante unas horas.
+
+**Estimación:** L (8 puntos)
+**Módulo:** `packages/database` (`vip_campaigns`, `vip_campaign_scope`), admin (CRUD + estados)
+**Estado:** 🔲 Pendiente (roadmap · E19 MVP)
+**Opción/builder:** gated por plan/rol. Estados: `scheduled` → `active` → `ended` (derivados de la ventana, con control manual de pausa/cancelar).
+
+| # | Escenario | Resultado esperado |
+|---|-----------|-------------------|
+| AC-1 | Crear campaña | Ventana inicio/fin, audiencia (segmento), alcance (productos y/o categorías), oferta y cupo opcionales |
+| AC-2 | Estado por ventana | La campaña pasa a activa/finalizada según la hora; el admin puede pausar/cancelar |
+| AC-3 | Validación | No se solapan ventanas conflictivas sobre el mismo producto de forma ambigua; fechas coherentes |
+| AC-4 | Aislamiento | Campañas acotadas por tenant (RLS) |
+
+---
+
+### HU-290 — Gating de acceso anticipado en el storefront · E19 (toca E4)
+
+> Como cliente VIP, quiero poder comprar los productos de la campaña antes que el público general; como público general, quiero ver que estará "disponible pronto".
+
+**Estimación:** L (8 puntos)
+**Módulo:** `apps/web` (resolución de acceso en catálogo/PDP/checkout), `packages/database` (membresía + ventana)
+**Estado:** 🔲 Pendiente (roadmap · E19 MVP)
+**Opción/builder:** requiere comprador autenticado; la verificación es **server-side** (no basta ocultar en UI). Fuera de la ventana VIP, se abre a todos o termina, según la campaña.
+
+| # | Escenario | Resultado esperado |
+|---|-----------|-------------------|
+| AC-1 | Miembro del segmento dentro de la ventana | Ve y puede comprar los ítems de la campaña (precio de campaña si aplica) |
+| AC-2 | No miembro / sin sesión dentro de la ventana | Ve "disponible pronto" + countdown; no puede agregar al carrito ni forzar checkout (control server-side) |
+| AC-3 | Cierre de ventana | Al terminar, el producto se abre al público (o la oferta desaparece) sin intervención manual |
+| AC-4 | Seguridad | El checkout revalida acceso y ventana en el servidor (no se puede saltar el gating por URL/API) |
+
+---
+
+### HU-291 — Urgencia y escasez: countdown + badges VIP (UI) · E19 (toca E3)
+
+> Como comerciante, quiero mostrar un contador y distintivos "VIP" para generar urgencia durante la ventana.
+
+**Estimación:** M (5 puntos)
+**Módulo:** `apps/web` (banner/countdown + badges), tokens de tema, variante de superficie (HU-122a)
+**Estado:** 🔲 Pendiente (roadmap · E19 MVP)
+**Opción/builder:** 100% tokens de tema + variante por plantilla; cupo/stock limitado opcional. Viaja en el paquete de plantilla/preset.
+
+| # | Escenario | Resultado esperado |
+|---|-----------|-------------------|
+| AC-1 | Campaña activa | Countdown al cierre de la ventana + badge "VIP" en la PDP/tarjetas de la campaña |
+| AC-2 | Cupo limitado | Si hay cupo/stock de campaña, se muestra el restante y se bloquea al agotarse |
+| AC-3 | Estilo por tienda | El diseño usa tokens de tema (sin colores fijos); variante de superficie por plantilla |
+| AC-4 | A11y | Countdown accesible (texto + `aria-live` en hitos), respeta `prefers-reduced-motion` |
+
+---
+
+### HU-292 — Avisos directos de campaña (correo / WhatsApp) · E19 (toca E8)
+
+> Como comerciante, quiero avisar a los miembros del segmento del inicio de la venta VIP por correo y/o WhatsApp con un enlace de acceso.
+
+**Estimación:** M (5 puntos)
+**Módulo:** reusa envío de correo (HU-159/160) y **multicanal WhatsApp (HU-153)**; disparo al activar la campaña
+**Estado:** 🔲 Pendiente (roadmap · E19 Fase 2) — WhatsApp **depende de HU-153**; MVP solo correo
+**Opción/builder:** plantilla del aviso estilable; se envía solo a miembros con consentimiento del canal.
+
+| # | Escenario | Resultado esperado |
+|---|-----------|-------------------|
+| AC-1 | Activación de campaña | Se notifica a los miembros del segmento por los canales activos con enlace de acceso |
+| AC-2 | Idempotencia | Cada miembro recibe el aviso una sola vez por campaña/evento |
+| AC-3 | Canales | Correo disponible en MVP; WhatsApp cuando exista HU-153; respeta preferencias/consentimiento |
+
+---
+
+### HU-293 — Precio / oferta de campaña · E19 (toca E5)
+
+> Como comerciante, quiero aplicar un precio u oferta especial solo durante la ventana VIP.
+
+**Estimación:** M (5 puntos)
+**Módulo:** se integra con el **motor de descuentos (HU-147)**; aplica solo dentro de la ventana y al público elegible
+**Estado:** 🔲 Pendiente (roadmap · E19 Fase 2) — depende de HU-147
+**Opción/builder:** el precio de campaña convive con `compare_at_price` (HU-261) para mostrar "antes/ahora".
+
+| # | Escenario | Resultado esperado |
+|---|-----------|-------------------|
+| AC-1 | Dentro de la ventana + elegible | Se aplica el precio/oferta de campaña en PDP, carrito y checkout |
+| AC-2 | Fuera de ventana / no elegible | Precio normal; sin fugas del precio VIP |
+| AC-3 | Consistencia | El total del checkout coincide con el precio mostrado; auditable |
+
+---
+
+### HU-294 — Reporte de campaña VIP · E19 (toca E13)
+
+> Como comerciante, quiero medir el resultado de cada campaña (participación, conversión, ingresos) para decidir repetirla.
+
+**Estimación:** S (3 puntos)
+**Módulo:** reusa `getSalesReport`/infra de reportes (HU-116), acotado a la campaña/segmento
+**Estado:** 🔲 Pendiente (roadmap · E19 Fase 2)
+
+| # | Escenario | Resultado esperado |
+|---|-----------|-------------------|
+| AC-1 | Resumen de campaña | Ingresos, pedidos, ticket y % de participación del segmento en la ventana |
+| AC-2 | Exportar | CSV del período/campaña |
+| AC-3 | Permisos | Visible según acceso a reportes/Pedidos |
+
+---
+
+### HU-295 — Segmentación automática por IA · E19 (toca E16)
+
+> Como comerciante, quiero que el sistema sugiera o arme segmentos VIP a partir de patrones de compra, para no definir reglas a mano.
+
+**Estimación:** L (8 puntos)
+**Módulo:** capa de IA (HU-135/137 patrones de compra) → propone segmentos
+**Estado:** 🔲 Pendiente (roadmap · E19 avanzado) — depende de los cimientos de IA (E16)
+
+| # | Escenario | Resultado esperado |
+|---|-----------|-------------------|
+| AC-1 | Sugerencia | El sistema propone segmentos (p. ej. "clientes recurrentes de alto ticket") con su tamaño estimado |
+| AC-2 | Control humano | El comerciante revisa y confirma antes de usarlos; nunca se envían comunicaciones automáticas sin aprobación |
+
+---
+
+### HU-296 — Campañas recurrentes + plantillas · E19
+
+> Como comerciante, quiero programar campañas recurrentes (Black Friday, Buen Fin, lanzamientos) y reutilizar plantillas de campaña.
+
+**Estimación:** M (5 puntos)
+**Módulo:** programación (cron/scheduler) + plantillas de campaña reutilizables
+**Estado:** 🔲 Pendiente (roadmap · E19 avanzado) — requiere infra de scheduling
+
+| # | Escenario | Resultado esperado |
+|---|-----------|-------------------|
+| AC-1 | Recurrencia | Se programa una campaña que se repite en fechas/eventos definidos |
+| AC-2 | Plantilla | Guardar una campaña como plantilla y crear nuevas a partir de ella |
+
+---
+
