@@ -34,9 +34,15 @@ interface Props {
   vipMember?: boolean
   /** HU-291: datos de la campaña VIP viva (para countdown/badge). */
   vipCampaign?: { name: string; ends_at: string }
+  /** HU-293: % de descuento de campaña para el miembro elegible (precio VIP). */
+  vipDiscountPercent?: number
 }
 
-export default function ProductDetail({ product, related, trustBadges = [], layoutVariant = 'gallery-left', galleryVariant = 'lightbox', ctaVariant = 'sticky-mobile', colorMap, showEstimator = false, showShare = true, vipLocked = false, vipMember = false, vipCampaign }: Props) {
+export default function ProductDetail({ product, related, trustBadges = [], layoutVariant = 'gallery-left', galleryVariant = 'lightbox', ctaVariant = 'sticky-mobile', colorMap, showEstimator = false, showShare = true, vipLocked = false, vipMember = false, vipCampaign, vipDiscountPercent = 0 }: Props) {
+  // HU-293 · precio de campaña VIP (solo display; el total lo recalcula el
+  // servidor en el checkout para evitar doble descuento).
+  const vipPct = vipMember && vipDiscountPercent > 0 ? vipDiscountPercent : 0
+  const vipPrice = (p: number) => (vipPct > 0 ? Math.round(p * (1 - vipPct / 100)) : p)
   const variantOpts = getProductOptions(product)
   const activeVariants = product.variants.filter((v) => v.active)
 
@@ -165,18 +171,22 @@ export default function ProductDetail({ product, related, trustBadges = [], layo
 
   // Price display: show selected variant price, or a range if not fully selected
   const priceDisplay = useMemo(() => {
-    if (selectedVariant) return fmt(selectedVariant.price)
-    const prices = activeVariants.map((v) => v.price)
+    if (selectedVariant) return fmt(vipPrice(selectedVariant.price))
+    const prices = activeVariants.map((v) => vipPrice(v.price))
     if (prices.length === 0) return '—'
     const min = Math.min(...prices)
     const max = Math.max(...prices)
     return min === max ? fmt(min) : `Desde ${fmt(min)}`
-  }, [selectedVariant, activeVariants])
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [selectedVariant, activeVariants, vipPct])
 
   // HU-261 · precio "antes" (oferta) de la variante seleccionada.
-  const compareAt = selectedVariant && selectedVariant.compare_at_price && selectedVariant.compare_at_price > selectedVariant.price
-    ? selectedVariant.compare_at_price
-    : null
+  // HU-293 · si hay precio VIP, el "antes" es el precio normal de la variante.
+  const compareAt = vipPct > 0 && selectedVariant
+    ? selectedVariant.price
+    : selectedVariant && selectedVariant.compare_at_price && selectedVariant.compare_at_price > selectedVariant.price
+      ? selectedVariant.compare_at_price
+      : null
 
   // HU-262/283 · Galería unificada: imágenes del producto + imágenes propias de
   // variante (como miniaturas reales y distintas). `selectedImage` indexa esta

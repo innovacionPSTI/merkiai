@@ -110,6 +110,7 @@ export default async function ProductPage({ params }: Props) {
         vipLocked={gate.status === 'locked'}
         vipMember={gate.status === 'vip_member'}
         vipCampaign={gate.campaign ? { name: gate.campaign.name, ends_at: gate.campaign.ends_at } : undefined}
+        vipDiscountPercent={gate.status === 'vip_member' ? (gate.campaign?.offer_percent ?? 0) : 0}
       />
       <Reviews productId={product.id} stats={stats} initialReviews={firstPage.reviews} total={firstPage.total} />
       {(storeConfig?.pdp_recommendations ?? true) && (

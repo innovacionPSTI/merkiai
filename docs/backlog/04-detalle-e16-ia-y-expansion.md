@@ -1472,7 +1472,7 @@
 
 **Estimación:** M (5 puntos)
 **Módulo:** se integra con el **motor de descuentos (HU-147)**; aplica solo dentro de la ventana y al público elegible
-**Estado:** 🔲 Pendiente (roadmap · E19 Fase 2) — depende de HU-147
+**Estado:** ✅ Hecho (v143) — el `offer_percent` de la campaña se aplica al **miembro elegible dentro de la ventana**: la PDP muestra el **precio VIP** (antes/ahora) y el **checkout recalcula el descuento server-side** (`computeVipMemberDiscount`, suma a `effectiveDiscount`/`effectiveTotal`, mismo pipeline que HU-147). Sin fuga para no-elegibles (status != vip_member → sin descuento). El total cobrado coincide con el mostrado (AC-3); el precio del carrito queda normal y el descuento VIP se aplica una sola vez en el servidor (sin doble conteo).
 **Opción/builder:** el precio de campaña convive con `compare_at_price` (HU-261) para mostrar "antes/ahora".
 
 | # | Escenario | Resultado esperado |

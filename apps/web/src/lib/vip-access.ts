@@ -70,3 +70,37 @@ export async function findLockedVariants(
   }
   return locked
 }
+
+/**
+ * HU-293 · precio de campaña VIP. Para el visitante actual (miembro elegible
+ * dentro de la ventana), calcula el descuento total server-side sobre las líneas
+ * cuyos productos están en una campaña con `offer_percent`. No hay fuga para
+ * no-elegibles (status !== 'vip_member' → sin descuento). Autoridad del servidor.
+ */
+export async function computeVipMemberDiscount(
+  tenantId: string,
+  items: Array<{ variant_id: number; qty: number }>,
+): Promise<number> {
+  if (!items.length) return 0
+  const db = getMachineDb(tenantId)
+  const [gates, memberSegmentIds, variantsRes] = await Promise.all([
+    listLiveVipGates(db),
+    getViewerSegmentIds(tenantId),
+    db.from('product_variants').select('id, price, product_id, products!inner(category_id)').in('id', items.map((i) => i.variant_id)),
+  ])
+  if (gates.length === 0) return 0
+  const vmap = new Map<number, { price: number; product_id: number; category_id: number | null }>()
+  for (const v of (variantsRes.data ?? []) as any[]) {
+    const prod = Array.isArray(v.products) ? v.products[0] : v.products
+    vmap.set(v.id, { price: Number(v.price), product_id: v.product_id, category_id: prod?.category_id ?? null })
+  }
+  let discount = 0
+  for (const i of items) {
+    const m = vmap.get(i.variant_id)
+    if (!m) continue
+    const gate = resolveProductGate(gates, { productId: m.product_id, categoryId: m.category_id, memberSegmentIds })
+    const pct = gate.status === 'vip_member' ? (gate.campaign?.offer_percent ?? 0) : 0
+    if (pct > 0) discount += Math.round((m.price * i.qty * pct) / 100)
+  }
+  return discount
+}

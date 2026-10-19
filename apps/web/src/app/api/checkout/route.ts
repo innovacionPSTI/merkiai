@@ -4,7 +4,7 @@ import { stackServerApp } from '@/stack'
 import { baseUrlFromRequest } from '@/lib/base-url'
 import { resolveTenant } from '@/lib/tenant-context';
 import { getMachineDb } from '@/lib/machine-db'
-import { findLockedVariants } from '@/lib/vip-access'
+import { findLockedVariants, computeVipMemberDiscount } from '@/lib/vip-access'
 
 // ── Rate limiting (best-effort, per-instance) ──────────────────────────────────
 // Allows MAX_REQUESTS per IP within WINDOW_MS. In Vercel's serverless model
@@ -222,8 +222,22 @@ export async function POST(req: NextRequest) {
     } catch {
       promoDiscount = 0 // fail-open: una promo mal configurada no debe tumbar el checkout
     }
-    const effectiveDiscount = Number(discount ?? 0) + promoDiscount
-    const effectiveTotal = Math.max(0, Number(total ?? 0) - promoDiscount)
+
+    // HU-293 · precio de campaña VIP: descuento server-side para el miembro
+    // elegible dentro de la ventana (sin fuga para no-elegibles). Fail-open.
+    let vipDiscount = 0
+    try {
+      vipDiscount = await computeVipMemberDiscount(
+        tenantId,
+        orderItems.map((i) => ({ variant_id: i.variant_id, qty: i.qty })),
+      )
+    } catch {
+      vipDiscount = 0
+    }
+
+    const extraDiscount = promoDiscount + vipDiscount
+    const effectiveDiscount = Number(discount ?? 0) + extraDiscount
+    const effectiveTotal = Math.max(0, Number(total ?? 0) - extraDiscount)
 
     // ── SEGURIDAD: la pasarela se deriva SIEMPRE del servidor (instancia activa),
     // nunca del `payment_method` que envía el cliente. ADR-004: resuelve la
