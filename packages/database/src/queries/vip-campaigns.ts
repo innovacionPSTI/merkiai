@@ -1,0 +1,146 @@
+import type { Db } from '../client'
+
+/**
+ * Campañas de acceso anticipado VIP (HU-289/290 · E19). Ventana horaria dirigida
+ * a un segmento, con alcance de productos/categorías y oferta/cupo opcionales.
+ * `db` se pasa por parámetro (RLS por tenant / is_admin; el storefront usa el
+ * cliente-máquina). La derivación de estado y acceso es pura y testeable.
+ */
+
+export type CampaignStatus = 'scheduled' | 'active' | 'ended' | 'paused' | 'cancelled'
+
+export interface VipScopeItem { product_id: number | null; category_id: number | null }
+
+export interface VipCampaign {
+  id: number
+  name: string
+  segment_id: number | null
+  starts_at: string
+  ends_at: string
+  status: CampaignStatus
+  offer_percent: number | null
+  quota: number | null
+  created_at: string
+  updated_at: string
+  scope?: VipScopeItem[]
+}
+
+/**
+ * Estado EFECTIVO de una campaña en un instante. El control manual (paused /
+ * cancelled) manda; si no, se deriva de la ventana: antes→scheduled,
+ * dentro→active, después→ended. Pura.
+ */
+export function deriveCampaignStatus(
+  c: Pick<VipCampaign, 'status' | 'starts_at' | 'ends_at'>,
+  now: Date = new Date(),
+): CampaignStatus {
+  if (c.status === 'paused' || c.status === 'cancelled') return c.status
+  const t = now.getTime()
+  if (t < new Date(c.starts_at).getTime()) return 'scheduled'
+  if (t >= new Date(c.ends_at).getTime()) return 'ended'
+  return 'active'
+}
+
+/** ¿La campaña está en su ventana activa ahora (y no pausada/cancelada)? Pura. */
+export function isCampaignLive(c: Pick<VipCampaign, 'status' | 'starts_at' | 'ends_at'>, now: Date = new Date()): boolean {
+  return deriveCampaignStatus(c, now) === 'active'
+}
+
+const CAMPAIGN_COLS = 'id, name, segment_id, starts_at, ends_at, status, offer_percent, quota, created_at, updated_at'
+
+export async function listCampaigns(db: Db): Promise<VipCampaign[]> {
+  const { data } = await db.from('vip_campaigns').select(CAMPAIGN_COLS).order('starts_at', { ascending: false })
+  return (data ?? []) as VipCampaign[]
+}
+
+export async function getCampaign(id: number, db: Db): Promise<VipCampaign | null> {
+  const { data } = await db.from('vip_campaigns').select(CAMPAIGN_COLS).eq('id', id).maybeSingle()
+  if (!data) return null
+  const { data: scope } = await db.from('vip_campaign_scope').select('product_id, category_id').eq('campaign_id', id)
+  return { ...(data as any), scope: (scope ?? []) as VipScopeItem[] }
+}
+
+export interface CampaignInput {
+  name: string
+  segment_id: number | null
+  starts_at: string
+  ends_at: string
+  offer_percent?: number | null
+  quota?: number | null
+  /** Alcance: ids de productos y/o categorías. */
+  product_ids?: number[]
+  category_ids?: number[]
+}
+
+/** Valida y normaliza una campaña. Pura. */
+export function validateCampaign(input: CampaignInput): { ok: boolean; error?: string } {
+  if (!(input.name ?? '').trim()) return { ok: false, error: 'El nombre es obligatorio.' }
+  const s = new Date(input.starts_at).getTime()
+  const e = new Date(input.ends_at).getTime()
+  if (!Number.isFinite(s) || !Number.isFinite(e)) return { ok: false, error: 'Fechas inválidas.' }
+  if (e <= s) return { ok: false, error: 'El fin debe ser posterior al inicio.' }
+  if (input.offer_percent != null && (input.offer_percent < 0 || input.offer_percent > 100)) {
+    return { ok: false, error: 'El descuento debe estar entre 0 y 100.' }
+  }
+  const hasScope = (input.product_ids?.length ?? 0) + (input.category_ids?.length ?? 0) > 0
+  if (!hasScope) return { ok: false, error: 'Agrega al menos un producto o categoría al alcance.' }
+  return { ok: true }
+}
+
+export async function createCampaign(input: CampaignInput, db: Db, tenantId: string): Promise<VipCampaign> {
+  const v = validateCampaign(input)
+  if (!v.ok) throw new Error(v.error)
+  const { data, error } = await db
+    .from('vip_campaigns')
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    .insert({
+      tenant_id: tenantId, name: input.name.trim(), segment_id: input.segment_id ?? null,
+      starts_at: input.starts_at, ends_at: input.ends_at,
+      offer_percent: input.offer_percent ?? null, quota: input.quota ?? null, status: 'scheduled',
+    } as any)
+    .select(CAMPAIGN_COLS)
+    .single()
+  if (error) throw error
+  const campaign = data as VipCampaign
+  await replaceScope(campaign.id, input.product_ids ?? [], input.category_ids ?? [], db, tenantId)
+  return campaign
+}
+
+export async function updateCampaign(id: number, input: CampaignInput, db: Db, tenantId: string): Promise<void> {
+  const v = validateCampaign(input)
+  if (!v.ok) throw new Error(v.error)
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const { error } = await db.from('vip_campaigns').update({
+    name: input.name.trim(), segment_id: input.segment_id ?? null,
+    starts_at: input.starts_at, ends_at: input.ends_at,
+    offer_percent: input.offer_percent ?? null, quota: input.quota ?? null,
+    updated_at: new Date().toISOString(),
+  } as any).eq('id', id)
+  if (error) throw error
+  await replaceScope(id, input.product_ids ?? [], input.category_ids ?? [], db, tenantId)
+}
+
+async function replaceScope(campaignId: number, productIds: number[], categoryIds: number[], db: Db, tenantId: string): Promise<void> {
+  await db.from('vip_campaign_scope').delete().eq('campaign_id', campaignId)
+  const rows = [
+    ...productIds.map((product_id) => ({ tenant_id: tenantId, campaign_id: campaignId, product_id, category_id: null })),
+    ...categoryIds.map((category_id) => ({ tenant_id: tenantId, campaign_id: campaignId, product_id: null, category_id })),
+  ]
+  if (rows.length) {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const { error } = await db.from('vip_campaign_scope').insert(rows as any)
+    if (error) throw error
+  }
+}
+
+/** Cambia el control manual: pausar/reanudar/cancelar. */
+export async function setCampaignStatus(id: number, status: CampaignStatus, db: Db): Promise<void> {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const { error } = await db.from('vip_campaigns').update({ status, updated_at: new Date().toISOString() } as any).eq('id', id)
+  if (error) throw error
+}
+
+export async function deleteCampaign(id: number, db: Db): Promise<void> {
+  const { error } = await db.from('vip_campaigns').delete().eq('id', id)
+  if (error) throw error
+}

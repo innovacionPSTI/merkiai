@@ -43,6 +43,7 @@ export type AdminSection =
   | 'configuracion'
   | 'usuarios'
   | 'sistema'
+  | 'ventas_vip'
 
 interface RoleConfig {
   label: string
@@ -63,7 +64,7 @@ export const ROLE_CONFIG: Record<AdminRole, RoleConfig> = {
   super_admin: {
     label: 'Super Admin',
     color: 'bg-red-100 text-red-700',
-    sections: ['dashboard', 'productos', 'categorias', 'variantes', 'pedidos', 'clientes', 'contenido', 'blog', 'newsletter', 'cupones', 'apariencia', 'media', 'configuracion', 'usuarios', 'sistema'],
+    sections: ['dashboard', 'productos', 'categorias', 'variantes', 'pedidos', 'clientes', 'contenido', 'blog', 'newsletter', 'cupones', 'apariencia', 'media', 'configuracion', 'usuarios', 'sistema', 'ventas_vip'],
     canManageUsers: true,
     canAccessFullConfig: true,
     canManageData: true,
@@ -71,7 +72,7 @@ export const ROLE_CONFIG: Record<AdminRole, RoleConfig> = {
   admin: {
     label: 'Admin',
     color: 'bg-brand-primary/10 text-brand-primary',
-    sections: ['dashboard', 'productos', 'categorias', 'variantes', 'pedidos', 'clientes', 'contenido', 'blog', 'newsletter', 'cupones', 'apariencia', 'media', 'configuracion', 'usuarios', 'sistema'],
+    sections: ['dashboard', 'productos', 'categorias', 'variantes', 'pedidos', 'clientes', 'contenido', 'blog', 'newsletter', 'cupones', 'apariencia', 'media', 'configuracion', 'usuarios', 'sistema', 'ventas_vip'],
     canManageUsers: true,
     canAccessFullConfig: true,
     canManageData: true,
@@ -89,7 +90,7 @@ export const ROLE_CONFIG: Record<AdminRole, RoleConfig> = {
     label: 'Gestor de Tienda',
     color: 'bg-blue-100 text-blue-700',
     // Enfoque contenido/marketing: visual, publicaciones, promociones y config básica
-    sections: ['dashboard', 'contenido', 'blog', 'newsletter', 'apariencia', 'media', 'cupones', 'configuracion'],
+    sections: ['dashboard', 'contenido', 'blog', 'newsletter', 'apariencia', 'media', 'cupones', 'configuracion', 'ventas_vip'],
     canManageUsers: false,
     canAccessFullConfig: false, // Solo ve config general y legal (no pagos ni envíos)
     canManageData: false,

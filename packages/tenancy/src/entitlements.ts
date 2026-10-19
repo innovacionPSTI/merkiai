@@ -37,6 +37,7 @@ export const ADMIN_SECTIONS: AdminSectionDef[] = [
   { key: 'configuracion', label: 'Configuración' },
   { key: 'usuarios',      label: 'Usuarios' },
   { key: 'sistema',       label: 'Sistema' },
+  { key: 'ventas_vip',    label: 'Ventas VIP' },
 ]
 
 /** Roles de STAFF cuyo acceso por secciones es configurable por plan. */
@@ -108,6 +109,8 @@ export const FEATURES = {
   MULTI_LOCATION: 'multi_location',
   AI_DESIGN: 'ai_design',
   PAGE_BUILDER: 'page_builder',
+  /** E19 · Club VIP / acceso anticipado (segmentos + campañas VIP). */
+  VIP_EARLY_ACCESS: 'vip_early_access',
 } as const
 
 /** Claves de límite (cuantitativas; null = ilimitado). */
@@ -125,6 +128,7 @@ export const ENTITLEMENTS_CATALOG: EntitlementDef[] = [
   { key: FEATURES.MULTI_LOCATION, kind: 'feature', label: 'Sucursales (multi-ubicación)', description: 'Inventario por ubicación, fulfillment por sucursal, click & collect.', default: false },
   { key: FEATURES.AI_DESIGN,      kind: 'feature', label: 'Diseño por IA',             description: 'Generar el diseño/contenido de la tienda con IA.',              default: false },
   { key: FEATURES.PAGE_BUILDER,   kind: 'feature', label: 'Constructor de páginas',    description: 'Editor visual de páginas por bloques.',                        default: false },
+  { key: FEATURES.VIP_EARLY_ACCESS, kind: 'feature', label: 'Club VIP / acceso anticipado', description: 'Segmentos de clientes y campañas de venta exclusiva por tiempo limitado.', default: false },
   { key: LIMITS.PRODUCTS,             kind: 'limit', label: 'Productos',            description: 'Máximo de productos publicables.',        default: null },
   { key: LIMITS.USERS,                kind: 'limit', label: 'Usuarios del panel',   description: 'Máximo de usuarios del admin.',           default: null },
   { key: LIMITS.CATEGORIES,           kind: 'limit', label: 'Categorías',           description: 'Máximo de categorías.',                   default: null },

@@ -433,6 +433,114 @@ export type Database = {
         }
         Relationships: []
       }
+      customer_segments: {
+        Row: {
+          id: number
+          tenant_id: string
+          name: string
+          type: 'manual' | 'rules'
+          rules: Record<string, unknown>
+          created_at: string
+          updated_at: string
+        }
+        Insert: {
+          id?: number
+          tenant_id?: string
+          name: string
+          type?: 'manual' | 'rules'
+          rules?: Record<string, unknown>
+          created_at?: string
+          updated_at?: string
+        }
+        Update: {
+          name?: string
+          type?: 'manual' | 'rules'
+          rules?: Record<string, unknown>
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      customer_segment_members: {
+        Row: {
+          id: number
+          tenant_id: string
+          segment_id: number
+          customer_id: string
+          added_at: string
+        }
+        Insert: {
+          id?: number
+          tenant_id?: string
+          segment_id: number
+          customer_id: string
+          added_at?: string
+        }
+        Update: {
+          segment_id?: number
+          customer_id?: string
+        }
+        Relationships: []
+      }
+      vip_campaigns: {
+        Row: {
+          id: number
+          tenant_id: string
+          name: string
+          segment_id: number | null
+          starts_at: string
+          ends_at: string
+          status: 'scheduled' | 'active' | 'ended' | 'paused' | 'cancelled'
+          offer_percent: number | null
+          quota: number | null
+          created_at: string
+          updated_at: string
+        }
+        Insert: {
+          id?: number
+          tenant_id?: string
+          name: string
+          segment_id?: number | null
+          starts_at: string
+          ends_at: string
+          status?: 'scheduled' | 'active' | 'ended' | 'paused' | 'cancelled'
+          offer_percent?: number | null
+          quota?: number | null
+          created_at?: string
+          updated_at?: string
+        }
+        Update: {
+          name?: string
+          segment_id?: number | null
+          starts_at?: string
+          ends_at?: string
+          status?: 'scheduled' | 'active' | 'ended' | 'paused' | 'cancelled'
+          offer_percent?: number | null
+          quota?: number | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      vip_campaign_scope: {
+        Row: {
+          id: number
+          tenant_id: string
+          campaign_id: number
+          product_id: number | null
+          category_id: number | null
+        }
+        Insert: {
+          id?: number
+          tenant_id?: string
+          campaign_id: number
+          product_id?: number | null
+          category_id?: number | null
+        }
+        Update: {
+          product_id?: number | null
+          category_id?: number | null
+        }
+        Relationships: []
+      }
       order_returns: {
         Row: {
           id: number
