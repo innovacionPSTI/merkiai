@@ -433,6 +433,48 @@ export type Database = {
         }
         Relationships: []
       }
+      promotions: {
+        Row: {
+          id: number
+          tenant_id: string
+          name: string
+          type: 'cart_percent' | 'cart_fixed' | 'category_percent' | 'bogo'
+          config: Record<string, unknown>
+          active: boolean
+          priority: number
+          combinable: boolean
+          starts_at: string | null
+          ends_at: string | null
+          created_at: string
+          updated_at: string
+        }
+        Insert: {
+          id?: number
+          tenant_id?: string
+          name: string
+          type: 'cart_percent' | 'cart_fixed' | 'category_percent' | 'bogo'
+          config?: Record<string, unknown>
+          active?: boolean
+          priority?: number
+          combinable?: boolean
+          starts_at?: string | null
+          ends_at?: string | null
+          created_at?: string
+          updated_at?: string
+        }
+        Update: {
+          name?: string
+          type?: 'cart_percent' | 'cart_fixed' | 'category_percent' | 'bogo'
+          config?: Record<string, unknown>
+          active?: boolean
+          priority?: number
+          combinable?: boolean
+          starts_at?: string | null
+          ends_at?: string | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
       customer_segments: {
         Row: {
           id: number

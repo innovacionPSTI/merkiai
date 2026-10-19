@@ -91,8 +91,9 @@ const NAV: NavNode[] = [
       { kind: 'leaf', href: '/pedidos',  icon: <Icon name="order" />,    label: 'Pedidos',  section: 'pedidos' },
       { kind: 'leaf', href: '/reportes', icon: <Icon name="chart" />,    label: 'Reportes', section: 'pedidos' },
       { kind: 'leaf', href: '/clientes', icon: <Icon name="customer" />, label: 'Clientes', section: 'clientes' },
-      { kind: 'leaf', href: '/cupones',  icon: <Icon name="coupon" />,   label: 'Cupones',  section: 'cupones' },
-      { kind: 'leaf', href: '/ventas-vip', icon: <Icon name="star" />,   label: 'Ventas VIP', section: 'ventas_vip' },
+      { kind: 'leaf', href: '/cupones',     icon: <Icon name="coupon" />, label: 'Cupones',     section: 'cupones' },
+      { kind: 'leaf', href: '/promociones', icon: <Icon name="money" />,  label: 'Promociones', section: 'cupones' },
+      { kind: 'leaf', href: '/ventas-vip',  icon: <Icon name="star" />,   label: 'Ventas VIP',  section: 'ventas_vip' },
     ],
   },
   {

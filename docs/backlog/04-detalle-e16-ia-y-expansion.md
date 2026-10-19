@@ -1126,7 +1126,7 @@
 
 **Estimación:** L (8 puntos)
 **Módulo:** motor de reglas de promoción, aplicación en carrito/checkout, admin
-**Estado:** 🔲 Pendiente (roadmap v17)
+**Estado:** ✅ Hecho (v142) — tabla `promotions` (`e17/44`, RLS lectura pública de activas + gestión is_admin). Motor **puro y testeado** `computePromotions` (tipos cart_percent, cart_fixed, category_percent, bogo; vigencia; combinable vs **exclusiva** = gana la de mayor descuento; tope al subtotal). Admin `/promociones` (alta por tipo + activar/eliminar). **Checkout server-side (AC-4):** si la tienda tiene promociones activas, recalcula el descuento desde los precios actuales y ajusta `discount`/`total` (y el monto cobrado a la pasarela); si no hay, flujo idéntico al anterior. Coexiste aditivamente con el cupón (AC-3).
 
 | # | Escenario | Resultado esperado |
 |---|-----------|-------------------|

@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { createOrder, createServerClient, resolveActivePayment, gatewayFromInstance, getStockForVariants, TuCompraGateway, ensureCustomer } from '@merkiai/database'
+import { createOrder, createServerClient, resolveActivePayment, gatewayFromInstance, getStockForVariants, TuCompraGateway, ensureCustomer, listActivePromotions, computePromotions } from '@merkiai/database'
 import { stackServerApp } from '@/stack'
 import { baseUrlFromRequest } from '@/lib/base-url'
 import { resolveTenant } from '@/lib/tenant-context';
@@ -189,6 +189,42 @@ export async function POST(req: NextRequest) {
       )
     }
 
+    // ── HU-147: motor de promociones (autoridad del total en el servidor, AC-4).
+    // Solo se activa si la tienda tiene promociones activas; si no, el flujo es
+    // idéntico al anterior (promoDiscount=0). El descuento se calcula desde los
+    // precios ACTUALES del servidor, no desde lo que envía el cliente.
+    let promoDiscount = 0
+    const promoApplied: Array<{ promotion_id: number; name: string; amount: number }> = []
+    try {
+      const mdb = getMachineDb(tenantId)
+      const activePromos = await listActivePromotions(mdb)
+      if (activePromos.length > 0) {
+        const vids = orderItems.map((i) => i.variant_id).filter((v): v is number => !!v)
+        const { data: vrows } = await mdb
+          .from('product_variants')
+          .select('id, price, product_id, products!inner(category_id)')
+          .in('id', vids)
+        const priceMap = new Map<number, { price: number; product_id: number; category_id: number | null }>()
+        for (const v of (vrows ?? []) as any[]) {
+          const prod = Array.isArray(v.products) ? v.products[0] : v.products
+          priceMap.set(v.id, { price: Number(v.price), product_id: v.product_id, category_id: prod?.category_id ?? null })
+        }
+        const cartLines = orderItems
+          .map((i) => {
+            const m = priceMap.get(i.variant_id)
+            return m ? { variant_id: i.variant_id, product_id: m.product_id, category_id: m.category_id, qty: i.qty, price: m.price } : null
+          })
+          .filter((l): l is NonNullable<typeof l> => l !== null)
+        const result = computePromotions(cartLines, activePromos)
+        promoDiscount = result.discount
+        promoApplied.push(...result.applied)
+      }
+    } catch {
+      promoDiscount = 0 // fail-open: una promo mal configurada no debe tumbar el checkout
+    }
+    const effectiveDiscount = Number(discount ?? 0) + promoDiscount
+    const effectiveTotal = Math.max(0, Number(total ?? 0) - promoDiscount)
+
     // ── SEGURIDAD: la pasarela se deriva SIEMPRE del servidor (instancia activa),
     // nunca del `payment_method` que envía el cliente. ADR-004: resuelve la
     // instancia activa (integration_instances) con fallback al legacy payment_config.
@@ -252,7 +288,8 @@ export async function POST(req: NextRequest) {
         items,
         subtotal,
         shipping_cost: shipping_cost ?? 0,
-        total,
+        discount: effectiveDiscount,
+        total: effectiveTotal,
         payment_method: 'manual',
         skydropx_rate_id,
         carrier_name,
@@ -291,7 +328,7 @@ export async function POST(req: NextRequest) {
         tenant_id: tenantId,
         customer_id: customerId,
         customer_name: name, customer_email: email, customer_phone: phone ?? null,
-        shipping_addr: address, items, subtotal, shipping_cost: shipping_cost ?? 0, total,
+        shipping_addr: address, items, subtotal, shipping_cost: shipping_cost ?? 0, discount: effectiveDiscount, total: effectiveTotal,
         payment_method: 'tucompra', skydropx_rate_id, carrier_name,
       }, getMachineDb(tenantId))
       await autoSaveAddress()
@@ -312,7 +349,7 @@ export async function POST(req: NextRequest) {
       try {
         const result = await gw.createIntegradorTransaction({
           referencia: order.order_number,
-          valorTotal: total,
+          valorTotal: effectiveTotal,
           descripcion: `Pedido ${order.order_number}`,
           correo: email,
           nombre: name,
@@ -422,7 +459,8 @@ export async function POST(req: NextRequest) {
       items,
       subtotal,
       shipping_cost: shipping_cost ?? 0,
-      total,
+      discount: effectiveDiscount,
+      total: effectiveTotal,
       payment_method: activeProvider as 'wompi' | 'mercadopago' | 'tucompra' | 'bold',
       skydropx_rate_id,
       carrier_name,
@@ -434,7 +472,7 @@ export async function POST(req: NextRequest) {
 
     const payment_url = await gateway.createPaymentUrl({
       orderNumber: order.order_number,
-      amountInCents: Math.round(total * 100),
+      amountInCents: Math.round(effectiveTotal * 100),
       currency: 'COP',
       customerEmail: email,
       customerName: name,
