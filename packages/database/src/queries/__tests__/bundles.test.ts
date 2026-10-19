@@ -1,4 +1,4 @@
-import { bundleMaxQty, isBundleAvailable, componentsListPrice, bundleSavings, validateBundle } from '../bundles'
+import { bundleMaxQty, isBundleAvailable, componentsListPrice, bundleSavings, validateBundle, expandBundleLines } from '../bundles'
 import type { BundleComponent } from '../bundles'
 
 const comps = (over: Partial<BundleComponent>[] = []): BundleComponent[] =>
@@ -43,5 +43,26 @@ describe('bundles (HU-168)', () => {
     it('acepta uno válido', () => { expect(validateBundle(ok).ok).toBe(true) })
     it('rechaza sin componentes', () => { expect(validateBundle({ ...ok, components: [] }).ok).toBe(false) })
     it('rechaza qty < 1', () => { expect(validateBundle({ ...ok, components: [{ variant_id: 1, qty: 0 }] }).ok).toBe(false) })
+  })
+
+  describe('expandBundleLines', () => {
+    const bundles = new Map([[7, { name: 'Kit', price: 4000, components: [{ variant_id: 10, qty: 1 }, { variant_id: 20, qty: 2 }] }]])
+    const prices = new Map([[10, 1000], [20, 2000]]) // list = 1000 + 2*2000 = 5000
+
+    it('expande el bundle a componentes con stock por cantidad y precio distribuido', () => {
+      const out = expandBundleLines([{ bundle_id: 7, qty: 2 }], bundles, prices)
+      // comp10: qty 1*2=2 ; comp20: qty 2*2=4
+      expect(out.map((o) => [o.variant_id, o.qty])).toEqual([[10, 2], [20, 4]])
+      // precio del bundle (×1) distribuido: 4000*1000/5000=800 ; resto 3200 al último (÷qty2=1600)
+      const perBundle = out[0].price * 1 + out[1].price * 2
+      expect(perBundle).toBe(4000)
+    })
+    it('deja pasar las líneas normales sin tocar', () => {
+      const out = expandBundleLines([{ variant_id: 99, qty: 1, price: 1500, product_name: 'X' }], bundles, prices)
+      expect(out).toEqual([{ variant_id: 99, qty: 1, price: 1500, product_name: 'X', variant_label: '' }])
+    })
+    it('ignora un bundle desconocido', () => {
+      expect(expandBundleLines([{ bundle_id: 999, qty: 1 }], bundles, prices)).toEqual([])
+    })
   })
 })

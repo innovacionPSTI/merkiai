@@ -2,6 +2,7 @@ import { create } from 'zustand'
 import { persist, createJSONStorage } from 'zustand/middleware'
 
 export interface CartItem {
+  /** Para líneas normales = id de variante. Para BUNDLES = sentinel negativo (-bundleId). */
   variantId: number
   productId?: number
   productSlug: string
@@ -9,6 +10,8 @@ export interface CartItem {
   variantLabel: string
   price: number
   qty: number
+  /** HU-168 · si la línea es un bundle, su id (el servidor expande a componentes). */
+  bundleId?: number
   /** Stock disponible de la variante (para topar la cantidad en el carrito) */
   stock?: number
   /** Si el producto permite vender sin stock (backorder) */
@@ -66,10 +69,13 @@ function consolidateByVariant(items: CartItem[]): CartItem[] {
 
 async function pushToServer(items: CartItem[]) {
   try {
+    // Las líneas de bundle no se sincronizan a la BD (no son una variante real;
+    // su `variantId` sentinel rompería el FK). Viven solo en el carrito local.
+    const syncable = items.filter((i) => !i.bundleId)
     await fetch('/api/account/cart', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ items }),
+      body: JSON.stringify({ items: syncable }),
     })
   } catch {
     // Non-critical: local state is still valid

@@ -271,7 +271,7 @@
 
 **Estimación:** L (8 puntos)
 **Módulo:** modelo de bundle, PDP, carrito, inventario compuesto
-**Estado:** 🟡 Fase 1 (v146) — modelo + admin. Tablas `bundles` + `bundle_components` (`e17/47`, RLS lectura pública de activos + gestión is_admin). Lógica **pura y testeada** (10): `bundleMaxQty` (componente más restrictivo, backorder no limita), `isBundleAvailable`, `componentsListPrice`, `bundleSavings`, `validateBundle`. Admin `/bundles` (crear con componentes + precio propio, activar/eliminar). **Pendiente Fase 2:** compra en storefront (PDP/carrito como línea única) + descuento de stock por componente (RPC) en el checkout (AC-2/AC-4).
+**Estado:** ✅ Hecho (v147) — **Fase 1** (modelo + admin + lógica pura) + **Fase 2** storefront/checkout: páginas `/bundles` (listado) y `/bundles/[slug]` (detalle con componentes, precio, ahorro y disponibilidad por componente más restrictivo). Add-to-cart como **línea única** (sentinel `-bundleId`; no se sincroniza a la BD). En el checkout el servidor **expande el bundle a sus componentes desde la BD** (server-authoritative): valida y descuenta stock por componente (reusa `getStockForVariants` + `applyStockForOrder`), con el precio del bundle distribuido entre líneas. Guarded: tiendas sin bundles no cambian. *(El canje/precio fino queda sujeto al endurecimiento de pricing HU-297.)*
 
 | # | Escenario | Resultado esperado |
 |---|-----------|-------------------|

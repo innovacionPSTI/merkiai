@@ -336,7 +336,7 @@ export default function CheckoutClient({ initialEmail = '', defaultAddress = nul
           name: `${shipping.name} ${shipping.lastname}`,
           phone: shipping.phone,
           address: { address: shipping.address, city: shipping.city, department: shipping.department, postal_code: shipping.postal_code },
-          items: items.map((i) => ({ variant_id: i.variantId, product_name: i.productName, variant_label: i.variantLabel, qty: i.qty, price: i.price })),
+          items: items.map((i) => ({ variant_id: i.variantId, bundle_id: i.bundleId, product_name: i.productName, variant_label: i.variantLabel, qty: i.qty, price: i.price })),
           subtotal: sub,
           shipping_cost: shippingCost,
           discount: couponDiscount,

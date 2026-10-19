@@ -96,6 +96,66 @@ export async function getBundleWithComponents(slug: string, db: Db): Promise<Bun
   return { id: b.id, name: b.name, slug: b.slug, description: b.description, price: b.price, image_url: b.image_url, active: b.active, components }
 }
 
+/**
+ * Bundles por id con sus componentes (variant_id, qty) y precio. Para expandir
+ * líneas de bundle en el checkout de forma **server-authoritative** (no se
+ * confía en los componentes/precio que envía el cliente).
+ */
+export async function getBundlesByIds(ids: number[], db: Db): Promise<Array<{ id: number; name: string; price: number; components: Array<{ variant_id: number; qty: number }> }>> {
+  if (!ids.length) return []
+  const { data } = await db
+    .from('bundles')
+    .select('id, name, price, active, bundle_components(variant_id, qty)')
+    .in('id', ids)
+    .eq('active', true)
+  return (data ?? []).map((b: any) => ({
+    id: b.id, name: b.name, price: b.price,
+    components: (b.bundle_components ?? []).map((c: any) => ({ variant_id: c.variant_id, qty: c.qty })),
+  }))
+}
+
+/**
+ * Expande líneas de carrito que son bundles a líneas por componente para el
+ * stock y el registro de la orden. Pura. Distribuye el precio del bundle entre
+ * sus componentes proporcional al precio de lista (resto al primero) para que la
+ * suma de líneas = precio del bundle × cantidad. Las líneas normales pasan igual.
+ */
+export interface CheckoutLineIn { variant_id?: number; qty: number; product_name?: string; variant_label?: string; price?: number; bundle_id?: number }
+export interface CheckoutLineOut { variant_id: number; qty: number; product_name: string; variant_label: string; price: number }
+
+export function expandBundleLines(
+  lines: CheckoutLineIn[],
+  bundles: Map<number, { name: string; price: number; components: Array<{ variant_id: number; qty: number }> }>,
+  componentPrice: Map<number, number>,
+): CheckoutLineOut[] {
+  const out: CheckoutLineOut[] = []
+  for (const l of lines) {
+    if (l.bundle_id && bundles.has(l.bundle_id)) {
+      const b = bundles.get(l.bundle_id)!
+      const bundleQty = Math.max(1, Math.floor(l.qty))
+      const listTotal = b.components.reduce((s, c) => s + (componentPrice.get(c.variant_id) ?? 0) * c.qty, 0)
+      let distributed = 0
+      b.components.forEach((c, idx) => {
+        const unitList = (componentPrice.get(c.variant_id) ?? 0) * c.qty
+        // Precio del componente (por 1 bundle) proporcional al precio de lista.
+        let compPrice = listTotal > 0 ? Math.round((b.price * unitList) / listTotal) : Math.round(b.price / b.components.length)
+        if (idx === b.components.length - 1) compPrice = b.price - distributed // resto al último
+        distributed += compPrice
+        out.push({
+          variant_id: c.variant_id,
+          qty: c.qty * bundleQty,
+          product_name: `${b.name}`,
+          variant_label: '',
+          price: c.qty > 0 ? Math.round(compPrice / c.qty) : compPrice,
+        })
+      })
+    } else if (l.variant_id) {
+      out.push({ variant_id: l.variant_id, qty: l.qty, product_name: l.product_name ?? '', variant_label: l.variant_label ?? '', price: l.price ?? 0 })
+    }
+  }
+  return out
+}
+
 export interface BundleInput {
   name: string
   slug: string

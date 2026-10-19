@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { createOrder, createServerClient, resolveActivePayment, gatewayFromInstance, getStockForVariants, TuCompraGateway, ensureCustomer, listActivePromotions, computePromotions, getGiftCardByCode, redeemGiftCard, getStoreCreditBalance, addStoreCredit, computeRedemption, applyStockForOrder } from '@merkiai/database'
+import { createOrder, createServerClient, resolveActivePayment, gatewayFromInstance, getStockForVariants, TuCompraGateway, ensureCustomer, listActivePromotions, computePromotions, getGiftCardByCode, redeemGiftCard, getStoreCreditBalance, addStoreCredit, computeRedemption, applyStockForOrder, getBundlesByIds, expandBundleLines } from '@merkiai/database'
 import { stackServerApp } from '@/stack'
 import { baseUrlFromRequest } from '@/lib/base-url'
 import { resolveTenant } from '@/lib/tenant-context';
@@ -148,9 +148,32 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'Datos incompletos' }, { status: 400 })
     }
 
-    // ── Validación de stock (Épica 9): rechazar si falta stock y el producto no
-    // permite backorder. El servidor es la autoridad; el front es solo ayuda.
-    const orderItems = items as Array<{ variant_id: number; qty: number; product_name?: string }>
+    // Tenant del pedido (resolución por host; siempre un tenantId). Necesario
+    // antes del stock para expandir bundles por tenant (server-authoritative).
+    const { tenantId } = await resolveTenant()
+
+    // ── HU-168 Fase 2 · expandir líneas de BUNDLE a sus componentes. Guarded:
+    // si no hay líneas de bundle, `orderItems` es la lista normal sin cambios.
+    // Los componentes y el precio se leen de la BD (no se confía en el cliente).
+    const rawItems = items as Array<{ variant_id?: number; qty: number; product_name?: string; variant_label?: string; price?: number; bundle_id?: number }>
+    const bundleIds = [...new Set(rawItems.filter((i) => i.bundle_id).map((i) => i.bundle_id as number))]
+    let orderItems: Array<{ variant_id: number; qty: number; product_name: string; variant_label: string; price: number }>
+    if (bundleIds.length) {
+      const mdb = getMachineDb(tenantId)
+      const bundleList = await getBundlesByIds(bundleIds, mdb)
+      const bundleMap = new Map(bundleList.map((b) => [b.id, { name: b.name, price: b.price, components: b.components }]))
+      const compVariantIds = bundleList.flatMap((b) => b.components.map((c) => c.variant_id))
+      const { data: compRows } = await mdb.from('product_variants').select('id, price').in('id', compVariantIds.length ? compVariantIds : [0])
+      const compPrice = new Map((compRows ?? []).map((r: any) => [r.id as number, Number(r.price)]))
+      orderItems = expandBundleLines(rawItems, bundleMap, compPrice)
+    } else {
+      orderItems = rawItems
+        .filter((i) => i.variant_id)
+        .map((i) => ({ variant_id: i.variant_id as number, qty: i.qty, product_name: i.product_name ?? '', variant_label: i.variant_label ?? '', price: i.price ?? 0 }))
+    }
+
+    // ── Validación de stock (Épica 9) sobre los ítems ya expandidos: rechazar si
+    // falta stock y el producto no permite backorder. El servidor es la autoridad.
     const stockRows = await getStockForVariants(
       orderItems.map((i) => i.variant_id).filter((v): v is number => !!v),
     )
@@ -173,10 +196,6 @@ export async function POST(req: NextRequest) {
         { status: 409 },
       )
     }
-
-    // Tenant del pedido (resolución por host; siempre un tenantId — en modo
-    // interino resolveTenant devuelve el default, en estricto lanza si no resuelve).
-    const { tenantId } = await resolveTenant()
 
     // ── Gating VIP (HU-290 AC-4): revalidar acceso anticipado en el servidor.
     // Si algún ítem está bloqueado para este visitante (campaña VIP viva y no es
@@ -358,7 +377,7 @@ export async function POST(req: NextRequest) {
         customer_email: email,
         customer_phone: phone ?? null,
         shipping_addr: address,
-        items,
+        items: orderItems,
         subtotal,
         shipping_cost: shipping_cost ?? 0,
         discount: effectiveDiscount,
@@ -385,7 +404,7 @@ export async function POST(req: NextRequest) {
         customer_email: email,
         customer_phone: phone ?? null,
         shipping_addr: address,
-        items,
+        items: orderItems,
         subtotal,
         shipping_cost: shipping_cost ?? 0,
         discount: effectiveDiscount,
@@ -429,7 +448,7 @@ export async function POST(req: NextRequest) {
         tenant_id: tenantId,
         customer_id: customerId,
         customer_name: name, customer_email: email, customer_phone: phone ?? null,
-        shipping_addr: address, items, subtotal, shipping_cost: shipping_cost ?? 0, discount: effectiveDiscount, total: effectiveTotal,
+        shipping_addr: address, items: orderItems, subtotal, shipping_cost: shipping_cost ?? 0, discount: effectiveDiscount, total: effectiveTotal,
         payment_method: 'tucompra', skydropx_rate_id, carrier_name, ...creditOrderFields,
       }, getMachineDb(tenantId))
       await autoSaveAddress()
@@ -557,7 +576,7 @@ export async function POST(req: NextRequest) {
       customer_email: email,
       customer_phone: phone ?? null,
       shipping_addr: address,
-      items,
+      items: orderItems,
       subtotal,
       shipping_cost: shipping_cost ?? 0,
       discount: effectiveDiscount,
@@ -579,11 +598,11 @@ export async function POST(req: NextRequest) {
       customerEmail: email,
       customerName: name,
       customerPhone: phone ?? undefined,
-      items: (items as Array<{ variant_id: number; product_name: string; qty: number; price: number }>).map((i) => ({
+      items: (orderItems as Array<{ variant_id: number; product_name?: string; qty: number; price?: number }>).map((i) => ({
         id: String(i.variant_id),
-        title: i.product_name,
+        title: i.product_name ?? '',
         quantity: i.qty,
-        unit_price: i.price,
+        unit_price: i.price ?? 0,
       })),
       redirectUrl: confirmUrl,
       webhookUrl: `${siteUrl}/api/webhooks/${activeProvider}`,
