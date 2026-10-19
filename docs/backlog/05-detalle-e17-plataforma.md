@@ -125,7 +125,7 @@
 
 **Estimación:** L (8 puntos)
 **Módulo:** layout MJML/React Email + plantillas en BD (`email_templates`), interpolación de variables, preview en admin, `lib/email` (reemplazar HTML fijo)
-**Estado:** 🔲 Pendiente (roadmap v18).
+**Estado:** 🟡 Fase 1 (v157) — **hecho:** tabla `email_templates` (`e17/51`, override por tienda de **asunto+cuerpo+enabled** por tipo, RLS is_admin) + catálogo de tipos con **defaults de sistema** (pago confirmado/rechazado, estados de pedido, bienvenida, recuperación) + renderer puro de variables (`{{...}}`) con **fallback** al default (`resolveTemplate`) + tests. Admin **Configuración → Plantillas de correo**: editar asunto/cuerpo con lista de variables y **activar/silenciar** por tipo (AC-2/AC-5). **Pendiente Fase 2:** que los envíos usen la plantilla activa (AC-4) y respeten el toggle; **previsualización + correo de prueba** (AC-3); layout con logo/tema reutilizado (AC-1, hoy ya existe el baseTemplate); i18n (AC-6).
 **Baseline actual (v20):** los correos transaccionales **ya se envían** con Resend vía el proveedor activo — confirmación de pago (al aprobarse), notificación de envío (con tracking) y en los cambios de estado del pedido —, pero con **plantillas HTML fijas en código** (`lib/email`). Esta HU las hace **editables por tipo/estado desde el admin**.
 
 | # | Escenario | Resultado esperado |

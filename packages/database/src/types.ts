@@ -409,6 +409,35 @@ export type Database = {
         }
         Relationships: []
       }
+      email_templates: {
+        Row: {
+          id: number
+          tenant_id: string
+          type: string
+          locale: string
+          subject: string
+          body: string
+          enabled: boolean
+          updated_at: string
+        }
+        Insert: {
+          id?: number
+          tenant_id?: string
+          type: string
+          locale?: string
+          subject: string
+          body: string
+          enabled?: boolean
+          updated_at?: string
+        }
+        Update: {
+          subject?: string
+          body?: string
+          enabled?: boolean
+          updated_at?: string
+        }
+        Relationships: []
+      }
       email_log: {
         Row: {
           id: number
