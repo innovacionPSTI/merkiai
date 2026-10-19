@@ -1383,7 +1383,7 @@
 
 **Estimación:** M (5 puntos)
 **Módulo:** `packages/database` (`customer_segments`, `customer_segment_members`), admin (CRUD de segmentos), reusa `customers`+histórico de pedidos
-**Estado:** 🔲 Pendiente (roadmap · E19 MVP)
+**Estado:** ✅ Hecho (v139) — tablas `customer_segments`/`customer_segment_members` (`e17/42`, RLS is_admin), segmentos manuales y por reglas (min_orders/min_total/within_days) con recálculo idempotente; admin en `/ventas-vip`.
 **Opción/builder:** sección gated por plan (`vip_early_access`) + rol. RLS por tenant.
 
 | # | Escenario | Resultado esperado |
@@ -1401,7 +1401,7 @@
 
 **Estimación:** L (8 puntos)
 **Módulo:** `packages/database` (`vip_campaigns`, `vip_campaign_scope`), admin (CRUD + estados)
-**Estado:** 🔲 Pendiente (roadmap · E19 MVP)
+**Estado:** ✅ Hecho (v139) — `vip_campaigns`+`vip_campaign_scope` (`e17/42`), ventana inicio/fin + audiencia (segmento) + alcance productos/categorías + oferta/cupo; estado derivado de la ventana con pausa/cancelación manual; admin CRUD.
 **Opción/builder:** gated por plan/rol. Estados: `scheduled` → `active` → `ended` (derivados de la ventana, con control manual de pausa/cancelar).
 
 | # | Escenario | Resultado esperado |
@@ -1419,7 +1419,7 @@
 
 **Estimación:** L (8 puntos)
 **Módulo:** `apps/web` (resolución de acceso en catálogo/PDP/checkout), `packages/database` (membresía + ventana)
-**Estado:** 🔲 Pendiente (roadmap · E19 MVP)
+**Estado:** ✅ Hecho (v139) — resolución **server-side** (`resolveProductGate` + `listLiveVipGates` + membresía por sesión): PDP muestra 'disponible pronto' a no-miembros y permite comprar a miembros; checkout **revalida** (403 si bloqueado) → no saltable por API.
 **Opción/builder:** requiere comprador autenticado; la verificación es **server-side** (no basta ocultar en UI). Fuera de la ventana VIP, se abre a todos o termina, según la campaña.
 
 | # | Escenario | Resultado esperado |
@@ -1437,7 +1437,7 @@
 
 **Estimación:** M (5 puntos)
 **Módulo:** `apps/web` (banner/countdown + badges), tokens de tema, variante de superficie (HU-122a)
-**Estado:** 🔲 Pendiente (roadmap · E19 MVP)
+**Estado:** ✅ Hecho (v139) — `VipCountdown` (tokens de tema, `aria-live`/`role=timer`) con panel 'disponible pronto' para no-miembros y cinta 'Acceso VIP activo' para miembros.
 **Opción/builder:** 100% tokens de tema + variante por plantilla; cupo/stock limitado opcional. Viaja en el paquete de plantilla/preset.
 
 | # | Escenario | Resultado esperado |

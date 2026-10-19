@@ -9,6 +9,7 @@ import WishlistButton from './WishlistButton'
 import ShareButton from './ShareButton'
 import ShippingEstimator from './ShippingEstimator'
 import BackInStock from './BackInStock'
+import VipCountdown from './VipCountdown'
 
 interface Props {
   product: ProductWithVariants
@@ -27,9 +28,15 @@ interface Props {
   showEstimator?: boolean
   /** HU-287: muestra el botón de compartir (store_config.pdp_share_enabled). */
   showShare?: boolean
+  /** HU-290: acceso anticipado VIP bloqueado para este visitante (no-miembro en ventana). */
+  vipLocked?: boolean
+  /** HU-290: el visitante es miembro VIP con acceso dentro de la ventana. */
+  vipMember?: boolean
+  /** HU-291: datos de la campaña VIP viva (para countdown/badge). */
+  vipCampaign?: { name: string; ends_at: string }
 }
 
-export default function ProductDetail({ product, related, trustBadges = [], layoutVariant = 'gallery-left', galleryVariant = 'lightbox', ctaVariant = 'sticky-mobile', colorMap, showEstimator = false, showShare = true }: Props) {
+export default function ProductDetail({ product, related, trustBadges = [], layoutVariant = 'gallery-left', galleryVariant = 'lightbox', ctaVariant = 'sticky-mobile', colorMap, showEstimator = false, showShare = true, vipLocked = false, vipMember = false, vipCampaign }: Props) {
   const variantOpts = getProductOptions(product)
   const activeVariants = product.variants.filter((v) => v.active)
 
@@ -250,7 +257,7 @@ export default function ProductDetail({ product, related, trustBadges = [], layo
   }, [selectedVariant?.id])
 
   function handleAddToCart() {
-    if (!selectedVariant || isOutOfStock) return
+    if (!selectedVariant || isOutOfStock || vipLocked) return // HU-290: gating VIP
     addItem({
       variantId: selectedVariant.id,
       productId: product.id,
@@ -533,34 +540,45 @@ export default function ProductDetail({ product, related, trustBadges = [], layo
 
             {/* CTAs */}
             <div ref={ctaRef} className="flex flex-col gap-3 mb-8">
-              <button
-                onClick={handleAddToCart}
-                disabled={!isFullySelected || !!isOutOfStock}
-                className={`w-full rounded-full py-4 font-brand font-medium transition-all ${
-                  addedFeedback
-                    ? 'bg-green-600 text-white'
-                    : 'bg-brand-primary text-brand-cream hover:bg-brand-dark disabled:opacity-40 disabled:cursor-not-allowed'
-                }`}
-              >
-                {addedFeedback
-                  ? 'Agregado al carrito'
-                  : isOutOfStock
-                    ? 'Sin stock'
-                    : !isFullySelected
-                      ? `Selecciona ${missingAttrs[0] ?? 'una opción'}`
-                      : 'Agregar al carrito'}
-              </button>
-              <Link
-                href="/checkout"
-                onClick={handleAddToCart}
-                className={`w-full text-center border border-brand-primary text-brand-primary rounded-full py-4 font-brand font-medium transition-colors ${
-                  isFullySelected && !isOutOfStock
-                    ? 'hover:bg-brand-primary hover:text-brand-cream'
-                    : 'opacity-40 pointer-events-none'
-                }`}
-              >
-                Comprar ahora
-              </Link>
+              {/* HU-290/291 · acceso anticipado VIP */}
+              {vipLocked && vipCampaign && (
+                <VipCountdown endsAt={vipCampaign.ends_at} campaignName={vipCampaign.name} variant="locked" />
+              )}
+              {!vipLocked && vipMember && vipCampaign && (
+                <VipCountdown endsAt={vipCampaign.ends_at} campaignName={vipCampaign.name} variant="member" />
+              )}
+              {!vipLocked && (
+                <>
+                  <button
+                    onClick={handleAddToCart}
+                    disabled={!isFullySelected || !!isOutOfStock}
+                    className={`w-full rounded-full py-4 font-brand font-medium transition-all ${
+                      addedFeedback
+                        ? 'bg-green-600 text-white'
+                        : 'bg-brand-primary text-brand-cream hover:bg-brand-dark disabled:opacity-40 disabled:cursor-not-allowed'
+                    }`}
+                  >
+                    {addedFeedback
+                      ? 'Agregado al carrito'
+                      : isOutOfStock
+                        ? 'Sin stock'
+                        : !isFullySelected
+                          ? `Selecciona ${missingAttrs[0] ?? 'una opción'}`
+                          : 'Agregar al carrito'}
+                  </button>
+                  <Link
+                    href="/checkout"
+                    onClick={handleAddToCart}
+                    className={`w-full text-center border border-brand-primary text-brand-primary rounded-full py-4 font-brand font-medium transition-colors ${
+                      isFullySelected && !isOutOfStock
+                        ? 'hover:bg-brand-primary hover:text-brand-cream'
+                        : 'opacity-40 pointer-events-none'
+                    }`}
+                  >
+                    Comprar ahora
+                  </Link>
+                </>
+              )}
               {/* HU-103 · guardar en favoritos */}
               <WishlistButton
                 variant="button"
@@ -664,8 +682,8 @@ export default function ProductDetail({ product, related, trustBadges = [], layo
         </div>
       )}
 
-      {/* HU-284 · Barra de compra pegajosa en móvil */}
-      {stickyEnabled && showSticky && (
+      {/* HU-284 · Barra de compra pegajosa en móvil (oculta si el acceso VIP bloquea la compra) */}
+      {stickyEnabled && showSticky && !vipLocked && (
         <div className="lg:hidden fixed bottom-0 inset-x-0 z-40 bg-brand-cream/95 backdrop-blur border-t border-brand-primary/10 shadow-[0_-4px_12px_rgba(0,0,0,0.06)] px-4 py-3 flex items-center gap-3">
           <div className="min-w-0 flex-1">
             <p className="font-brand text-xs text-brand-primary/60 truncate">{product.name}</p>

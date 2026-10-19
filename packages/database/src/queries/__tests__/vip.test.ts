@@ -1,5 +1,6 @@
 import { evaluateSegmentRules, computeSegmentMembers, aggregateCustomerStats } from '../segments'
-import { deriveCampaignStatus, isCampaignLive, validateCampaign } from '../vip-campaigns'
+import { deriveCampaignStatus, isCampaignLive, validateCampaign, resolveProductGate } from '../vip-campaigns'
+import type { VipGate } from '../vip-campaigns'
 
 describe('segmentos (HU-288)', () => {
   const now = new Date('2026-10-18T12:00:00Z')
@@ -82,6 +83,26 @@ describe('campañas VIP (HU-289/290)', () => {
     })
     it('rechaza descuento fuera de rango', () => {
       expect(validateCampaign({ ...ok, offer_percent: 150 }).ok).toBe(false)
+    })
+  })
+
+  describe('resolveProductGate (HU-290)', () => {
+    const campaign = { id: 1, name: 'VIP', ends_at: '2026-10-18T22:00:00Z', segment_id: 7, offer_percent: null, quota: null }
+    const gates: VipGate[] = [
+      { product_id: 10, category_id: null, campaign },
+      { product_id: null, category_id: 5, campaign },
+    ]
+    it('open cuando no hay campaña que cubra el producto', () => {
+      expect(resolveProductGate(gates, { productId: 99, categoryId: 1, memberSegmentIds: [] }).status).toBe('open')
+    })
+    it('locked para no-miembro dentro de campaña (por producto)', () => {
+      expect(resolveProductGate(gates, { productId: 10, categoryId: 1, memberSegmentIds: [] }).status).toBe('locked')
+    })
+    it('vip_member para miembro del segmento', () => {
+      expect(resolveProductGate(gates, { productId: 10, categoryId: 1, memberSegmentIds: [7] }).status).toBe('vip_member')
+    })
+    it('cubre por categoría del producto', () => {
+      expect(resolveProductGate(gates, { productId: 50, categoryId: 5, memberSegmentIds: [] }).status).toBe('locked')
     })
   })
 })

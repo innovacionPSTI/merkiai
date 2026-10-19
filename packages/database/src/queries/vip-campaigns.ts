@@ -144,3 +144,73 @@ export async function deleteCampaign(id: number, db: Db): Promise<void> {
   const { error } = await db.from('vip_campaigns').delete().eq('id', id)
   if (error) throw error
 }
+
+// ── Gating de acceso anticipado en el storefront (HU-290) ─────────────────────
+
+export interface VipGateCampaign {
+  id: number
+  name: string
+  ends_at: string
+  segment_id: number | null
+  offer_percent: number | null
+  quota: number | null
+}
+
+export interface VipGate {
+  product_id: number | null
+  category_id: number | null
+  campaign: VipGateCampaign
+}
+
+/** Estado de acceso de un producto para un visitante concreto. */
+export type GateStatus = 'open' | 'vip_member' | 'locked'
+
+/**
+ * Reglas de acceso (pura, server-side). Dada la lista de gates vivos y el
+ * producto/categoría + segmentos del visitante, decide si está abierto, si el
+ * visitante es miembro VIP (puede comprar) o si está bloqueado ("disponible
+ * pronto"). Un producto sin campaña viva → `open`. Si lo cubre una campaña viva:
+ * miembro del segmento → `vip_member`; si no (o sin sesión) → `locked`.
+ */
+export function resolveProductGate(
+  gates: VipGate[],
+  opts: { productId: number; categoryId: number | null; memberSegmentIds: number[] },
+): { status: GateStatus; campaign?: VipGateCampaign } {
+  const matching = gates.filter(
+    (g) => g.product_id === opts.productId || (g.category_id != null && g.category_id === opts.categoryId),
+  )
+  if (matching.length === 0) return { status: 'open' }
+  // La campaña que cierra antes marca la urgencia mostrada.
+  matching.sort((a, b) => new Date(a.campaign.ends_at).getTime() - new Date(b.campaign.ends_at).getTime())
+  const { campaign } = matching[0]
+  const isMember = campaign.segment_id != null && opts.memberSegmentIds.includes(campaign.segment_id)
+  return { status: isMember ? 'vip_member' : 'locked', campaign }
+}
+
+/** Campañas vivas (dentro de ventana, ni pausadas ni canceladas) con su alcance. */
+export async function listLiveVipGates(db: Db, now: Date = new Date()): Promise<VipGate[]> {
+  const iso = now.toISOString()
+  const { data } = await db
+    .from('vip_campaigns')
+    .select('id, name, ends_at, segment_id, offer_percent, quota, starts_at, status, vip_campaign_scope(product_id, category_id)')
+    .lte('starts_at', iso)
+    .gt('ends_at', iso)
+    .not('status', 'in', '("paused","cancelled")')
+  const gates: VipGate[] = []
+  for (const c of (data ?? []) as any[]) {
+    const campaign: VipGateCampaign = {
+      id: c.id, name: c.name, ends_at: c.ends_at, segment_id: c.segment_id,
+      offer_percent: c.offer_percent, quota: c.quota,
+    }
+    const scope = Array.isArray(c.vip_campaign_scope) ? c.vip_campaign_scope : []
+    for (const s of scope) gates.push({ product_id: s.product_id ?? null, category_id: s.category_id ?? null, campaign })
+  }
+  return gates
+}
+
+/** Segmentos a los que pertenece un cliente (o [] si no hay sesión/cliente). */
+export async function customerSegmentIds(db: Db, customerId: string | null): Promise<number[]> {
+  if (!customerId) return []
+  const { data } = await db.from('customer_segment_members').select('segment_id').eq('customer_id', customerId)
+  return (data ?? []).map((r: any) => r.segment_id as number)
+}

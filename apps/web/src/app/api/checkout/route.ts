@@ -4,6 +4,7 @@ import { stackServerApp } from '@/stack'
 import { baseUrlFromRequest } from '@/lib/base-url'
 import { resolveTenant } from '@/lib/tenant-context';
 import { getMachineDb } from '@/lib/machine-db'
+import { findLockedVariants } from '@/lib/vip-access'
 
 // ── Rate limiting (best-effort, per-instance) ──────────────────────────────────
 // Allows MAX_REQUESTS per IP within WINDOW_MS. In Vercel's serverless model
@@ -173,6 +174,20 @@ export async function POST(req: NextRequest) {
     // Tenant del pedido (resolución por host; siempre un tenantId — en modo
     // interino resolveTenant devuelve el default, en estricto lanza si no resuelve).
     const { tenantId } = await resolveTenant()
+
+    // ── Gating VIP (HU-290 AC-4): revalidar acceso anticipado en el servidor.
+    // Si algún ítem está bloqueado para este visitante (campaña VIP viva y no es
+    // miembro del segmento), se rechaza el checkout — no se puede saltar por API.
+    const lockedVariants = await findLockedVariants(
+      tenantId,
+      orderItems.map((i) => i.variant_id).filter((v): v is number => !!v),
+    ).catch(() => [])
+    if (lockedVariants.length) {
+      return NextResponse.json(
+        { error: 'Uno o más productos son de acceso anticipado VIP y aún no están disponibles para tu cuenta.', vip_locked: lockedVariants },
+        { status: 403 },
+      )
+    }
 
     // ── SEGURIDAD: la pasarela se deriva SIEMPRE del servidor (instancia activa),
     // nunca del `payment_method` que envía el cliente. ADR-004: resuelve la

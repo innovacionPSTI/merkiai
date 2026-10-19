@@ -7,6 +7,7 @@ import Reviews from '@/components/shop/Reviews'
 import RecentlyViewed from '@/components/shop/RecentlyViewed'
 import { buildProductJsonLd } from '@/lib/json-ld'
 import { getRequestCatalogDb } from '@/lib/tenant-db'
+import { resolveGateForProduct } from '@/lib/vip-access'
 
 interface Props {
   params: Promise<{ slug: string }>
@@ -74,6 +75,10 @@ export default async function ProductPage({ params }: Props) {
   // HU-264: mapa de colores de swatch de la tienda.
   const colorMap = buildSwatchColorMap(await getVariantTypes(true, db).catch(() => []))
 
+  // HU-290 · gating de acceso anticipado VIP (server-side). Resuelve si el
+  // producto está dentro de una campaña viva y si el visitante tiene acceso.
+  const gate = await resolveGateForProduct(product.id, product.category_id ?? null)
+
   // JSON-LD — Product schema (lógica pura en @/lib/json-ld)
   const jsonLd = buildProductJsonLd({
     name: product.name,
@@ -102,6 +107,9 @@ export default async function ProductPage({ params }: Props) {
         colorMap={colorMap}
         showEstimator={!!storeConfig?.pdp_shipping_estimator}
         showShare={storeConfig?.pdp_share_enabled ?? true}
+        vipLocked={gate.status === 'locked'}
+        vipMember={gate.status === 'vip_member'}
+        vipCampaign={gate.campaign ? { name: gate.campaign.name, ends_at: gate.campaign.ends_at } : undefined}
       />
       <Reviews productId={product.id} stats={stats} initialReviews={firstPage.reviews} total={firstPage.total} />
       {(storeConfig?.pdp_recommendations ?? true) && (
