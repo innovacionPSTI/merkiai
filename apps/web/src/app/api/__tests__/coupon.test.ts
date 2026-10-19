@@ -34,13 +34,14 @@ beforeEach(() => jest.clearAllMocks())
 
 // ── Tests ──────────────────────────────────────
 describe('POST /api/checkout/coupon', () => {
-  it('devuelve 404 cuando el cupón no existe', async () => {
+  it('devuelve 422 NEUTRO cuando el cupón no existe (HU-300 anti-enumeración)', async () => {
     mockGetCouponByCode.mockResolvedValueOnce(null)
 
     const res = await POST(makeReq({ code: 'NOEXISTE', subtotal: 100_000 }))
-    expect(res.status).toBe(404)
+    // 422 (no 404) + mensaje neutro: no revela si el código existe o no.
+    expect(res.status).toBe(422)
     const body = await res.json()
-    expect(body.error).toBeTruthy()
+    expect(body.error).toMatch(/no es válido o no aplica/i)
   })
 
   it('devuelve 422 cuando el cupón existe pero no es válido', async () => {
@@ -51,7 +52,8 @@ describe('POST /api/checkout/coupon', () => {
     const res = await POST(makeReq({ code: 'INACTIVO', subtotal: 100_000 }))
     expect(res.status).toBe(422)
     const body = await res.json()
-    expect(body.error).toBe('Cupón inactivo')
+    // HU-300 · mensaje neutro (no revela el motivo exacto de invalidez).
+    expect(body.error).toMatch(/no es válido o no aplica/i)
   })
 
   it('devuelve 200 con discount cuando el cupón es válido', async () => {

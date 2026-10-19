@@ -113,7 +113,7 @@
 ### HU-300 — Anti-abuso y auditoría de instrumentos de valor · E14 (toca E13)
 > Como plataforma, quiero límites y trazabilidad sobre la validación y el uso de códigos y saldos, para frenar la enumeración de gift cards/cupones y detectar abuso.
 
-**Estimación:** M (5 puntos) · **Estado:** 🔲 Pendiente (roadmap) — se apoya en el rate-limit distribuido (HU-204) y la auditoría (HU-146)
+**Estimación:** M (5 puntos) · **Estado:** 🟡 Parcial (v151) — **hecho:** respuestas **neutras** en validación de cupón (422 único, no distingue "no existe" de "inválido") + **rate-limit** por IP (in-memory) en `/api/checkout/coupon` y `/api/checkout/credit` (anti-enumeración, AC-1 parcial); **auditoría** (HU-146) de emisión de gift cards (`giftcard.issue`), ajuste de saldo (`storecredit.adjust`) y reembolso como saldo (`return.credit`) con actor/monto (AC-3). **Pendiente:** rate-limit distribuido (depende de HU-204), bloqueo tras N intentos, alertas de abuso (AC-4) y reporte de conciliación emitido vs. canjeado (AC-5).
 
 | # | Escenario | Resultado esperado |
 |---|-----------|-------------------|

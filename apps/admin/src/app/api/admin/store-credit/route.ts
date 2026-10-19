@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { getStoreCreditBalance, addStoreCredit } from '@merkiai/database'
+import { getStoreCreditBalance, addStoreCredit, logAudit } from '@merkiai/database'
 import { getAdminUser } from '@/lib/auth'
 import { getAdminDb } from '@/lib/admin-db'
 import { userCanAccess } from '@/lib/roles'
@@ -39,5 +39,12 @@ export async function POST(req: NextRequest) {
   const current = await getStoreCreditBalance(customer.id, db)
   if (current + delta < 0) return NextResponse.json({ error: `El saldo no puede quedar negativo (actual: ${current}).` }, { status: 400 })
   await addStoreCredit({ customerId: customer.id, delta, reason: b.reason || 'manual' }, db, adminUser.tenantId)
+  // HU-300 · auditoría de ajuste manual de saldo a favor.
+  await logAudit(db, {
+    tenantId: adminUser.tenantId, actorEmail: adminUser.email, actorRole: adminUser.role,
+    action: 'storecredit.adjust', entity: 'customer', entityId: customer.id,
+    summary: `Ajustó saldo de ${customer.email} en ${delta} (nuevo: ${current + delta})`,
+    metadata: { delta, balance: current + delta, reason: b.reason || 'manual' },
+  })
   return NextResponse.json({ customer, balance: current + delta })
 }

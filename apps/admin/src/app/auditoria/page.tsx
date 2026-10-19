@@ -17,6 +17,9 @@ const ACTION_LABEL: Record<string, string> = {
   'order.payment_status': 'Validación de pago',
   'return.create': 'Devolución creada',
   'return.resolve': 'Devolución resuelta',
+  'return.credit': 'Reembolso como saldo',
+  'giftcard.issue': 'Gift card emitida',
+  'storecredit.adjust': 'Ajuste de saldo',
 }
 
 const fmt = (s: string) =>
