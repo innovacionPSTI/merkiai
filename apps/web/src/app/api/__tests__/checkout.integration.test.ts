@@ -165,6 +165,18 @@ describe('POST /api/checkout — pricing autoritativo (HU-297)', () => {
       expect.anything(),
     )
   })
+
+  // HU-299 · el cliente no puede inyectar un descuento (promo/cupón) por el body.
+  it('ignora un `discount` inyectado por el cliente (sin cupón ni promos)', async () => {
+    mockCreateOrder.mockResolvedValue({ id: 1, order_number: 'ORD-0042' } as never)
+    const res = await POST(makeRequest({ ...validBody, discount: 50000 }))
+    expect(res.status).toBe(200)
+    // Sin cupón válido ni promociones activas, el descuento es 0 y el total no baja.
+    expect(mockCreateOrder).toHaveBeenCalledWith(
+      expect.objectContaining({ discount: 0, total: 98000 }),
+      expect.anything(),
+    )
+  })
 })
 
 // ─────────────────────────────────────────────

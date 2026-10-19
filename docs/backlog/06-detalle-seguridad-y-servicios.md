@@ -100,7 +100,7 @@
 ### HU-299 — Enforcement server-side de promociones y acceso/precio VIP · E14 (toca E5/E19)
 > Como plataforma, quiero que la elegibilidad y el valor de promociones y campañas VIP se decidan **solo en el servidor**, para que el cliente no pueda forzar un descuento, un precio VIP ni el acceso anticipado al que no tiene derecho.
 
-**Estimación:** M (5 puntos) · **Estado:** 🔲 Pendiente (roadmap) — consolida HU-147/290/293 (hoy ya es server-side, pero sin pruebas de evasión ni revisión de fugas de elegibilidad)
+**Estimación:** M (5 puntos) · **Estado:** ✅ Hecho (v150) — el enforcement ya era server-side (promos `computePromotions` desde BD; gating VIP `findLockedVariants` + precio `computeVipMemberDiscount`). Blindado con **pruebas de evasión**: un `discount` inyectado por el body se ignora (sin cupón/promos el total no baja) y el precio/subtotal/total manipulados se corrigen (HU-297). **Revisión de fugas:** el `offer_percent` y la pertenencia a segmentos **no** se envían a no-miembros (la PDP pasa 0; sólo nombre/fin de campaña para el countdown); ninguna API pública expone campañas/segmentos (se resuelven con cliente-máquina). Cupo bajo concurrencia queda sujeto al endurecimiento general.
 
 | # | Escenario | Resultado esperado |
 |---|-----------|-------------------|
