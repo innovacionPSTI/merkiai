@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { createOrder, createServerClient, resolveActivePayment, gatewayFromInstance, getStockForVariants, TuCompraGateway, ensureCustomer, listActivePromotions, computePromotions, getGiftCardByCode, redeemGiftCard, getStoreCreditBalance, addStoreCredit, computeRedemption, applyStockForOrder, getBundlesByIds, expandBundleLines } from '@merkiai/database'
+import { createOrder, createServerClient, resolveActivePayment, gatewayFromInstance, getStockForVariants, TuCompraGateway, ensureCustomer, listActivePromotions, computePromotions, getGiftCardByCode, redeemGiftCard, getStoreCreditBalance, addStoreCredit, computeRedemption, applyStockForOrder, getBundlesByIds, expandBundleLines, getCouponByCode, validateCoupon } from '@merkiai/database'
 import { stackServerApp } from '@/stack'
 import { baseUrlFromRequest } from '@/lib/base-url'
 import { resolveTenant } from '@/lib/tenant-context';
@@ -157,19 +157,36 @@ export async function POST(req: NextRequest) {
     // Los componentes y el precio se leen de la BD (no se confía en el cliente).
     const rawItems = items as Array<{ variant_id?: number; qty: number; product_name?: string; variant_label?: string; price?: number; bundle_id?: number }>
     const bundleIds = [...new Set(rawItems.filter((i) => i.bundle_id).map((i) => i.bundle_id as number))]
+    const mdbPricing = getMachineDb(tenantId)
+    const bundleMap = new Map<number, { name: string; price: number; components: Array<{ variant_id: number; qty: number }> }>()
     let orderItems: Array<{ variant_id: number; qty: number; product_name: string; variant_label: string; price: number }>
     if (bundleIds.length) {
-      const mdb = getMachineDb(tenantId)
-      const bundleList = await getBundlesByIds(bundleIds, mdb)
-      const bundleMap = new Map(bundleList.map((b) => [b.id, { name: b.name, price: b.price, components: b.components }]))
+      const bundleList = await getBundlesByIds(bundleIds, mdbPricing)
+      for (const b of bundleList) bundleMap.set(b.id, { name: b.name, price: b.price, components: b.components })
       const compVariantIds = bundleList.flatMap((b) => b.components.map((c) => c.variant_id))
-      const { data: compRows } = await mdb.from('product_variants').select('id, price').in('id', compVariantIds.length ? compVariantIds : [0])
+      const { data: compRows } = await mdbPricing.from('product_variants').select('id, price').in('id', compVariantIds.length ? compVariantIds : [0])
       const compPrice = new Map((compRows ?? []).map((r: any) => [r.id as number, Number(r.price)]))
       orderItems = expandBundleLines(rawItems, bundleMap, compPrice)
     } else {
       orderItems = rawItems
         .filter((i) => i.variant_id)
         .map((i) => ({ variant_id: i.variant_id as number, qty: i.qty, product_name: i.product_name ?? '', variant_label: i.variant_label ?? '', price: i.price ?? 0 }))
+    }
+
+    // ── HU-297 · PRICING AUTORITATIVO: el subtotal se recomputa desde los precios
+    // ACTUALES de la BD (variantes para líneas normales, precio del bundle para
+    // kits). Se ignora el `price`/`subtotal` que envía el cliente. Para pedidos
+    // normales coincide con el del cliente; si un precio cambió, manda el servidor.
+    const normalVariantIds = rawItems.filter((i) => !i.bundle_id && i.variant_id).map((i) => i.variant_id as number)
+    const { data: priceRows } = normalVariantIds.length
+      ? await mdbPricing.from('product_variants').select('id, price').in('id', normalVariantIds)
+      : { data: [] as Array<{ id: number; price: number }> }
+    const dbPrice = new Map((priceRows ?? []).map((r: any) => [r.id as number, Number(r.price)]))
+    let serverSubtotal = 0
+    for (const it of rawItems) {
+      const qty = Math.max(1, Math.floor(it.qty))
+      if (it.bundle_id && bundleMap.has(it.bundle_id)) serverSubtotal += bundleMap.get(it.bundle_id)!.price * qty
+      else if (it.variant_id) serverSubtotal += (dbPrice.get(it.variant_id) ?? 0) * qty
     }
 
     // ── Validación de stock (Épica 9) sobre los ítems ya expandidos: rechazar si
@@ -257,9 +274,25 @@ export async function POST(req: NextRequest) {
       vipDiscount = 0
     }
 
+    // ── HU-297 · cupón recomputado server-side desde `coupon_code` + el subtotal
+    // AUTORITATIVO (no se confía en el `discount` del cliente). Inválido → 0.
+    let serverCouponDiscount = 0
+    if (coupon_code) {
+      try {
+        const coupon = await getCouponByCode(String(coupon_code).trim(), mdbPricing)
+        if (coupon) {
+          const r = validateCoupon(coupon, serverSubtotal)
+          if (r.valid) serverCouponDiscount = r.discount
+        }
+      } catch { serverCouponDiscount = 0 }
+    }
+
+    // ── HU-297 · total DERIVADO del servidor: subtotal(BD) + envío − cupón − promo
+    // − VIP. El crédito (gift card/saldo) se resta después. El cliente no decide
+    // el total; `discount`/`total`/`subtotal` recibidos se ignoran.
     const extraDiscount = promoDiscount + vipDiscount
-    const effectiveDiscount = Number(discount ?? 0) + extraDiscount
-    let effectiveTotal = Math.max(0, Number(total ?? 0) - extraDiscount)
+    const effectiveDiscount = serverCouponDiscount + extraDiscount
+    let effectiveTotal = Math.max(0, serverSubtotal + Number(shipping_cost ?? 0) - serverCouponDiscount - extraDiscount)
 
     // ── HU-148 Fase 2 · canje de gift card / saldo a favor (guarded). Valida y
     // aplica server-side sobre el monto ya descontado. Decremento ATÓMICO de la
@@ -378,7 +411,7 @@ export async function POST(req: NextRequest) {
         customer_phone: phone ?? null,
         shipping_addr: address,
         items: orderItems,
-        subtotal,
+        subtotal: serverSubtotal,
         shipping_cost: shipping_cost ?? 0,
         discount: effectiveDiscount,
         total: 0,
@@ -405,7 +438,7 @@ export async function POST(req: NextRequest) {
         customer_phone: phone ?? null,
         shipping_addr: address,
         items: orderItems,
-        subtotal,
+        subtotal: serverSubtotal,
         shipping_cost: shipping_cost ?? 0,
         discount: effectiveDiscount,
         total: effectiveTotal,
@@ -448,7 +481,7 @@ export async function POST(req: NextRequest) {
         tenant_id: tenantId,
         customer_id: customerId,
         customer_name: name, customer_email: email, customer_phone: phone ?? null,
-        shipping_addr: address, items: orderItems, subtotal, shipping_cost: shipping_cost ?? 0, discount: effectiveDiscount, total: effectiveTotal,
+        shipping_addr: address, items: orderItems, subtotal: serverSubtotal, shipping_cost: shipping_cost ?? 0, discount: effectiveDiscount, total: effectiveTotal,
         payment_method: 'tucompra', skydropx_rate_id, carrier_name, ...creditOrderFields,
       }, getMachineDb(tenantId))
       await autoSaveAddress()
@@ -577,7 +610,7 @@ export async function POST(req: NextRequest) {
       customer_phone: phone ?? null,
       shipping_addr: address,
       items: orderItems,
-      subtotal,
+      subtotal: serverSubtotal,
       shipping_cost: shipping_cost ?? 0,
       discount: effectiveDiscount,
       total: effectiveTotal,

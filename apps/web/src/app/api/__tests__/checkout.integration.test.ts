@@ -34,7 +34,19 @@ jest.mock('@/stack', () => ({
 
 // HU-232: el checkout resuelve tenant + usa getMachineDb (RLS).
 jest.mock('@/lib/tenant-context', () => ({ resolveTenant: jest.fn(async () => ({ tenantId: 't1' })) }))
-jest.mock('@/lib/machine-db', () => ({ getMachineDb: jest.fn(() => ({})) }))
+// HU-297: el checkout recomputa el subtotal desde los precios de la BD
+// (product_variants). El stub devuelve el precio de la variante 10 = 45000 para
+// que el subtotal autoritativo coincida con el del fixture (2 × 45000 = 90000).
+jest.mock('@/lib/machine-db', () => ({
+  getMachineDb: jest.fn(() => ({
+    from: () => ({
+      select: () => ({
+        in: async () => ({ data: [{ id: 10, price: 45000 }] }),
+        eq: () => ({ maybeSingle: async () => ({ data: null }) }),
+      }),
+    }),
+  })),
+}))
 
 import { createOrder, getPaymentConfig, resolveActivePayment, gatewayFromInstance, getStockForVariants } from '@merkiai/database'
 import { POST } from '../checkout/route'
@@ -130,6 +142,29 @@ beforeEach(() => {
     return { provider, environment: 'test', credentials, settings, source: 'legacy' } as never
   })
   mockGatewayFromInstance.mockImplementation(((provider: string) => fakeGatewayFactory(provider)) as never)
+})
+
+// ─────────────────────────────────────────────
+// HU-297 · pricing autoritativo (no se confía en montos del cliente)
+// ─────────────────────────────────────────────
+describe('POST /api/checkout — pricing autoritativo (HU-297)', () => {
+  it('ignora price/subtotal/total manipulados y recomputa desde la BD', async () => {
+    mockCreateOrder.mockResolvedValue({ id: 1, order_number: 'ORD-0042' } as never)
+    // El cliente intenta pagar 1 en vez de 98000 (precio/subtotal/total alterados).
+    const tampered = {
+      ...validBody,
+      items: [{ variant_id: 10, product_name: 'Café Huila', variant_label: '500g', price: 1, qty: 2 }],
+      subtotal: 2,
+      total: 1,
+    }
+    const res = await POST(makeRequest(tampered))
+    expect(res.status).toBe(200)
+    // El servidor recompone: 2 × 45000 (BD) = 90000 subtotal; + 8000 envío = 98000.
+    expect(mockCreateOrder).toHaveBeenCalledWith(
+      expect.objectContaining({ subtotal: 90000, total: 98000 }),
+      expect.anything(),
+    )
+  })
 })
 
 // ─────────────────────────────────────────────

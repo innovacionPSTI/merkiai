@@ -73,7 +73,7 @@
 ### HU-297 — Pricing autoritativo de extremo a extremo en el checkout · E14 (toca E5/E6)
 > Como plataforma, quiero que el checkout **recompute desde la base de datos** cada precio, descuento y total —ignorando los montos que envía el cliente—, para que nadie pueda manipular el valor a pagar desde el navegador o la API.
 
-**Estimación:** L (8 puntos) · **Estado:** 🔲 Pendiente (roadmap) — formaliza y cierra lo iniciado en HU-147/293/148 (hoy el server ya resta promos/VIP/crédito, pero aún **confía en `subtotal`/`total`/`price` del cliente** como base)
+**Estimación:** L (8 puntos) · **Estado:** 🟡 Parcial (v148) — **hecho:** el checkout recomputa el **subtotal desde los precios ACTUALES de la BD** (variantes + precio de bundle), **recalcula el cupón server-side** desde `coupon_code` y **deriva el total** (subtotal BD + envío − cupón − promo − VIP − crédito); se ignoran `price`/`subtotal`/`total`/`discount` del cliente. Test adversarial (precio/subtotal/total manipulados → corregidos). **Pendiente:** recomputar el envío server-side (AC-4, hoy usa la tarifa seleccionada) y la suite adversarial ampliada (qty negativas/fraccionarias).
 
 | # | Escenario | Resultado esperado |
 |---|-----------|-------------------|
