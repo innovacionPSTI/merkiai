@@ -263,6 +263,15 @@ function Campanas({ initial, segments, products, categories }: { initial: Campai
     if (res.ok) setRows((r) => r.filter((c) => c.id !== id))
   }
 
+  const [reportFor, setReportFor] = useState<number | null>(null)
+  const [report, setReport] = useState<any>(null)
+  async function openReport(id: number) {
+    if (reportFor === id) { setReportFor(null); return }
+    setReportFor(id); setReport(null)
+    const res = await fetch(`/api/admin/vip-campaigns/${id}/report`)
+    if (res.ok) setReport((await res.json()).report)
+  }
+
   const multi = (sel: number[], set: (v: number[]) => void, opts: Opt[], label: string) => (
     <label className="block"><span className="font-brand text-xs text-brand-primary/50">{label}</span>
       <select multiple value={sel.map(String)} onChange={(e) => set(Array.from(e.target.selectedOptions).map((o) => Number(o.value)))}
@@ -312,25 +321,53 @@ function Campanas({ initial, segments, products, categories }: { initial: Campai
         {rows.length === 0 && <p className="font-brand text-brand-primary/40 text-center py-8">Aún no tienes campañas.</p>}
         {rows.map((c) => {
           const eff = effectiveStatus(c)
+          const pct = (n: number) => `${Math.round(n * 100)}%`
+          const money = (n: number) => new Intl.NumberFormat('es-CO', { style: 'currency', currency: 'COP', maximumFractionDigits: 0 }).format(n)
           return (
-            <div key={c.id} className="bg-white rounded-2xl shadow-sm px-5 py-4 flex flex-wrap items-center gap-3">
-              <div className="flex-1 min-w-[200px]">
-                <p className="font-brand font-semibold text-brand-primary">{c.name}</p>
-                <p className="font-brand text-xs text-brand-primary/40">
-                  {new Date(c.starts_at).toLocaleString('es-CO')} → {new Date(c.ends_at).toLocaleString('es-CO')}
-                  {c.offer_percent != null ? ` · -${c.offer_percent}%` : ''}{c.quota != null ? ` · cupo ${c.quota}` : ''}
-                </p>
+            <div key={c.id} className="bg-white rounded-2xl shadow-sm">
+              <div className="px-5 py-4 flex flex-wrap items-center gap-3">
+                <div className="flex-1 min-w-[200px]">
+                  <p className="font-brand font-semibold text-brand-primary">{c.name}</p>
+                  <p className="font-brand text-xs text-brand-primary/40">
+                    {new Date(c.starts_at).toLocaleString('es-CO')} → {new Date(c.ends_at).toLocaleString('es-CO')}
+                    {c.offer_percent != null ? ` · -${c.offer_percent}%` : ''}{c.quota != null ? ` · cupo ${c.quota}` : ''}
+                  </p>
+                </div>
+                <span className={`font-brand text-xs rounded-full px-2 py-1 ${STATUS_COLOR[eff]}`}>{STATUS_LABEL[eff]}</span>
+                <button onClick={() => openReport(c.id)} className="font-brand text-xs text-brand-primary border border-brand-primary/20 rounded-full px-3 py-1 hover:bg-brand-cream">
+                  {reportFor === c.id ? 'Ocultar reporte' : 'Reporte'}
+                </button>
+                {c.status !== 'cancelled' && (
+                  <>
+                    {c.status === 'paused'
+                      ? <button onClick={() => setStatus(c.id, 'scheduled')} className="font-brand text-xs text-brand-primary border border-brand-primary/20 rounded-full px-3 py-1 hover:bg-brand-cream">Reanudar</button>
+                      : <button onClick={() => setStatus(c.id, 'paused')} className="font-brand text-xs text-brand-primary border border-brand-primary/20 rounded-full px-3 py-1 hover:bg-brand-cream">Pausar</button>}
+                    <button onClick={() => setStatus(c.id, 'cancelled')} className="font-brand text-xs text-orange-600 border border-orange-200 rounded-full px-3 py-1 hover:bg-orange-50">Cancelar</button>
+                  </>
+                )}
+                <button onClick={() => remove(c.id)} className="font-brand text-xs text-red-600 border border-red-200 rounded-full px-3 py-1 hover:bg-red-50">Eliminar</button>
               </div>
-              <span className={`font-brand text-xs rounded-full px-2 py-1 ${STATUS_COLOR[eff]}`}>{STATUS_LABEL[eff]}</span>
-              {c.status !== 'cancelled' && (
-                <>
-                  {c.status === 'paused'
-                    ? <button onClick={() => setStatus(c.id, 'scheduled')} className="font-brand text-xs text-brand-primary border border-brand-primary/20 rounded-full px-3 py-1 hover:bg-brand-cream">Reanudar</button>
-                    : <button onClick={() => setStatus(c.id, 'paused')} className="font-brand text-xs text-brand-primary border border-brand-primary/20 rounded-full px-3 py-1 hover:bg-brand-cream">Pausar</button>}
-                  <button onClick={() => setStatus(c.id, 'cancelled')} className="font-brand text-xs text-orange-600 border border-orange-200 rounded-full px-3 py-1 hover:bg-orange-50">Cancelar</button>
-                </>
+              {reportFor === c.id && (
+                <div className="border-t border-gray-100 px-5 py-4">
+                  {!report ? <p className="font-brand text-xs text-brand-primary/50">Cargando reporte…</p> : (
+                    <div className="grid grid-cols-2 sm:grid-cols-5 gap-3">
+                      {[
+                        ['Miembros', String(report.members)],
+                        ['Participantes', String(report.participants)],
+                        ['Participación', pct(report.participationRate)],
+                        ['Pedidos', String(report.orders)],
+                        ['Ingresos', money(report.revenue)],
+                      ].map(([k, v]) => (
+                        <div key={k} className="rounded-xl bg-brand-cream/50 px-3 py-2">
+                          <p className="font-brand text-[11px] text-brand-primary/50">{k}</p>
+                          <p className="font-brand text-sm font-semibold text-brand-primary">{v}</p>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                  <p className="font-brand text-[11px] text-brand-primary/40 mt-2">Pedidos de miembros del segmento con pago aprobado dentro de la ventana.</p>
+                </div>
               )}
-              <button onClick={() => remove(c.id)} className="font-brand text-xs text-red-600 border border-red-200 rounded-full px-3 py-1 hover:bg-red-50">Eliminar</button>
             </div>
           )
         })}

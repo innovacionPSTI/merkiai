@@ -1489,7 +1489,7 @@
 
 **Estimación:** S (3 puntos)
 **Módulo:** reusa `getSalesReport`/infra de reportes (HU-116), acotado a la campaña/segmento
-**Estado:** 🔲 Pendiente (roadmap · E19 Fase 2)
+**Estado:** ✅ Hecho (v140) — `getVipCampaignReport` + `computeVipReport` (puro, testeado): miembros, participantes, participación %, pedidos e ingresos de los miembros del segmento (pago aprobado) dentro de la ventana. `GET /api/admin/vip-campaigns/[id]/report` + panel 'Reporte' por campaña en `/ventas-vip`.
 
 | # | Escenario | Resultado esperado |
 |---|-----------|-------------------|

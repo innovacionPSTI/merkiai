@@ -214,3 +214,63 @@ export async function customerSegmentIds(db: Db, customerId: string | null): Pro
   const { data } = await db.from('customer_segment_members').select('segment_id').eq('customer_id', customerId)
   return (data ?? []).map((r: any) => r.segment_id as number)
 }
+
+// ── Reporte de campaña (HU-294) ───────────────────────────────────────────────
+
+export interface VipCampaignReport {
+  members: number
+  participants: number
+  orders: number
+  revenue: number
+  avgTicket: number
+  /** Participación = participantes / miembros del segmento (0..1). */
+  participationRate: number
+}
+
+/** Agrega los pedidos de los miembros en la ventana a métricas de campaña. Pura. */
+export function computeVipReport(
+  members: number,
+  orders: Array<{ customer_id: string | null; total: number }>,
+): VipCampaignReport {
+  const participants = new Set(orders.map((o) => o.customer_id).filter(Boolean) as string[]).size
+  const revenue = orders.reduce((s, o) => s + Number(o.total ?? 0), 0)
+  const count = orders.length
+  return {
+    members,
+    participants,
+    orders: count,
+    revenue,
+    avgTicket: count > 0 ? Math.round(revenue / count) : 0,
+    participationRate: members > 0 ? participants / members : 0,
+  }
+}
+
+/**
+ * Reporte de una campaña VIP (HU-294): participación del segmento y ventas de
+ * sus miembros dentro de la ventana (pagos aprobados). Nota: mide pedidos de los
+ * miembros en la ventana (no filtra por los productos del alcance; suficiente
+ * para el MVP de medición).
+ */
+export async function getVipCampaignReport(campaignId: number, db: Db): Promise<VipCampaignReport> {
+  const campaign = await getCampaign(campaignId, db)
+  if (!campaign) throw new Error('Campaña no encontrada.')
+
+  let members = 0
+  let memberIds: string[] = []
+  if (campaign.segment_id != null) {
+    const { data } = await db.from('customer_segment_members').select('customer_id').eq('segment_id', campaign.segment_id)
+    memberIds = (data ?? []).map((r: any) => r.customer_id as string)
+    members = memberIds.length
+  }
+
+  if (memberIds.length === 0) return computeVipReport(members, [])
+
+  const { data: orders } = await db
+    .from('orders')
+    .select('customer_id, total, created_at, payment_status')
+    .in('customer_id', memberIds)
+    .eq('payment_status', 'approved')
+    .gte('created_at', campaign.starts_at)
+    .lte('created_at', campaign.ends_at)
+  return computeVipReport(members, (orders ?? []) as any)
+}

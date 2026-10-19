@@ -1,5 +1,5 @@
 import { evaluateSegmentRules, computeSegmentMembers, aggregateCustomerStats } from '../segments'
-import { deriveCampaignStatus, isCampaignLive, validateCampaign, resolveProductGate } from '../vip-campaigns'
+import { deriveCampaignStatus, isCampaignLive, validateCampaign, resolveProductGate, computeVipReport } from '../vip-campaigns'
 import type { VipGate } from '../vip-campaigns'
 
 describe('segmentos (HU-288)', () => {
@@ -103,6 +103,26 @@ describe('campañas VIP (HU-289/290)', () => {
     })
     it('cubre por categoría del producto', () => {
       expect(resolveProductGate(gates, { productId: 50, categoryId: 5, memberSegmentIds: [] }).status).toBe('locked')
+    })
+  })
+
+  describe('computeVipReport (HU-294)', () => {
+    it('agrega participantes, ingresos, ticket y participación', () => {
+      const r = computeVipReport(10, [
+        { customer_id: 'a', total: 100 },
+        { customer_id: 'a', total: 200 },
+        { customer_id: 'b', total: 300 },
+      ])
+      expect(r.members).toBe(10)
+      expect(r.participants).toBe(2)
+      expect(r.orders).toBe(3)
+      expect(r.revenue).toBe(600)
+      expect(r.avgTicket).toBe(200)
+      expect(r.participationRate).toBeCloseTo(0.2)
+    })
+    it('sin pedidos → ceros sin dividir por cero', () => {
+      const r = computeVipReport(0, [])
+      expect(r).toEqual({ members: 0, participants: 0, orders: 0, revenue: 0, avgTicket: 0, participationRate: 0 })
     })
   })
 })
