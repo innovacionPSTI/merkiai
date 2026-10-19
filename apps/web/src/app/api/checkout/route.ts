@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { createOrder, createServerClient, resolveActivePayment, gatewayFromInstance, getStockForVariants, TuCompraGateway, ensureCustomer, listActivePromotions, computePromotions, getGiftCardByCode, getStoreCreditBalance, computeRedemption, redeemStoreValue, refundStoreValue, applyStockForOrder, getBundlesByIds, expandBundleLines, getCouponByCode, validateCoupon } from '@merkiai/database'
+import { createOrder, createServerClient, resolveActivePayment, gatewayFromInstance, getStockForVariants, TuCompraGateway, ensureCustomer, listActivePromotions, computePromotions, getGiftCardByCode, getStoreCreditBalance, computeRedemption, redeemStoreValue, refundStoreValue, applyStockForOrder, getBundlesByIds, expandBundleLines, getCouponByCode, validateCoupon, getShippingConfig } from '@merkiai/database'
 import { stackServerApp } from '@/stack'
 import { baseUrlFromRequest } from '@/lib/base-url'
 import { resolveTenant } from '@/lib/tenant-context';
@@ -194,6 +194,17 @@ export async function POST(req: NextRequest) {
       else if (it.variant_id) serverSubtotal += (dbPrice.get(it.variant_id) ?? 0) * qty
     }
 
+    // ── HU-297 AC-4 · envío recomputado server-side. Envío gratis (si aplica por
+    // config + subtotal) → 0; tarifa FIJA → la de la config (ignora el cliente);
+    // transportadora → se respeta la tarifa seleccionada (cotizada por el server).
+    let serverShipping = Math.max(0, Number(shipping_cost ?? 0))
+    try {
+      const sc = await getShippingConfig(mdbPricing, tenantId)
+      if (sc.free_shipping_enabled && serverSubtotal >= sc.free_shipping_min_amount) serverShipping = 0
+      else if (sc.provider === 'fixed') serverShipping = Math.max(0, Math.round(sc.fixed_rate))
+      // 'skydropx'/transportadora: se mantiene la tarifa seleccionada (server-issued).
+    } catch { /* fail-safe: conserva el valor recibido */ }
+
     // ── Validación de stock (Épica 9) sobre los ítems ya expandidos: rechazar si
     // falta stock y el producto no permite backorder. El servidor es la autoridad.
     const stockRows = await getStockForVariants(
@@ -297,7 +308,7 @@ export async function POST(req: NextRequest) {
     // el total; `discount`/`total`/`subtotal` recibidos se ignoran.
     const extraDiscount = promoDiscount + vipDiscount
     const effectiveDiscount = serverCouponDiscount + extraDiscount
-    let effectiveTotal = Math.max(0, serverSubtotal + Number(shipping_cost ?? 0) - serverCouponDiscount - extraDiscount)
+    let effectiveTotal = Math.max(0, serverSubtotal + serverShipping - serverCouponDiscount - extraDiscount)
 
     // ── HU-148 Fase 2 · canje de gift card / saldo a favor (guarded). Valida y
     // aplica server-side sobre el monto ya descontado. Decremento ATÓMICO de la
@@ -426,7 +437,7 @@ export async function POST(req: NextRequest) {
         shipping_addr: address,
         items: orderItems,
         subtotal: serverSubtotal,
-        shipping_cost: shipping_cost ?? 0,
+        shipping_cost: serverShipping,
         discount: effectiveDiscount,
         total: 0,
         payment_method: 'manual',
@@ -454,7 +465,7 @@ export async function POST(req: NextRequest) {
         shipping_addr: address,
         items: orderItems,
         subtotal: serverSubtotal,
-        shipping_cost: shipping_cost ?? 0,
+        shipping_cost: serverShipping,
         discount: effectiveDiscount,
         total: effectiveTotal,
         payment_method: 'manual',
@@ -497,7 +508,7 @@ export async function POST(req: NextRequest) {
         tenant_id: tenantId,
         customer_id: customerId,
         customer_name: name, customer_email: email, customer_phone: phone ?? null,
-        shipping_addr: address, items: orderItems, subtotal: serverSubtotal, shipping_cost: shipping_cost ?? 0, discount: effectiveDiscount, total: effectiveTotal,
+        shipping_addr: address, items: orderItems, subtotal: serverSubtotal, shipping_cost: serverShipping, discount: effectiveDiscount, total: effectiveTotal,
         payment_method: 'tucompra', skydropx_rate_id, carrier_name, ...creditOrderFields,
       }, getMachineDb(tenantId))
       orderWasCreated = true
@@ -628,7 +639,7 @@ export async function POST(req: NextRequest) {
       shipping_addr: address,
       items: orderItems,
       subtotal: serverSubtotal,
-      shipping_cost: shipping_cost ?? 0,
+      shipping_cost: serverShipping,
       discount: effectiveDiscount,
       total: effectiveTotal,
       payment_method: activeProvider as 'wompi' | 'mercadopago' | 'tucompra' | 'bold',

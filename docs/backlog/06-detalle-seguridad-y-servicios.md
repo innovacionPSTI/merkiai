@@ -73,7 +73,7 @@
 ### HU-297 — Pricing autoritativo de extremo a extremo en el checkout · E14 (toca E5/E6)
 > Como plataforma, quiero que el checkout **recompute desde la base de datos** cada precio, descuento y total —ignorando los montos que envía el cliente—, para que nadie pueda manipular el valor a pagar desde el navegador o la API.
 
-**Estimación:** L (8 puntos) · **Estado:** 🟡 Parcial (v148) — **hecho:** el checkout recomputa el **subtotal desde los precios ACTUALES de la BD** (variantes + precio de bundle), **recalcula el cupón server-side** desde `coupon_code` y **deriva el total** (subtotal BD + envío − cupón − promo − VIP − crédito); se ignoran `price`/`subtotal`/`total`/`discount` del cliente. Test adversarial (precio/subtotal/total manipulados → corregidos). **Pendiente:** recomputar el envío server-side (AC-4, hoy usa la tarifa seleccionada) y la suite adversarial ampliada (qty negativas/fraccionarias).
+**Estimación:** L (8 puntos) · **Estado:** ✅ Hecho (v154) — **hecho:** el checkout recomputa el **subtotal desde los precios ACTUALES de la BD** (variantes + precio de bundle), **recalcula el cupón server-side** desde `coupon_code` y **deriva el total** (subtotal BD + envío − cupón − promo − VIP − crédito); se ignoran `price`/`subtotal`/`total`/`discount` del cliente. Test adversarial (precio/subtotal/total manipulados → corregidos). **Envío server-side (AC-4, v154):** envío gratis (por config+subtotal) y **tarifa fija** se recomputan del lado del servidor (se ignora el `shipping_cost` del cliente); transportadora conserva la tarifa seleccionada (cotizada por el server). **Pendiente menor:** suite adversarial ampliada (qty negativas/fraccionarias).
 
 | # | Escenario | Resultado esperado |
 |---|-----------|-------------------|
