@@ -1,0 +1,136 @@
+import type { Db } from '../client'
+
+/**
+ * Gift cards y saldo a favor (HU-148). Las gift cards tienen un saldo canjeable;
+ * el saldo a favor es un ledger append-only por cliente (balance = suma de
+ * deltas). La generación de código y el cálculo de canje son puros y testeables;
+ * el canje real en el checkout (decremento atómico) es la fase 2. `db` se pasa
+ * por parámetro (RLS por tenant).
+ */
+
+export interface GiftCard {
+  id: number
+  code: string
+  initial_balance: number
+  balance: number
+  active: boolean
+  note: string | null
+  expires_at: string | null
+  created_at: string
+}
+
+// Sin caracteres ambiguos (0/O, 1/I) para dictar/leer fácil.
+const ALPHABET = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789'
+
+/** Normaliza un código para comparar: mayúsculas, sin espacios/guiones. */
+export function normalizeGiftCardCode(raw: string): string {
+  return (raw ?? '').toUpperCase().replace(/[^A-Z0-9]/g, '')
+}
+
+/** Genera un código legible agrupado (ej. ABCD-EFGH-JKLM). */
+export function generateGiftCardCode(groups = 3, size = 4, rnd: () => number = Math.random): string {
+  const part = () => Array.from({ length: size }, () => ALPHABET[Math.floor(rnd() * ALPHABET.length)]).join('')
+  return Array.from({ length: groups }, part).join('-')
+}
+
+/** ¿La gift card puede canjearse ahora? Pura. */
+export function isGiftCardRedeemable(gc: Pick<GiftCard, 'active' | 'balance' | 'expires_at'>, now: Date = new Date()): boolean {
+  if (!gc.active || gc.balance <= 0) return false
+  if (gc.expires_at && now.getTime() >= new Date(gc.expires_at).getTime()) return false
+  return true
+}
+
+export interface RedemptionResult {
+  giftCardApplied: number
+  creditApplied: number
+  /** Monto que queda por pagar tras aplicar gift card + saldo. */
+  remaining: number
+}
+
+/**
+ * Reparte el monto a pagar entre gift card y saldo a favor (pura). Aplica primero
+ * la gift card y luego el saldo, sin exceder ninguno ni el monto adeudado.
+ */
+export function computeRedemption(amountDue: number, giftCardBalance: number, storeCredit: number): RedemptionResult {
+  const due = Math.max(0, Math.round(amountDue))
+  const giftCardApplied = Math.min(Math.max(0, giftCardBalance), due)
+  const afterGc = due - giftCardApplied
+  const creditApplied = Math.min(Math.max(0, storeCredit), afterGc)
+  return { giftCardApplied, creditApplied, remaining: afterGc - creditApplied }
+}
+
+// ── Gift cards ────────────────────────────────────────────────────────────────
+
+const GC_COLS = 'id, code, initial_balance, balance, active, note, expires_at, created_at'
+
+export async function listGiftCards(db: Db): Promise<GiftCard[]> {
+  const { data } = await db.from('gift_cards').select(GC_COLS).order('created_at', { ascending: false })
+  return (data ?? []) as GiftCard[]
+}
+
+export async function getGiftCardByCode(code: string, db: Db): Promise<GiftCard | null> {
+  const { data } = await db.from('gift_cards').select(GC_COLS).eq('code', normalizeGiftCardCode(code)).maybeSingle()
+  return (data as GiftCard) ?? null
+}
+
+/** Emite una gift card con saldo inicial. Reintenta si el código colisiona. */
+export async function issueGiftCard(
+  input: { amount: number; note?: string | null; expires_at?: string | null },
+  db: Db,
+  tenantId: string,
+): Promise<GiftCard> {
+  const amount = Math.round(input.amount)
+  if (!(amount > 0)) throw new Error('El monto de la gift card debe ser mayor que 0.')
+  for (let attempt = 0; attempt < 5; attempt++) {
+    const code = generateGiftCardCode()
+    const { data, error } = await db
+      .from('gift_cards')
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      .insert({ tenant_id: tenantId, code, initial_balance: amount, balance: amount, note: input.note ?? null, expires_at: input.expires_at ?? null } as any)
+      .select(GC_COLS)
+      .single()
+    if (!error) return data as GiftCard
+    if ((error as any).code !== '23505') throw error // colisión de código → reintentar
+  }
+  throw new Error('No se pudo generar un código único para la gift card.')
+}
+
+export async function setGiftCardActive(id: number, active: boolean, db: Db): Promise<void> {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const { error } = await db.from('gift_cards').update({ active, updated_at: new Date().toISOString() } as any).eq('id', id)
+  if (error) throw error
+}
+
+// ── Saldo a favor (store credit) ───────────────────────────────────────────────
+
+/** Balance del cliente = suma de los deltas del ledger. */
+export async function getStoreCreditBalance(customerId: string, db: Db): Promise<number> {
+  const { data } = await db.from('store_credit_ledger').select('delta').eq('customer_id', customerId)
+  return (data ?? []).reduce((s: number, r: any) => s + Number(r.delta ?? 0), 0)
+}
+
+export interface StoreCreditEntry { id: number; delta: number; reason: string | null; order_id: number | null; created_at: string }
+
+export async function listStoreCredit(customerId: string, db: Db): Promise<StoreCreditEntry[]> {
+  const { data } = await db
+    .from('store_credit_ledger')
+    .select('id, delta, reason, order_id, created_at')
+    .eq('customer_id', customerId)
+    .order('created_at', { ascending: false })
+  return (data ?? []) as StoreCreditEntry[]
+}
+
+/** Registra un movimiento de saldo (+abono / −consumo). Append-only. */
+export async function addStoreCredit(
+  input: { customerId: string; delta: number; reason?: string; orderId?: number | null },
+  db: Db,
+  tenantId: string,
+): Promise<void> {
+  const delta = Math.round(input.delta)
+  if (!delta) return
+  const { error } = await db
+    .from('store_credit_ledger')
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    .insert({ tenant_id: tenantId, customer_id: input.customerId, delta, reason: input.reason ?? 'manual', order_id: input.orderId ?? null } as any)
+  if (error) throw error
+}

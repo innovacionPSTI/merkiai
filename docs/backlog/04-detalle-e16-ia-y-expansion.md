@@ -1143,7 +1143,7 @@
 
 **Estimación:** L (8 puntos)
 **Módulo:** `packages/database` (`gift_cards`/`store_credit`), checkout (medio de pago), admin
-**Estado:** 🔲 Pendiente (roadmap v17) — soporta reembolso como crédito (HU-107b)
+**Estado:** 🟡 Fase 1 (v144) — emisión y saldo. Tablas `gift_cards` + `store_credit_ledger` (`e17/45`, RLS). Helpers puros (código legible sin ambiguos, `isGiftCardRedeemable`, `computeRedemption`) + queries (emitir/listar/getByCode gift cards; abonar/consultar/listar saldo). Admin `/gift-cards`: emitir gift cards + ajustar/consultar saldo a favor por email. **AC-3 ✅:** al aprobar una devolución se puede **reembolsar como saldo** (`creditAmount` → ledger). **Pendiente Fase 2:** canje en el checkout (AC-1/AC-2: validación + decremento atómico + pago total).
 
 | # | Escenario | Resultado esperado |
 |---|-----------|-------------------|

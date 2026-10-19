@@ -1,4 +1,4 @@
-import { setReturnStatus, restoreStockForOrder, logAudit } from '@merkiai/database'
+import { setReturnStatus, restoreStockForOrder, logAudit, addStoreCredit } from '@merkiai/database'
 import { NextRequest, NextResponse } from 'next/server'
 import { getAdminUser } from '@/lib/auth'
 import { getAdminDb } from '@/lib/admin-db'
@@ -40,6 +40,30 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
     await restoreStockForOrder(res.returnRow.order_number).catch((e) =>
       console.error('[returns] restock:', e instanceof Error ? e.message : e),
     )
+  }
+
+  // HU-148 (AC-3) · reembolso como saldo a favor. Al aprobar, si se indica un
+  // monto de crédito y el pedido tiene cliente registrado, se abona al ledger.
+  const creditAmount = Math.round(Number(body?.creditAmount))
+  if (status === 'approved' && Number.isFinite(creditAmount) && creditAmount > 0) {
+    try {
+      const { data: order } = await db
+        .from('orders').select('id, customer_id').eq('order_number', res.returnRow.order_number).maybeSingle()
+      if (order?.customer_id) {
+        await addStoreCredit(
+          { customerId: order.customer_id as string, delta: creditAmount, reason: 'refund', orderId: order.id as number },
+          db, user.tenantId,
+        )
+        await logAudit(db, {
+          tenantId: user.tenantId, actorEmail: user.email, actorRole: user.role,
+          action: 'return.credit', entity: 'order', entityId: res.returnRow.order_number,
+          summary: `Reembolso como saldo a favor: ${creditAmount} (pedido ${res.returnRow.order_number})`,
+          metadata: { return_id: returnId, creditAmount },
+        })
+      }
+    } catch (e) {
+      console.error('[returns] store credit:', e instanceof Error ? e.message : e)
+    }
   }
 
   return NextResponse.json({ ok: true, return: res.returnRow })

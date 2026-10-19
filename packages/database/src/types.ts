@@ -433,6 +433,64 @@ export type Database = {
         }
         Relationships: []
       }
+      gift_cards: {
+        Row: {
+          id: number
+          tenant_id: string
+          code: string
+          initial_balance: number
+          balance: number
+          active: boolean
+          note: string | null
+          expires_at: string | null
+          created_at: string
+          updated_at: string
+        }
+        Insert: {
+          id?: number
+          tenant_id?: string
+          code: string
+          initial_balance: number
+          balance: number
+          active?: boolean
+          note?: string | null
+          expires_at?: string | null
+          created_at?: string
+          updated_at?: string
+        }
+        Update: {
+          balance?: number
+          active?: boolean
+          note?: string | null
+          expires_at?: string | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      store_credit_ledger: {
+        Row: {
+          id: number
+          tenant_id: string
+          customer_id: string
+          delta: number
+          reason: string | null
+          order_id: number | null
+          created_at: string
+        }
+        Insert: {
+          id?: number
+          tenant_id?: string
+          customer_id: string
+          delta: number
+          reason?: string | null
+          order_id?: number | null
+          created_at?: string
+        }
+        Update: {
+          reason?: string | null
+        }
+        Relationships: []
+      }
       promotions: {
         Row: {
           id: number
