@@ -541,6 +541,28 @@ export type Database = {
         }
         Relationships: []
       }
+      vip_campaign_notifications: {
+        Row: {
+          id: number
+          tenant_id: string
+          campaign_id: number
+          customer_id: string
+          channel: string
+          sent_at: string
+        }
+        Insert: {
+          id?: number
+          tenant_id?: string
+          campaign_id: number
+          customer_id: string
+          channel?: string
+          sent_at?: string
+        }
+        Update: {
+          channel?: string
+        }
+        Relationships: []
+      }
       order_returns: {
         Row: {
           id: number

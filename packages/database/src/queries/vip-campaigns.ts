@@ -1,4 +1,5 @@
 import type { Db } from '../client'
+import { sendVipCampaignInvite, type EmailConfig } from '../lib/email'
 
 /**
  * Campañas de acceso anticipado VIP (HU-289/290 · E19). Ventana horaria dirigida
@@ -273,4 +274,60 @@ export async function getVipCampaignReport(campaignId: number, db: Db): Promise<
     .gte('created_at', campaign.starts_at)
     .lte('created_at', campaign.ends_at)
   return computeVipReport(members, (orders ?? []) as any)
+}
+
+// ── Avisos por correo (HU-292) ────────────────────────────────────────────────
+
+export interface NotifyResult { sent: number; skipped: number; total: number }
+
+/**
+ * Avisa por correo a los miembros del segmento de una campaña (HU-292).
+ * **Idempotente** (AC-2): salta a quien ya fue avisado por el mismo canal
+ * (`vip_campaign_notifications`, único por campaña+cliente+canal). No lanza por
+ * un envío individual fallido; registra solo los exitosos. MVP: solo email.
+ */
+export async function notifyCampaignMembers(
+  campaignId: number,
+  opts: { emailConfig: EmailConfig; accessUrl?: string | null },
+  db: Db,
+  tenantId: string,
+): Promise<NotifyResult> {
+  const campaign = await getCampaign(campaignId, db)
+  if (!campaign) throw new Error('Campaña no encontrada.')
+  if (campaign.segment_id == null) throw new Error('La campaña no tiene un segmento de audiencia.')
+
+  const { data: memberRows } = await db
+    .from('customer_segment_members')
+    .select('customer_id, customers!inner(email, name)')
+    .eq('segment_id', campaign.segment_id)
+  const members = (memberRows ?? []).map((m: any) => {
+    const c = Array.isArray(m.customers) ? m.customers[0] : m.customers
+    return { customer_id: m.customer_id as string, email: (c?.email as string) ?? '' }
+  }).filter((m) => m.email)
+
+  const { data: already } = await db
+    .from('vip_campaign_notifications')
+    .select('customer_id')
+    .eq('campaign_id', campaignId)
+    .eq('channel', 'email')
+  const notified = new Set((already ?? []).map((r: any) => r.customer_id as string))
+
+  let sent = 0
+  let skipped = 0
+  for (const m of members) {
+    if (notified.has(m.customer_id)) { skipped += 1; continue }
+    try {
+      await sendVipCampaignInvite(
+        { to: m.email, campaignName: campaign.name, accessUrl: opts.accessUrl ?? null, endsAt: campaign.ends_at },
+        opts.emailConfig,
+      )
+      await db.from('vip_campaign_notifications')
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        .insert({ tenant_id: tenantId, campaign_id: campaignId, customer_id: m.customer_id, channel: 'email' } as any)
+      sent += 1
+    } catch {
+      // no cortar el lote por un envío fallido
+    }
+  }
+  return { sent, skipped, total: members.length }
 }

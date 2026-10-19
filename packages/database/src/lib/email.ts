@@ -208,3 +208,37 @@ export async function sendBackInStock(
     html: baseTemplate(content, config),
   })
 }
+
+/** HU-292 · invitación a una venta VIP / acceso anticipado. */
+export async function sendVipCampaignInvite(
+  data: {
+    to: string
+    campaignName: string
+    accessUrl?: string | null
+    endsAt?: string | null
+  },
+  config: EmailConfig,
+): Promise<void> {
+  const name = config.storeName ?? 'Mi Tienda'
+  const when = data.endsAt ? new Date(data.endsAt).toLocaleString('es-CO') : null
+
+  const content = `
+    <p style="margin: 0 0 4px; color: #8a6a4a; font-size: 12px; text-transform: uppercase; letter-spacing: 1px; font-family: sans-serif;">Acceso anticipado VIP</p>
+    <h2 style="margin: 0 0 8px; color: #614a2a; font-size: 20px; font-family: sans-serif;">${data.campaignName}</h2>
+    <p style="margin: 0 0 24px; color: #8a6a4a; font-size: 14px; font-family: sans-serif;">
+      Como miembro de nuestro Club VIP, tienes acceso anticipado a esta venta exclusiva${when ? ` hasta el <strong>${when}</strong>` : ''}. Aprovéchala antes que el público general.
+    </p>
+    ${data.accessUrl ? `
+    <div style="text-align: center; margin-bottom: 24px;">
+      <a href="${data.accessUrl}" style="display: inline-block; background: #614a2a; color: #fff8ec; text-decoration: none; padding: 12px 28px; border-radius: 50px; font-size: 14px; font-weight: 600; font-family: sans-serif;">
+        Comprar ahora
+      </a>
+    </div>` : ''}`
+
+  await sendEmail(config, {
+    from: `${name} <${config.fromEmail}>`,
+    to: [data.to],
+    subject: `Acceso VIP: ${data.campaignName} — ${name}`,
+    html: baseTemplate(content, config),
+  })
+}

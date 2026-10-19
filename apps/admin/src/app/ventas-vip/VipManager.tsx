@@ -265,6 +265,16 @@ function Campanas({ initial, segments, products, categories }: { initial: Campai
 
   const [reportFor, setReportFor] = useState<number | null>(null)
   const [report, setReport] = useState<any>(null)
+  const [notifyMsg, setNotifyMsg] = useState<Record<number, string>>({})
+  async function notify(id: number) {
+    if (!confirm('¿Enviar el aviso por correo a los miembros del segmento? No se reenvía a quien ya fue avisado.')) return
+    setNotifyMsg((m) => ({ ...m, [id]: 'Enviando…' }))
+    const res = await fetch(`/api/admin/vip-campaigns/${id}/notify`, {
+      method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({}),
+    })
+    const d = await res.json()
+    setNotifyMsg((m) => ({ ...m, [id]: res.ok ? `Enviados ${d.result.sent} · omitidos ${d.result.skipped}` : (d.error ?? 'Error') }))
+  }
   async function openReport(id: number) {
     if (reportFor === id) { setReportFor(null); return }
     setReportFor(id); setReport(null)
@@ -337,6 +347,9 @@ function Campanas({ initial, segments, products, categories }: { initial: Campai
                 <button onClick={() => openReport(c.id)} className="font-brand text-xs text-brand-primary border border-brand-primary/20 rounded-full px-3 py-1 hover:bg-brand-cream">
                   {reportFor === c.id ? 'Ocultar reporte' : 'Reporte'}
                 </button>
+                {c.segment_id != null && c.status !== 'cancelled' && (
+                  <button onClick={() => notify(c.id)} className="font-brand text-xs text-brand-primary border border-brand-primary/20 rounded-full px-3 py-1 hover:bg-brand-cream">Avisar</button>
+                )}
                 {c.status !== 'cancelled' && (
                   <>
                     {c.status === 'paused'
@@ -346,6 +359,7 @@ function Campanas({ initial, segments, products, categories }: { initial: Campai
                   </>
                 )}
                 <button onClick={() => remove(c.id)} className="font-brand text-xs text-red-600 border border-red-200 rounded-full px-3 py-1 hover:bg-red-50">Eliminar</button>
+                {notifyMsg[c.id] && <span className="font-brand text-xs text-brand-primary/60 w-full">{notifyMsg[c.id]}</span>}
               </div>
               {reportFor === c.id && (
                 <div className="border-t border-gray-100 px-5 py-4">

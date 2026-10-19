@@ -1455,7 +1455,7 @@
 
 **Estimación:** M (5 puntos)
 **Módulo:** reusa envío de correo (HU-159/160) y **multicanal WhatsApp (HU-153)**; disparo al activar la campaña
-**Estado:** 🔲 Pendiente (roadmap · E19 Fase 2) — WhatsApp **depende de HU-153**; MVP solo correo
+**Estado:** ✅ Hecho (v141, solo correo) — `notifyCampaignMembers` + `sendVipCampaignInvite`; acción 'Avisar' por campaña en `/ventas-vip` envía el correo a los miembros del segmento con enlace de acceso. **Idempotente** (`vip_campaign_notifications` `e17/43`, único por campaña+cliente+canal): no reenvía a quien ya fue avisado. WhatsApp queda para cuando exista HU-153.
 **Opción/builder:** plantilla del aviso estilable; se envía solo a miembros con consentimiento del canal.
 
 | # | Escenario | Resultado esperado |
