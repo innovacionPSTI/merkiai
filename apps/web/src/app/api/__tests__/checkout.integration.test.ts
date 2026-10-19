@@ -25,6 +25,7 @@ jest.mock('@merkiai/database', () => ({
   gatewayFromInstance: jest.fn(),
   getStockForVariants: jest.fn(),
   createServerClient: jest.fn(),
+  reportError: jest.fn(),
 }))
 
 // Corta la cadena de imports ESM de @stackframe/stack (jose, export-to-csv, otp…)

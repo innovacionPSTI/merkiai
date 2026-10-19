@@ -305,14 +305,21 @@
 > Como responsable, quiero capturar y agrupar errores de runtime (front y back) con contexto, para detectar y resolver incidencias.
 
 **Estimación:** M (5 puntos)
-**Módulo:** integración de error tracking (Sentry o similar), source maps, alertas
-**Estado:** 🔲 Pendiente (roadmap)
+**Módulo:** abstracción `ErrorReporter` intercambiable (packages) + adaptador por defecto (Sentry) + bordes de captura (route handlers, error boundaries, middleware) + source maps en el build
+**Estado:** 🟡 Parcial (v155) — **hecho:** abstracción `ErrorReporter` en `@merkiai/database` (`NoopReporter` / `ConsoleReporter` default — JSON estructurado a stderr que Vercel/Supabase Logs recogen / `HookReporter` que enruta a un APM externo vía `globalThis.__merkiaiCaptureException`), `reportError()` best-effort con **scrubbing de PII/secretos** (AC-4), contexto de **tenant/scope/route** (AC-1/AC-5), resiliencia (AC-6) + tests. Cableado en el borde del **checkout**. **Pendiente:** conectar Sentry real (instalar `@sentry/nextjs`, `SENTRY_DSN`, registrar el hook en el bootstrap de cada app + subir source maps en el build) y adoptar `reportError` en el resto de bordes (webhooks, otras APIs, error boundaries del cliente).
+
+> **Enfoque (patrón del repo).** Igual que pagos/envíos/correo/identidad, NO acoplar la app a un proveedor: definir una **interfaz `ErrorReporter`** (`captureException(err, context)`, `captureMessage`, `setTenant/ setUser`, `flush`) en `packages/observability` (o `@merkiai/tenancy`-adjacent) con un **`NoopReporter`** por defecto (sin config → no-op, no rompe dev/CI) y un **`SentryReporter`** activado por env (`SENTRY_DSN`). El contexto de **tenant** se inyecta desde el request (host→tenant) para poder filtrar incidencias por tienda. Capa de infra (Vercel/Supabase logs) se mantiene; esto añade el **application error-tracking** que hoy falta. Alcance: web + admin + console.
+>
+> **Capas distintas (aclaración).** *Infra logging/metrics* (Vercel Observability, Supabase Logs; equivalente a CloudWatch en AWS) ya existe y no es parte de esta HU. HU-170 agrega el **tracking de errores de aplicación** (agrupación + stack + contexto de negocio + alertas), típicamente Sentry.
 
 | # | Escenario | Resultado esperado |
 |---|-----------|-------------------|
-| AC-1 | Captura | Errores de cliente y servidor con traza y contexto (usuario/tenant) |
-| AC-2 | Gestión | Agrupación, alertas, entorno y release asociados |
-| AC-3 | Privacidad | Sin PII innecesaria; respeta consentimiento (HU-152) |
+| AC-1 | Captura | Errores de cliente (error boundary + unhandled) y servidor (route handlers, server actions, webhooks, middleware) con **stack + contexto** (tenant, ruta, release, request id) |
+| AC-2 | Abstracción | Interfaz `ErrorReporter` intercambiable; `NoopReporter` por defecto (sin DSN = no-op); `SentryReporter` por env — sin acoplar la app al proveedor |
+| AC-3 | Gestión | Agrupación por fingerprint, **entorno** (prod/preview/dev) y **release** (commit) asociados; alertas configurables; source maps subidos en el build para stacks legibles |
+| AC-4 | Privacidad | **Sin PII innecesaria** (scrubbing de email/teléfono/dirección y de secretos/credenciales); respeta consentimiento (HU-152); nunca envía tokens ni llaves |
+| AC-5 | Multi-tenant | El error queda etiquetado con `tenant_id` para filtrar por tienda; no se filtran datos de un tenant a otro |
+| AC-6 | Resiliencia | El reporter nunca tumba la request (best-effort, try/catch interno); `flush` acotado por timeout en serverless |
 
 ---
 

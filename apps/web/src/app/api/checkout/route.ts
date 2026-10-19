@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { createOrder, createServerClient, resolveActivePayment, gatewayFromInstance, getStockForVariants, TuCompraGateway, ensureCustomer, listActivePromotions, computePromotions, getGiftCardByCode, getStoreCreditBalance, computeRedemption, redeemStoreValue, refundStoreValue, applyStockForOrder, getBundlesByIds, expandBundleLines, getCouponByCode, validateCoupon, getShippingConfig } from '@merkiai/database'
+import { createOrder, createServerClient, resolveActivePayment, gatewayFromInstance, getStockForVariants, TuCompraGateway, ensureCustomer, listActivePromotions, computePromotions, getGiftCardByCode, getStoreCreditBalance, computeRedemption, redeemStoreValue, refundStoreValue, applyStockForOrder, getBundlesByIds, expandBundleLines, getCouponByCode, validateCoupon, getShippingConfig, reportError } from '@merkiai/database'
 import { stackServerApp } from '@/stack'
 import { baseUrlFromRequest } from '@/lib/base-url'
 import { resolveTenant } from '@/lib/tenant-context';
@@ -677,6 +677,8 @@ export async function POST(req: NextRequest) {
     })
   } catch (err) {
     console.error('[checkout] Error:', err)
+    // HU-170 · reporte de error de aplicación (best-effort, con contexto de tenant).
+    reportError(err, { scope: 'checkout', tenantId: redeemState?.tenantId })
     // HU-298 · si el crédito se consumió pero no se llegó a crear el pedido,
     // se revierte (reverso) para no dejar "crédito consumido sin pedido".
     if (redeemState && !orderWasCreated) {
