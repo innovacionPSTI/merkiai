@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { createOrder, createServerClient, resolveActivePayment, gatewayFromInstance, getStockForVariants, TuCompraGateway, ensureCustomer, listActivePromotions, computePromotions, getGiftCardByCode, redeemGiftCard, getStoreCreditBalance, addStoreCredit, computeRedemption, applyStockForOrder, getBundlesByIds, expandBundleLines, getCouponByCode, validateCoupon } from '@merkiai/database'
+import { createOrder, createServerClient, resolveActivePayment, gatewayFromInstance, getStockForVariants, TuCompraGateway, ensureCustomer, listActivePromotions, computePromotions, getGiftCardByCode, getStoreCreditBalance, computeRedemption, redeemStoreValue, applyStockForOrder, getBundlesByIds, expandBundleLines, getCouponByCode, validateCoupon } from '@merkiai/database'
 import { stackServerApp } from '@/stack'
 import { baseUrlFromRequest } from '@/lib/base-url'
 import { resolveTenant } from '@/lib/tenant-context';
@@ -324,15 +324,19 @@ export async function POST(req: NextRequest) {
           }
         }
         const plan = computeRedemption(effectiveTotal, giftCardBalance, storeCredit)
-        // Aplica gift card (atómico) y luego saldo sobre el restante real.
-        if (giftCardId && plan.giftCardApplied > 0) {
-          giftCardAmount = await redeemGiftCard(giftCardId, plan.giftCardApplied, mdb)
-        }
-        const afterGc = Math.max(0, effectiveTotal - giftCardAmount)
-        storeCreditAmount = Math.min(storeCredit, afterGc, use_store_credit && creditCustomerId ? plan.creditApplied : 0)
-        if (creditCustomerId && storeCreditAmount > 0) {
-          await addStoreCredit({ customerId: creditCustomerId, delta: -storeCreditAmount, reason: 'order' }, mdb, tenantId)
-        }
+        // HU-298 · canje ATÓMICO: gift card + saldo en una sola transacción (RPC
+        // con FOR UPDATE), revalidando saldo/vigencia server-side. Devuelve lo
+        // efectivamente aplicado (mínimo entre lo pedido y lo disponible).
+        const applied = await redeemStoreValue(mdb, {
+          tenantId,
+          giftCardId,
+          giftCardAmount: plan.giftCardApplied,
+          customerId: creditCustomerId,
+          storeCreditAmount: use_store_credit && creditCustomerId ? plan.creditApplied : 0,
+          orderId: null,
+        })
+        giftCardAmount = applied.giftCardApplied
+        storeCreditAmount = applied.storeCreditApplied
         if (!giftCardAmount) giftCardCodeApplied = null
         effectiveTotal = Math.max(0, effectiveTotal - giftCardAmount - storeCreditAmount)
       } catch (e) {

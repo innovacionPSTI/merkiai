@@ -86,7 +86,7 @@
 ### HU-298 — Blindaje de gift cards y saldo a favor (anti-doble gasto, sin fugas) · E14 (toca E6)
 > Como plataforma, quiero que el canje de gift cards y saldo a favor sea **atómico, idempotente y sin fugas**, para que no se pueda gastar más de lo disponible, reutilizar un canje ni enumerar/leer saldos ajenos.
 
-**Estimación:** L (8 puntos) · **Estado:** 🔲 Pendiente (roadmap) — endurece HU-148 (hoy `redeemGiftCard` es atómico con guard optimista, pero el consumo se asienta **antes** de crear la orden y la idempotencia por reintento del ledger es limitada)
+**Estimación:** L (8 puntos) · **Estado:** 🟡 Parcial (v149) — **hecho:** RPC transaccional `redeem_store_value` (`e17/48`, `SECURITY DEFINER`, chequeo de tenant, **`FOR UPDATE`** de la gift card, revalida vigencia/saldo y aplica el **mínimo** entre lo pedido y lo disponible → sin sobre-gasto bajo concurrencia; gift card + asiento de saldo en **una sola transacción**). El checkout usa el RPC en vez de `redeemGiftCard`+`addStoreCredit` por separado. AC-4/AC-5 (sin fugas + propiedad del saldo por sesión) ya cubiertos. **Pendiente:** envolver también la **creación de la orden** en la transacción (hoy el canje sigue asentándose antes de crear la orden — residual documentado) + clave de idempotencia por intento (AC-2).
 
 | # | Escenario | Resultado esperado |
 |---|-----------|-------------------|

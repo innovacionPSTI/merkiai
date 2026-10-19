@@ -128,6 +128,30 @@ export async function redeemGiftCard(giftCardId: number, amount: number, db: Db)
   return 0
 }
 
+/**
+ * Canje ATÓMICO de gift card + saldo a favor (HU-298) vía RPC transaccional
+ * (`redeem_store_value`): revalida vigencia/saldo con bloqueo de fila y aplica el
+ * mínimo entre lo pedido y lo disponible, sin sobre-gasto por concurrencia.
+ * Devuelve lo efectivamente aplicado. No lanza por falta de saldo (aplica 0).
+ */
+export async function redeemStoreValue(
+  db: Db,
+  input: { tenantId: string; giftCardId: number | null; giftCardAmount: number; customerId: string | null; storeCreditAmount: number; orderId: number | null },
+): Promise<{ giftCardApplied: number; storeCreditApplied: number }> {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const { data, error } = await (db as any).rpc('redeem_store_value', {
+    p_tenant: input.tenantId,
+    p_gift_card_id: input.giftCardId,
+    p_gift_card_amount: Math.max(0, Math.round(input.giftCardAmount)),
+    p_customer_id: input.customerId,
+    p_store_credit_amount: Math.max(0, Math.round(input.storeCreditAmount)),
+    p_order_id: input.orderId,
+  })
+  if (error) throw error
+  const r = (data ?? {}) as { gift_card_applied?: number; store_credit_applied?: number }
+  return { giftCardApplied: Number(r.gift_card_applied ?? 0), storeCreditApplied: Number(r.store_credit_applied ?? 0) }
+}
+
 export async function setGiftCardActive(id: number, active: boolean, db: Db): Promise<void> {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const { error } = await db.from('gift_cards').update({ active, updated_at: new Date().toISOString() } as any).eq('id', id)
