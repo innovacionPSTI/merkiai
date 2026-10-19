@@ -116,7 +116,7 @@ Consolidar todo el contenido gestionable (banners, secciones del home, testimoni
 |-----------|---------|--------------|
 | **E12 · Autenticación y Mi Cuenta** | Login/register (Stack Auth), pedidos, perfil, direcciones, tracking · *(roadmap: login social, reorder, consulta como invitado, portabilidad/borrado de datos, fidelización/puntos)* | A-01…10, HU-060, HU-111/112/150/151/167 🔲 |
 | **E13 · Panel de administración** | CRUD catálogo/pedidos/contenido, roles, configuración, temas, newsletter, export/import · *(roadmap: reportes exportables, drag-and-drop de secciones, carga CSV de productos, drag generalizado, export CSV, acciones masivas, importadores CSV, onboarding/setup wizard)* | AD-01…38, HU-116/120/124/126/130/131/132/169 🔲 |
-| **E14 · Despliegue, seguridad e identidad del panel** | Vercel + CI/CD, hardening (rate limit, CSP, firmas), favicon, colores del admin, responsive · *(roadmap: 2FA, registro de auditoría, respaldos + restore programado, RBAC de datos, consentimiento de cookies, monitoreo de errores/APM, hardening PCI DSS)* | HU-061…064, HU-079…081, HU-117/125/133/134/146/152/170, HU-184…187 (PCI) 🔲 |
+| **E14 · Despliegue, seguridad e identidad del panel** | Vercel + CI/CD, hardening (rate limit, CSP, firmas), favicon, colores del admin, responsive · *(roadmap: 2FA, registro de auditoría, respaldos + restore programado, RBAC de datos, consentimiento de cookies, monitoreo de errores/APM, hardening PCI DSS)* | HU-061…064, HU-079…081, HU-117/125/133/134/146/152/170, HU-184…187 (PCI), HU-202…206, HU-297…300 (hardening de pricing e instrumentos de valor) 🔲 |
 
 **Transversales**
 

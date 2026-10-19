@@ -1,4 +1,4 @@
-## Detalle · E14 — Seguridad transversal y hardening (HU-202…206)
+## Detalle · E14 — Seguridad transversal y hardening (HU-202…206, HU-297…300)
 
 > Refuerza la seguridad más allá de lo ya hecho (CSP básica + rate-limit HU-062 ✅; firmas/idempotencia/anti-subpago en webhooks ✅; PCI SAQ A HU-184…187; RLS). Cubre CORS, XSS, abuso, validación, secretos y dependencias. Todo **🔲 (roadmap)**.
 
@@ -61,6 +61,67 @@
 | AC-2 | SCA en CI | Escaneo de dependencias (Dependabot/Snyk) y alertas de CVE en el pipeline |
 | AC-3 | Secret scanning | Detección de secretos en commits (pre-commit / GitHub) |
 | AC-4 | Mínimo privilegio | Revisión de que ninguna llave sensible esté en `NEXT_PUBLIC_` ni en el cliente |
+
+---
+
+## Detalle · E14 — Hardening de instrumentos de valor y pricing (HU-297…300)
+
+> **Contexto.** Con el cierre de la Ola 1 el storefront maneja varios **instrumentos de valor** que afectan cuánto paga el cliente: **promociones** (HU-147), **precio de campaña VIP** (HU-293), **gift cards** y **saldo a favor** (HU-148), además del cupón y el precio/stock del catálogo. Hoy el checkout ya recalcula buena parte server-side y los descuentos VIP/promos/crédito se aplican en el servidor, pero esa garantía está **dispersa** y nunca se auditó de forma integral. Este bloque consolida un **principio único: el precio y el total son autoridad exclusiva del servidor**, el cliente solo propone intención (ítems, código, "usar saldo"), y **ningún valor monetario enviado por el cliente se confía jamás**. El objetivo es cerrar cualquier vía por la que un usuario pudiera **alterar precios, descuentos, saldos o elegibilidad** para pagar de menos, y evitar **fugas de datos sensibles** (saldos, códigos, pertenencia a segmentos VIP) por las APIs. Todo **🔲 (roadmap)**.
+>
+> **No-objetivos:** no cambia la experiencia de compra legítima; es endurecimiento + pruebas de abuso. Se apoya en lo ya existente (recalculo en `/api/checkout`, RLS por tenant, `redeemGiftCard` atómico, gating VIP server-side) y lo formaliza, cierra huecos y lo cubre con tests adversariales.
+
+### HU-297 — Pricing autoritativo de extremo a extremo en el checkout · E14 (toca E5/E6)
+> Como plataforma, quiero que el checkout **recompute desde la base de datos** cada precio, descuento y total —ignorando los montos que envía el cliente—, para que nadie pueda manipular el valor a pagar desde el navegador o la API.
+
+**Estimación:** L (8 puntos) · **Estado:** 🔲 Pendiente (roadmap) — formaliza y cierra lo iniciado en HU-147/293/148 (hoy el server ya resta promos/VIP/crédito, pero aún **confía en `subtotal`/`total`/`price` del cliente** como base)
+
+| # | Escenario | Resultado esperado |
+|---|-----------|-------------------|
+| AC-1 | Precios de servidor | El `price` unitario de cada ítem se lee de `product_variants` por `variant_id`; se ignora el `price` del body. El `subtotal` se recomputa; discrepancia con el cliente ⇒ se usa el del servidor (no error silencioso) |
+| AC-2 | Cadena de descuentos única | Un solo pipeline server-side aplica, en orden determinista y documentado: cupón → promociones (HU-147) → precio VIP (HU-293) → gift card/saldo (HU-148); el `total` final es derivado, nunca recibido |
+| AC-3 | Topes e invariantes | `0 ≤ descuentos ≤ subtotal`; el monto cobrado a la pasarela = total derivado; imposible total negativo o cobro menor al debido por combinación de instrumentos |
+| AC-4 | Envío y stock | `shipping_cost` recomputado por el motor de envíos (no del cliente); revalidación de stock y de elegibilidad VIP server-side antes de crear la orden |
+| AC-5 | Pruebas adversariales | Suite que intenta manipular `price`, `subtotal`, `total`, `discount`, `qty` negativas, cantidades fraccionarias y descuentos encadenados; todas deben fallar o ser corregidas por el servidor |
+
+### HU-298 — Blindaje de gift cards y saldo a favor (anti-doble gasto, sin fugas) · E14 (toca E6)
+> Como plataforma, quiero que el canje de gift cards y saldo a favor sea **atómico, idempotente y sin fugas**, para que no se pueda gastar más de lo disponible, reutilizar un canje ni enumerar/leer saldos ajenos.
+
+**Estimación:** L (8 puntos) · **Estado:** 🔲 Pendiente (roadmap) — endurece HU-148 (hoy `redeemGiftCard` es atómico con guard optimista, pero el consumo se asienta **antes** de crear la orden y la idempotencia por reintento del ledger es limitada)
+
+| # | Escenario | Resultado esperado |
+|---|-----------|-------------------|
+| AC-1 | Atomicidad transaccional | Validar saldo + decrementar gift card + asentar consumo de saldo + crear la orden en una **transacción** (RPC `SECURITY DEFINER`), de modo que un fallo revierta todo (sin crédito consumido sin orden, ni orden sin crédito) |
+| AC-2 | Idempotencia | Reintentos del mismo checkout no doble-descuentan (clave de idempotencia por intento); el ledger de saldo referencia `order_id` y no admite dobles asientos |
+| AC-3 | Sin sobre-gasto | Imposible que gift card o saldo queden negativos bajo concurrencia; el crédito aplicado nunca supera el saldo real ni el total |
+| AC-4 | Sin fugas en API | `/api/checkout/credit` solo revela el saldo de la gift card consultada y el saldo del **cliente autenticado**; nunca saldos de otros; sin enumeración masiva (ver HU-300). El saldo a favor se lee solo vía RLS `store_credit_own_read` |
+| AC-5 | Propiedad del saldo | El saldo a favor solo lo puede gastar su dueño autenticado; un invitado o tercero no puede aplicar el crédito de otra cuenta (verificación server-side de `customer_id` por sesión) |
+| AC-6 | Reembolso/consistencia | Anular/expirar una orden pagada con crédito revierte o re-acredita correctamente; trazas en auditoría (HU-146) |
+
+### HU-299 — Enforcement server-side de promociones y acceso/precio VIP · E14 (toca E5/E19)
+> Como plataforma, quiero que la elegibilidad y el valor de promociones y campañas VIP se decidan **solo en el servidor**, para que el cliente no pueda forzar un descuento, un precio VIP ni el acceso anticipado al que no tiene derecho.
+
+**Estimación:** M (5 puntos) · **Estado:** 🔲 Pendiente (roadmap) — consolida HU-147/290/293 (hoy ya es server-side, pero sin pruebas de evasión ni revisión de fugas de elegibilidad)
+
+| # | Escenario | Resultado esperado |
+|---|-----------|-------------------|
+| AC-1 | Promos no manipulables | El cliente no envía el descuento de promoción; el servidor evalúa reglas, vigencia y combinabilidad desde `promotions`. Un `promotion_id` o porcentaje inyectado en el body se ignora |
+| AC-2 | Elegibilidad VIP server-side | La pertenencia al segmento y la ventana se verifican con la sesión + BD; no basta con ocultar en UI. El precio VIP se aplica solo si el servidor confirma `vip_member` dentro de la ventana |
+| AC-3 | Gating no evitable | Comprar un producto en campaña (bloqueado para no-miembros) se rechaza en el checkout aunque se llame la API directamente o se manipule la URL |
+| AC-4 | Sin fuga de datos VIP | Las APIs no exponen a qué segmentos pertenece un cliente, ni los miembros de un segmento, ni el `offer_percent` a quien no es elegible |
+| AC-5 | Cupo/escasez | Si la campaña define cupo, el límite se respeta server-side bajo concurrencia (no se puede exceder recargando o en paralelo) |
+
+### HU-300 — Anti-abuso y auditoría de instrumentos de valor · E14 (toca E13)
+> Como plataforma, quiero límites y trazabilidad sobre la validación y el uso de códigos y saldos, para frenar la enumeración de gift cards/cupones y detectar abuso.
+
+**Estimación:** M (5 puntos) · **Estado:** 🔲 Pendiente (roadmap) — se apoya en el rate-limit distribuido (HU-204) y la auditoría (HU-146)
+
+| # | Escenario | Resultado esperado |
+|---|-----------|-------------------|
+| AC-1 | Anti-enumeración | Rate limit por IP/sesión en validación de gift cards, cupones y códigos; respuestas neutras (no distinguir "no existe" de "sin saldo") y sin filtrar la existencia por tiempos |
+| AC-2 | Formato robusto | Códigos de alta entropía (ya sin caracteres ambiguos); validación de formato antes de tocar la BD; bloqueo tras N intentos fallidos |
+| AC-3 | Auditoría | Emisión/canje/ajuste de gift cards y saldo, aplicación de promociones y de precio VIP quedan en el registro de auditoría (HU-146) con actor, monto y pedido |
+| AC-4 | Alertas | Umbrales de abuso (muchos canjes fallidos, saldo que cae anómalamente, picos de redención) notificables al operador |
+| AC-5 | Conciliación | Reporte/cuadre de valor emitido vs. canjeado (gift cards y saldo) para detectar descuadres |
 
 ---
 

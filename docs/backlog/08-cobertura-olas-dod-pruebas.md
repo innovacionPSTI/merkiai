@@ -17,7 +17,7 @@
 | E11 · Páginas de contenido y servicios | 6 | 6 | 0 | 0 |
 | E12 · Autenticación y Mi Cuenta | 17 | 13 | 0 | 4 |
 | E13 · Panel de administración | 46 | 41 | 0 | 5 |
-| E14 · Despliegue, seguridad e identidad del panel | 24 | 9 | 0 | 15 |
+| E14 · Despliegue, seguridad e identidad del panel | 28 | 9 | 0 | 19 | *(+HU-297…300 hardening de pricing/instrumentos de valor)* |
 | E15 · SEO y rendimiento | 12 | 10 | 0 | 2 |
 | E16 · Aplicación inteligente (IA) *(roadmap)* | 17 | 0 | 0 | 17 |
 | E17 · Plataforma multi-tienda + SaaS (control plane, billing, aislamiento, identidad) *(roadmap)* | 14 | 0 | 0 | 14 |
