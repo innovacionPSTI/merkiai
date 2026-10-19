@@ -18,6 +18,7 @@ jest.mock('@merkiai/database', () => ({
   // ADR-004: la ruta resuelve la config de correo por instancia/legacy.
   resolveEmailConfig: jest.fn().mockResolvedValue({ apiKey: 're_test_key', fromEmail: 'noreply@tienda.example.com', storeName: 'Tienda', provider: 'resend' }),
   logAudit: jest.fn().mockResolvedValue(undefined), // HU-146
+  recordEmail: jest.fn().mockResolvedValue(undefined), // HU-162
 }))
 
 // HU-158: la ruta usa getAdminUser + getAdminDb (RLS por tenant).

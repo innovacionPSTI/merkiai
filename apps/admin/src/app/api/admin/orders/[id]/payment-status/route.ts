@@ -7,7 +7,7 @@
  * Seguridad: guard admin (super_admin/admin/vendedor); solo acepta 'approved' o
  * 'rejected'; nunca accesible desde el sitio público.
  */
-import { applyStockForOrder, restoreStockForOrder, resolveEmailConfig, logAudit } from '@merkiai/database'
+import { applyStockForOrder, restoreStockForOrder, resolveEmailConfig, logAudit, recordEmail } from '@merkiai/database'
 import { getAdminDb } from '@/lib/admin-db'
 import type { Database } from '@merkiai/database'
 import { NextRequest, NextResponse } from 'next/server'
@@ -93,9 +93,13 @@ export async function PATCH(
           },
           { apiKey: ec.apiKey, fromEmail: ec.fromEmail, storeName: ec.storeName },
         )
+        // HU-162 · registro del correo de confirmación de pago.
+        await recordEmail(supabase, { tenantId: user!.tenantId, to: order.customer_email, type: 'order.payment', provider: ec.provider, status: 'sent', entity: order.order_number })
       }
     } catch (emailErr) {
       console.error('[payment-status] email error:', emailErr instanceof Error ? emailErr.message : emailErr)
+      // HU-162 · registra el fallo (reemplaza el catch mudo).
+      await recordEmail(supabase, { tenantId: user!.tenantId, to: order.customer_email, type: 'order.payment', status: 'failed', entity: order.order_number, error: emailErr instanceof Error ? emailErr.message : String(emailErr) })
     }
   }
 

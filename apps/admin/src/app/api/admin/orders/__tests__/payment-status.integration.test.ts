@@ -9,7 +9,7 @@
 
 import { NextRequest } from 'next/server'
 
-jest.mock('@merkiai/database', () => ({ createServerClient: jest.fn(), applyStockForOrder: jest.fn().mockResolvedValue(undefined), restoreStockForOrder: jest.fn().mockResolvedValue(undefined), resolveEmailConfig: jest.fn().mockResolvedValue({ apiKey: 're_x', fromEmail: 'noreply@tienda.example.com', storeName: 'Tienda', provider: 'resend' }), logAudit: jest.fn().mockResolvedValue(undefined) }))
+jest.mock('@merkiai/database', () => ({ createServerClient: jest.fn(), applyStockForOrder: jest.fn().mockResolvedValue(undefined), restoreStockForOrder: jest.fn().mockResolvedValue(undefined), resolveEmailConfig: jest.fn().mockResolvedValue({ apiKey: 're_x', fromEmail: 'noreply@tienda.example.com', storeName: 'Tienda', provider: 'resend' }), logAudit: jest.fn().mockResolvedValue(undefined), recordEmail: jest.fn().mockResolvedValue(undefined) }))
 jest.mock('@/lib/admin-db', () => ({ getAdminDb: () => require('@merkiai/database').createServerClient() }))
 jest.mock('@/lib/auth', () => ({ getAdminUser: jest.fn() }))
 jest.mock('@/lib/email', () => ({ sendPaymentConfirmed: jest.fn() }))

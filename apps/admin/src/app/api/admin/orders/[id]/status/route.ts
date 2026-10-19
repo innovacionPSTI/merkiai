@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { restoreStockForOrder, resolveEmailConfig, logAudit } from '@merkiai/database'
+import { restoreStockForOrder, resolveEmailConfig, logAudit, recordEmail } from '@merkiai/database'
 import { sendShippingNotification, sendStatusNotification } from '@/lib/email'
 import { getAdminUser } from '@/lib/auth'
 import { getAdminDb } from '@/lib/admin-db'
@@ -70,8 +70,12 @@ export async function PATCH(
               emailConfig,
             )
           }
+          // HU-162 · registro de email enviado.
+          await recordEmail(supabase, { tenantId: adminUser.tenantId, to: order.customer_email, type: 'order.status', provider: ec.provider, status: 'sent', entity: order.order_number })
         } catch (emailErr) {
+          // HU-162 · reemplaza el `.catch` mudo: registra el fallo con trazabilidad.
           console.error('[status/route] email error:', emailErr instanceof Error ? emailErr.message : emailErr)
+          await recordEmail(supabase, { tenantId: adminUser.tenantId, to: order.customer_email, type: 'order.status', provider: ec.provider, status: 'failed', entity: order.order_number, error: emailErr instanceof Error ? emailErr.message : String(emailErr) })
         }
       }
     }

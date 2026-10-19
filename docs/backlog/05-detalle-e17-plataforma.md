@@ -162,7 +162,7 @@
 
 **Estimación:** M (5 puntos)
 **Módulo:** tabla `email_log`, wrapper de envío, reintentos con backoff
-**Estado:** 🔲 Pendiente (roadmap v18)
+**Estado:** 🟡 Parcial (v156) — **hecho:** tabla `email_log` (`e17/50`, RLS is_admin read/insert) + `recordEmail` (best-effort, nunca lanza) / `listEmailLog` (paginado); instrumentados los correos **admin** de **estado de pedido** y **confirmación de pago** (sent/failed, reemplazando el `.catch` mudo — AC-1/AC-4); vista admin **`/emails`** (menú Sistema, gated por permiso de datos). **Pendiente:** instrumentar los envíos del storefront (confirmación de compra, back-in-stock, avisos VIP) + **reintentos con backoff + idempotencia por (tipo, entidad)** (AC-2).
 
 | # | Escenario | Resultado esperado |
 |---|-----------|-------------------|

@@ -409,6 +409,35 @@ export type Database = {
         }
         Relationships: []
       }
+      email_log: {
+        Row: {
+          id: number
+          tenant_id: string
+          to_email: string
+          type: string
+          provider: string | null
+          status: string
+          entity: string | null
+          error: string | null
+          created_at: string
+        }
+        Insert: {
+          id?: number
+          tenant_id?: string
+          to_email: string
+          type: string
+          provider?: string | null
+          status: string
+          entity?: string | null
+          error?: string | null
+          created_at?: string
+        }
+        Update: {
+          status?: string
+          error?: string | null
+        }
+        Relationships: []
+      }
       redirects: {
         Row: {
           id: number
