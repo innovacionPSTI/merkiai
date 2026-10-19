@@ -271,7 +271,7 @@
 
 **Estimación:** L (8 puntos)
 **Módulo:** modelo de bundle, PDP, carrito, inventario compuesto
-**Estado:** 🔲 Pendiente (roadmap)
+**Estado:** 🟡 Fase 1 (v146) — modelo + admin. Tablas `bundles` + `bundle_components` (`e17/47`, RLS lectura pública de activos + gestión is_admin). Lógica **pura y testeada** (10): `bundleMaxQty` (componente más restrictivo, backorder no limita), `isBundleAvailable`, `componentsListPrice`, `bundleSavings`, `validateBundle`. Admin `/bundles` (crear con componentes + precio propio, activar/eliminar). **Pendiente Fase 2:** compra en storefront (PDP/carrito como línea única) + descuento de stock por componente (RPC) en el checkout (AC-2/AC-4).
 
 | # | Escenario | Resultado esperado |
 |---|-----------|-------------------|

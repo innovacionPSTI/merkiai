@@ -442,6 +442,62 @@ export type Database = {
         }
         Relationships: []
       }
+      bundles: {
+        Row: {
+          id: number
+          tenant_id: string
+          name: string
+          slug: string
+          description: string | null
+          price: number
+          image_url: string | null
+          active: boolean
+          created_at: string
+          updated_at: string
+        }
+        Insert: {
+          id?: number
+          tenant_id?: string
+          name: string
+          slug: string
+          description?: string | null
+          price: number
+          image_url?: string | null
+          active?: boolean
+          created_at?: string
+          updated_at?: string
+        }
+        Update: {
+          name?: string
+          slug?: string
+          description?: string | null
+          price?: number
+          image_url?: string | null
+          active?: boolean
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      bundle_components: {
+        Row: {
+          id: number
+          tenant_id: string
+          bundle_id: number
+          variant_id: number
+          qty: number
+        }
+        Insert: {
+          id?: number
+          tenant_id?: string
+          bundle_id: number
+          variant_id: number
+          qty?: number
+        }
+        Update: {
+          qty?: number
+        }
+        Relationships: []
+      }
       gift_cards: {
         Row: {
           id: number
