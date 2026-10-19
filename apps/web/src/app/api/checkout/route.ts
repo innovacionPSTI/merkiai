@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { createOrder, createServerClient, resolveActivePayment, gatewayFromInstance, getStockForVariants, TuCompraGateway, ensureCustomer, listActivePromotions, computePromotions, getGiftCardByCode, getStoreCreditBalance, computeRedemption, redeemStoreValue, applyStockForOrder, getBundlesByIds, expandBundleLines, getCouponByCode, validateCoupon } from '@merkiai/database'
+import { createOrder, createServerClient, resolveActivePayment, gatewayFromInstance, getStockForVariants, TuCompraGateway, ensureCustomer, listActivePromotions, computePromotions, getGiftCardByCode, getStoreCreditBalance, computeRedemption, redeemStoreValue, refundStoreValue, applyStockForOrder, getBundlesByIds, expandBundleLines, getCouponByCode, validateCoupon } from '@merkiai/database'
 import { stackServerApp } from '@/stack'
 import { baseUrlFromRequest } from '@/lib/base-url'
 import { resolveTenant } from '@/lib/tenant-context';
@@ -115,6 +115,11 @@ export async function POST(req: NextRequest) {
       },
     )
   }
+
+  // HU-298 · estado de compensación: si el crédito ya se consumió y la creación
+  // del pedido falla, el catch revierte (reverso) para no perder valor.
+  let redeemState: { tenantId: string; giftCardId: number | null; giftCardAmount: number; customerId: string | null; storeCreditAmount: number } | null = null
+  let orderWasCreated = false
 
   try {
     const body = await req.json()
@@ -302,6 +307,7 @@ export async function POST(req: NextRequest) {
     let giftCardAmount = 0
     let storeCreditAmount = 0
     let creditCustomerId: string | null = null
+    let appliedGiftCardId: number | null = null
     if (gift_card_code || use_store_credit) {
       try {
         const mdb = getMachineDb(tenantId)
@@ -337,6 +343,7 @@ export async function POST(req: NextRequest) {
         })
         giftCardAmount = applied.giftCardApplied
         storeCreditAmount = applied.storeCreditApplied
+        appliedGiftCardId = giftCardAmount > 0 ? giftCardId : null
         if (!giftCardAmount) giftCardCodeApplied = null
         effectiveTotal = Math.max(0, effectiveTotal - giftCardAmount - storeCreditAmount)
       } catch (e) {
@@ -347,6 +354,9 @@ export async function POST(req: NextRequest) {
       }
     }
     const creditPaid = giftCardAmount + storeCreditAmount
+    if (creditPaid > 0) {
+      redeemState = { tenantId, giftCardId: appliedGiftCardId, giftCardAmount, customerId: creditCustomerId, storeCreditAmount }
+    }
     const creditOrderFields = {
       gift_card_code: giftCardCodeApplied,
       gift_card_amount: giftCardAmount,
@@ -426,6 +436,7 @@ export async function POST(req: NextRequest) {
         ...creditOrderFields,
       }, mdb)
       await applyStockForOrder(order.order_number).catch((e) => console.error('[checkout] applyStock credit:', e instanceof Error ? e.message : e))
+      orderWasCreated = true
       await autoSaveAddress()
       return NextResponse.json({ order_number: order.order_number, order_id: order.id, payment_url: null, manual: true, paid_with_credit: true })
     }
@@ -451,6 +462,7 @@ export async function POST(req: NextRequest) {
         carrier_name,
         ...creditOrderFields,
       }, getMachineDb(tenantId))
+      orderWasCreated = true
       await autoSaveAddress()
       return NextResponse.json({
         order_number: order.order_number,
@@ -488,6 +500,7 @@ export async function POST(req: NextRequest) {
         shipping_addr: address, items: orderItems, subtotal: serverSubtotal, shipping_cost: shipping_cost ?? 0, discount: effectiveDiscount, total: effectiveTotal,
         payment_method: 'tucompra', skydropx_rate_id, carrier_name, ...creditOrderFields,
       }, getMachineDb(tenantId))
+      orderWasCreated = true
       await autoSaveAddress()
 
       const tcCreds = active!.credentials
@@ -623,6 +636,7 @@ export async function POST(req: NextRequest) {
       carrier_name,
       ...creditOrderFields,
     }, getMachineDb(tenantId))
+    orderWasCreated = true
 
     await autoSaveAddress()
 
@@ -652,6 +666,12 @@ export async function POST(req: NextRequest) {
     })
   } catch (err) {
     console.error('[checkout] Error:', err)
+    // HU-298 · si el crédito se consumió pero no se llegó a crear el pedido,
+    // se revierte (reverso) para no dejar "crédito consumido sin pedido".
+    if (redeemState && !orderWasCreated) {
+      await refundStoreValue(getMachineDb(redeemState.tenantId), redeemState)
+        .catch((e) => console.error('[checkout] reverso de crédito:', e instanceof Error ? e.message : e))
+    }
     return NextResponse.json({ error: 'Error interno' }, { status: 500 })
   }
 }

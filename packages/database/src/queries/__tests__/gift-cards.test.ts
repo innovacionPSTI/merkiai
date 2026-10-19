@@ -1,4 +1,4 @@
-import { normalizeGiftCardCode, generateGiftCardCode, isGiftCardRedeemable, computeRedemption, redeemGiftCard, computeStoreValueReconciliation } from '../gift-cards'
+import { normalizeGiftCardCode, generateGiftCardCode, isGiftCardRedeemable, computeRedemption, redeemGiftCard, computeStoreValueReconciliation, redeemStoreValue, refundStoreValue } from '../gift-cards'
 
 describe('gift cards (HU-148)', () => {
   describe('normalizeGiftCardCode', () => {
@@ -67,6 +67,20 @@ describe('gift cards (HU-148)', () => {
     it('devuelve 0 si el guard optimista no afecta filas (concurrencia)', async () => {
       const applied = await redeemGiftCard(1, 1000, dbWith(5000, []))
       expect(applied).toBe(0)
+    })
+  })
+
+  describe('redeemStoreValue / refundStoreValue (HU-298 RPC)', () => {
+    it('redeemStoreValue llama al RPC y devuelve lo aplicado', async () => {
+      const rpc = jest.fn().mockResolvedValue({ data: { gift_card_applied: 3000, store_credit_applied: 1000 }, error: null })
+      const r = await redeemStoreValue({ rpc } as any, { tenantId: 't1', giftCardId: 5, giftCardAmount: 3000, customerId: 'c1', storeCreditAmount: 1000, orderId: null })
+      expect(rpc).toHaveBeenCalledWith('redeem_store_value', expect.objectContaining({ p_tenant: 't1', p_gift_card_id: 5, p_gift_card_amount: 3000, p_store_credit_amount: 1000 }))
+      expect(r).toEqual({ giftCardApplied: 3000, storeCreditApplied: 1000 })
+    })
+    it('refundStoreValue llama al RPC de reverso', async () => {
+      const rpc = jest.fn().mockResolvedValue({ error: null })
+      await refundStoreValue({ rpc } as any, { tenantId: 't1', giftCardId: 5, giftCardAmount: 3000, customerId: 'c1', storeCreditAmount: 1000 })
+      expect(rpc).toHaveBeenCalledWith('refund_store_value', expect.objectContaining({ p_tenant: 't1', p_gift_card_id: 5, p_gift_card_amount: 3000, p_store_credit_amount: 1000 }))
     })
   })
 

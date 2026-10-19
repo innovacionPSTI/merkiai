@@ -152,6 +152,26 @@ export async function redeemStoreValue(
   return { giftCardApplied: Number(r.gift_card_applied ?? 0), storeCreditApplied: Number(r.store_credit_applied ?? 0) }
 }
 
+/**
+ * Reverso (compensación) de un canje previo (HU-298) vía RPC `refund_store_value`:
+ * restituye el saldo de la gift card y abona de vuelta el saldo a favor. Se usa
+ * cuando la creación del pedido falla tras aplicar el crédito. Best-effort.
+ */
+export async function refundStoreValue(
+  db: Db,
+  input: { tenantId: string; giftCardId: number | null; giftCardAmount: number; customerId: string | null; storeCreditAmount: number },
+): Promise<void> {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const { error } = await (db as any).rpc('refund_store_value', {
+    p_tenant: input.tenantId,
+    p_gift_card_id: input.giftCardId,
+    p_gift_card_amount: Math.max(0, Math.round(input.giftCardAmount)),
+    p_customer_id: input.customerId,
+    p_store_credit_amount: Math.max(0, Math.round(input.storeCreditAmount)),
+  })
+  if (error) throw error
+}
+
 export async function setGiftCardActive(id: number, active: boolean, db: Db): Promise<void> {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const { error } = await db.from('gift_cards').update({ active, updated_at: new Date().toISOString() } as any).eq('id', id)
