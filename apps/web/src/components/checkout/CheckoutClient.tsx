@@ -110,6 +110,13 @@ export default function CheckoutClient({ initialEmail = '', defaultAddress = nul
   const [couponLoading, setCouponLoading]   = useState(false)
   const [couponError, setCouponError]       = useState('')
 
+  // HU-148 · gift card + saldo a favor
+  const [giftCardCode, setGiftCardCode]     = useState('')
+  const [giftCardBalance, setGiftCardBalance] = useState(0)   // saldo disponible de la gift card validada
+  const [giftCardError, setGiftCardError]   = useState('')
+  const [storeCredit, setStoreCredit]       = useState(0)     // saldo a favor del cliente
+  const [useCredit, setUseCredit]           = useState(false)
+
   // Cargar config de envío y pasarelas activas al montar
   useEffect(() => {
     fetch('/api/shipping/config')
@@ -266,6 +273,28 @@ export default function CheckoutClient({ initialEmail = '', defaultAddress = nul
     setCouponError('')
   }
 
+  // HU-148 · cargar saldo a favor al montar (si hay sesión).
+  useEffect(() => {
+    fetch('/api/checkout/credit', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({}) })
+      .then((r) => r.ok ? r.json() : null)
+      .then((d) => { if (d) setStoreCredit(d.storeCredit ?? 0) })
+      .catch(() => {})
+  }, [])
+
+  const applyGiftCard = async () => {
+    if (!giftCardCode.trim()) return
+    setGiftCardError('')
+    try {
+      const res = await fetch('/api/checkout/credit', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ code: giftCardCode.trim() }),
+      })
+      const d = await res.json()
+      if (d?.giftCard?.balance > 0) setGiftCardBalance(d.giftCard.balance)
+      else { setGiftCardBalance(0); setGiftCardError('Gift card inválida o sin saldo.') }
+    } catch { setGiftCardError('Error validando la gift card.') }
+  }
+
   const sub = subtotal()
   const isFreeShipping = shippingCfg.free_shipping_enabled && sub >= shippingCfg.free_shipping_min_amount
 
@@ -276,7 +305,13 @@ export default function CheckoutClient({ initialEmail = '', defaultAddress = nul
       ? selectedRate.total_price
       : shippingCfg.fixed_rate
 
+  // `total` es el monto ANTES de gift card / saldo: el servidor aplica el canje
+  // y es la autoridad del cobro. Aquí solo se previsualiza el crédito.
   const total = Math.max(0, sub + shippingCost - couponDiscount)
+  const giftCardUse = Math.min(giftCardBalance, total)
+  const creditUse = useCredit ? Math.min(storeCredit, total - giftCardUse) : 0
+  const creditApplied = giftCardUse + creditUse
+  const displayTotal = Math.max(0, total - creditApplied)
 
   if (items.length === 0) {
     return (
@@ -306,6 +341,8 @@ export default function CheckoutClient({ initialEmail = '', defaultAddress = nul
           shipping_cost: shippingCost,
           discount: couponDiscount,
           coupon_code: couponApplied,
+          gift_card_code: giftCardBalance > 0 ? giftCardCode.trim() : null,
+          use_store_credit: useCredit,
           shipping_rate: selectedRate
             ? {
                 id: selectedRate.id,
@@ -787,6 +824,31 @@ export default function CheckoutClient({ initialEmail = '', defaultAddress = nul
                 )}
               </div>
 
+              {/* HU-148 · Gift card + saldo a favor */}
+              <div className="space-y-2">
+                <div className="flex gap-2">
+                  <input
+                    type="text" value={giftCardCode}
+                    onChange={(e) => { setGiftCardCode(e.target.value); setGiftCardBalance(0); setGiftCardError('') }}
+                    onKeyDown={(e) => e.key === 'Enter' && applyGiftCard()}
+                    placeholder="Código de gift card"
+                    className="flex-1 rounded-lg border border-brand-primary/15 px-3 py-2 font-brand text-sm focus:border-brand-primary focus:outline-none"
+                  />
+                  <button onClick={applyGiftCard} type="button"
+                    className="font-brand text-sm border border-brand-primary/20 text-brand-primary rounded-lg px-4 py-2 hover:bg-brand-cream">
+                    Aplicar
+                  </button>
+                </div>
+                {giftCardError && <p className="font-brand text-xs text-red-500">{giftCardError}</p>}
+                {giftCardBalance > 0 && <p className="font-brand text-xs text-green-600">🎁 Gift card válida — saldo {fmt(giftCardBalance)}</p>}
+                {storeCredit > 0 && (
+                  <label className="flex items-center gap-2 font-brand text-sm text-brand-primary">
+                    <input type="checkbox" checked={useCredit} onChange={(e) => setUseCredit(e.target.checked)} className="w-4 h-4 accent-brand-primary" />
+                    Usar mi saldo a favor ({fmt(storeCredit)})
+                  </label>
+                )}
+              </div>
+
               {/* Totales */}
               <div className="border-t border-gray-100 pt-3 space-y-2 text-sm font-brand">
                 <div className="flex justify-between">
@@ -814,10 +876,16 @@ export default function CheckoutClient({ initialEmail = '', defaultAddress = nul
                 {selectedRate && !isFreeShipping && (
                   <p className="text-xs text-brand-primary/40">{selectedRate.carrier_name} · {selectedRate.service_name}</p>
                 )}
+                {creditApplied > 0 && (
+                  <div className="flex justify-between text-green-600">
+                    <span>Gift card / saldo</span>
+                    <span>−{fmt(creditApplied)}</span>
+                  </div>
+                )}
                 <hr className="border-brand-primary/10" />
                 <div className="flex justify-between font-bold text-brand-primary text-base">
                   <span>Total</span>
-                  <span>{fmt(total)}</span>
+                  <span>{fmt(displayTotal)}</span>
                 </div>
               </div>
             </div>

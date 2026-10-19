@@ -95,6 +95,39 @@ export async function issueGiftCard(
   throw new Error('No se pudo generar un código único para la gift card.')
 }
 
+/**
+ * Decrementa el saldo de una gift card de forma ATÓMICA (HU-148 Fase 2). El
+ * UPDATE condicional (`balance >= amount`) evita sobre-canje por concurrencia:
+ * si otra petición ya gastó el saldo, no afecta ninguna fila y devuelve 0.
+ * Devuelve el monto efectivamente aplicado.
+ */
+export async function redeemGiftCard(giftCardId: number, amount: number, db: Db): Promise<number> {
+  const amt = Math.round(amount)
+  if (!(amt > 0)) return 0
+  // Supabase JS no expresa `balance = balance - amt` directo: se hace con
+  // lectura + escritura CONDICIONAL por el saldo actual (guard optimista de
+  // igualdad). Si otra petición cambió el saldo, se reintenta con el valor nuevo.
+  for (let attempt = 0; attempt < 5; attempt++) {
+    const { data: row } = await db.from('gift_cards').select('balance, active, expires_at').eq('id', giftCardId).maybeSingle()
+    if (!row) return 0
+    const gc = row as { balance: number; active: boolean; expires_at: string | null }
+    if (!isGiftCardRedeemable(gc)) return 0
+    const applied = Math.min(gc.balance, amt)
+    if (applied <= 0) return 0
+    const next = gc.balance - applied
+    const { data: updated } = await db
+      .from('gift_cards')
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      .update({ balance: next, updated_at: new Date().toISOString() } as any)
+      .eq('id', giftCardId)
+      .eq('balance', gc.balance) // guard optimista: solo si nadie cambió el saldo
+      .select('id')
+    if (updated && updated.length > 0) return applied
+    // alguien más modificó el saldo → reintentar con el valor nuevo
+  }
+  return 0
+}
+
 export async function setGiftCardActive(id: number, active: boolean, db: Db): Promise<void> {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const { error } = await db.from('gift_cards').update({ active, updated_at: new Date().toISOString() } as any).eq('id', id)

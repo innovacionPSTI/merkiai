@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { createOrder, createServerClient, resolveActivePayment, gatewayFromInstance, getStockForVariants, TuCompraGateway, ensureCustomer, listActivePromotions, computePromotions } from '@merkiai/database'
+import { createOrder, createServerClient, resolveActivePayment, gatewayFromInstance, getStockForVariants, TuCompraGateway, ensureCustomer, listActivePromotions, computePromotions, getGiftCardByCode, redeemGiftCard, getStoreCreditBalance, addStoreCredit, computeRedemption, applyStockForOrder } from '@merkiai/database'
 import { stackServerApp } from '@/stack'
 import { baseUrlFromRequest } from '@/lib/base-url'
 import { resolveTenant } from '@/lib/tenant-context';
@@ -135,6 +135,9 @@ export async function POST(req: NextRequest) {
       shipping_rate,
       // Datos del medio de pago Tu Compra (modalidad integrador, elegidos en el checkout)
       tucompra,
+      // HU-148 · pago con gift card / saldo a favor
+      gift_card_code,
+      use_store_credit,
     } = body
 
     // Extract carrier info from the rate the user selected
@@ -237,7 +240,62 @@ export async function POST(req: NextRequest) {
 
     const extraDiscount = promoDiscount + vipDiscount
     const effectiveDiscount = Number(discount ?? 0) + extraDiscount
-    const effectiveTotal = Math.max(0, Number(total ?? 0) - extraDiscount)
+    let effectiveTotal = Math.max(0, Number(total ?? 0) - extraDiscount)
+
+    // ── HU-148 Fase 2 · canje de gift card / saldo a favor (guarded). Valida y
+    // aplica server-side sobre el monto ya descontado. Decremento ATÓMICO de la
+    // gift card + asiento en el ledger de saldo. Reduce el monto a cobrar a la
+    // pasarela. Solo actúa si el cliente envió un código o pidió usar su saldo.
+    let giftCardCodeApplied: string | null = null
+    let giftCardAmount = 0
+    let storeCreditAmount = 0
+    let creditCustomerId: string | null = null
+    if (gift_card_code || use_store_credit) {
+      try {
+        const mdb = getMachineDb(tenantId)
+        // Saldo disponible de gift card (si se envió un código válido).
+        let giftCardId: number | null = null
+        let giftCardBalance = 0
+        if (gift_card_code) {
+          const gc = await getGiftCardByCode(String(gift_card_code), mdb)
+          if (gc && gc.active && gc.balance > 0 && (!gc.expires_at || Date.now() < new Date(gc.expires_at).getTime())) {
+            giftCardId = gc.id; giftCardBalance = gc.balance; giftCardCodeApplied = gc.code
+          }
+        }
+        // Saldo a favor del cliente autenticado.
+        let storeCredit = 0
+        if (use_store_credit) {
+          const su = await stackServerApp.getUser().catch(() => null)
+          if (su?.id) {
+            const { data: cust } = await mdb.from('customers').select('id').eq('stack_id', su.id).maybeSingle()
+            if (cust?.id) { creditCustomerId = cust.id as string; storeCredit = await getStoreCreditBalance(creditCustomerId, mdb) }
+          }
+        }
+        const plan = computeRedemption(effectiveTotal, giftCardBalance, storeCredit)
+        // Aplica gift card (atómico) y luego saldo sobre el restante real.
+        if (giftCardId && plan.giftCardApplied > 0) {
+          giftCardAmount = await redeemGiftCard(giftCardId, plan.giftCardApplied, mdb)
+        }
+        const afterGc = Math.max(0, effectiveTotal - giftCardAmount)
+        storeCreditAmount = Math.min(storeCredit, afterGc, use_store_credit && creditCustomerId ? plan.creditApplied : 0)
+        if (creditCustomerId && storeCreditAmount > 0) {
+          await addStoreCredit({ customerId: creditCustomerId, delta: -storeCreditAmount, reason: 'order' }, mdb, tenantId)
+        }
+        if (!giftCardAmount) giftCardCodeApplied = null
+        effectiveTotal = Math.max(0, effectiveTotal - giftCardAmount - storeCreditAmount)
+      } catch (e) {
+        // Fail-safe: ante error de canje no se cobra el crédito ni se bloquea;
+        // se sigue con el monto sin crédito.
+        console.error('[checkout] canje gift card/saldo:', e instanceof Error ? e.message : e)
+        giftCardCodeApplied = null; giftCardAmount = 0; storeCreditAmount = 0
+      }
+    }
+    const creditPaid = giftCardAmount + storeCreditAmount
+    const creditOrderFields = {
+      gift_card_code: giftCardCodeApplied,
+      gift_card_amount: giftCardAmount,
+      store_credit_amount: storeCreditAmount,
+    }
 
     // ── SEGURIDAD: la pasarela se deriva SIEMPRE del servidor (instancia activa),
     // nunca del `payment_method` que envía el cliente. ADR-004: resuelve la
@@ -288,6 +346,34 @@ export async function POST(req: NextRequest) {
       } catch { /* non-critical */ }
     }
 
+    // ── HU-148 · Pago TOTAL con crédito: si gift card + saldo cubren todo, no
+    // hay pasarela. Se crea la orden pagada (manual/approved), se aplica stock
+    // (idempotente) y se enlaza el consumo de saldo al pedido.
+    if (creditPaid > 0 && effectiveTotal <= 0) {
+      const mdb = getMachineDb(tenantId)
+      const order = await createOrder({
+        tenant_id: tenantId,
+        customer_id: customerId,
+        customer_name: name,
+        customer_email: email,
+        customer_phone: phone ?? null,
+        shipping_addr: address,
+        items,
+        subtotal,
+        shipping_cost: shipping_cost ?? 0,
+        discount: effectiveDiscount,
+        total: 0,
+        payment_method: 'manual',
+        payment_status: 'approved',
+        skydropx_rate_id,
+        carrier_name,
+        ...creditOrderFields,
+      }, mdb)
+      await applyStockForOrder(order.order_number).catch((e) => console.error('[checkout] applyStock credit:', e instanceof Error ? e.message : e))
+      await autoSaveAddress()
+      return NextResponse.json({ order_number: order.order_number, order_id: order.id, payment_url: null, manual: true, paid_with_credit: true })
+    }
+
     // ── Caso 'none': no hay pasarela de pago activa → el pedido se crea como
     // 'manual' y queda payment_status 'pending', sujeto a validación del
     // administrador. No se genera ningún pago en línea.
@@ -307,6 +393,7 @@ export async function POST(req: NextRequest) {
         payment_method: 'manual',
         skydropx_rate_id,
         carrier_name,
+        ...creditOrderFields,
       }, getMachineDb(tenantId))
       await autoSaveAddress()
       return NextResponse.json({
@@ -343,7 +430,7 @@ export async function POST(req: NextRequest) {
         customer_id: customerId,
         customer_name: name, customer_email: email, customer_phone: phone ?? null,
         shipping_addr: address, items, subtotal, shipping_cost: shipping_cost ?? 0, discount: effectiveDiscount, total: effectiveTotal,
-        payment_method: 'tucompra', skydropx_rate_id, carrier_name,
+        payment_method: 'tucompra', skydropx_rate_id, carrier_name, ...creditOrderFields,
       }, getMachineDb(tenantId))
       await autoSaveAddress()
 
@@ -478,6 +565,7 @@ export async function POST(req: NextRequest) {
       payment_method: activeProvider as 'wompi' | 'mercadopago' | 'tucompra' | 'bold',
       skydropx_rate_id,
       carrier_name,
+      ...creditOrderFields,
     }, getMachineDb(tenantId))
 
     await autoSaveAddress()

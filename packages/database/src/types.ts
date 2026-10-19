@@ -242,6 +242,9 @@ export type Database = {
           tucompra_codigo_seguimiento: string | null
           tucompra_numero_transaccion: string | null
           coupon_code: string | null
+          gift_card_code: string | null
+          gift_card_amount: number
+          store_credit_amount: number
           stock_applied: boolean
           stock_restored: boolean
           created_at: string
@@ -280,6 +283,9 @@ export type Database = {
           tucompra_codigo_seguimiento?: string | null
           tucompra_numero_transaccion?: string | null
           coupon_code?: string | null
+          gift_card_code?: string | null
+          gift_card_amount?: number
+          store_credit_amount?: number
           stock_applied?: boolean
           stock_restored?: boolean
           created_at?: string
@@ -318,6 +324,9 @@ export type Database = {
           tucompra_codigo_seguimiento?: string | null
           tucompra_numero_transaccion?: string | null
           coupon_code?: string | null
+          gift_card_code?: string | null
+          gift_card_amount?: number
+          store_credit_amount?: number
           stock_applied?: boolean
           stock_restored?: boolean
           updated_at?: string

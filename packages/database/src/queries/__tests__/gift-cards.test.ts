@@ -1,4 +1,4 @@
-import { normalizeGiftCardCode, generateGiftCardCode, isGiftCardRedeemable, computeRedemption } from '../gift-cards'
+import { normalizeGiftCardCode, generateGiftCardCode, isGiftCardRedeemable, computeRedemption, redeemGiftCard } from '../gift-cards'
 
 describe('gift cards (HU-148)', () => {
   describe('normalizeGiftCardCode', () => {
@@ -39,6 +39,34 @@ describe('gift cards (HU-148)', () => {
     })
     it('sin saldos → todo queda por pagar', () => {
       expect(computeRedemption(5000, 0, 0)).toEqual({ giftCardApplied: 0, creditApplied: 0, remaining: 5000 })
+    })
+  })
+
+  describe('redeemGiftCard (atómico)', () => {
+    function dbWith(balance: number, updateRows: unknown[] = [{ id: 1 }]) {
+      const selectSingle = jest.fn().mockResolvedValue({ data: { balance, active: true, expires_at: null } })
+      const updEqBalance = jest.fn().mockResolvedValue({ data: updateRows })
+      const updEqId = jest.fn(() => ({ eq: updEqBalance }))
+      const updSelect = jest.fn(() => ({ eq: updEqId }))        // .select('id')... but chain is update().eq().eq().select()
+      // Chain real: update().eq('id').eq('balance').select('id')
+      const chain = {
+        update: jest.fn(() => ({ eq: () => ({ eq: () => ({ select: () => Promise.resolve({ data: updateRows }) }) }) })),
+        select: jest.fn(() => ({ eq: () => ({ maybeSingle: selectSingle }) })),
+      }
+      void updSelect; void updEqId; void updEqBalance
+      return { from: jest.fn(() => chain) } as any
+    }
+    it('aplica el mínimo entre saldo y monto', async () => {
+      const applied = await redeemGiftCard(1, 3000, dbWith(5000))
+      expect(applied).toBe(3000)
+    })
+    it('si el saldo es menor, aplica solo el saldo', async () => {
+      const applied = await redeemGiftCard(1, 9000, dbWith(2000))
+      expect(applied).toBe(2000)
+    })
+    it('devuelve 0 si el guard optimista no afecta filas (concurrencia)', async () => {
+      const applied = await redeemGiftCard(1, 1000, dbWith(5000, []))
+      expect(applied).toBe(0)
     })
   })
 })

@@ -1143,7 +1143,7 @@
 
 **Estimación:** L (8 puntos)
 **Módulo:** `packages/database` (`gift_cards`/`store_credit`), checkout (medio de pago), admin
-**Estado:** 🟡 Fase 1 (v144) — emisión y saldo. Tablas `gift_cards` + `store_credit_ledger` (`e17/45`, RLS). Helpers puros (código legible sin ambiguos, `isGiftCardRedeemable`, `computeRedemption`) + queries (emitir/listar/getByCode gift cards; abonar/consultar/listar saldo). Admin `/gift-cards`: emitir gift cards + ajustar/consultar saldo a favor por email. **AC-3 ✅:** al aprobar una devolución se puede **reembolsar como saldo** (`creditAmount` → ledger). **Pendiente Fase 2:** canje en el checkout (AC-1/AC-2: validación + decremento atómico + pago total).
+**Estado:** ✅ Hecho (v145) — **Fase 1** (emisión + saldo + AC-3, v144) + **Fase 2** canje en checkout: `redeemGiftCard` (decremento **atómico** con guard optimista), endpoint `/api/checkout/credit` (previsualización), canje server-side en `/api/checkout` (guarded: reduce el monto cobrado a la pasarela; **pago total** con crédito → orden `manual/approved` + `applyStockForOrder`), columnas `orders.gift_card_code/gift_card_amount/store_credit_amount` (`e17/46`), y UI en el checkout (código + usar saldo). El total es autoridad del servidor.
 
 | # | Escenario | Resultado esperado |
 |---|-----------|-------------------|

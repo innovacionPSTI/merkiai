@@ -18,6 +18,12 @@ export interface CreateOrderInput {
   skydropx_rate_id?: string | null
   carrier_name?: string | null
   coupon_code?: string | null
+  /** HU-148 · pago con gift card / saldo a favor. */
+  gift_card_code?: string | null
+  gift_card_amount?: number
+  store_credit_amount?: number
+  /** Permite forzar estado pagado (pago total con crédito, sin pasarela). */
+  payment_status?: 'pending' | 'approved' | 'rejected' | 'refunded'
 }
 
 export async function createOrder(input: CreateOrderInput, db: Db): Promise<Order> {
@@ -38,7 +44,7 @@ export async function createOrder(input: CreateOrderInput, db: Db): Promise<Orde
       ...input,
       discount: input.discount ?? 0,
       status: 'pending',
-      payment_status: 'pending',
+      payment_status: input.payment_status ?? 'pending',
     })
     .select()
     .single()
