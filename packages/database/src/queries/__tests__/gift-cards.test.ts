@@ -1,4 +1,4 @@
-import { normalizeGiftCardCode, generateGiftCardCode, isGiftCardRedeemable, computeRedemption, redeemGiftCard } from '../gift-cards'
+import { normalizeGiftCardCode, generateGiftCardCode, isGiftCardRedeemable, computeRedemption, redeemGiftCard, computeStoreValueReconciliation } from '../gift-cards'
 
 describe('gift cards (HU-148)', () => {
   describe('normalizeGiftCardCode', () => {
@@ -67,6 +67,17 @@ describe('gift cards (HU-148)', () => {
     it('devuelve 0 si el guard optimista no afecta filas (concurrencia)', async () => {
       const applied = await redeemGiftCard(1, 1000, dbWith(5000, []))
       expect(applied).toBe(0)
+    })
+  })
+
+  describe('computeStoreValueReconciliation (HU-300 AC-5)', () => {
+    it('agrega emitido/restante/canjeado de gift cards y abonos/consumos de saldo', () => {
+      const r = computeStoreValueReconciliation(
+        [{ initial_balance: 10000, balance: 4000 }, { initial_balance: 5000, balance: 5000 }],
+        [{ delta: 8000 }, { delta: -3000 }, { delta: 2000 }],
+      )
+      expect(r.giftCards).toEqual({ issued: 15000, remaining: 9000, redeemed: 6000, count: 2 })
+      expect(r.storeCredit).toEqual({ credited: 10000, consumed: 3000, balance: 7000 })
     })
   })
 })

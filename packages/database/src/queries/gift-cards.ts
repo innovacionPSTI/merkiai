@@ -177,6 +177,42 @@ export async function listStoreCredit(customerId: string, db: Db): Promise<Store
   return (data ?? []) as StoreCreditEntry[]
 }
 
+// ── Conciliación de valor (HU-300 AC-5) ───────────────────────────────────────
+
+export interface StoreValueReconciliation {
+  giftCards: { issued: number; remaining: number; redeemed: number; count: number }
+  storeCredit: { credited: number; consumed: number; balance: number }
+}
+
+/** Agrega los montos puros de gift cards + ledger de saldo. Pura. */
+export function computeStoreValueReconciliation(
+  giftCards: Array<{ initial_balance: number; balance: number }>,
+  ledger: Array<{ delta: number }>,
+): StoreValueReconciliation {
+  const issued = giftCards.reduce((s, g) => s + Number(g.initial_balance ?? 0), 0)
+  const remaining = giftCards.reduce((s, g) => s + Number(g.balance ?? 0), 0)
+  let credited = 0
+  let consumed = 0
+  for (const l of ledger) {
+    const d = Number(l.delta ?? 0)
+    if (d >= 0) credited += d
+    else consumed += -d
+  }
+  return {
+    giftCards: { issued, remaining, redeemed: issued - remaining, count: giftCards.length },
+    storeCredit: { credited, consumed, balance: credited - consumed },
+  }
+}
+
+/** Reporte de valor emitido vs. canjeado (gift cards + saldo a favor) del tenant. */
+export async function getStoreValueReconciliation(db: Db): Promise<StoreValueReconciliation> {
+  const [gc, led] = await Promise.all([
+    db.from('gift_cards').select('initial_balance, balance'),
+    db.from('store_credit_ledger').select('delta'),
+  ])
+  return computeStoreValueReconciliation((gc.data ?? []) as any, (led.data ?? []) as any)
+}
+
 /** Registra un movimiento de saldo (+abono / −consumo). Append-only. */
 export async function addStoreCredit(
   input: { customerId: string; delta: number; reason?: string; orderId?: number | null },
