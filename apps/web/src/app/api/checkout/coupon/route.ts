@@ -3,28 +3,24 @@
  * Valida un código de cupón y retorna el descuento calculado.
  */
 import { NextRequest, NextResponse } from 'next/server'
-import { getCouponByCode, validateCoupon } from '@merkiai/database'
+import { getCouponByCode, validateCoupon, checkRateLimit, reportError } from '@merkiai/database'
 import { resolveTenant } from '@/lib/tenant-context'
 import { getMachineDb } from '@/lib/machine-db'
 
-// HU-300 · rate limit básico anti-enumeración (por IP, en memoria por instancia).
-const WINDOW_MS = 60_000
-const MAX = 20
-const hits = new Map<string, { count: number; resetAt: number }>()
-function limited(ip: string): boolean {
-  const now = Date.now()
-  const e = hits.get(ip)
-  if (!e || now > e.resetAt) { hits.set(ip, { count: 1, resetAt: now + WINDOW_MS }); return false }
-  e.count++
-  return e.count > MAX
-}
 // Mensaje NEUTRO: no distingue "no existe" de "sin saldo/caducado" (evita enumeración).
 const NEUTRAL = 'El cupón no es válido o no aplica a tu compra.'
 
 export async function POST(req: NextRequest) {
   try {
     const ip = req.headers.get('x-forwarded-for')?.split(',')[0]?.trim() || 'unknown'
-    if (limited(ip)) return NextResponse.json({ error: 'Demasiados intentos. Espera un momento.' }, { status: 429 })
+    // Tenant-scoped: el cupón pertenece al tenant resuelto por Host (no cross-tenant).
+    const { tenantId } = await resolveTenant()
+    const db = getMachineDb(tenantId)
+
+    // HU-300 · rate-limit DISTRIBUIDO anti-enumeración + bloqueo (cooldown) + alerta.
+    const rl = await checkRateLimit(db, { tenantId, bucket: 'checkout.coupon', ident: ip, windowSecs: 60, max: 20, lockSecs: 300 })
+    if (rl.justLocked) reportError(new Error('rate-limit lock'), { scope: 'abuse.checkout.coupon', tenantId, extra: { ip, count: rl.count } })
+    if (!rl.allowed) return NextResponse.json({ error: 'Demasiados intentos. Espera un momento.' }, { status: 429 })
 
     const { code, subtotal } = await req.json()
 
@@ -32,9 +28,7 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'Se requiere code y subtotal' }, { status: 400 })
     }
 
-    // Tenant-scoped: el cupón pertenece al tenant resuelto por Host (no cross-tenant).
-    const { tenantId } = await resolveTenant()
-    const coupon = await getCouponByCode(code.trim(), getMachineDb(tenantId))
+    const coupon = await getCouponByCode(code.trim(), db)
     if (!coupon) {
       return NextResponse.json({ error: NEUTRAL }, { status: 422 })
     }

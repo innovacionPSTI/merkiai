@@ -17,6 +17,8 @@ const mockValidateCoupon = jest.fn()
 jest.mock('@merkiai/database', () => ({
   getCouponByCode: (...args: unknown[]) => mockGetCouponByCode(...args),
   validateCoupon: (...args: unknown[]) => mockValidateCoupon(...args),
+  checkRateLimit: jest.fn(async () => ({ allowed: true, count: 1, blockedUntil: null, justLocked: false })),
+  reportError: jest.fn(),
 }))
 // HU-174/hardening: la ruta resuelve el tenant y usa un cliente tenant-scoped.
 jest.mock('@/lib/tenant-context', () => ({ resolveTenant: jest.fn(async () => ({ tenantId: 't1' })) }))

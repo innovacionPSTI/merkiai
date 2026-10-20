@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { getGiftCardByCode, getStoreCreditBalance, isGiftCardRedeemable } from '@merkiai/database'
+import { getGiftCardByCode, getStoreCreditBalance, isGiftCardRedeemable, checkRateLimit, reportError } from '@merkiai/database'
 import { stackServerApp } from '@/stack'
 import { resolveTenant } from '@/lib/tenant-context'
 import { getMachineDb } from '@/lib/machine-db'
@@ -9,25 +9,19 @@ import { getMachineDb } from '@/lib/machine-db'
  * gift card (si el código es válido) y el saldo a favor del cliente autenticado.
  * No modifica nada; el canje real ocurre en POST /api/checkout (server-side).
  */
-// HU-300 · rate limit básico anti-enumeración de gift cards (por IP, en memoria).
-const WINDOW_MS = 60_000
-const MAX = 20
-const hits = new Map<string, { count: number; resetAt: number }>()
-function limited(ip: string): boolean {
-  const now = Date.now()
-  const e = hits.get(ip)
-  if (!e || now > e.resetAt) { hits.set(ip, { count: 1, resetAt: now + WINDOW_MS }); return false }
-  e.count++
-  return e.count > MAX
-}
 
 export async function POST(req: NextRequest) {
   try {
     const ip = req.headers.get('x-forwarded-for')?.split(',')[0]?.trim() || 'unknown'
-    if (limited(ip)) return NextResponse.json({ giftCard: null, storeCredit: 0, error: 'Demasiados intentos.' }, { status: 429 })
-
     const { tenantId } = await resolveTenant()
     const db = getMachineDb(tenantId)
+
+    // HU-300 · rate-limit DISTRIBUIDO anti-enumeración de gift cards + bloqueo
+    // tras superar el umbral (cooldown). Alerta de abuso la primera vez que bloquea.
+    const rl = await checkRateLimit(db, { tenantId, bucket: 'checkout.credit', ident: ip, windowSecs: 60, max: 20, lockSecs: 300 })
+    if (rl.justLocked) reportError(new Error('rate-limit lock'), { scope: 'abuse.checkout.credit', tenantId, extra: { ip, count: rl.count } })
+    if (!rl.allowed) return NextResponse.json({ giftCard: null, storeCredit: 0, error: 'Demasiados intentos.' }, { status: 429 })
+
     const body = await req.json().catch(() => ({}))
 
     let giftCard: { balance: number } | null = null
