@@ -1,6 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { restoreStockForOrder, resolveEmailConfig, logAudit, recordEmail } from '@merkiai/database'
-import { sendShippingNotification, sendStatusNotification } from '@/lib/email'
+import { restoreStockForOrder, resolveEmailConfig, logAudit, recordEmail, sendTemplatedEmail } from '@merkiai/database'
 import { getAdminUser } from '@/lib/auth'
 import { getAdminDb } from '@/lib/admin-db'
 
@@ -46,36 +45,30 @@ export async function PATCH(
     if (NOTIFIABLE_STATUSES.has(status) && order) {
       const ec = await resolveEmailConfig(supabase, adminUser.tenantId).catch(() => null)
       if (ec) {
-        const emailConfig = { apiKey: ec.apiKey, fromEmail: ec.fromEmail, storeName: ec.storeName }
+        const emailConfig = { apiKey: ec.apiKey, fromEmail: ec.fromEmail, storeName: ec.storeName, emailProvider: ec.provider }
+        // HU-160 · usa la plantilla editable del tenant por estado (respeta el
+        // toggle de activación). HU-162 · registra el resultado en email_log.
+        const type = `order.${status}` // order.shipped | order.delivered | order.cancelled | ...
         try {
-          if (status === 'shipped') {
-            await sendShippingNotification(
-              {
-                order_number:    order.order_number,
-                customer_email:  order.customer_email,
-                customer_name:   order.customer_name,
-                // eslint-disable-next-line @typescript-eslint/no-explicit-any
-                tracking_number: (order as any).tracking_number ?? null,
-                // eslint-disable-next-line @typescript-eslint/no-explicit-any
-                carrier_name:    (order as any).carrier_name    ?? null,
-                // eslint-disable-next-line @typescript-eslint/no-explicit-any
-                label_url:       (order as any).label_url       ?? null,
-              },
-              emailConfig,
-            )
-          } else if (status === 'delivered' || status === 'cancelled') {
-            await sendStatusNotification(
-              { order_number: order.order_number, customer_email: order.customer_email, customer_name: order.customer_name },
+          const r = await sendTemplatedEmail(supabase, {
+            tenantId: adminUser.tenantId,
+            type,
+            to: order.customer_email,
+            vars: {
+              customer_name: order.customer_name,
+              order_number: order.order_number,
+              // eslint-disable-next-line @typescript-eslint/no-explicit-any
+              tracking_url: (order as any).label_url ?? '',
+              // eslint-disable-next-line @typescript-eslint/no-explicit-any
+              carrier_name: (order as any).carrier_name ?? '',
               status,
-              emailConfig,
-            )
-          }
-          // HU-162 · registro de email enviado.
-          await recordEmail(supabase, { tenantId: adminUser.tenantId, to: order.customer_email, type: 'order.status', provider: ec.provider, status: 'sent', entity: order.order_number })
+            },
+          }, emailConfig)
+          await recordEmail(supabase, { tenantId: adminUser.tenantId, to: order.customer_email, type, provider: ec.provider, status: r.status === 'sent' ? 'sent' : 'suppressed', entity: order.order_number })
         } catch (emailErr) {
           // HU-162 · reemplaza el `.catch` mudo: registra el fallo con trazabilidad.
           console.error('[status/route] email error:', emailErr instanceof Error ? emailErr.message : emailErr)
-          await recordEmail(supabase, { tenantId: adminUser.tenantId, to: order.customer_email, type: 'order.status', provider: ec.provider, status: 'failed', entity: order.order_number, error: emailErr instanceof Error ? emailErr.message : String(emailErr) })
+          await recordEmail(supabase, { tenantId: adminUser.tenantId, to: order.customer_email, type, provider: ec.provider, status: 'failed', entity: order.order_number, error: emailErr instanceof Error ? emailErr.message : String(emailErr) })
         }
       }
     }

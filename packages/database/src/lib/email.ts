@@ -7,6 +7,8 @@
  */
 
 import { getEmailProvider } from '../providers/email'
+import type { Db } from '../client'
+import { resolveTemplate, getEmailTemplateOverride } from '../queries/email-templates'
 
 export interface EmailConfig {
   apiKey: string
@@ -29,6 +31,62 @@ interface EmailPayload {
 async function sendEmail(config: EmailConfig, payload: EmailPayload): Promise<void> {
   const provider = getEmailProvider({ provider: config.emailProvider, apiKey: config.apiKey })
   await provider.send(payload)
+}
+
+/** Escapa HTML y convierte el texto de la plantilla (con saltos de línea y URLs)
+ *  en párrafos seguros. HU-160. Pura. */
+function templateBodyToHtml(body: string): string {
+  const esc = (s: string) => s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+  const linkify = (s: string) => s.replace(/(https?:\/\/[^\s<]+)/g, (u) => `<a href="${u}" style="color:#614a2a;">${u}</a>`)
+  return (body ?? '')
+    .split(/\n{2,}/)
+    .map((para) => `<p style="margin: 0 0 16px; color: #8a6a4a; font-size: 14px; font-family: sans-serif; line-height: 1.5;">${linkify(esc(para)).replace(/\n/g, '<br>')}</p>`)
+    .join('')
+}
+
+export interface TemplatedEmailResult { status: 'sent' | 'suppressed' | 'skipped'; subject?: string }
+
+/**
+ * HU-160 · envía un correo usando la **plantilla editable** del tenant (override
+ * o default de sistema), interpolando variables y respetando el toggle de
+ * activación. Si el tipo está silenciado → 'suppressed' (no envía). Si no hay
+ * plantilla → 'skipped'. El layout/tema lo pone la app (`baseTemplate`).
+ */
+export async function sendTemplatedEmail(
+  db: Db,
+  params: { tenantId: string; type: string; to: string; vars: Record<string, string | number | null | undefined>; locale?: string },
+  config: EmailConfig,
+): Promise<TemplatedEmailResult> {
+  const override = await getEmailTemplateOverride(db, params.type, params.locale ?? 'es').catch(() => null)
+  const resolved = resolveTemplate(params.type, params.vars, override)
+  if (!resolved) return { status: 'skipped' }
+  if (!resolved.enabled) return { status: 'suppressed' }
+  const name = config.storeName ?? 'Mi Tienda'
+  await sendEmail(config, {
+    from: `${name} <${config.fromEmail}>`,
+    to: [params.to],
+    subject: resolved.subject,
+    html: baseTemplate(templateBodyToHtml(resolved.body), config),
+  })
+  return { status: 'sent', subject: resolved.subject }
+}
+
+/** Envío directo (asunto+HTML ya renderizados). Para correos de prueba (HU-160). */
+export async function sendRawEmail(config: EmailConfig, data: { to: string; subject: string; html: string }): Promise<void> {
+  const name = config.storeName ?? 'Mi Tienda'
+  await sendEmail(config, { from: `${name} <${config.fromEmail}>`, to: [data.to], subject: data.subject, html: data.html })
+}
+
+/** HU-160 · render de previsualización (no envía): asunto + HTML final. */
+export function renderTemplatedPreview(
+  type: string,
+  vars: Record<string, string | number | null | undefined>,
+  override: { subject?: string; body?: string; enabled?: boolean } | null,
+  config: EmailConfig,
+): { subject: string; html: string; enabled: boolean } | null {
+  const resolved = resolveTemplate(type, vars, override)
+  if (!resolved) return null
+  return { subject: resolved.subject, html: baseTemplate(templateBodyToHtml(resolved.body), config), enabled: resolved.enabled }
 }
 
 function baseTemplate(content: string, config: EmailConfig): string {

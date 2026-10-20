@@ -7,12 +7,11 @@
  * Seguridad: guard admin (super_admin/admin/vendedor); solo acepta 'approved' o
  * 'rejected'; nunca accesible desde el sitio público.
  */
-import { applyStockForOrder, restoreStockForOrder, resolveEmailConfig, logAudit, recordEmail } from '@merkiai/database'
+import { applyStockForOrder, restoreStockForOrder, resolveEmailConfig, logAudit, recordEmail, sendTemplatedEmail } from '@merkiai/database'
 import { getAdminDb } from '@/lib/admin-db'
 import type { Database } from '@merkiai/database'
 import { NextRequest, NextResponse } from 'next/server'
 import { getAdminUser } from '@/lib/auth'
-import { sendPaymentConfirmed } from '@/lib/email'
 
 type OrderUpdate = Database['public']['Tables']['orders']['Update']
 
@@ -85,21 +84,20 @@ export async function PATCH(
     try {
       const ec = await resolveEmailConfig(supabase, user!.tenantId).catch(() => null)
       if (ec) {
-        await sendPaymentConfirmed(
-          {
-            order_number:   order.order_number,
-            customer_email: order.customer_email,
-            customer_name:  order.customer_name,
-          },
-          { apiKey: ec.apiKey, fromEmail: ec.fromEmail, storeName: ec.storeName },
-        )
-        // HU-162 · registro del correo de confirmación de pago.
-        await recordEmail(supabase, { tenantId: user!.tenantId, to: order.customer_email, type: 'order.payment', provider: ec.provider, status: 'sent', entity: order.order_number })
+        // HU-160 · plantilla editable de confirmación de pago (respeta el toggle).
+        const r = await sendTemplatedEmail(supabase, {
+          tenantId: user!.tenantId,
+          type: 'payment.confirmed',
+          to: order.customer_email,
+          vars: { customer_name: order.customer_name, order_number: order.order_number, total: (order as any).total ?? '' },
+        }, { apiKey: ec.apiKey, fromEmail: ec.fromEmail, storeName: ec.storeName, emailProvider: ec.provider })
+        // HU-162 · registro del correo.
+        await recordEmail(supabase, { tenantId: user!.tenantId, to: order.customer_email, type: 'payment.confirmed', provider: ec.provider, status: r.status === 'sent' ? 'sent' : 'suppressed', entity: order.order_number })
       }
     } catch (emailErr) {
       console.error('[payment-status] email error:', emailErr instanceof Error ? emailErr.message : emailErr)
       // HU-162 · registra el fallo (reemplaza el catch mudo).
-      await recordEmail(supabase, { tenantId: user!.tenantId, to: order.customer_email, type: 'order.payment', status: 'failed', entity: order.order_number, error: emailErr instanceof Error ? emailErr.message : String(emailErr) })
+      await recordEmail(supabase, { tenantId: user!.tenantId, to: order.customer_email, type: 'payment.confirmed', status: 'failed', entity: order.order_number, error: emailErr instanceof Error ? emailErr.message : String(emailErr) })
     }
   }
 

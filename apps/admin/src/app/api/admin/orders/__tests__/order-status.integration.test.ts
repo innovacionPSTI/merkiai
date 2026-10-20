@@ -19,6 +19,7 @@ jest.mock('@merkiai/database', () => ({
   resolveEmailConfig: jest.fn().mockResolvedValue({ apiKey: 're_test_key', fromEmail: 'noreply@tienda.example.com', storeName: 'Tienda', provider: 'resend' }),
   logAudit: jest.fn().mockResolvedValue(undefined), // HU-146
   recordEmail: jest.fn().mockResolvedValue(undefined), // HU-162
+  sendTemplatedEmail: jest.fn().mockResolvedValue({ status: 'sent' }), // HU-160
 }))
 
 // HU-158: la ruta usa getAdminUser + getAdminDb (RLS por tenant).
@@ -27,14 +28,7 @@ jest.mock('@/lib/auth', () => ({
 }))
 jest.mock('@/lib/admin-db', () => ({ getAdminDb: () => require('@merkiai/database').createServerClient() }))
 
-// Mock del módulo de email — evita llamadas reales a Resend
-jest.mock('@/lib/email', () => ({
-  sendShippingNotification: jest.fn().mockResolvedValue(undefined),
-  sendStatusNotification:   jest.fn().mockResolvedValue(undefined),
-}))
-
-import { createServerClient } from '@merkiai/database'
-import { sendShippingNotification, sendStatusNotification } from '@/lib/email'
+import { createServerClient, sendTemplatedEmail } from '@merkiai/database'
 import { resolveEmailConfig } from '@merkiai/database'
 import { PATCH } from '../[id]/status/route'
 
@@ -140,8 +134,8 @@ describe('PATCH /api/admin/orders/[id]/status — happy path', () => {
   it('ESPERA el envío del email antes de responder (confiable en serverless)', async () => {
     // En Vercel el fire-and-forget tras responder no está garantizado; por eso se
     // awaitea. La respuesta no debe volver antes de que el email termine.
-    ;(sendShippingNotification as jest.Mock).mockImplementation(
-      () => new Promise((resolve) => setTimeout(resolve, 300)),
+    ;(sendTemplatedEmail as jest.Mock).mockImplementationOnce(
+      () => new Promise((resolve) => setTimeout(() => resolve({ status: 'sent' }), 300)),
     )
     const { mockSupabase } = buildSupabaseMock({ data: mockOrder, error: null })
     mockCreateServerClient.mockReturnValue(mockSupabase as never)
@@ -151,7 +145,7 @@ describe('PATCH /api/admin/orders/[id]/status — happy path', () => {
     const elapsed = Date.now() - start
 
     expect(res.status).toBe(200)
-    expect(sendShippingNotification).toHaveBeenCalled()
+    expect(sendTemplatedEmail).toHaveBeenCalled()
     // Esperó el envío (≥300ms del mock), no respondió antes.
     expect(elapsed).toBeGreaterThanOrEqual(250)
   })
@@ -169,39 +163,40 @@ describe('PATCH /api/admin/orders/[id]/status — email triggers', () => {
     // Dar tiempo al fire-and-forget
     await new Promise((r) => setTimeout(r, 20))
 
-    expect(sendShippingNotification).not.toHaveBeenCalled()
-    expect(sendStatusNotification).not.toHaveBeenCalled()
+    expect(sendTemplatedEmail).not.toHaveBeenCalled()
   })
 
-  it('dispara sendShippingNotification para status "shipped"', async () => {
+  it('usa la plantilla (sendTemplatedEmail) para status "shipped"', async () => {
     const { mockSupabase } = buildSupabaseMock({ data: mockOrder, error: null })
     mockCreateServerClient.mockReturnValue(mockSupabase as never)
 
     await PATCH(makeRequest({ status: 'shipped' }), { params: Promise.resolve({ id: '42' }) })
     await new Promise((r) => setTimeout(r, 20))
 
-    expect(sendShippingNotification).toHaveBeenCalledWith(
-      expect.objectContaining({ order_number: 'ORD-0042', tracking_number: 'TRK123' }),
+    expect(sendTemplatedEmail).toHaveBeenCalledWith(
+      expect.anything(),
+      expect.objectContaining({ type: 'order.shipped', to: 'ana@example.com', tenantId: 't1' }),
       expect.objectContaining({ apiKey: 're_test_key' }),
     )
   })
 
-  it('dispara sendStatusNotification para status "cancelled"', async () => {
+  it('usa la plantilla (sendTemplatedEmail) para status "cancelled"', async () => {
     const { mockSupabase } = buildSupabaseMock({ data: { ...mockOrder, status: 'cancelled' }, error: null })
     mockCreateServerClient.mockReturnValue(mockSupabase as never)
 
     await PATCH(makeRequest({ status: 'cancelled' }), { params: Promise.resolve({ id: '42' }) })
     await new Promise((r) => setTimeout(r, 20))
 
-    expect(sendStatusNotification).toHaveBeenCalledWith(
-      expect.objectContaining({ order_number: 'ORD-0042' }),
-      'cancelled',
+    expect(sendTemplatedEmail).toHaveBeenCalledWith(
+      expect.anything(),
+      expect.objectContaining({ type: 'order.cancelled', to: 'ana@example.com' }),
       expect.objectContaining({ apiKey: 're_test_key' }),
     )
   })
 
   it('no envía email si no hay configuración de correo', async () => {
     ;(resolveEmailConfig as jest.Mock).mockResolvedValueOnce(null)
+    ;(sendTemplatedEmail as jest.Mock).mockClear()
     const { mockSupabase } = buildSupabaseMock(
       { data: mockOrder, error: null },
       { data: { resend_api_key: null, resend_from_email: null, store_name: null }, error: null },
@@ -211,7 +206,7 @@ describe('PATCH /api/admin/orders/[id]/status — email triggers', () => {
     await PATCH(makeRequest({ status: 'shipped' }), { params: Promise.resolve({ id: '42' }) })
     await new Promise((r) => setTimeout(r, 20))
 
-    expect(sendShippingNotification).not.toHaveBeenCalled()
+    expect(sendTemplatedEmail).not.toHaveBeenCalled()
   })
 })
 
@@ -234,7 +229,7 @@ describe('PATCH /api/admin/orders/[id]/status — errores', () => {
   })
 
   it('retorna 200 aunque el email falle (fire-and-forget silencioso)', async () => {
-    ;(sendShippingNotification as jest.Mock).mockRejectedValue(new Error('Resend down'))
+    ;(sendTemplatedEmail as jest.Mock).mockRejectedValueOnce(new Error('Resend down'))
     const { mockSupabase } = buildSupabaseMock({ data: mockOrder, error: null })
     mockCreateServerClient.mockReturnValue(mockSupabase as never)
 
