@@ -9,7 +9,8 @@
  * buildEmailConfig, sendOrderConfirmation, sendNewsletterConfirmation, sendWelcomeEmail.
  */
 
-import type { Order } from '@merkiai/database'
+import type { Order, Db } from '@merkiai/database'
+import { alreadySentEmail, retryAsync, recordEmail } from '@merkiai/database'
 
 export type { EmailConfig } from '@merkiai/database'
 export { sendShippingNotification, sendStatusNotification } from '@merkiai/database'
@@ -239,4 +240,30 @@ export async function sendWelcomeEmail(
     subject: `Bienvenido a ${storeName} — Cuenta creada`,
     html: baseTemplate(content, config),
   })
+}
+
+/**
+ * HU-162 · entrega de un correo transaccional del storefront con:
+ *  - idempotencia por (tenant, tipo, entidad): si ya se envió, no reenvía;
+ *  - reintentos con backoff ante fallos transitorios del proveedor;
+ *  - registro en email_log (sent / failed / skipped).
+ * Nunca lanza (el flujo de pago/pedido no debe depender del correo).
+ * Devuelve el resultado para quien quiera loguearlo.
+ */
+export async function deliverStorefrontEmail(
+  db: Db,
+  meta: { tenantId: string; type: string; to: string; entity: string | null; provider?: string | null },
+  send: () => Promise<void>,
+): Promise<'sent' | 'failed' | 'skipped'> {
+  if (await alreadySentEmail(db, { tenantId: meta.tenantId, type: meta.type, entity: meta.entity })) {
+    return 'skipped'
+  }
+  try {
+    await retryAsync(send, { attempts: 3 })
+    await recordEmail(db, { tenantId: meta.tenantId, to: meta.to, type: meta.type, provider: meta.provider, status: 'sent', entity: meta.entity })
+    return 'sent'
+  } catch (err) {
+    await recordEmail(db, { tenantId: meta.tenantId, to: meta.to, type: meta.type, provider: meta.provider, status: 'failed', entity: meta.entity, error: err instanceof Error ? err.message : String(err) })
+    return 'failed'
+  }
 }

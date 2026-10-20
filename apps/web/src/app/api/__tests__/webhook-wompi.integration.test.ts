@@ -60,6 +60,7 @@ jest.mock('@/lib/tenant-context', () => ({
 jest.mock('@/lib/email', () => ({
   sendOrderConfirmation: jest.fn(),
   sendShippingNotification: jest.fn(),
+  deliverStorefrontEmail: jest.fn(async (_db, _meta, send) => { try { await send() } catch { return 'failed' } return 'sent' }),
   buildEmailConfig: jest.fn((apiKey: string, fromEmail: string, storeName?: string) => ({
     apiKey, fromEmail, storeName,
   })),

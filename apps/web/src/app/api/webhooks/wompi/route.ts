@@ -1,10 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { resolveActivePayment, resolveEmailConfig, applyStockForOrder, markWebhookEventProcessed, recordEmail } from '@merkiai/database'
+import { resolveActivePayment, resolveEmailConfig, applyStockForOrder, markWebhookEventProcessed } from '@merkiai/database'
 import { resolveTenant } from '@/lib/tenant-context'
 import { getMachineDb } from '@/lib/machine-db'
 import { verifyWompiWebhook, isWompiTimestampFresh, mapWompiStatus } from '@/lib/wompi'
 import { amountCoversOrder } from '@/lib/payment-guards'
-import { sendOrderConfirmation, sendShippingNotification, buildEmailConfig } from '@/lib/email'
+import { sendOrderConfirmation, sendShippingNotification, buildEmailConfig, deliverStorefrontEmail } from '@/lib/email'
 import { createShipmentForOrder } from '@/lib/shipping/shipments'
 import type { Order, Database } from '@merkiai/database'
 
@@ -120,13 +120,7 @@ export async function POST(req: NextRequest) {
 
     // Email de confirmación de pago
     if (emailConfig) {
-      try {
-        await sendOrderConfirmation(updatedOrder as unknown as Order, emailConfig)
-        await recordEmail(supabase, { tenantId, to: updatedOrder.customer_email, type: 'order.confirmed', provider: ec?.provider, status: 'sent', entity: reference })
-      } catch (err) {
-        console.error('[webhook/wompi] Error email confirmación:', err)
-        await recordEmail(supabase, { tenantId, to: updatedOrder.customer_email, type: 'order.confirmed', provider: ec?.provider, status: 'failed', entity: reference, error: err instanceof Error ? err.message : String(err) })
-      }
+      await deliverStorefrontEmail(supabase, { tenantId, type: 'order.confirmed', to: updatedOrder.customer_email, entity: reference, provider: ec?.provider }, () => sendOrderConfirmation(updatedOrder as unknown as Order, emailConfig))
     }
 
     // Generar guía Skydropx (no bloquea — falla silenciosa)
@@ -139,16 +133,12 @@ export async function POST(req: NextRequest) {
         .eq('order_number', reference)
         .single()
       if (shippedOrder?.tracking_number) {
-        try {
-          await sendShippingNotification(
+        await deliverStorefrontEmail(supabase, { tenantId, type: 'order.shipped', to: updatedOrder.customer_email, entity: reference, provider: ec?.provider }, () =>
+          sendShippingNotification(
             shippedOrder as unknown as Order & { tracking_number: string; carrier_name: string | null; label_url: string | null },
             emailConfig,
-          )
-          await recordEmail(supabase, { tenantId, to: updatedOrder.customer_email, type: 'order.shipped', provider: ec?.provider, status: 'sent', entity: reference })
-        } catch (err) {
-          console.error('[webhook/wompi] Error email tracking:', err)
-          await recordEmail(supabase, { tenantId, to: updatedOrder.customer_email, type: 'order.shipped', provider: ec?.provider, status: 'failed', entity: reference, error: err instanceof Error ? err.message : String(err) })
-        }
+          ),
+        )
       }
     }
   }

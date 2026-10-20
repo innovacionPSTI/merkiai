@@ -34,6 +34,54 @@ export async function recordEmail(db: Db, input: EmailLogInput): Promise<void> {
   }
 }
 
+/**
+ * Idempotencia por (tenant, tipo, entidad): devuelve true si ya existe un envío
+ * `sent` para esa combinación (p. ej. no reenviar la confirmación de un pedido
+ * cuando el webhook se reintenta). Best-effort: ante error devuelve false para
+ * no bloquear un envío legítimo.
+ */
+export async function alreadySentEmail(
+  db: Db,
+  key: { tenantId: string; type: string; entity: string | null | undefined },
+): Promise<boolean> {
+  if (!key.entity) return false
+  try {
+    const { count } = await db
+      .from('email_log')
+      .select('id', { count: 'exact', head: true })
+      .eq('tenant_id', key.tenantId)
+      .eq('type', key.type)
+      .eq('entity', key.entity)
+      .eq('status', 'sent')
+    return (count ?? 0) > 0
+  } catch {
+    return false
+  }
+}
+
+/**
+ * Reintenta una operación asíncrona (envío de correo) con backoff exponencial.
+ * `attempts` = nº total de intentos (1 = sin reintento). Lanza el último error.
+ */
+export async function retryAsync<T>(
+  fn: () => Promise<T>,
+  opts: { attempts?: number; baseDelayMs?: number; sleep?: (ms: number) => Promise<void> } = {},
+): Promise<T> {
+  const attempts = Math.max(1, opts.attempts ?? 3)
+  const base = opts.baseDelayMs ?? 300
+  const sleep = opts.sleep ?? ((ms: number) => new Promise((r) => setTimeout(r, ms)))
+  let lastErr: unknown
+  for (let i = 0; i < attempts; i++) {
+    try {
+      return await fn()
+    } catch (e) {
+      lastErr = e
+      if (i < attempts - 1) await sleep(base * Math.pow(2, i))
+    }
+  }
+  throw lastErr
+}
+
 export interface EmailLogEntry {
   id: number
   to_email: string

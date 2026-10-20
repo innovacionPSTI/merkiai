@@ -8,9 +8,9 @@
  * `bold` en estado `pending`.
  */
 
-import { createServerClient, resolveActivePayment, resolveEmailConfig, BoldGateway, applyStockForOrder, recordEmail } from '@merkiai/database'
+import { createServerClient, resolveActivePayment, resolveEmailConfig, BoldGateway, applyStockForOrder } from '@merkiai/database'
 import type { Order, Database } from '@merkiai/database'
-import { sendOrderConfirmation, buildEmailConfig } from '@/lib/email'
+import { sendOrderConfirmation, buildEmailConfig, deliverStorefrontEmail } from '@/lib/email'
 import { createShipmentForOrder } from '@/lib/shipping/shipments'
 
 type OrderUpdate = Database['public']['Tables']['orders']['Update']
@@ -80,13 +80,7 @@ export async function reconcileBoldOrder(orderNumber: string): Promise<Reconcile
     const emailConfig = ec ? buildEmailConfig(ec.apiKey, ec.fromEmail, ec.storeName, ec.provider) : null
 
     if (emailConfig) {
-      try {
-        await sendOrderConfirmation(updatedOrder as unknown as Order, emailConfig)
-        await recordEmail(supabase, { tenantId: order.tenant_id, to: updatedOrder.customer_email, type: 'order.confirmed', provider: ec?.provider, status: 'sent', entity: orderNumber })
-      } catch (err) {
-        console.error('[bold-reconcile] Error email confirmación:', err)
-        await recordEmail(supabase, { tenantId: order.tenant_id, to: updatedOrder.customer_email, type: 'order.confirmed', provider: ec?.provider, status: 'failed', entity: orderNumber, error: err instanceof Error ? err.message : String(err) })
-      }
+      await deliverStorefrontEmail(supabase, { tenantId: order.tenant_id, type: 'order.confirmed', to: updatedOrder.customer_email, entity: orderNumber, provider: ec?.provider }, () => sendOrderConfirmation(updatedOrder as unknown as Order, emailConfig))
     }
 
     const shipment = await createShipmentForOrder(orderNumber)
@@ -97,14 +91,8 @@ export async function reconcileBoldOrder(orderNumber: string): Promise<Reconcile
         .eq('order_number', orderNumber)
         .single()
       if (shippedOrder?.tracking_number) {
-        try {
-          const { sendShippingNotification } = await import('@/lib/email')
-          await sendShippingNotification(shippedOrder as unknown as Order, emailConfig)
-          await recordEmail(supabase, { tenantId: order.tenant_id, to: updatedOrder.customer_email, type: 'order.shipped', provider: ec?.provider, status: 'sent', entity: orderNumber })
-        } catch (err) {
-          console.error('[bold-reconcile] Error email envío:', err)
-          await recordEmail(supabase, { tenantId: order.tenant_id, to: updatedOrder.customer_email, type: 'order.shipped', provider: ec?.provider, status: 'failed', entity: orderNumber, error: err instanceof Error ? err.message : String(err) })
-        }
+        const { sendShippingNotification } = await import('@/lib/email')
+        await deliverStorefrontEmail(supabase, { tenantId: order.tenant_id, type: 'order.shipped', to: updatedOrder.customer_email, entity: orderNumber, provider: ec?.provider }, () => sendShippingNotification(shippedOrder as unknown as Order, emailConfig))
       }
     }
   }

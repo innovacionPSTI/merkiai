@@ -29,6 +29,7 @@ jest.mock('@merkiai/database', () => ({
 jest.mock('@/lib/email', () => ({
   sendOrderConfirmation: jest.fn(),
   sendShippingNotification: jest.fn(),
+  deliverStorefrontEmail: jest.fn(async (_db, _meta, send) => { try { await send() } catch { return 'failed' } return 'sent' }),
   buildEmailConfig: jest.fn(() => ({ apiKey: 'x', fromEmail: 'y' })),
 }))
 
