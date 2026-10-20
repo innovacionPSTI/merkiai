@@ -136,7 +136,7 @@ export async function redeemGiftCard(giftCardId: number, amount: number, db: Db)
  */
 export async function redeemStoreValue(
   db: Db,
-  input: { tenantId: string; giftCardId: number | null; giftCardAmount: number; customerId: string | null; storeCreditAmount: number; orderId: number | null },
+  input: { tenantId: string; giftCardId: number | null; giftCardAmount: number; customerId: string | null; storeCreditAmount: number; orderId: number | null; idempotencyKey?: string | null },
 ): Promise<{ giftCardApplied: number; storeCreditApplied: number }> {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const { data, error } = await (db as any).rpc('redeem_store_value', {
@@ -146,6 +146,8 @@ export async function redeemStoreValue(
     p_customer_id: input.customerId,
     p_store_credit_amount: Math.max(0, Math.round(input.storeCreditAmount)),
     p_order_id: input.orderId,
+    // HU-298 · clave de intento: reintentos del mismo checkout no vuelven a descontar.
+    p_idempotency_key: input.idempotencyKey ?? null,
   })
   if (error) throw error
   const r = (data ?? {}) as { gift_card_applied?: number; store_credit_applied?: number }

@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import Link from 'next/link'
 import { useCartStore } from '@/store/cart'
 import type { ShippingRate } from '@/lib/shipping/types'
@@ -68,6 +68,14 @@ function addressToShipping(addr: SavedAddress): ShippingInfo {
 export default function CheckoutClient({ initialEmail = '', defaultAddress = null }: Props) {
   const { items, subtotal, clearCart } = useCartStore()
 
+  // HU-298 · clave de idempotencia estable por intento de checkout: se reutiliza
+  // en cada reintento (reenvío) del mismo pago para que el canje de gift card/saldo
+  // no se descuente dos veces. Se renueva solo al montar un nuevo checkout.
+  const idempotencyKeyRef = useRef<string>(
+    (typeof crypto !== 'undefined' && 'randomUUID' in crypto)
+      ? crypto.randomUUID()
+      : `ck-${Date.now()}-${Math.random().toString(36).slice(2)}`,
+  )
   const [step, setStep]         = useState<Step>(1)
   const [contact, setContact]   = useState<ContactInfo>({ email: initialEmail })
   const [shipping, setShipping] = useState<ShippingInfo>(
@@ -343,6 +351,7 @@ export default function CheckoutClient({ initialEmail = '', defaultAddress = nul
           coupon_code: couponApplied,
           gift_card_code: giftCardBalance > 0 ? giftCardCode.trim() : null,
           use_store_credit: useCredit,
+          idempotency_key: idempotencyKeyRef.current,
           shipping_rate: selectedRate
             ? {
                 id: selectedRate.id,

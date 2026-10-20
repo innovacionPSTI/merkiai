@@ -118,7 +118,7 @@ export async function POST(req: NextRequest) {
 
   // HU-298 · estado de compensación: si el crédito ya se consumió y la creación
   // del pedido falla, el catch revierte (reverso) para no perder valor.
-  let redeemState: { tenantId: string; giftCardId: number | null; giftCardAmount: number; customerId: string | null; storeCreditAmount: number } | null = null
+  let redeemState: { tenantId: string; giftCardId: number | null; giftCardAmount: number; customerId: string | null; storeCreditAmount: number; idempotencyKey: string | null } | null = null
   let orderWasCreated = false
 
   try {
@@ -143,7 +143,14 @@ export async function POST(req: NextRequest) {
       // HU-148 · pago con gift card / saldo a favor
       gift_card_code,
       use_store_credit,
+      // HU-298 · clave de intento (idempotencia del canje): el cliente envía una
+      // clave estable por intento de checkout y la reenvía en cada reintento.
+      idempotency_key,
     } = body
+    const redeemKey: string | null =
+      typeof idempotency_key === 'string' && idempotency_key.length > 0 && idempotency_key.length <= 100
+        ? idempotency_key
+        : null
 
     // Extract carrier info from the rate the user selected
     const skydropx_rate_id: string | null = shipping_rate?.id ?? null
@@ -351,6 +358,7 @@ export async function POST(req: NextRequest) {
           customerId: creditCustomerId,
           storeCreditAmount: use_store_credit && creditCustomerId ? plan.creditApplied : 0,
           orderId: null,
+          idempotencyKey: redeemKey,
         })
         giftCardAmount = applied.giftCardApplied
         storeCreditAmount = applied.storeCreditApplied
@@ -366,7 +374,7 @@ export async function POST(req: NextRequest) {
     }
     const creditPaid = giftCardAmount + storeCreditAmount
     if (creditPaid > 0) {
-      redeemState = { tenantId, giftCardId: appliedGiftCardId, giftCardAmount, customerId: creditCustomerId, storeCreditAmount }
+      redeemState = { tenantId, giftCardId: appliedGiftCardId, giftCardAmount, customerId: creditCustomerId, storeCreditAmount, idempotencyKey: redeemKey }
     }
     const creditOrderFields = {
       gift_card_code: giftCardCodeApplied,
@@ -682,8 +690,22 @@ export async function POST(req: NextRequest) {
     // HU-298 · si el crédito se consumió pero no se llegó a crear el pedido,
     // se revierte (reverso) para no dejar "crédito consumido sin pedido".
     if (redeemState && !orderWasCreated) {
-      await refundStoreValue(getMachineDb(redeemState.tenantId), redeemState)
+      const mdbc = getMachineDb(redeemState.tenantId)
+      await refundStoreValue(mdbc, redeemState)
         .catch((e) => console.error('[checkout] reverso de crédito:', e instanceof Error ? e.message : e))
+      // HU-298 · invalida el reclamo de idempotencia: tras el reverso, un reintento
+      // del mismo intento DEBE volver a descontar (si no, aplicaría el crédito sin cobro).
+      if (redeemState.idempotencyKey) {
+        try {
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          await (mdbc as any).from('store_value_redemptions')
+            .delete()
+            .eq('tenant_id', redeemState.tenantId)
+            .eq('idempotency_key', redeemState.idempotencyKey)
+        } catch (e) {
+          console.error('[checkout] limpieza idempotencia:', e instanceof Error ? e.message : e)
+        }
+      }
     }
     return NextResponse.json({ error: 'Error interno' }, { status: 500 })
   }

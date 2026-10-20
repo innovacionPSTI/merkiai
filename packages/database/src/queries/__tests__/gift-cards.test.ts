@@ -77,6 +77,16 @@ describe('gift cards (HU-148)', () => {
       expect(rpc).toHaveBeenCalledWith('redeem_store_value', expect.objectContaining({ p_tenant: 't1', p_gift_card_id: 5, p_gift_card_amount: 3000, p_store_credit_amount: 1000 }))
       expect(r).toEqual({ giftCardApplied: 3000, storeCreditApplied: 1000 })
     })
+    it('redeemStoreValue reenvía la clave de idempotencia al RPC (HU-298 residual)', async () => {
+      const rpc = jest.fn().mockResolvedValue({ data: { gift_card_applied: 0, store_credit_applied: 0 }, error: null })
+      await redeemStoreValue({ rpc } as any, { tenantId: 't1', giftCardId: null, giftCardAmount: 0, customerId: 'c1', storeCreditAmount: 500, orderId: null, idempotencyKey: 'ck-abc' })
+      expect(rpc).toHaveBeenCalledWith('redeem_store_value', expect.objectContaining({ p_idempotency_key: 'ck-abc' }))
+    })
+    it('redeemStoreValue manda null cuando no hay clave de idempotencia', async () => {
+      const rpc = jest.fn().mockResolvedValue({ data: { gift_card_applied: 0, store_credit_applied: 0 }, error: null })
+      await redeemStoreValue({ rpc } as any, { tenantId: 't1', giftCardId: null, giftCardAmount: 0, customerId: 'c1', storeCreditAmount: 500, orderId: null })
+      expect(rpc).toHaveBeenCalledWith('redeem_store_value', expect.objectContaining({ p_idempotency_key: null }))
+    })
     it('refundStoreValue llama al RPC de reverso', async () => {
       const rpc = jest.fn().mockResolvedValue({ error: null })
       await refundStoreValue({ rpc } as any, { tenantId: 't1', giftCardId: 5, giftCardAmount: 3000, customerId: 'c1', storeCreditAmount: 1000 })
