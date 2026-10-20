@@ -8,7 +8,7 @@
  * solo actúa sobre pedidos `tucompra` en estado `pending`.
  */
 
-import { createServerClient, resolveActivePayment, resolveEmailConfig, TuCompraGateway, applyStockForOrder } from '@merkiai/database'
+import { createServerClient, resolveActivePayment, resolveEmailConfig, TuCompraGateway, applyStockForOrder, recordEmail } from '@merkiai/database'
 import type { Order, Database } from '@merkiai/database'
 import { sendOrderConfirmation, buildEmailConfig } from '@/lib/email'
 import { createShipmentForOrder } from '@/lib/shipping/shipments'
@@ -90,8 +90,10 @@ export async function reconcileTuCompraOrder(orderNumber: string): Promise<Recon
     if (emailConfig) {
       try {
         await sendOrderConfirmation(updatedOrder as unknown as Order, emailConfig)
+        await recordEmail(supabase, { tenantId: order.tenant_id, to: updatedOrder.customer_email, type: 'order.confirmed', provider: ec?.provider, status: 'sent', entity: orderNumber })
       } catch (err) {
         console.error('[tucompra-reconcile] Error email confirmación:', err)
+        await recordEmail(supabase, { tenantId: order.tenant_id, to: updatedOrder.customer_email, type: 'order.confirmed', provider: ec?.provider, status: 'failed', entity: orderNumber, error: err instanceof Error ? err.message : String(err) })
       }
     }
 
@@ -106,8 +108,10 @@ export async function reconcileTuCompraOrder(orderNumber: string): Promise<Recon
         try {
           const { sendShippingNotification } = await import('@/lib/email')
           await sendShippingNotification(shippedOrder as unknown as Order, emailConfig)
+          await recordEmail(supabase, { tenantId: order.tenant_id, to: updatedOrder.customer_email, type: 'order.shipped', provider: ec?.provider, status: 'sent', entity: orderNumber })
         } catch (err) {
           console.error('[tucompra-reconcile] Error email envío:', err)
+          await recordEmail(supabase, { tenantId: order.tenant_id, to: updatedOrder.customer_email, type: 'order.shipped', provider: ec?.provider, status: 'failed', entity: orderNumber, error: err instanceof Error ? err.message : String(err) })
         }
       }
     }

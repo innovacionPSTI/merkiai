@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { resolveActivePayment, resolveEmailConfig, TuCompraGateway, applyStockForOrder, markWebhookEventProcessed } from '@merkiai/database'
+import { resolveActivePayment, resolveEmailConfig, TuCompraGateway, applyStockForOrder, markWebhookEventProcessed, recordEmail } from '@merkiai/database'
 import { resolveTenant } from '@/lib/tenant-context'
 import { getMachineDb } from '@/lib/machine-db'
 import { amountCoversOrder } from '@/lib/payment-guards'
@@ -137,8 +137,13 @@ export async function POST(req: NextRequest) {
     const emailConfig = ec ? buildEmailConfig(ec.apiKey, ec.fromEmail, ec.storeName, ec.provider) : null
 
     if (emailConfig) {
-      try { await sendOrderConfirmation(updatedOrder as unknown as Order, emailConfig) }
-      catch (err) { console.error('[webhook/tucompra] Error email confirmación:', err) }
+      try {
+        await sendOrderConfirmation(updatedOrder as unknown as Order, emailConfig)
+        await recordEmail(supabase, { tenantId, to: updatedOrder.customer_email, type: 'order.confirmed', provider: ec?.provider, status: 'sent', entity: orderReference })
+      } catch (err) {
+        console.error('[webhook/tucompra] Error email confirmación:', err)
+        await recordEmail(supabase, { tenantId, to: updatedOrder.customer_email, type: 'order.confirmed', provider: ec?.provider, status: 'failed', entity: orderReference, error: err instanceof Error ? err.message : String(err) })
+      }
     }
 
     const shipment = await createShipmentForOrder(orderReference)
@@ -148,7 +153,11 @@ export async function POST(req: NextRequest) {
         try {
           const { sendShippingNotification } = await import('@/lib/email')
           await sendShippingNotification(shippedOrder as unknown as Order, emailConfig)
-        } catch (err) { console.error('[webhook/tucompra] Error email envío:', err) }
+          await recordEmail(supabase, { tenantId, to: updatedOrder.customer_email, type: 'order.shipped', provider: ec?.provider, status: 'sent', entity: orderReference })
+        } catch (err) {
+          console.error('[webhook/tucompra] Error email envío:', err)
+          await recordEmail(supabase, { tenantId, to: updatedOrder.customer_email, type: 'order.shipped', provider: ec?.provider, status: 'failed', entity: orderReference, error: err instanceof Error ? err.message : String(err) })
+        }
       }
     }
   }

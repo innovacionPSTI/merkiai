@@ -43,6 +43,7 @@ jest.mock('@merkiai/database', () => ({
   getStoreConfig: jest.fn(),
   resolveEmailConfig: jest.fn(),
   applyStockForOrder: jest.fn(),
+  recordEmail: jest.fn(),
   markWebhookEventProcessed: jest.fn(async () => ({ duplicate: false })),
 }))
 

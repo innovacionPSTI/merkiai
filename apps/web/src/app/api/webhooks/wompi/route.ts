@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { resolveActivePayment, resolveEmailConfig, applyStockForOrder, markWebhookEventProcessed } from '@merkiai/database'
+import { resolveActivePayment, resolveEmailConfig, applyStockForOrder, markWebhookEventProcessed, recordEmail } from '@merkiai/database'
 import { resolveTenant } from '@/lib/tenant-context'
 import { getMachineDb } from '@/lib/machine-db'
 import { verifyWompiWebhook, isWompiTimestampFresh, mapWompiStatus } from '@/lib/wompi'
@@ -122,8 +122,10 @@ export async function POST(req: NextRequest) {
     if (emailConfig) {
       try {
         await sendOrderConfirmation(updatedOrder as unknown as Order, emailConfig)
+        await recordEmail(supabase, { tenantId, to: updatedOrder.customer_email, type: 'order.confirmed', provider: ec?.provider, status: 'sent', entity: reference })
       } catch (err) {
         console.error('[webhook/wompi] Error email confirmación:', err)
+        await recordEmail(supabase, { tenantId, to: updatedOrder.customer_email, type: 'order.confirmed', provider: ec?.provider, status: 'failed', entity: reference, error: err instanceof Error ? err.message : String(err) })
       }
     }
 
@@ -142,8 +144,10 @@ export async function POST(req: NextRequest) {
             shippedOrder as unknown as Order & { tracking_number: string; carrier_name: string | null; label_url: string | null },
             emailConfig,
           )
+          await recordEmail(supabase, { tenantId, to: updatedOrder.customer_email, type: 'order.shipped', provider: ec?.provider, status: 'sent', entity: reference })
         } catch (err) {
           console.error('[webhook/wompi] Error email tracking:', err)
+          await recordEmail(supabase, { tenantId, to: updatedOrder.customer_email, type: 'order.shipped', provider: ec?.provider, status: 'failed', entity: reference, error: err instanceof Error ? err.message : String(err) })
         }
       }
     }

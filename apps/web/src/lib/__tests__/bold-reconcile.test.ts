@@ -22,6 +22,7 @@ jest.mock('@merkiai/database', () => ({
   resolveEmailConfig: jest.fn(),
   getStoreConfig: jest.fn(),
   applyStockForOrder: jest.fn(),
+  recordEmail: jest.fn(),
   BoldGateway: jest.fn().mockImplementation(() => ({ queryStatusByReference: mockQuery })),
 }))
 
