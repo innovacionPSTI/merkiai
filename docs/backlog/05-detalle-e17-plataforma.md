@@ -323,6 +323,31 @@
 
 ---
 
+### HU-170b — Monitoreo de errores en el ADMIN (y consola) · E14
+
+> Como responsable, quiero que los errores de runtime del **panel de cada tenant** (y de la consola del operador) también se capturen en el APM, para detectar incidencias de gestión (cambios de estado de pedido, validación de pago, gift cards, imports) y no solo las del storefront.
+
+**Estimación:** S (3 puntos)
+**Estado:** 🔲 Pendiente (documentada v162). HU-170 dejó Sentry conectado **solo en `apps/web`**. El admin (`apps/admin`) y la consola (`apps/console`) hoy registran errores únicamente en los logs de infraestructura (Vercel/Supabase); **no** tienen `@sentry/nextjs`, ni `instrumentation.ts`, ni llamadas a `reportError`.
+
+> **Enfoque (reutiliza HU-170, sin reinventar):** la abstracción `ErrorReporter` + `reportError` de `@merkiai/database` ya es multi-app. El trabajo es replicar en `apps/admin` el mismo cableado **guarded** que ya tiene web:
+> 1. Agregar `@sentry/nextjs` a `apps/admin` (y opcionalmente `apps/console`).
+> 2. Crear `apps/admin/src/lib/sentry.ts` (loader no-literal + `initSentryServer` que registra `globalThis.__merkiaiCaptureException` solo si hay DSN), `apps/admin/instrumentation.ts` (`register` + `onRequestError`) y `instrumentation-client.ts`.
+> 3. Instrumentar los **bordes sensibles del admin** con `reportError({ scope, tenantId })`: cambio de estado de pedido, validación manual de pago, emisión de gift cards, ajuste de saldo, imports/exports masivos, aprobación de devoluciones.
+> 4. Env nuevas en el proyecto **admin** de Vercel: su propio `SENTRY_DSN` / `NEXT_PUBLIC_SENTRY_DSN` (puede ser el mismo proyecto Sentry que web o uno aparte).
+
+> **Multi-tenant (importante):** Sentry es **por aplicación, no por tenant**. Un único proyecto Sentry recibe los errores de **todos** los tenants del admin juntos; la separación por tienda se hace con el **tag `tenant_id`** (ya lo adjunta `reportError`), filtrando/alertando dentro del mismo proyecto. **No** se crea un Sentry por tenant.
+
+| # | Escenario | Resultado esperado |
+|---|-----------|-------------------|
+| AC-1 | Captura (admin) | Errores de servidor del admin (route handlers de pedidos/pagos/gift cards/imports) y de cliente (error boundaries) con **stack + contexto** (tenant, ruta, actor) |
+| AC-2 | Guarded | Sin `SENTRY_DSN` del admin, no se envía nada (se mantiene el log); mismo patrón no-literal que web (build no acoplado) |
+| AC-3 | Multi-tenant | Cada evento etiquetado con `tenant_id` para filtrar por tienda dentro del mismo proyecto Sentry |
+| AC-4 | Privacidad | Scrubbing de PII/secretos (reutiliza el del `ErrorReporter`); nunca envía tokens ni llaves |
+| AC-5 | Consola (opcional) | Mismo cableado en `apps/console` para errores del control plane |
+
+---
+
 ### HU-171 — Spike: auth multi-tenant + estrategia de aislamiento RLS · E17
 
 > Como arquitecto, quiero validar con un PoC la decisión de auth + aislamiento y dejarla en un ADR, para no acoplar E17 a supuestos sin probar.
