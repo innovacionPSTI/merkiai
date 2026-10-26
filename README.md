@@ -204,6 +204,8 @@ merkiai/
 
 ## 6. Instalación y setup local
 
+> Guía completa de puesta en marcha (requisitos, envs por app, migraciones y activación de Sentry) en **[`SETUP.md`](./SETUP.md)**.
+
 ### Paso 1 — Clonar e instalar dependencias
 
 ```bash
@@ -1005,36 +1007,28 @@ pnpm format        # Código formateado con Prettier
 - **SEO completo**: `sitemap.xml` dinámico, `robots.txt`, Open Graph y Twitter Cards por página
 - **Inventario**: stock por variante con descuento/reposición atómico por estado de pago, backorder y topes en el front
 - **Pagos**: pasarela única activa (Wompi, MercadoPago, **Tu Compra integrador** — PSE/Nequi/Daviplata/Referenciado —, Bold) con webhooks firmados, **anti-forja + anti-subpago + idempotencia por evento**, validación manual y fallback/reconcile de estado. Tarjeta directa excluida por PCI (SAQ A).
-- **641 casos de prueba** — database 160 · web 316 · admin 165 (unitarias + integración)
+- **Multi-tenant (E17 base)**: aislamiento por `tenant_id` + **RLS** (JWT con `tenant_id`/`is_admin`), resolución host→tenant vía control plane, planes/entitlements y onboarding con presets por nicho; consola del operador (`apps/console`).
+
+### Construido después del MVP (Ola 1 + E19 + hardening + observabilidad)
+
+> Fuente de verdad detallada: `PROGRESS.md` (notas por versión) y `docs/backlog/`.
+
+- **Catálogo y conversión (Ola 1):** reseñas con voto útil, búsqueda de catálogo con índice de texto, wishlist, filtro por precio, "avísame cuando vuelva" (stock notifications), galería/zoom en PDP, CTA pegajoso móvil, estimador de envío en PDP, vistos recientemente, compartir producto, repetir pedido, consulta de pedido como invitado, alertas de **stock bajo** configurables y **redirects 301/302** por tienda.
+- **Ventas y precios:** motor de **promociones** (cart %/fijo, categoría, BOGO; combinables/exclusivas), **gift cards** + **saldo a favor** con canje en checkout, **bundles/kits**, y **Club VIP** (E19): segmentos, campañas con ventana/alcance, gating de acceso anticipado server-side, countdown, reporte de campaña, avisos por correo y precio de campaña.
+- **Operación y postventa:** reportes de ventas + CSV, devoluciones (con reembolso como saldo), **registro de auditoría** (`audit_log`) de operaciones sensibles, importación/exportación CSV (productos, categorías, cupones, clientes, blog), acciones masivas y respaldos.
+- **Correos (E8):** **plantillas editables** por tienda (asunto/cuerpo con variables + silenciar) con fallback a defaults, **previsualización** y correo de prueba; **registro de envíos** (`email_log`) con **idempotencia** por (tipo, entidad) y **reintentos** con backoff en los envíos del storefront.
+- **Checkout server-authoritative + hardening de valor (E14):** precio, subtotal, envío, cupón, promo, VIP, gift card/saldo y stock se **recomputan en el servidor** (ningún monto del cliente se persiste/cobra); canje de valor **atómico** vía RPC (`FOR UPDATE`) con **compensación/reverso** e **idempotencia por intento**; validación de cupón **neutra** (anti-enumeración) y **rate-limit distribuido** (Postgres) con bloqueo y alertas de abuso.
+- **Monitoreo de errores (HU-170):** abstracción `ErrorReporter` + **Sentry** conectado en el storefront (guarded por DSN; sin DSN usa logs). Ver `SETUP.md` §6.
+
+- **~1.200 casos de prueba** (unitarias + integración) — referencia v161: database ~486 · web ~362 · admin ~260 · console ~79 · tenancy ~26 — con type-check limpio.
 
 ### Roadmap 🔲
 
-Expansión planificada en 18 épicas / 99 historias 🔲 (ver `PRODUCT_BACKLOG.md`): **E16** Aplicación inteligente (IA), **E17** Plataforma multi-tienda + control plane (planes/entitlements, dominios personalizados), **E18** Inventario multi-ubicación, más reseñas, búsqueda, descuentos, i18n, entregabilidad de email, newsletter externo (Beehiiv), pricing unificado, webhooks salientes, facturación electrónica (DIAN), accesibilidad y monitoreo. Priorizado en 8 olas de entrega (`§11.1`).
+Expansión planificada (ver `PRODUCT_BACKLOG.md`): **E16** Aplicación inteligente (IA), resto de **E17** (plataforma multi-tienda / dominios personalizados avanzados), **E18** Inventario multi-ubicación, más i18n, entregabilidad de email (SPF/DKIM/DMARC), newsletter externo (Beehiiv), facturación electrónica (DIAN), 2FA, respaldos programados y observabilidad distribuida. Priorizado en olas de entrega (`§11.1`).
 
-### Variables de entorno nuevas (v3)
+### Puesta en marcha
 
-Además de las variables base, agrega en `apps/web/.env.local`:
-
-```env
-# Blog Draft Mode — previsualización de borradores
-DRAFT_SECRET=cambia-este-secreto
-```
-
-Y en `apps/admin/.env.local`:
-
-```env
-# URL pública del sitio web para generar el enlace de previsualización
-NEXT_PUBLIC_SITE_URL=https://shop.example.com
-NEXT_PUBLIC_DRAFT_SECRET=cambia-este-secreto  # debe coincidir con DRAFT_SECRET del web
-```
-
-### Pendiente 🔲
-
-| Feature | Prioridad |
-|---------|-----------|
-| Validación de cupones de descuento | Media |
-| Integración analítica (Vercel Analytics / Plausible) | Baja |
-| Búsqueda de productos en la tienda | Baja |
+Instalación, variables de entorno por app, migraciones y activación de Sentry están documentadas en **`SETUP.md`**. Despliegue detallado en `DEPLOYMENT.md`; identidad en `STACK_AUTH_SETUP.md`.
 
 ---
 
