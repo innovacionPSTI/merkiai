@@ -155,11 +155,57 @@
 
 ---
 
+## HU-359 — Entitlements del Constructor + tiering por plan · E17 (toca E2/E3)
+
+> Como operador de plataforma, quiero habilitar cada funcionalidad del Constructor según el plan del tenant, para empaquetar capacidades (layout avanzado, colecciones, portal) en distintos planes comerciales sin tocar código.
+
+**Estimación:** M (5 puntos) · **Módulo:** alta de **features + limits** del Constructor v2 en el catálogo de entitlements (`@merkiai/tenancy/entitlements`, HU-173) + **gating en 3 capas** (UI `tenantHasFeature` / API `requireFeature`·`requireWithinLimit` / datos solo RLS para aislamiento, HU-239) + asignación por plan desde la consola (editor de planes HU-239 v2). **No construye sistema nuevo: puebla el existente.** · **Estado:** 🔲 Pendiente — transversal a HU-350…358; se implementa junto a cada feature.
+
+> **Graduación del flag:** el Constructor hoy vive tras el flag técnico `pageBuilder`. Con HU-350/HU-359 ese flag **se gradúa a entitlement** de plan (deja de ser interruptor de desarrollo).
+
+**Features (on/off) y limits propuestos:**
+
+| Entitlement | Tipo | Cubre (HU) |
+|---|---|---|
+| `page_builder` | feature | Acceso al Constructor como hub (gradúa el flag `pageBuilder`) · HU-350 |
+| `layout_avanzado` | feature | Filas/Columnas por presets · HU-351 |
+| `estilo_por_pagina` | feature | Overrides de estilo por página · HU-352 |
+| `colecciones` | feature | Tipos de contenido dinámicos · HU-353 |
+| `plantillas_por_tipo` | feature | Render dinámico `/[colección]/[slug]` · HU-354 |
+| `listado_dinamico` | feature | Bloque de listado/agregador · HU-355 |
+| `partials_globales` | feature | Bloques globales reutilizables · HU-356 |
+| `biblioteca_medios` | feature | Media library · HU-357 |
+| `bloques_guardados` | feature | Biblioteca de bloques guardados · HU-358 |
+| `max_paginas` | limit | Nº de páginas por tenant |
+| `max_colecciones` | limit | Nº de colecciones |
+| `max_registros_coleccion` | limit | Registros por colección |
+| `max_medios_mb` | limit | Almacenamiento de biblioteca de medios |
+
+**Tiering de referencia (ajustable desde la consola):**
+
+| Plan | Features del Constructor | Notas |
+|---|---|---|
+| Básico (tienda/servicios) | `page_builder`, `estilo_por_pagina` | Pila vertical + estilo; sin layout avanzado ni colecciones |
+| Pro | + `layout_avanzado`, `partials_globales`, `biblioteca_medios`, `bloques_guardados` | Layout rico + facilidad; límites moderados |
+| Educación | + `colecciones`, `plantillas_por_tipo`, `listado_dinamico` | Catálogo de cursos (con E20) |
+| Portal / Enterprise | Todas | Límites altos + portal (E23) + aislamiento dedicado (HU-200) |
+
+| # | Escenario | Resultado esperado |
+|---|-----------|-------------------|
+| AC-1 | Catálogo | Las features/limits de arriba quedan dadas de alta en el catálogo de entitlements (HU-173) |
+| AC-2 | Gating 3 capas | Cada capacidad se oculta en UI, se rechaza en API (403) y respeta límites; la RLS solo aísla por tenant |
+| AC-3 | Asignable por plan | El operador enciende/apaga features y fija límites por plan desde la consola (HU-239 v2) |
+| AC-4 | Degradación segura | Si un plan pierde una feature, la UI la oculta y la API la bloquea, pero **el render del contenido ya creado no se rompe** (es metadato opt-in) |
+| AC-5 | Límites en alta | Al crear páginas/colecciones/registros/medios se valida el límite del plan (`requireWithinLimit`), importando/omitiendo según remanente como en los importadores existentes |
+
+---
+
 ## Orden de implementación (olas) y dependencias
 
 1. **Ola 1 (fundación de autoría):** **HU-350** (shell unificado) → **HU-351** (Filas/Columnas) → **HU-352** (estilo por página). *Reorganiza + añade la capa de layout; cero regresión.*
 2. **Ola 2 (contenido dirigido por datos):** **HU-353** (colecciones, pieza madre) → **HU-354** (plantillas por tipo) → **HU-355** (listado dinámico).
 3. **Ola 3 (facilidad transversal, en paralelo tras Ola 1):** **HU-356** (partials) · **HU-357** (biblioteca de medios) · **HU-358** (bloques guardados).
+- **Transversal (con cada HU):** **HU-359** (entitlements + tiering por plan) — se puebla a medida que cada feature se construye; no es una fase aparte.
 4. **Habilita:** el **vertical educación** (E20: cursos como colección + plantilla por tipo) y el **Portal Institucional** (E23: HU-341 multiportal, HU-342 buscador/agregadores se apoyan en HU-353/355).
 
 > **Nota de dependencia inversa:** HU-341/342 (E23) y el catálogo de cursos (E20) **dependen** de HU-353/354/355. Conviene abordar Constructor v2 **antes** de esos tramos.
