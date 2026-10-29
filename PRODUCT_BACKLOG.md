@@ -15,6 +15,7 @@
 | [`docs/backlog/07-detalle-e18-y-pci.md`](docs/backlog/07-detalle-e18-y-pci.md) | E18 (inventario multi-ubicación) + hardening PCI DSS | HU-176…191 |
 | [`docs/backlog/08-cobertura-olas-dod-pruebas.md`](docs/backlog/08-cobertura-olas-dod-pruebas.md) | **Cobertura · roadmap por olas · DoD · pruebas** + HUs recientes (HU-207/209/215/216) | E17 en curso |
 | [`docs/backlog/09-detalle-e20-e23-vertical-servicios.md`](docs/backlog/09-detalle-e20-e23-vertical-servicios.md) | **Vertical Servicios/Educación**: E20 (cobros recurrentes/matrículas) · E21 (formularios/trámites/certificados) · E22 (marketing & analytics) · E23 (portal institucional, horizonte) | HU-310…343 🔲 |
+| [`docs/backlog/10-detalle-constructor-v2.md`](docs/backlog/10-detalle-constructor-v2.md) | **Constructor v2** (E2/E3): autoría unificada + **layout adaptable (Filas/Columnas)** + **colecciones/contenido dirigido por datos** + plantillas por tipo + bloques dinámicos/globales + biblioteca de medios. Habilita educación (E20) y portal (E23). | HU-350…358 🔲 |
 | [`docs/backlog/JIRA-MIGRATION.md`](docs/backlog/JIRA-MIGRATION.md) | Plan de migración a Jira (HU→issue, épica→epic, ola→fixVersion, estado→status) | — |
 
 ## Estado actual (E17 multi-tenant · en curso)
