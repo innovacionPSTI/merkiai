@@ -25,6 +25,16 @@ const PAGE_TYPE_LABELS: Record<string, string> = {
   landing: 'Landing', services: 'Servicios', about: 'Acerca de',
   faq: 'FAQ', content: 'Contenido', custom: 'Personalizada',
 }
+
+// HU-374 · estructura de arranque por tipo de página (bloques típicos). 'custom'
+// y lo no listado nacen en blanco. Reusa los section_type del catálogo de bloques.
+const PAGE_TYPE_SEED: Record<string, string[]> = {
+  landing:  ['hero', 'cards', 'cta'],
+  services: ['hero', 'cards', 'cta'],
+  about:    ['hero', 'text'],
+  faq:      ['hero', 'faq'],
+  content:  ['text'],
+}
 interface SectionRow {
   id: number
   page_key: string
@@ -78,7 +88,7 @@ export default function ConstructorClient({
   // HU-364 · modales de marca (reemplazan prompt/confirm nativos).
   const [confirmState, setConfirmState] = useState<null | { title: string; message?: ReactNode; danger?: boolean; confirmLabel?: string; onConfirm: () => void }>(null)
   const [promptState, setPromptState] = useState<null | { title: string; fields: import('@merkiai/ui').PromptField[]; submitLabel?: string; validate?: (v: Record<string, string>) => string | null; onSubmit: (v: Record<string, string>) => void }>(null)
-  const [newPage, setNewPage] = useState<null | { type: string; label: string; slug: string }>(null) // wizard Nueva página
+  const [newPage, setNewPage] = useState<null | { type: string; label: string; slug: string; seed: boolean }>(null) // wizard Nueva página
   const [advOpen, setAdvOpen] = useState(false) // HU-365 · menú "···" de acciones avanzadas
   const [pageSettingsOpen, setPageSettingsOpen] = useState(false) // HU-365 AC-3 · drawer Ajustes de página
   const [navOpen, setNavOpen] = useState(false) // HU-367 · drawer Navegación
@@ -138,20 +148,29 @@ export default function ConstructorClient({
   function slugify(s: string) { return s.trim().toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '') }
 
   // HU-364 · "Nueva página" → wizard de marca (paso 1 tipo, paso 2 nombre/URL).
-  function openNewPage() { setNewPage({ type: 'content', label: '', slug: '' }) }
+  function openNewPage() { setNewPage({ type: 'content', label: '', slug: '', seed: true }) }
   async function doCreatePage() {
     if (!newPage) return
     const label = newPage.label.trim()
     const slug = (newPage.slug.trim() || slugify(label)).replace(/^\//, '')
     const key = slugify(slug) || `pagina-${Date.now()}`
+    const type = newPage.type
+    const seedTypes = newPage.seed ? (PAGE_TYPE_SEED[type] ?? []) : []
     const res = await fetch('/api/admin/cms/pages', {
       method: 'POST', headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ key, label, slug, page_type: newPage.type, enabled: false, show_in_footer: false }),
+      body: JSON.stringify({ key, label, slug, page_type: type, enabled: false, show_in_footer: false }),
     })
     if (!res.ok) { setTplMsg((await res.json().catch(() => ({}))).error || 'No se pudo crear la página'); return }
-    setPageList((ps) => [...ps, { key, label, slug, page_type: newPage.type, enabled: false }])
+    // HU-374 · siembra la estructura de arranque del tipo (opt-out = "en blanco").
+    for (let i = 0; i < seedTypes.length; i++) {
+      await fetch(api, {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ page_key: key, section_type: seedTypes[i], order_index: i, enabled: true }),
+      }).catch(() => {})
+    }
+    setPageList((ps) => [...ps, { key, label, slug, page_type: type, enabled: false }])
     setExpanded(null); setPageKey(key); setNewPage(null)
-    setTplMsg('Página creada (borrador). Agrega bloques y publícala cuando esté lista ✓')
+    setTplMsg(seedTypes.length ? 'Página creada con estructura de arranque (borrador) ✓' : 'Página creada en blanco (borrador) ✓')
   }
 
   // HU-350/364 · duplicar la página actual (modal de marca; export → import).
@@ -965,6 +984,13 @@ export default function ConstructorClient({
                 </div>
                 {pageList.some((p) => p.key === (slugify(newPage.slug) || slugify(newPage.label))) && newPage.label.trim() && (
                   <p className="text-xs text-red-500">Ya existe una página con esa clave.</p>
+                )}
+                {/* HU-374 · sembrar la estructura típica del tipo (si la hay) */}
+                {(PAGE_TYPE_SEED[newPage.type]?.length ?? 0) > 0 && (
+                  <label className="flex items-start gap-2 text-sm text-slate-600 pt-1">
+                    <input type="checkbox" checked={newPage.seed} onChange={(e) => setNewPage((n) => n && ({ ...n, seed: e.target.checked }))} className="mt-0.5" />
+                    <span>Crear con estructura de arranque <span className="text-slate-400">({PAGE_TYPE_SEED[newPage.type].join(' · ')})</span></span>
+                  </label>
                 )}
               </div>
             ),

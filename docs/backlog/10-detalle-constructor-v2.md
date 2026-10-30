@@ -360,7 +360,7 @@
 
 > Como comerciante, quiero que al crear una página de un tipo (p. ej. "Servicios") nazca con los bloques típicos de ese tipo.
 
-**Estimación:** S (3 puntos) · **Módulo:** mapa `page_type → layout de arranque` que siembra bloques al crear (reusa el motor de "aplicar plantilla"). · **Estado:** 🔲 Pendiente.
+**Estimación:** S (3 puntos) · **Módulo:** mapa `page_type → layout de arranque` que siembra bloques al crear (reusa el motor de "aplicar plantilla"). · **Estado:** ✅ (v195) — **AC-1 ✅** `PAGE_TYPE_SEED` (landing→hero/cards/cta · servicios→hero/cards/cta · acerca→hero/text · faq→hero/faq · contenido→text) siembra los bloques al crear la página desde el wizard; **AC-2 ✅** opt-out ("Crear con estructura de arranque", checkbox marcado por defecto; desmarcarlo crea la página en blanco). `custom` y lo no listado nacen en blanco.
 
 | # | Escenario | Resultado esperado |
 |---|-----------|-------------------|
