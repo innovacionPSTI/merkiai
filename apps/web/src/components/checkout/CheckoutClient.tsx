@@ -166,8 +166,12 @@ export default function CheckoutClient({ initialEmail = '', defaultAddress = nul
   useEffect(() => {
     if (tcFlow?.flow !== 'push') return
     let stopped = false
+    // Tu Compra: la push de Nequi está vigente 15 min. Cortamos el polling al
+    // vencer para no quedar consultando indefinidamente.
+    const deadline = Date.now() + 15 * 60 * 1000
     const poll = async () => {
       if (stopped) return
+      if (Date.now() > deadline) { stopped = true; setTcError('El cobro de Nequi expiró (15 minutos). Intenta de nuevo o con otro medio.'); return }
       try {
         const r = await fetch('/api/checkout/tucompra/reconcile', {
           method: 'POST', headers: { 'Content-Type': 'application/json' },
