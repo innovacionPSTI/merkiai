@@ -36,7 +36,7 @@
 
 > Como comerciante, quiero elegir cómo se organizan los bloques de una página (en columnas, no solo apilados), para construir páginas ricas sin depender de un diseño fijo.
 
-**Estimación:** L (8 puntos) · **Módulo:** metadato de ubicación en `page_sections` (`row_id`, `row_layout` = preset, `col_index`) + agrupación en el renderer a **CSS Grid** (ambos caminos: home-blocks y SectionRenderer/CMS) + *picker* visual de proporciones en el Constructor + safelist de clases de grid · **Estado:** 🔲 Pendiente — depende de HU-350.
+**Estimación:** L (8 puntos) · **Módulo:** metadato de ubicación en `page_sections` (`row_id`, `row_layout` = preset, `col_index`) + agrupación en el renderer a **CSS Grid** (ambos caminos: home-blocks y SectionRenderer/CMS) + *picker* visual de proporciones en el Constructor + safelist de clases de grid · **Estado:** 🟡 Parcial (v168) — **hecho:** migración `e17/54` (columnas `row_id`/`row_layout`/`col_index`, aditivas nullable), **helper puro `groupSectionsIntoRows`** + `parseLayout`/`cellSpanClass` (clases `lg:col-span-*` en map literal, sin safelist) con tests (9), y **render de filas cableado en el path CMS `/[slug]`**: sin `row_id` = fila full-width idéntica a hoy (**cero regresión**), con `row_id` = **CSS Grid de 12** que **apila en móvil** (`grid-cols-1 lg:grid-cols-12`). **Pendiente:** cablear el path **home**, el **picker visual de proporciones** en el Constructor (asignar fila/preset/columna desde la UI) y ajustes responsive por breakpoint (ocultar/reordenar). Depende de HU-350. **Ops:** aplicar `e17/54` + deploy web.
 
 | # | Escenario | Resultado esperado |
 |---|-----------|-------------------|

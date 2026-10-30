@@ -18,6 +18,7 @@ import { getStoreContext } from '@/lib/store-context'
 import { getMachineDb } from '@/lib/machine-db'
 import { isPreviewMode } from '@/lib/preview'
 import SectionRenderer from '@/components/sections/SectionRenderer'
+import { groupSectionsIntoRows, cellSpanClass } from '@/lib/section-rows'
 import { getRequestCatalogDb } from '@/lib/tenant-db'
 import PreviewBanner from '@/components/PreviewBanner'
 
@@ -53,15 +54,25 @@ export default async function CmsPage({ params }: Props) {
   return (
     <div className="bg-brand-cream min-h-screen pt-16">
       {preview && <PreviewBanner />}
-      {pageData.sections.map((section) => {
-        const hidden = section.enabled === false
+      {/* HU-351 · agrupa en Filas/Columnas (opt-in). Sin row_id = fila full-width
+          (idéntico a antes). Con row_id = grilla de 12 que apila en móvil. */}
+      {groupSectionsIntoRows(pageData.sections).map((row, ri) => {
+        const hiddenStyle = { opacity: 0.55, outline: '2px dashed #d97706', outlineOffset: -2 } as const
+        if (row.single) {
+          const section = row.cells[0].section
+          return (
+            <div key={section.id} style={section.enabled === false ? hiddenStyle : undefined}>
+              <SectionRenderer section={section} pageKey={pageData.key} whatsappNumber={ctx.config?.whatsapp_number} />
+            </div>
+          )
+        }
         return (
-          <div key={section.id} style={hidden ? { opacity: 0.55, outline: '2px dashed #d97706', outlineOffset: -2 } : undefined}>
-            <SectionRenderer
-              section={section}
-              pageKey={pageData.key}
-              whatsappNumber={ctx.config?.whatsapp_number}
-            />
+          <div key={`row-${row.rowId}-${ri}`} className="mx-auto max-w-7xl px-4 py-2 grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
+            {row.cells.map(({ section, span }) => (
+              <div key={section.id} className={cellSpanClass(span)} style={section.enabled === false ? hiddenStyle : undefined}>
+                <SectionRenderer section={section} pageKey={pageData.key} whatsappNumber={ctx.config?.whatsapp_number} />
+              </div>
+            ))}
           </div>
         )
       })}
