@@ -533,6 +533,68 @@
 
 ---
 
+## Detalle · E17 — Despliegue e infraestructura dedicada por tenant (HU-360…363)
+
+> **Contexto.** HU-200 enruta la **BD** por plan (compartido / schema / BD dedicada vía `db_ref` + connection factory). Pero ofrecer infraestructura dedicada "de verdad" (servidor propio, residencia de datos, cumplimiento) abre tres huecos que HU-200 no cubre: (1) un **despliegue de app aislado** por cliente, no solo la BD; (2) promover las **variables de entorno de infra** a **config por-tenant gestionada en la consola** (hoy `SUPABASE_URL`/`JWT_SECRET`/`SERVICE_ROLE`/DSN son globales por env); (3) **custodia cifrada de los secretos de esa infra por-tenant** (no en env global ni en texto plano en la BD de plataforma).
+>
+> **No bloquean el MVP.** Café y fundación salen en **pooled + RLS** (BD compartida). Este tier es para **plan enterprise / residencia de datos**, cuando un cliente lo exija. Todo **🔲 (roadmap)**. Dependen de HU-200 (routing de datos) y HU-172/173 (control plane + plan).
+
+### HU-360 — Modo de despliegue dedicado (app-tier) por tenant · E17
+
+> Como operador, quiero poder desplegar la app de un cliente en una **instancia aislada** (su propio servidor/deploy, no solo su BD), para ofrecer aislamiento de cómputo, residencia y cumplimiento como parte del plan enterprise.
+
+**Estimación:** XL (13+ puntos) · **Módulo:** perfil de despliegue por tenant (`shared` | `dedicated`) en el control plane; plantilla de deploy parametrizada (mismo código, env/config por instancia); enrutamiento de dominio→instancia; runbook de alta/baja · **Estado:** 🔲 Pendiente (roadmap).
+
+| # | Escenario | Resultado esperado |
+|---|-----------|-------------------|
+| AC-1 | Modo por plan | El plan define `deployment_mode` (`shared` por defecto / `dedicated`); visible y asignable desde la consola |
+| AC-2 | Mismo código | La instancia dedicada corre **el mismo build**, parametrizada por config/secretos de ese tenant (sin fork de código) |
+| AC-3 | Enrutamiento | El dominio del tenant resuelve a su instancia dedicada; el plano compartido no la toca |
+| AC-4 | Alta/baja | Aprovisionar y retirar una instancia dedicada es un procedimiento auditado y reversible (runbook) |
+| AC-5 | Sin regresión | El modo `shared` (pooled) sigue siendo el default; nada cambia para los tenants compartidos |
+
+### HU-361 — Configuración de infraestructura por-tenant en la consola (env → config) · E17
+
+> Como operador, quiero gestionar desde la consola las **variables de infraestructura por tenant** (endpoint y claves de su BD dedicada, DSN de monitoreo, base URL), para no depender de env globales cuando un tenant tiene infra propia.
+
+**Estimación:** L (8 puntos) · **Módulo:** modelo de config de infra por tenant en la **BD de plataforma** (ligado a `db_ref`), UI en la consola, y resolución en el **connection factory** / arranque de la instancia · **Estado:** 🔲 Pendiente (roadmap) — extiende HU-200 (lado "gestión en consola").
+
+| # | Escenario | Resultado esperado |
+|---|-----------|-------------------|
+| AC-1 | Modelo por-tenant | Por tenant dedicado: endpoint/anon/service de su BD, `JWT_SECRET` de esa instancia, DSN de Sentry, base URL — en la BD de plataforma, referenciados por `db_ref` |
+| AC-2 | Resolución | El connection factory (HU-156) y el arranque resuelven esta config por tenant en runtime; el tenant compartido usa la env global como hoy |
+| AC-3 | Consola | Panel para ver/editar la config de infra de un tenant dedicado, gated al operador (Project Permission) |
+| AC-4 | Nunca al cliente | Estas variables jamás se exponen al admin del tenant ni al navegador (solo operador + server) |
+| AC-5 | Validación | "Probar conexión" antes de activar un destino dedicado (evita dejar un tenant sin BD) |
+
+### HU-362 — Custodia cifrada de secretos de infra por-tenant (vault) · E17 (toca E14)
+
+> Como responsable, quiero que los secretos de infraestructura de cada tenant dedicado (connection strings, service keys, JWT secret) se guarden **cifrados en reposo** y nunca en texto plano ni en env global, para que un compromiso de la BD de plataforma no exponga las infraestructuras de los clientes.
+
+**Estimación:** L (8 puntos) · **Módulo:** cifrado en reposo (Supabase Vault / KMS / gestor externo) para los secretos por-tenant de HU-361; descifrado solo server-side con mínimo privilegio; rotación por-tenant · **Estado:** 🔲 Pendiente (roadmap) — extiende HU-206/228 al caso multi-tenant dedicado.
+
+| # | Escenario | Resultado esperado |
+|---|-----------|-------------------|
+| AC-1 | Cifrado en reposo | Los secretos de infra por tenant se almacenan cifrados (Vault/KMS); la BD de plataforma nunca los guarda en claro |
+| AC-2 | Acceso mínimo | Solo el proceso server del control plane/instancia los descifra, en memoria, por request; nunca el cliente ni logs |
+| AC-3 | Rotación por-tenant | Rotar el secreto de un tenant no afecta a otros; procedimiento auditado (extiende HU-228) |
+| AC-4 | Auditoría | Todo acceso/rotación queda auditado (HU-146) y alertable (HU-170) |
+
+### HU-363 — Orquestación de aprovisionamiento de infra dedicada + migración · E17
+
+> Como operador, quiero aprovisionar (y promover) la infraestructura dedicada de un tenant de forma orquestada —crear su BD, migrar sus datos, sembrar y custodiar sus secretos—, para ofrecer el tier dedicado sin pasos manuales frágiles.
+
+**Estimación:** XL (13+ puntos) · **Módulo:** orquestador en el control plane que compone HU-200 (migración/promoción de datos) + HU-361 (config) + HU-362 (secretos), idempotente y con rollback · **Estado:** 🔲 Pendiente (roadmap) — puede ejecutarse como fase final de HU-200.
+
+| # | Escenario | Resultado esperado |
+|---|-----------|-------------------|
+| AC-1 | Alta orquestada | "Promover a dedicado" crea el destino (Supabase/Neon), migra las filas del tenant (HU-200 AC-4), guarda sus secretos (HU-362) y cambia `db_ref` — en un flujo auditado |
+| AC-2 | Idempotente + rollback | Si un paso falla, revierte los previos; re-ejecutar no duplica |
+| AC-3 | Sin downtime perceptible | La promoción se hace con corte mínimo/ventana controlada; reversible |
+| AC-4 | Verificación | Chequeo post-promoción (lectura/escritura acotada al tenant en el nuevo destino) antes de dar por activo |
+
+---
+
 ## Detalle · E17 — Abstracción del proveedor de identidad (HU-201)
 
 > Garantiza que migrar de **Stack Auth** a otro proveedor de identidad sea de bajo costo, con el mismo patrón interfaz+factory de pagos/email/billing. Ver `docs/identidad-abstraccion-y-migracion.md`. **🔲 (roadmap; base ya implementada).**
