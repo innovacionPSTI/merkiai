@@ -19,6 +19,7 @@ import { getMachineDb } from '@/lib/machine-db'
 import { isPreviewMode } from '@/lib/preview'
 import SectionRenderer from '@/components/sections/SectionRenderer'
 import { groupSectionsIntoRows, cellSpanClass } from '@/lib/section-rows'
+import { pageStyleVars } from '@/lib/page-style'
 import { getRequestCatalogDb } from '@/lib/tenant-db'
 import PreviewBanner from '@/components/PreviewBanner'
 
@@ -52,7 +53,7 @@ export default async function CmsPage({ params }: Props) {
   if (!pageData) notFound()
 
   return (
-    <div className="bg-brand-cream min-h-screen pt-16">
+    <div className="bg-brand-cream min-h-screen pt-16" style={pageStyleVars((pageData as { style?: unknown }).style)}>
       {preview && <PreviewBanner />}
       {/* HU-351 · agrupa en Filas/Columnas (opt-in). Sin row_id = fila full-width
           (idéntico a antes). Con row_id = grilla de 12 que apila en móvil. */}

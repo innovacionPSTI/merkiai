@@ -16,7 +16,7 @@ import SectionEditor from './SectionEditor'
 import AddBlockCatalog from './AddBlockCatalog'
 import { getPreviewUrlAction } from '@/app/constructor/preview-action'
 
-interface PageOption { key: string; label: string; slug: string }
+interface PageOption { key: string; label: string; slug: string; style?: unknown }
 interface SectionRow {
   id: number
   page_key: string
@@ -256,6 +256,21 @@ export default function ConstructorClient({ pages, initialPageKey, initialTempla
     await load(pageKey)
   }
 
+  // HU-352 · acento por página (override sobre el tema). Guarda en pages.style.
+  async function setPageAccent(accent: string | null) {
+    const cur = pageList.find((p) => p.key === pageKey)
+    const style: Record<string, unknown> = { ...((cur?.style as Record<string, unknown>) ?? {}) }
+    if (accent) style.accent = accent; else delete style.accent
+    const res = await fetch('/api/admin/cms/pages', {
+      method: 'PATCH', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ key: pageKey, style }),
+    })
+    if (!res.ok) { setTplMsg((await res.json().catch(() => ({}))).error || 'No se pudo actualizar el acento'); return }
+    setPageList((ps) => ps.map((p) => (p.key === pageKey ? { ...p, style } : p)))
+    setTplMsg(accent ? 'Acento de la página actualizado ✓' : 'Acento de la página quitado ✓')
+    bump()
+  }
+
   async function changeTemplate(next: string) {
     setTemplate(next); setTplMsg('')
     const res = await fetch('/api/admin/config', {
@@ -363,6 +378,17 @@ export default function ConstructorClient({ pages, initialPageKey, initialTempla
             {/* HU-350 · crear/duplicar página desde el hub */}
             <button onClick={createPage} className="rounded-lg border border-indigo-300 px-3 py-2 text-sm font-medium text-indigo-700 hover:bg-indigo-50">+ Nueva página</button>
             <button onClick={duplicatePage} className="rounded-lg border border-slate-300 px-3 py-2 text-sm text-slate-700 hover:bg-slate-50">Duplicar</button>
+            {/* HU-352 · acento por página */}
+            {(() => {
+              const a = ((pageList.find((p) => p.key === pageKey)?.style as { accent?: string } | undefined)?.accent) ?? ''
+              return (
+                <label className="flex items-center gap-1 text-xs text-slate-600" title="Acento de esta página (en cascada sobre el tema)">
+                  Acento
+                  <input type="color" value={a || '#000000'} onChange={(e) => setPageAccent(e.target.value)} className="h-7 w-9 rounded border border-slate-300 p-0.5 cursor-pointer" aria-label="Acento de la página" />
+                  {a && <button onClick={() => setPageAccent(null)} className="text-slate-400 hover:text-red-600" title="Quitar acento" aria-label="Quitar acento">✕</button>}
+                </label>
+              )
+            })()}
 
             <div className="ml-auto">
               <AddBlockCatalog onAdd={addBlock} />

@@ -18,7 +18,7 @@ export const PAGE_PACKAGE_KIND = 'merkiai.page' as const
 
 /** Campos de la página que viajan (sin key/slug/enabled/order/timestamps). */
 export const PACKAGE_PAGE_FIELDS = [
-  'label', 'page_type', 'show_in_footer', 'meta_title', 'meta_description',
+  'label', 'page_type', 'show_in_footer', 'meta_title', 'meta_description', 'style',
 ] as const
 
 /** Columnas de sección que viajan. */
@@ -57,7 +57,7 @@ function pick<T extends Record<string, unknown>>(row: T, cols: readonly string[]
 
 /** Construye el paquete a partir de la página + sus secciones con ítems (pura). */
 export function buildPagePackage(
-  page: Pick<Page, 'label' | 'page_type' | 'show_in_footer' | 'meta_title' | 'meta_description'>,
+  page: Pick<Page, 'label' | 'page_type' | 'show_in_footer' | 'meta_title' | 'meta_description' | 'style'>,
   sections: (PageSection & { items: SectionItem[] })[],
 ): PagePackage {
   return {
@@ -143,6 +143,8 @@ export async function importPagePackage(raw: unknown, db: Db, opts: ImportPageOp
     show_in_footer: pageFields.show_in_footer === true,
     meta_title: (pageFields.meta_title as string) ?? null,
     meta_description: (pageFields.meta_description as string) ?? null,
+    // HU-352 · portabilidad del estilo por página
+    style: (pageFields.style && typeof pageFields.style === 'object') ? pageFields.style as Record<string, unknown> : null,
   }, db)
 
   for (const [i, s] of sections.entries()) {

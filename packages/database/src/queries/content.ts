@@ -25,6 +25,8 @@ export type CreatePageInput = {
   meta_title?: string | null
   meta_description?: string | null
   order_index?: number
+  // HU-352 · estilo por página (override sobre el tema)
+  style?: Record<string, unknown> | null
 }
 
 export type UpdatePageInput = Partial<Omit<CreatePageInput, 'key'>>
@@ -190,9 +192,15 @@ export async function getPageWithSections(
 /** Crea una página. */
 export async function createPage(input: CreatePageInput, db: Db): Promise<Page> {
   const supabase = db
+  const { style, ...rest } = input
   const { data, error } = await supabase
     .from('pages')
-    .insert({ ...input, created_at: new Date().toISOString(), updated_at: new Date().toISOString() })
+    .insert({
+      ...rest,
+      ...(style !== undefined ? { style: style as unknown as Json } : {}),
+      created_at: new Date().toISOString(),
+      updated_at: new Date().toISOString(),
+    })
     .select()
     .single()
   if (error) throw error
@@ -202,9 +210,14 @@ export async function createPage(input: CreatePageInput, db: Db): Promise<Page> 
 /** Actualiza campos de una página. */
 export async function updatePage(key: string, input: UpdatePageInput, db: Db): Promise<Page> {
   const supabase = db
+  const { style, ...rest } = input
   const { data, error } = await supabase
     .from('pages')
-    .update({ ...input, updated_at: new Date().toISOString() })
+    .update({
+      ...rest,
+      ...(style !== undefined ? { style: style as unknown as Json } : {}),
+      updated_at: new Date().toISOString(),
+    })
     .eq('key', key)
     .select()
     .single()

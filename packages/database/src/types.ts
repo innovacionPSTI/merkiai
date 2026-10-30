@@ -1264,6 +1264,7 @@ export type Database = {
           meta_title: string | null
           meta_description: string | null
           order_index: number
+          style: Json | null
           created_at: string
           updated_at: string
         }
@@ -1278,6 +1279,7 @@ export type Database = {
           meta_title?: string | null
           meta_description?: string | null
           order_index?: number
+          style?: Json | null
           created_at?: string
           updated_at?: string
         }
@@ -1292,6 +1294,7 @@ export type Database = {
           meta_title?: string | null
           meta_description?: string | null
           order_index?: number
+          style?: Json | null
           updated_at?: string
         }
         Relationships: []
