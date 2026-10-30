@@ -54,14 +54,16 @@
 
 > Como comerciante, quiero poder ajustar el estilo de una página concreta (acento, ancho de contenedor, escala de espaciado) sin cambiar el tema global, para diferenciar landings/portadas.
 
-**Estimación:** S (3 puntos) · **Módulo:** overrides por página (acento/ancho/espaciado por **tokens**) que caen en cascada sobre el tema activo (HU-247) + fila/sección (HU-253); editor "Estilo de la página" · **Estado:** 🔲 Pendiente — separa el eje "estilo" del eje "estructura" (HU-351) y "contenido".
+**Estimación:** S (3 puntos) · **Módulo:** overrides por página (acento/ancho/espaciado por **tokens**) que caen en cascada sobre el tema activo (HU-247) + fila/sección (HU-253); editor "Estilo de la página" · **Estado:** 🟡 Parcial (acento) — AC-1/AC-3/AC-4 ✅; AC-2 parcial (acento aplicado; ancho de contenedor y escala de espaciado reservados en el tipo `PageStyle`, pendientes de cablear en render). Separa el eje "estilo" del eje "estructura" (HU-351) y "contenido".
 
-| # | Escenario | Resultado esperado |
-|---|-----------|-------------------|
-| AC-1 | Cascada | Estilo efectivo = tema global (HU-247) → override de página → estilo de fila/sección (HU-253); todo por **tokens**, sin colores fijos |
-| AC-2 | Alcance acotado | Override limitado a acento, ancho de contenedor y escala de espaciado (no un tema paralelo completo) |
-| AC-3 | Default sin efecto | Sin override, la página hereda el tema → cero regresión |
-| AC-4 | Portabilidad | El override viaja en el paquete de Página/Preset |
+| # | Escenario | Resultado esperado | Estado |
+|---|-----------|-------------------|--------|
+| AC-1 | Cascada | Estilo efectivo = tema global (HU-247) → override de página → estilo de fila/sección (HU-253); todo por **tokens**, sin colores fijos | ✅ acento re-tinta `--brand-primary`/`--brand-dark` vía `hexToRgb` |
+| AC-2 | Alcance acotado | Override limitado a acento, ancho de contenedor y escala de espaciado (no un tema paralelo completo) | 🟡 acento ✅; ancho/espaciado reservados en `PageStyle`, por cablear |
+| AC-3 | Default sin efecto | Sin override, la página hereda el tema → cero regresión | ✅ `pageStyleVars(null)` = `{}` |
+| AC-4 | Portabilidad | El override viaja en el paquete de Página/Preset | ✅ `style` en `PACKAGE_PAGE_FIELDS` (export/import) |
+
+**Implementado (migración e17/55 + commit HU-352):** `pages.style jsonb` (opt-in, aditiva) · `apps/web/src/lib/page-style.ts` (`pageStyleVars`/`hasPageStyle`/`parsePageStyle`) · contenedor de `[slug]` aplica el estilo · control de color de acento por página en el Constructor · `CreatePageInput.style` + `types.ts` · 5 tests. **Pendiente:** aplicar en el path home (hoy solo `[slug]`); cablear ancho de contenedor + escala de espaciado.
 
 ---
 
