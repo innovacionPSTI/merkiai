@@ -33,7 +33,7 @@ export default async function ConstructorPage() {
 
   const { db: supabase } = await requireAdminDb()
   const [{ data: pages }, { data: cfg }] = await Promise.all([
-    supabase.from('pages').select('key, label, slug, style, page_type, enabled').order('order_index'),
+    supabase.from('pages').select('key, label, slug, style, page_type, enabled, meta_title, meta_description, show_in_footer').order('order_index'),
     supabase.from('store_config').select('template').maybeSingle(),
   ])
   const pageOptions = (pages ?? []).map((p) => ({
@@ -43,6 +43,9 @@ export default async function ConstructorPage() {
     style: (p as { style?: unknown }).style ?? null,
     page_type: ((p as { page_type?: string }).page_type ?? 'custom'),
     enabled: (p as { enabled?: boolean }).enabled ?? true,
+    meta_title: ((p as { meta_title?: string | null }).meta_title ?? null),
+    meta_description: ((p as { meta_description?: string | null }).meta_description ?? null),
+    show_in_footer: ((p as { show_in_footer?: boolean }).show_in_footer ?? false),
   }))
   const initialPageKey = pageOptions.find((p) => p.key === 'home')?.key ?? pageOptions[0]?.key ?? 'home'
   const initialTemplate = (cfg?.template as string | undefined) ?? 'default'

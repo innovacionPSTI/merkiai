@@ -288,7 +288,7 @@
 
 > Como plataforma, quiero una sola superficie de autoría: el Constructor absorbe lo que hoy hace "Páginas" y esa sección se retira.
 
-**Estimación:** M (5 puntos) · **Módulo:** editor de metadatos (tipo/SEO/footer/nav) en el hub + retiro de `/contenido`. · **Estado:** 🔲 Pendiente — depende de HU-367.
+**Estimación:** M (5 puntos) · **Módulo:** editor de metadatos (tipo/SEO/footer/nav) en el hub + retiro de `/contenido`. · **Estado:** ✅ (v191) — **AC-1 ✅** metadatos (nombre, slug, tipo, meta título/descr., mostrar en footer) editables en el drawer "Ajustes de página" del Constructor (`savePageMeta` → `/api/admin/cms/pages`); **AC-2 ✅** retiro **condicional por plan**: con el Constructor disponible (flag o entitlement `page_builder`) se **oculta "Páginas"** del menú y `/contenido` **redirige** a `/constructor`; **sin** él, "Páginas" se conserva como editor de respaldo → **cero regresión** (AC-3). Navegación ya cubierta por HU-367.
 
 | # | Escenario | Resultado esperado |
 |---|-----------|-------------------|

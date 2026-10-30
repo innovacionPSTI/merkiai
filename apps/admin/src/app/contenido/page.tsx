@@ -1,6 +1,9 @@
 import { getAdminUser } from '@/lib/auth'
 import { redirect } from 'next/navigation'
 import { requireAdminDb } from '@/lib/admin-context'
+import { FEATURES as FLAGS } from '@/lib/features'
+import { getTenantEntitlements } from '@/lib/entitlements'
+import { resolveFeature, FEATURES } from '@merkiai/tenancy'
 import ContenidoClient from './ContenidoClient'
 
 export const dynamic = 'force-dynamic'
@@ -10,6 +13,12 @@ export default async function ContenidoPage() {
     await getAdminUser()
   } catch {
     redirect('/sign-in')
+  }
+
+  // HU-368 · con el Constructor disponible, "Páginas" se unificó en él → redirige.
+  const { entitlements } = await getTenantEntitlements().catch(() => ({ entitlements: null }))
+  if (FLAGS.pageBuilder || resolveFeature(entitlements, FEATURES.PAGE_BUILDER)) {
+    redirect('/constructor')
   }
 
   const { db: supabase } = await requireAdminDb()

@@ -163,7 +163,10 @@ const NAV: NavNode[] = [
  *  (filtra el leaf `/constructor` cuando el plan/flag no lo habilita). */
 function navFor(pageBuilder: boolean, collections: boolean): NavNode[] {
   const hidden = new Set<string>()
-  if (!pageBuilder) hidden.add('/constructor')
+  // HU-368 · con el Constructor disponible, "Páginas" (/contenido) se retira; sin
+  // él, se conserva "Páginas" como editor de respaldo (cero regresión por plan).
+  if (pageBuilder) hidden.add('/contenido')
+  else hidden.add('/constructor')
   if (!collections) hidden.add('/colecciones')
   if (hidden.size === 0) return NAV
   return NAV.map((node) =>

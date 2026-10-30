@@ -17,7 +17,7 @@ import AddBlockCatalog from './AddBlockCatalog'
 import NavEditor from './NavEditor'
 import { getPreviewUrlAction } from '@/app/constructor/preview-action'
 
-interface PageOption { key: string; label: string; slug: string; style?: unknown; page_type?: string; enabled?: boolean }
+interface PageOption { key: string; label: string; slug: string; style?: unknown; page_type?: string; enabled?: boolean; meta_title?: string | null; meta_description?: string | null; show_in_footer?: boolean }
 
 // HU-350 AC-2 · etiquetas de tipo de página para el filtro de la lista.
 const PAGE_TYPE_LABELS: Record<string, string> = {
@@ -192,6 +192,17 @@ export default function ConstructorClient({
     setTplMsg(enabled ? 'Página publicada ✓' : 'Página pasada a borrador ✓')
     bump()
   }
+  // HU-368 · metadatos de página editables en el Constructor (tipo/SEO/footer/slug).
+  async function savePageMeta(fields: Partial<PageOption>, okMsg = 'Página actualizada ✓') {
+    const res = await fetch('/api/admin/cms/pages', {
+      method: 'PATCH', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ key: pageKey, ...fields }),
+    })
+    if (!res.ok) { setTplMsg((await res.json().catch(() => ({}))).error || 'No se pudo actualizar'); return }
+    setPageList((ps) => ps.map((p) => (p.key === pageKey ? { ...p, ...fields } : p)))
+    setTplMsg(okMsg); bump()
+  }
+
   function publishPage() { void setPublished(true) }
   function unpublishPage() {
     askConfirm({
@@ -809,7 +820,47 @@ export default function ConstructorClient({
                     <option value="relaxed">Amplio</option>
                   </select>
                 </div>
-                <p className="text-[11px] text-slate-400 pt-2 border-t border-slate-100">Más ajustes (tipo de página, SEO, navegación) llegarán al traer «Páginas» al Constructor.</p>
+                {/* HU-368 · metadatos de página (tipo, SEO, slug, footer) */}
+                {(() => {
+                  const cur = pageList.find((p) => p.key === pageKey)
+                  return (
+                    <div className="pt-3 border-t border-slate-100 space-y-3">
+                      <p className="text-xs font-semibold text-slate-500 uppercase tracking-wide">Página</p>
+                      <div>
+                        <label className="block text-xs font-semibold text-slate-500 mb-1">Nombre</label>
+                        <input defaultValue={cur?.label ?? ''} onBlur={(e) => e.target.value.trim() && e.target.value !== cur?.label && savePageMeta({ label: e.target.value.trim() })}
+                          className="w-full rounded-lg border border-slate-300 px-2 py-1.5 text-sm" />
+                      </div>
+                      <div>
+                        <label className="block text-xs font-semibold text-slate-500 mb-1">Slug (URL)</label>
+                        <input defaultValue={cur?.slug ?? ''} onBlur={(e) => e.target.value.trim() && e.target.value !== cur?.slug && savePageMeta({ slug: e.target.value.trim() }, 'Slug actualizado ✓ (revisa redirecciones)')}
+                          className="w-full rounded-lg border border-slate-300 px-2 py-1.5 text-sm font-mono text-xs" />
+                      </div>
+                      <div>
+                        <label className="block text-xs font-semibold text-slate-500 mb-1">Tipo de página</label>
+                        <select value={cur?.page_type ?? 'custom'} onChange={(e) => savePageMeta({ page_type: e.target.value })}
+                          className="w-full h-9 rounded-lg border border-slate-300 text-sm px-2">
+                          {Object.entries(PAGE_TYPE_LABELS).map(([v, l]) => <option key={v} value={v}>{l}</option>)}
+                        </select>
+                      </div>
+                      <div>
+                        <label className="block text-xs font-semibold text-slate-500 mb-1">Meta título (SEO)</label>
+                        <input defaultValue={cur?.meta_title ?? ''} onBlur={(e) => e.target.value !== (cur?.meta_title ?? '') && savePageMeta({ meta_title: e.target.value || null })}
+                          className="w-full rounded-lg border border-slate-300 px-2 py-1.5 text-sm" placeholder="Título para buscadores" />
+                      </div>
+                      <div>
+                        <label className="block text-xs font-semibold text-slate-500 mb-1">Meta descripción (SEO)</label>
+                        <textarea defaultValue={cur?.meta_description ?? ''} rows={2} onBlur={(e) => e.target.value !== (cur?.meta_description ?? '') && savePageMeta({ meta_description: e.target.value || null })}
+                          className="w-full rounded-lg border border-slate-300 px-2 py-1.5 text-sm resize-none" placeholder="Descripción para buscadores" />
+                      </div>
+                      <label className="flex items-center gap-2 text-sm text-slate-600">
+                        <input type="checkbox" checked={cur?.show_in_footer === true} onChange={(e) => savePageMeta({ show_in_footer: e.target.checked })} />
+                        Mostrar en el footer
+                      </label>
+                      <p className="text-[11px] text-slate-400">Para el menú del sitio usa «Navegación» en la barra.</p>
+                    </div>
+                  )
+                })()}
               </div>
             </div>
           </div>

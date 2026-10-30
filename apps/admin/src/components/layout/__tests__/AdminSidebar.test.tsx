@@ -51,17 +51,18 @@ describe('AdminSidebar', () => {
     expect(screen.queryByText('General')).not.toBeInTheDocument()
   })
 
-  it('HU-350/HU-359 · "Constructor" oculto sin pageBuilder', () => {
+  it('HU-350/HU-368 · sin pageBuilder: "Páginas" (fallback) y sin "Constructor"', () => {
     render(<AdminSidebar role="super_admin" pageBuilder={false} />)
     fireEvent.click(screen.getByRole('button', { name: /Contenido/ }))
     expect(screen.getByText('Páginas')).toBeInTheDocument()
     expect(screen.queryByText('Constructor')).not.toBeInTheDocument()
   })
 
-  it('HU-350/HU-359 · "Constructor" visible con pageBuilder', () => {
+  it('HU-350/HU-368 · con pageBuilder: "Constructor" y SIN "Páginas" (retirada)', () => {
     render(<AdminSidebar role="super_admin" pageBuilder={true} />)
     fireEvent.click(screen.getByRole('button', { name: /Contenido/ }))
     expect(screen.getByText('Constructor')).toBeInTheDocument()
+    expect(screen.queryByText('Páginas')).not.toBeInTheDocument()
   })
 
   it('oculta secciones sin permiso según el rol (vendedor no ve Configuración)', () => {
