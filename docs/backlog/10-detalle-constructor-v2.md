@@ -276,7 +276,7 @@
 
 > Como comerciante, quiero editar el menú (con jerarquías padre/hijo) desde el Constructor, para no saltar a otra sección.
 
-**Estimación:** M (5 puntos) · **Módulo:** traer el editor de `nav_items` (de `/contenido`) al hub. · **Estado:** 🔲 Pendiente.
+**Estimación:** M (5 puntos) · **Módulo:** traer el editor de `nav_items` (de `/contenido`) al hub. · **Estado:** ✅ (v190) — nuevo `NavEditor` en el Constructor (drawer **"Navegación"**): CRUD de `nav_items` vía `/api/admin/nav`, **jerarquía padre/hijo (1 nivel)**, **vincular a página** (href = /slug), toggle visible, sin diálogos nativos (ConfirmDialog). AC-1/AC-2 ✅; AC-3 (niveles por plan) llega con HU-369.
 
 | # | Escenario | Resultado esperado |
 |---|-----------|-------------------|

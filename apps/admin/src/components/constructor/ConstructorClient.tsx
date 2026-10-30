@@ -14,6 +14,7 @@ import { getBlockSchema, listTemplates, getTemplateHomeLayout } from '@merkiai/d
 import { Icon, ConfirmDialog, PromptModal, WizardModal } from '@merkiai/ui'
 import SectionEditor from './SectionEditor'
 import AddBlockCatalog from './AddBlockCatalog'
+import NavEditor from './NavEditor'
 import { getPreviewUrlAction } from '@/app/constructor/preview-action'
 
 interface PageOption { key: string; label: string; slug: string; style?: unknown; page_type?: string; enabled?: boolean }
@@ -77,6 +78,7 @@ export default function ConstructorClient({
   const [newPage, setNewPage] = useState<null | { type: string; label: string; slug: string }>(null) // wizard Nueva página
   const [advOpen, setAdvOpen] = useState(false) // HU-365 · menú "···" de acciones avanzadas
   const [pageSettingsOpen, setPageSettingsOpen] = useState(false) // HU-365 AC-3 · drawer Ajustes de página
+  const [navOpen, setNavOpen] = useState(false) // HU-367 · drawer Navegación
   const askConfirm = (o: NonNullable<typeof confirmState>) => setConfirmState(o)
   const askPrompt = (o: NonNullable<typeof promptState>) => setPromptState(o)
 
@@ -589,6 +591,10 @@ export default function ConstructorClient({
                 <Icon name="settings" size={14} /> Ajustes de página
               </button>
             )}
+            {/* HU-367 · navegación (menú) dentro del Constructor */}
+            <button onClick={() => setNavOpen(true)} className="inline-flex items-center gap-1 rounded-lg border border-slate-300 px-3 py-2 text-sm text-slate-700 hover:bg-slate-50" title="Editar el menú del sitio">
+              <Icon name="content" size={14} /> Navegación
+            </button>
 
             {/* HU-358 · insertar un bloque guardado */}
             {savedBlocks.length > 0 && (
@@ -809,6 +815,20 @@ export default function ConstructorClient({
           </div>
         )
       })()}
+
+      {/* HU-367 · drawer "Navegación" (gestión del menú dentro del Constructor) */}
+      {navOpen && (
+        <div className="fixed inset-0 z-50 flex justify-end bg-black/30" onClick={() => setNavOpen(false)}>
+          <div className="w-96 max-w-full h-full bg-white shadow-xl p-5 overflow-y-auto" onClick={(e) => e.stopPropagation()}>
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="font-display text-brand-primary text-lg">Navegación</h3>
+              <button onClick={() => setNavOpen(false)} className="text-slate-400 hover:text-slate-700" aria-label="Cerrar"><Icon name="close" size={18} /></button>
+            </div>
+            <p className="text-xs text-slate-400 mb-3">Elementos del menú del sitio (1 nivel de subelementos). Vincula cada uno a una página o deja una ruta libre.</p>
+            <NavEditor pages={pageList.map((p) => ({ key: p.key, label: p.label, slug: p.slug }))} />
+          </div>
+        </div>
+      )}
 
       {/* HU-364 · modales de marca (reemplazan prompt/confirm/alert nativos) */}
       <ConfirmDialog
