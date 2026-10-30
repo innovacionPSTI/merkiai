@@ -88,7 +88,7 @@
 
 > Como editor, quiero construir una sola plantilla por tipo de contenido y que cada registro se renderice con ella, para publicar miles de páginas (noticias, cursos) sin armarlas una por una.
 
-**Estimación:** L (8 puntos) · **Módulo:** plantilla por colección (layout + bloques con *placeholders* que leen campos del registro) + ruta dinámica `/[collection]/[slug]` que resuelve el registro y aplica la plantilla · **Estado:** 🔲 Pendiente — depende de HU-351 (layout) + HU-353 (colecciones).
+**Estimación:** L (8 puntos) · **Módulo:** plantilla por colección (layout + bloques con *placeholders* que leen campos del registro) + ruta dinámica `/[collection]/[slug]` que resuelve el registro y aplica la plantilla · **Estado:** 🟡 Render público (v177) — **hecho:** ruta dinámica **`/[slug]/[item]`** (reusa el segmento `[slug]` del CMS + anida `[item]`; las rutas literales blog/shop/bundles tienen prioridad) que resuelve colección (habilitada) + registro (publicado; en preview también borradores vía machine-db) y lo renderiza con una **plantilla genérica dirigida por el esquema** (título, imagen hero, fecha, cuerpo richtext, enlaces/relaciones, booleanos…); **SEO/OG por registro** en `generateMetadata` (AC-2/AC-3); **preview por token + borrador** reusados (AC-4); ruta/tipo nuevo → **cero regresión** (AC-5). **Pendiente:** **AC-1** plantilla construida en el lienzo (Filas/Columnas + bloques con campos enlazados) como override de la plantilla automática. Depende de HU-351 + HU-353.
 
 | # | Escenario | Resultado esperado |
 |---|-----------|-------------------|
