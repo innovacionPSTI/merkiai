@@ -26,7 +26,7 @@
 | **HU-354** | Plantillas por tipo | ✅ AC-1…AC-5 | Ruta pública `/[slug]/[item]`: plantilla construida en el Constructor (`template_page_key` + placeholders `{{campo}}`, `e17/58`) con fallback a la automática; SEO/OG + preview; portable. |
 | **HU-355** | Listado dinámico | ✅ AC-1…AC-4 | Bloque `collection_list` (`e17/57`): colección + orden + filtro + límite + presentación; enlaza a los registros. |
 | **HU-356** | Partials globales | ✅ AC-1…AC-3 | Bloque `partial_ref` (`e17/59`): página reutilizable inyectada por referencia; anti-recursión; preview + portabilidad por ser página. |
-| **HU-357** | Biblioteca de medios | 🔲 Pendiente | Ola 3 (facilidad). |
+| **HU-357** | Biblioteca de medios | ✅ AC-1…AC-3 | `MediaPicker` reutilizable en campos de imagen (elegir de la biblioteca sin re-subir); gestión en /media; RLS existente. Sin migración. |
 | **HU-358** | Bloques guardados | ✅ AC-1…AC-3 | Tabla `saved_blocks` (`e17/60`): guardar una sección (con ítems) como reutilizable e insertarla como copia; viaja en el paquete de sitio. |
 | **HU-359** | Entitlements + tiering | 🟡 transversal | Catálogo completo (8 features + 4 limits) + gating de las features vivas (`page_builder`/`layout_avanzado`/`estilo_por_pagina`/`colecciones`); el resto aterriza con cada HU futura. |
 
@@ -34,7 +34,7 @@
 
 **Circuito Ola 2 operativo de punta a punta:** definir tipo (colección) → cargar registros (admin) → página pública por registro (`/[colección]/[slug]`) → listarlos en cualquier página (bloque `collection_list`). **Habilita** el catálogo de cursos (E20) y el portal (E23).
 
-**Pendientes (opcionales / pulido):** HU-357 (biblioteca de medios) de la Ola 3. El resto del gating de HU-359 se puebla junto a esa HU. (Ola 1 ✅ · Ola 2 ✅ · Ola 3: HU-356 ✅, HU-358 ✅.)
+**Épica Constructor v2 COMPLETA** (Ola 1 ✅ · Ola 2 ✅ · Ola 3 ✅). Único transversal abierto: **HU-359** — el gating por entitlement de las features de contenido (colecciones/medios/etc.) se afina según tiering comercial, pero el catálogo y el gating de las features base ya están.
 
 ---
 
@@ -156,7 +156,7 @@
 
 > Como editor, quiero una biblioteca para reutilizar imágenes/archivos entre páginas, para no re-subir el mismo recurso una y otra vez.
 
-**Estimación:** M (5 puntos) · **Módulo:** índice de medios por tenant (sobre el Storage ya usado) + selector reutilizable en el widget `image`/`file` (HU-264) + metadatos (alt, nombre) · **Estado:** 🔲 Pendiente (estaba como roadmap de E2).
+**Estimación:** M (5 puntos) · **Módulo:** índice de medios por tenant (sobre el Storage ya usado) + selector reutilizable en el widget `image`/`file` (HU-264) + metadatos (alt, nombre) · **Estado:** ✅ (v184) — **AC-1:** nuevo `MediaPicker` (modal que lista `media_assets` del tenant vía `/api/admin/media`, con búsqueda por nombre/alt) integrado en `ImageUpload` → **cualquier campo de imagen** permite "elegir de la biblioteca" (reutilizar sin re-subir); **AC-2** ya cubierto por la página **/media** (listar/buscar/eliminar + `alt` editable: `updateMediaAssetAlt`); **AC-3** multi-tenant + RLS sobre `media_assets` (preexistente). Sin tablas ni migración nuevas.
 
 | # | Escenario | Resultado esperado |
 |---|-----------|-------------------|
@@ -229,7 +229,7 @@
 
 1. **Ola 1 (fundación de autoría):** **HU-350** ✅ (shell unificado) → **HU-351** ✅ (Filas/Columnas) → **HU-352** ✅ (estilo por página). *Reorganiza + añade la capa de layout; cero regresión.* **→ Ola 1 completa.**
 2. **Ola 2 (contenido dirigido por datos):** **HU-353** ✅ (colecciones, pieza madre) → **HU-354** ✅ (plantillas por tipo) → **HU-355** ✅ (listado dinámico). **→ Ola 2 completa.**
-3. **Ola 3 (facilidad transversal, en paralelo tras Ola 1):** **HU-356** ✅ (partials) · **HU-357** 🔲 (biblioteca de medios) · **HU-358** ✅ (bloques guardados). **→ en curso (resta HU-357).**
+3. **Ola 3 (facilidad transversal, en paralelo tras Ola 1):** **HU-356** ✅ (partials) · **HU-357** ✅ (biblioteca de medios) · **HU-358** ✅ (bloques guardados). **→ completa.**
 - **Transversal (con cada HU):** **HU-359** 🟡 (entitlements + tiering por plan) — catálogo completo; el gating se puebla a medida que cada feature se construye.
 4. **Habilita:** el **vertical educación** (E20: cursos como colección + plantilla por tipo) y el **Portal Institucional** (E23: HU-341 multiportal, HU-342 buscador/agregadores se apoyan en HU-353/355).
 

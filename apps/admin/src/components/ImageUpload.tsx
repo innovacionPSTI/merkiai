@@ -2,6 +2,7 @@
 
 import { useState, useRef } from 'react'
 import { Icon } from '@merkiai/ui'
+import MediaPicker from './MediaPicker'
 
 interface Props {
   value: string
@@ -25,6 +26,7 @@ export default function ImageUpload({
   const [uploading, setUploading] = useState(false)
   const [error, setError] = useState('')
   const [dragging, setDragging] = useState(false)
+  const [pickerOpen, setPickerOpen] = useState(false) // HU-357 · biblioteca
   const inputRef = useRef<HTMLInputElement>(null)
 
   async function upload(file: File) {
@@ -97,6 +99,13 @@ export default function ImageUpload({
             </button>
             <button
               type="button"
+              onClick={() => setPickerOpen(true)}
+              className="font-brand text-xs bg-white text-brand-primary px-3 py-1.5 rounded-lg hover:bg-brand-cream"
+            >
+              Biblioteca
+            </button>
+            <button
+              type="button"
               onClick={handleRemove}
               className="font-brand text-xs bg-red-500 text-white px-3 py-1.5 rounded-lg hover:bg-red-600"
             >
@@ -129,6 +138,13 @@ export default function ImageUpload({
                 Arrastra una imagen o <span className="text-brand-primary underline">haz clic</span>
               </p>
               <p className="font-brand text-xs text-brand-primary/30">JPG, PNG, WebP — máx. 5 MB</p>
+              <button
+                type="button"
+                onClick={(e) => { e.stopPropagation(); setPickerOpen(true) }}
+                className="mt-1 font-brand text-xs text-brand-primary underline"
+              >
+                o elegir de la biblioteca
+              </button>
             </div>
           )}
         </div>
@@ -143,6 +159,9 @@ export default function ImageUpload({
       />
 
       {error && <p className="font-brand text-xs text-red-500">{error}</p>}
+
+      {/* HU-357 · elegir de la biblioteca de medios (reutilizar sin re-subir) */}
+      <MediaPicker open={pickerOpen} onClose={() => setPickerOpen(false)} onSelect={(url) => onChange(url)} mime="image" />
     </div>
   )
 }
