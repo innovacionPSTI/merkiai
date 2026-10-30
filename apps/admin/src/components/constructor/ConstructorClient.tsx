@@ -76,6 +76,7 @@ export default function ConstructorClient({
   const [promptState, setPromptState] = useState<null | { title: string; fields: import('@merkiai/ui').PromptField[]; submitLabel?: string; validate?: (v: Record<string, string>) => string | null; onSubmit: (v: Record<string, string>) => void }>(null)
   const [newPage, setNewPage] = useState<null | { type: string; label: string; slug: string }>(null) // wizard Nueva página
   const [advOpen, setAdvOpen] = useState(false) // HU-365 · menú "···" de acciones avanzadas
+  const [pageSettingsOpen, setPageSettingsOpen] = useState(false) // HU-365 AC-3 · drawer Ajustes de página
   const askConfirm = (o: NonNullable<typeof confirmState>) => setConfirmState(o)
   const askPrompt = (o: NonNullable<typeof promptState>) => setPromptState(o)
 
@@ -582,49 +583,12 @@ export default function ConstructorClient({
             <span className="inline-flex items-center gap-1 text-[11px] text-slate-400" title="Los cambios se guardan automáticamente">
               <Icon name="check" size={12} /> Autoguardado
             </span>
-            {/* HU-352 · estilo por página: acento + ancho de contenedor + espaciado
-                (HU-359 · gated por el entitlement estilo_por_pagina). */}
-            {features.pageStyle && (() => {
-              const st = (pageList.find((p) => p.key === pageKey)?.style as { accent?: string; container?: string; space?: string } | undefined) ?? {}
-              const a = st.accent ?? ''
-              return (
-                <>
-                  <label className="flex items-center gap-1 text-xs text-slate-600" title="Acento de esta página (en cascada sobre el tema)">
-                    Acento
-                    <input type="color" value={a || '#000000'} onChange={(e) => setPageAccent(e.target.value)} className="h-7 w-9 rounded border border-slate-300 p-0.5 cursor-pointer" aria-label="Acento de la página" />
-                    {a && <button onClick={() => setPageAccent(null)} className="text-slate-400 hover:text-red-600" title="Quitar acento" aria-label="Quitar acento">✕</button>}
-                  </label>
-                  <label className="flex items-center gap-1 text-xs text-slate-600" title="Ancho del contenedor de esta página">
-                    Ancho
-                    <select
-                      value={st.container ?? ''}
-                      onChange={(e) => setPageStyleProp('container', e.target.value || null, 'Ancho de la página actualizado ✓')}
-                      className="h-7 rounded border border-slate-300 text-xs px-1" aria-label="Ancho de contenedor de la página"
-                    >
-                      <option value="">Tema</option>
-                      <option value="sm">Estrecho</option>
-                      <option value="md">Medio</option>
-                      <option value="lg">Normal</option>
-                      <option value="xl">Ancho</option>
-                      <option value="full">Completo</option>
-                    </select>
-                  </label>
-                  <label className="flex items-center gap-1 text-xs text-slate-600" title="Escala de espaciado de esta página">
-                    Espaciado
-                    <select
-                      value={st.space ?? ''}
-                      onChange={(e) => setPageStyleProp('space', e.target.value || null, 'Espaciado de la página actualizado ✓')}
-                      className="h-7 rounded border border-slate-300 text-xs px-1" aria-label="Escala de espaciado de la página"
-                    >
-                      <option value="">Tema</option>
-                      <option value="compact">Compacto</option>
-                      <option value="normal">Normal</option>
-                      <option value="relaxed">Amplio</option>
-                    </select>
-                  </label>
-                </>
-              )
-            })()}
+            {/* HU-365 · AC-3 · ajustes de página agrupados en un drawer */}
+            {features.pageStyle && (
+              <button onClick={() => setPageSettingsOpen(true)} className="inline-flex items-center gap-1 rounded-lg border border-slate-300 px-3 py-2 text-sm text-slate-700 hover:bg-slate-50" title="Ancho, espaciado y acento de esta página">
+                <Icon name="settings" size={14} /> Ajustes de página
+              </button>
+            )}
 
             {/* HU-358 · insertar un bloque guardado */}
             {savedBlocks.length > 0 && (
@@ -799,6 +763,52 @@ export default function ConstructorClient({
           )}
         </div>
       </div>
+
+      {/* HU-365 AC-3 · drawer "Ajustes de página" (agrupa ancho/espaciado/acento) */}
+      {pageSettingsOpen && (() => {
+        const st = (pageList.find((p) => p.key === pageKey)?.style as { accent?: string; container?: string; space?: string } | undefined) ?? {}
+        const a = st.accent ?? ''
+        return (
+          <div className="fixed inset-0 z-50 flex justify-end bg-black/30" onClick={() => setPageSettingsOpen(false)}>
+            <div className="w-80 max-w-full h-full bg-white shadow-xl p-5 overflow-y-auto" onClick={(e) => e.stopPropagation()}>
+              <div className="flex items-center justify-between mb-4">
+                <h3 className="font-display text-brand-primary text-lg">Ajustes de página</h3>
+                <button onClick={() => setPageSettingsOpen(false)} className="text-slate-400 hover:text-slate-700" aria-label="Cerrar"><Icon name="close" size={18} /></button>
+              </div>
+              <div className="space-y-4">
+                <div>
+                  <label className="block text-xs font-semibold text-slate-500 mb-1">Acento <span className="font-normal text-slate-400">(en cascada sobre el tema)</span></label>
+                  <div className="flex items-center gap-2">
+                    <input type="color" value={a || '#000000'} onChange={(e) => setPageAccent(e.target.value)} className="h-9 w-10 rounded border border-slate-300 p-0.5 cursor-pointer" aria-label="Acento de la página" />
+                    {a && <button onClick={() => setPageAccent(null)} className="text-xs text-slate-400 hover:text-red-600">Quitar</button>}
+                  </div>
+                </div>
+                <div>
+                  <label className="block text-xs font-semibold text-slate-500 mb-1">Ancho del contenedor</label>
+                  <select value={st.container ?? ''} onChange={(e) => setPageStyleProp('container', e.target.value || null, 'Ancho de la página actualizado ✓')} className="w-full h-9 rounded-lg border border-slate-300 text-sm px-2">
+                    <option value="">Tema</option>
+                    <option value="sm">Estrecho</option>
+                    <option value="md">Medio</option>
+                    <option value="lg">Normal</option>
+                    <option value="xl">Ancho</option>
+                    <option value="full">Completo</option>
+                  </select>
+                </div>
+                <div>
+                  <label className="block text-xs font-semibold text-slate-500 mb-1">Escala de espaciado</label>
+                  <select value={st.space ?? ''} onChange={(e) => setPageStyleProp('space', e.target.value || null, 'Espaciado de la página actualizado ✓')} className="w-full h-9 rounded-lg border border-slate-300 text-sm px-2">
+                    <option value="">Tema</option>
+                    <option value="compact">Compacto</option>
+                    <option value="normal">Normal</option>
+                    <option value="relaxed">Amplio</option>
+                  </select>
+                </div>
+                <p className="text-[11px] text-slate-400 pt-2 border-t border-slate-100">Más ajustes (tipo de página, SEO, navegación) llegarán al traer «Páginas» al Constructor.</p>
+              </div>
+            </div>
+          </div>
+        )
+      })()}
 
       {/* HU-364 · modales de marca (reemplazan prompt/confirm/alert nativos) */}
       <ConfirmDialog

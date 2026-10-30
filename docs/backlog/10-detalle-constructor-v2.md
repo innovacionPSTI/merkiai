@@ -250,7 +250,7 @@
 
 > Como comerciante, quiero que las acciones estén agrupadas por lo que afectan (sitio / página / bloque) y no en una barra plana, para encontrarlas con pocos clics.
 
-**Estimación:** M (5 puntos) · **Módulo:** reorg de la barra + `AddBlockCatalog` por categorías + drawer "Ajustes de página". · **Estado:** 🟡 Parcial (v188) — **AC-2 ✅** (Exportar página/preset, Backup, Importar movidos a un menú **"··· Avanzado"**); **AC-4 ✅** (catálogo "Agregar bloque" con **pestañas por categoría** —Contenido/Comercio/**Dinámico**/**Globales**/Interacción— + **búsqueda**; categorías virtuales Dinámico=`collection_list`, Globales=`partial_ref`, sin tocar el schema). **Pendiente:** **AC-1** barra de sitio (reubicar Vista previa/Publicar arriba-derecha), **AC-3** drawer "Ajustes de página" (agrupar tipo/ancho/espaciado/acento/SEO), **AC-5** acciones por bloque en "···".
+**Estimación:** M (5 puntos) · **Módulo:** reorg de la barra + `AddBlockCatalog` por categorías + drawer "Ajustes de página". · **Estado:** 🟡 Parcial (v189) — **AC-2 ✅** (Exportar página/preset, Backup, Importar en un menú **"··· Avanzado"**); **AC-3 ✅** (drawer **"Ajustes de página"** que agrupa acento + ancho + espaciado, sacándolos de la barra; tipo/SEO/nav llegarán con HU-368); **AC-4 ✅** (catálogo "Agregar bloque" con **pestañas por categoría** —Contenido/Comercio/**Dinámico**/**Globales**/Interacción— + **búsqueda**; categorías virtuales Dinámico=`collection_list`, Globales=`partial_ref`, sin tocar el schema). **Pendiente:** **AC-1** barra de sitio (reubicar Vista previa/Publicar arriba-derecha) y **AC-5** acciones por bloque en "···" — cosméticos.
 
 | # | Escenario | Resultado esperado |
 |---|-----------|-------------------|
