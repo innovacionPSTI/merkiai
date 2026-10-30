@@ -71,7 +71,7 @@
 
 > Como editor, quiero definir tipos de contenido reutilizables (noticia, evento, curso, persona, documento) con sus campos y gestionar sus registros, para no construir a mano cada página de contenido repetido.
 
-**Estimación:** XL (13 puntos) · **Módulo:** `collections` (definición de tipo + esquema de campos, por tenant) + `collection_items` (registros) + RLS + gestor de registros en el admin + API scoped · **Estado:** 🔲 Pendiente — *pieza madre* del contenido dirigido por datos; depende de HU-350.
+**Estimación:** XL (13 puntos) · **Módulo:** `collections` (definición de tipo + esquema de campos, por tenant) + `collection_items` (registros) + RLS + gestor de registros en el admin + API scoped · **Estado:** 🟡 Fase 1 — fundación (v175) — **hecho:** migración `e17/56` (`collections` + `collection_items`, RLS lectura pública acotada por tenant [colecciones habilitadas; registros solo `published`] + `*_admin_all`); tipos en `types.ts`; **capa de datos** `queries/collections.ts` con **validación por esquema PURA** (`normalizeFields`, `validateItemData` con required/coerción number·boolean/date/select/saneo de claves desconocidas, `deriveItemTitle`, `slugifyCollection`) + CRUD de colecciones y registros (borrador/publicado, slug único por colección); 11 tipos de campo (incl. `date`/`relation`/`file`); 9 tests puros. *Pieza madre; depende de HU-350.* **Pendiente (fases siguientes):** gestor en el admin (AC-1 editor de tipos + AC-2 CRUD de registros), API scoped, gating por plan (AC-4 · feature `colecciones` + limits `max_colecciones`/`max_registros_coleccion`), portabilidad en paquetes (AC-5).
 
 | # | Escenario | Resultado esperado |
 |---|-----------|-------------------|

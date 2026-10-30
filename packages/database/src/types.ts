@@ -467,6 +467,87 @@ export type Database = {
         }
         Relationships: []
       }
+      collections: {
+        Row: {
+          id: number
+          tenant_id: string
+          key: string
+          label: string
+          label_plural: string | null
+          description: string | null
+          icon: string | null
+          fields: Json
+          enabled: boolean
+          order_index: number
+          created_at: string
+          updated_at: string
+        }
+        Insert: {
+          id?: number
+          tenant_id?: string
+          key: string
+          label: string
+          label_plural?: string | null
+          description?: string | null
+          icon?: string | null
+          fields?: Json
+          enabled?: boolean
+          order_index?: number
+          created_at?: string
+          updated_at?: string
+        }
+        Update: {
+          key?: string
+          label?: string
+          label_plural?: string | null
+          description?: string | null
+          icon?: string | null
+          fields?: Json
+          enabled?: boolean
+          order_index?: number
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      collection_items: {
+        Row: {
+          id: number
+          tenant_id: string
+          collection_key: string
+          slug: string
+          title: string | null
+          status: string
+          data: Json
+          order_index: number
+          published_at: string | null
+          created_at: string
+          updated_at: string
+        }
+        Insert: {
+          id?: number
+          tenant_id?: string
+          collection_key: string
+          slug: string
+          title?: string | null
+          status?: string
+          data?: Json
+          order_index?: number
+          published_at?: string | null
+          created_at?: string
+          updated_at?: string
+        }
+        Update: {
+          collection_key?: string
+          slug?: string
+          title?: string | null
+          status?: string
+          data?: Json
+          order_index?: number
+          published_at?: string | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
       redirects: {
         Row: {
           id: number
