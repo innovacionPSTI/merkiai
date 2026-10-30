@@ -75,6 +75,7 @@ export default function ConstructorClient({
   const [confirmState, setConfirmState] = useState<null | { title: string; message?: ReactNode; danger?: boolean; confirmLabel?: string; onConfirm: () => void }>(null)
   const [promptState, setPromptState] = useState<null | { title: string; fields: import('@merkiai/ui').PromptField[]; submitLabel?: string; validate?: (v: Record<string, string>) => string | null; onSubmit: (v: Record<string, string>) => void }>(null)
   const [newPage, setNewPage] = useState<null | { type: string; label: string; slug: string }>(null) // wizard Nueva página
+  const [advOpen, setAdvOpen] = useState(false) // HU-365 · menú "···" de acciones avanzadas
   const askConfirm = (o: NonNullable<typeof confirmState>) => setConfirmState(o)
   const askPrompt = (o: NonNullable<typeof promptState>) => setPromptState(o)
 
@@ -470,34 +471,33 @@ export default function ConstructorClient({
             </button>
           )}
           <span role="status" aria-live="polite" className="text-sm text-green-600">{tplMsg}</span>
-          <div className="ml-auto flex items-center gap-2">
-            <a
-              href={`/api/admin/cms/page-export?page_key=${encodeURIComponent(pageKey)}`}
+          {/* HU-365 · acciones avanzadas (exportar/importar/backup) en menú "···" */}
+          <div className="ml-auto relative">
+            <button
+              onClick={() => setAdvOpen((v) => !v)}
               className="rounded-lg border border-slate-300 px-3 py-2 text-sm text-slate-700 hover:bg-slate-50"
+              aria-haspopup="menu" aria-expanded={advOpen} title="Exportar, importar y copia de seguridad"
             >
-              Exportar página
-            </a>
-            <a
-              href="/api/admin/preset-export"
-              className="rounded-lg border border-slate-300 px-3 py-2 text-sm text-slate-700 hover:bg-slate-50"
-              title="Empaqueta Tema + home como preset (JSON) para que el operador lo publique"
-            >
-              Exportar como preset
-            </a>
-            <a
-              href="/api/admin/site-export"
-              className="rounded-lg border border-slate-300 px-3 py-2 text-sm text-slate-700 hover:bg-slate-50"
-              title="Backup del sitio completo (Tema + config + nav + páginas), sin secretos"
-            >
-              Backup del sitio
-            </a>
-            <label className="rounded-lg border border-slate-300 px-3 py-2 text-sm text-slate-700 hover:bg-slate-50 cursor-pointer">
-              Importar página
-              <input
-                type="file" accept="application/json,.json" className="hidden"
-                onChange={(e) => { const f = e.target.files?.[0]; if (f) void importPageFile(f); e.target.value = '' }}
-              />
-            </label>
+              ··· Avanzado
+            </button>
+            {advOpen && (
+              <>
+                <div className="fixed inset-0 z-10" onClick={() => setAdvOpen(false)} aria-hidden="true" />
+                <div className="absolute right-0 top-full z-20 mt-1 w-56 rounded-xl border border-slate-200 bg-white shadow-lg p-1.5" role="menu">
+                  <a href={`/api/admin/cms/page-export?page_key=${encodeURIComponent(pageKey)}`} onClick={() => setAdvOpen(false)}
+                    className="block rounded-lg px-3 py-2 text-sm text-slate-700 hover:bg-slate-50">Exportar página</a>
+                  <a href="/api/admin/preset-export" onClick={() => setAdvOpen(false)}
+                    className="block rounded-lg px-3 py-2 text-sm text-slate-700 hover:bg-slate-50" title="Empaqueta Tema + home como preset (JSON)">Exportar como preset</a>
+                  <a href="/api/admin/site-export" onClick={() => setAdvOpen(false)}
+                    className="block rounded-lg px-3 py-2 text-sm text-slate-700 hover:bg-slate-50" title="Backup del sitio completo (sin secretos)">Backup del sitio</a>
+                  <label className="block rounded-lg px-3 py-2 text-sm text-slate-700 hover:bg-slate-50 cursor-pointer">
+                    Importar página
+                    <input type="file" accept="application/json,.json" className="hidden"
+                      onChange={(e) => { const f = e.target.files?.[0]; setAdvOpen(false); if (f) void importPageFile(f); e.target.value = '' }} />
+                  </label>
+                </div>
+              </>
+            )}
           </div>
         </div>
         {activeTpl?.description && <p className="mt-2 text-xs text-slate-500">{activeTpl.description}</p>}
