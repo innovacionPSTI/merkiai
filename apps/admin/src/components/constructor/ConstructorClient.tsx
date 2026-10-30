@@ -9,9 +9,9 @@
  * (`/api/admin/cms/sections`), ya acotado por tenant vía RLS. Convive con el
  * editor actual (`/contenido`) tras el flag `pageBuilder`.
  */
-import { Fragment, useCallback, useEffect, useState } from 'react'
+import { Fragment, useCallback, useEffect, useState, type ReactNode } from 'react'
 import { getBlockSchema, listTemplates, getTemplateHomeLayout } from '@merkiai/database/blocks'
-import { Icon } from '@merkiai/ui'
+import { Icon, ConfirmDialog, PromptModal, WizardModal } from '@merkiai/ui'
 import SectionEditor from './SectionEditor'
 import AddBlockCatalog from './AddBlockCatalog'
 import { getPreviewUrlAction } from '@/app/constructor/preview-action'
@@ -71,6 +71,13 @@ export default function ConstructorClient({
   }, [])
   useEffect(() => { void loadSaved() }, [loadSaved])
 
+  // HU-364 · modales de marca (reemplazan prompt/confirm nativos).
+  const [confirmState, setConfirmState] = useState<null | { title: string; message?: ReactNode; danger?: boolean; confirmLabel?: string; onConfirm: () => void }>(null)
+  const [promptState, setPromptState] = useState<null | { title: string; fields: import('@merkiai/ui').PromptField[]; submitLabel?: string; validate?: (v: Record<string, string>) => string | null; onSubmit: (v: Record<string, string>) => void }>(null)
+  const [newPage, setNewPage] = useState<null | { type: string; label: string; slug: string }>(null) // wizard Nueva página
+  const askConfirm = (o: NonNullable<typeof confirmState>) => setConfirmState(o)
+  const askPrompt = (o: NonNullable<typeof promptState>) => setPromptState(o)
+
   const bump = useCallback(() => setPreviewKey(Date.now()), [])
 
   // HU-350 AC-2 · tipos presentes en las páginas (para poblar el filtro).
@@ -117,43 +124,52 @@ export default function ConstructorClient({
   // HU-350 · crear una página nueva (cascarón) desde el hub → se abre el lienzo
   // en ella. Nace como BORRADOR (enabled=false): no se expone hasta publicar.
   function slugify(s: string) { return s.trim().toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '') }
-  async function createPage() {
-    const label = prompt('Nombre de la página nueva:')?.trim()
-    if (!label) return
-    const base = slugify(label) || `pagina-${Date.now()}`
-    const slug = (prompt('Slug (URL) de la página:', base)?.trim() || base).replace(/^\//, '')
-    const key = slugify(slug) || base
-    if (pageList.some((p) => p.key === key)) { setTplMsg('Ya existe una página con esa clave.'); return }
+
+  // HU-364 · "Nueva página" → wizard de marca (paso 1 tipo, paso 2 nombre/URL).
+  function openNewPage() { setNewPage({ type: 'content', label: '', slug: '' }) }
+  async function doCreatePage() {
+    if (!newPage) return
+    const label = newPage.label.trim()
+    const slug = (newPage.slug.trim() || slugify(label)).replace(/^\//, '')
+    const key = slugify(slug) || `pagina-${Date.now()}`
     const res = await fetch('/api/admin/cms/pages', {
       method: 'POST', headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ key, label, slug, page_type: 'content', enabled: false, show_in_footer: false }),
+      body: JSON.stringify({ key, label, slug, page_type: newPage.type, enabled: false, show_in_footer: false }),
     })
     if (!res.ok) { setTplMsg((await res.json().catch(() => ({}))).error || 'No se pudo crear la página'); return }
-    setPageList((ps) => [...ps, { key, label, slug, page_type: 'content', enabled: false }])
-    setExpanded(null); setPageKey(key)
+    setPageList((ps) => [...ps, { key, label, slug, page_type: newPage.type, enabled: false }])
+    setExpanded(null); setPageKey(key); setNewPage(null)
     setTplMsg('Página creada (borrador). Agrega bloques y publícala cuando esté lista ✓')
   }
 
-  // HU-350 · duplicar la página actual (export → import como página nueva en borrador).
-  async function duplicatePage() {
+  // HU-350/364 · duplicar la página actual (modal de marca; export → import).
+  function openDuplicate() {
     const current = pageList.find((p) => p.key === pageKey)
-    const label = prompt('Nombre de la copia:', `${current?.label ?? pageKey} (copia)`)?.trim()
-    if (!label) return
-    const base = slugify(label) || `${pageKey}-copia`
-    const slug = (prompt('Slug (URL) de la copia:', base)?.trim() || base).replace(/^\//, '')
-    const key = slugify(slug) || base
-    if (pageList.some((p) => p.key === key)) { setTplMsg('Ya existe una página con esa clave.'); return }
+    askPrompt({
+      title: 'Duplicar página',
+      submitLabel: 'Duplicar',
+      fields: [
+        { key: 'label', label: 'Nombre de la copia', required: true, defaultValue: `${current?.label ?? pageKey} (copia)` },
+        { key: 'slug', label: 'Slug (URL)', required: true, help: 'a-z, 0-9 y guiones' },
+      ],
+      validate: (v) => pageList.some((p) => p.key === (slugify(v.slug) || slugify(v.label))) ? 'Ya existe una página con esa clave.' : null,
+      onSubmit: (v) => { setPromptState(null); void doDuplicate(v.label.trim(), v.slug.trim()) },
+    })
+  }
+  async function doDuplicate(label: string, slugIn: string) {
+    const base = slugify(slugIn) || slugify(label) || `${pageKey}-copia`
+    const key = base
     try {
       const exp = await fetch(`/api/admin/cms/page-export?page_key=${encodeURIComponent(pageKey)}`)
       if (!exp.ok) { setTplMsg('No se pudo leer la página a duplicar'); return }
       const pkg = await exp.json()
       const res = await fetch('/api/admin/cms/page-import', {
         method: 'POST', headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ package: pkg, key, slug, label }),
+        body: JSON.stringify({ package: pkg, key, slug: base, label }),
       })
       if (!res.ok) { setTplMsg((await res.json().catch(() => ({}))).error || 'No se pudo duplicar'); return }
       const src = pageList.find((p) => p.key === pageKey)
-      setPageList((ps) => [...ps, { key, label, slug, page_type: src?.page_type ?? 'content', enabled: false }])
+      setPageList((ps) => [...ps, { key, label, slug: base, page_type: src?.page_type ?? 'content', enabled: false }])
       setExpanded(null); setPageKey(key)
       setTplMsg('Página duplicada como borrador ✓')
     } catch {
@@ -172,10 +188,16 @@ export default function ConstructorClient({
     await load(pageKey)
   }
 
-  // HU-358 · guardar una sección como bloque reutilizable del tenant.
-  async function saveBlock(s: SectionRow) {
-    const label = prompt('Nombre del bloque guardado:')?.trim()
-    if (!label) return
+  // HU-358/364 · guardar una sección como bloque reutilizable (modal de marca).
+  function saveBlock(s: SectionRow) {
+    askPrompt({
+      title: 'Guardar bloque',
+      submitLabel: 'Guardar',
+      fields: [{ key: 'label', label: 'Nombre del bloque guardado', required: true }],
+      onSubmit: (v) => { setPromptState(null); void doSaveBlock(s, v.label.trim()) },
+    })
+  }
+  async function doSaveBlock(s: SectionRow, label: string) {
     const res = await fetch('/api/admin/cms/saved-blocks', {
       method: 'POST', headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ section_id: s.id, label }),
@@ -211,8 +233,15 @@ export default function ConstructorClient({
     await load(pageKey)
   }
 
-  async function remove(s: SectionRow) {
-    if (!confirm(`¿Eliminar el bloque "${getBlockSchema(s.section_type)?.label ?? s.section_type}"?`)) return
+  function remove(s: SectionRow) {
+    askConfirm({
+      title: 'Eliminar bloque',
+      message: `¿Eliminar el bloque "${getBlockSchema(s.section_type)?.label ?? s.section_type}"? Esta acción no se puede deshacer.`,
+      danger: true, confirmLabel: 'Eliminar',
+      onConfirm: () => { setConfirmState(null); void doRemove(s) },
+    })
+  }
+  async function doRemove(s: SectionRow) {
     await fetch(`${api}?id=${s.id}`, { method: 'DELETE' })
     if (expanded === s.id) setExpanded(null)
     await load(pageKey)
@@ -248,22 +277,30 @@ export default function ConstructorClient({
 
   // HU-255 · importar una página desde un paquete .json → página nueva (borrador)
   async function importPageFile(file: File) {
+    let pkg: unknown
+    try { pkg = JSON.parse(await file.text()) } catch { setTplMsg('Archivo de página inválido'); return }
+    askPrompt({
+      title: 'Importar página',
+      submitLabel: 'Importar',
+      fields: [
+        { key: 'label', label: 'Nombre visible', required: true },
+        { key: 'slug', label: 'Slug (URL)', required: true, help: 'a-z, 0-9 y guiones' },
+      ],
+      validate: (v) => pageList.some((p) => p.key === slugify(v.slug)) ? 'Ya existe una página con esa clave.' : null,
+      onSubmit: (v) => { setPromptState(null); void doImportPage(pkg, v.label.trim(), v.slug.trim()) },
+    })
+  }
+  async function doImportPage(pkg: unknown, label: string, slugIn: string) {
+    const slug = slugify(slugIn)
     try {
-      const pkg = JSON.parse(await file.text())
-      const key = prompt('Key de la nueva página (a-z, 0-9, -, _):', '')?.trim().toLowerCase()
-      if (!key) return
-      const slug = prompt('Slug (URL) de la nueva página:', key)?.trim().toLowerCase()
-      if (!slug) return
-      const label = prompt('Nombre visible:', key) ?? key
       const res = await fetch('/api/admin/cms/page-import', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ package: pkg, key, slug, label }),
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ package: pkg, key: slug, slug, label }),
       })
       if (!res.ok) { setTplMsg((await res.json().catch(() => ({}))).error || 'No se pudo importar'); return }
       setTplMsg('Página importada como borrador ✓')
     } catch {
-      setTplMsg('Archivo de página inválido')
+      setTplMsg('No se pudo importar la página')
     }
   }
 
@@ -358,9 +395,16 @@ export default function ConstructorClient({
 
   // HU-220: aplica el layout del template a la página home — crea los bloques
   // faltantes y ordena todo según el preset (no borra contenido existente).
-  async function applyTemplate() {
+  function applyTemplate() {
+    askConfirm({
+      title: 'Aplicar plantilla',
+      message: `¿Aplicar la plantilla "${activeTpl?.label ?? template}" a esta página? Se crearán los bloques faltantes y se reordenarán según la plantilla. No se borra contenido.`,
+      confirmLabel: 'Aplicar',
+      onConfirm: () => { setConfirmState(null); void doApplyTemplate() },
+    })
+  }
+  async function doApplyTemplate() {
     const layout = getTemplateHomeLayout(template)
-    if (!confirm(`¿Aplicar la plantilla "${activeTpl?.label ?? template}" a esta página? Se crearán los bloques faltantes y se reordenarán según la plantilla. No se borra contenido.`)) return
     setTplMsg('Aplicando…')
     const byType = new Map(sections.map((s) => [s.section_type, s]))
     // Bloques del preset: reordenar los existentes y crear los faltantes.
@@ -496,8 +540,8 @@ export default function ConstructorClient({
               )}
             </div>
             {/* HU-350 · crear/duplicar página desde el hub */}
-            <button onClick={createPage} className="rounded-lg border border-indigo-300 px-3 py-2 text-sm font-medium text-indigo-700 hover:bg-indigo-50">+ Nueva página</button>
-            <button onClick={duplicatePage} className="rounded-lg border border-slate-300 px-3 py-2 text-sm text-slate-700 hover:bg-slate-50">Duplicar</button>
+            <button onClick={openNewPage} className="rounded-lg border border-indigo-300 px-3 py-2 text-sm font-medium text-indigo-700 hover:bg-indigo-50">+ Nueva página</button>
+            <button onClick={openDuplicate} className="rounded-lg border border-slate-300 px-3 py-2 text-sm text-slate-700 hover:bg-slate-50">Duplicar</button>
             {/* HU-352 · estilo por página: acento + ancho de contenedor + espaciado
                 (HU-359 · gated por el entitlement estilo_por_pagina). */}
             {features.pageStyle && (() => {
@@ -715,6 +759,74 @@ export default function ConstructorClient({
           )}
         </div>
       </div>
+
+      {/* HU-364 · modales de marca (reemplazan prompt/confirm/alert nativos) */}
+      <ConfirmDialog
+        open={!!confirmState}
+        title={confirmState?.title ?? ''}
+        message={confirmState?.message}
+        danger={confirmState?.danger}
+        confirmLabel={confirmState?.confirmLabel}
+        onConfirm={() => confirmState?.onConfirm()}
+        onCancel={() => setConfirmState(null)}
+      />
+      <PromptModal
+        open={!!promptState}
+        title={promptState?.title ?? ''}
+        fields={promptState?.fields ?? []}
+        submitLabel={promptState?.submitLabel}
+        validate={promptState?.validate}
+        onSubmit={(v) => promptState?.onSubmit(v)}
+        onClose={() => setPromptState(null)}
+      />
+      {/* HU-364 · "Nueva página": wizard tipo → nombre/URL con validación en vivo */}
+      <WizardModal
+        open={!!newPage}
+        title="Nueva página"
+        onClose={() => setNewPage(null)}
+        onFinish={() => void doCreatePage()}
+        finishLabel="Crear página"
+        steps={newPage ? [
+          {
+            title: 'Tipo',
+            canAdvance: !!newPage.type,
+            content: (
+              <div className="grid grid-cols-2 gap-2">
+                {Object.entries(PAGE_TYPE_LABELS).map(([val, lbl]) => (
+                  <button
+                    key={val} type="button"
+                    onClick={() => setNewPage((n) => n && ({ ...n, type: val }))}
+                    className={`rounded-xl border p-3 text-left text-sm ${newPage.type === val ? 'border-indigo-400 bg-indigo-50 text-indigo-700' : 'border-slate-200 hover:bg-slate-50'}`}
+                  >{lbl}</button>
+                ))}
+              </div>
+            ),
+          },
+          {
+            title: 'Nombre y URL',
+            canAdvance: !!newPage.label.trim() && !pageList.some((p) => p.key === (slugify(newPage.slug) || slugify(newPage.label))),
+            content: (
+              <div className="space-y-3">
+                <div>
+                  <label className="text-xs text-slate-500 block mb-1">Nombre de la página *</label>
+                  <input autoFocus value={newPage.label} onChange={(e) => setNewPage((n) => n && ({ ...n, label: e.target.value }))}
+                    className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm" />
+                </div>
+                <div>
+                  <label className="text-xs text-slate-500 block mb-1">Slug (URL)</label>
+                  <input value={newPage.slug} onChange={(e) => setNewPage((n) => n && ({ ...n, slug: e.target.value }))}
+                    placeholder={slugify(newPage.label) || 'mi-pagina'}
+                    className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm font-mono text-xs" />
+                  <p className="text-[11px] text-slate-400 mt-0.5">Se usará /{slugify(newPage.slug) || slugify(newPage.label) || 'mi-pagina'}. Nace como borrador.</p>
+                </div>
+                {pageList.some((p) => p.key === (slugify(newPage.slug) || slugify(newPage.label))) && newPage.label.trim() && (
+                  <p className="text-xs text-red-500">Ya existe una página con esa clave.</p>
+                )}
+              </div>
+            ),
+          },
+        ] : []}
+      />
     </div>
   )
 }

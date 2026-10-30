@@ -237,7 +237,7 @@
 
 > Como comerciante, quiero que crear/duplicar/guardar/eliminar use ventanas de la propia app (no las del navegador), para una experiencia consistente y con validación en vivo.
 
-**Estimación:** S (3 puntos) · **Módulo:** reemplazar `window.prompt/confirm/alert` del Constructor por `WizardModal`/modales de confirmación (HU-271). · **Estado:** 🔲 Pendiente — **mayor impacto / menor costo; primero.**
+**Estimación:** S (3 puntos) · **Módulo:** reemplazar `window.prompt/confirm/alert` del Constructor por `WizardModal`/modales de confirmación (HU-271). · **Estado:** ✅ (v186) — nuevos `ConfirmDialog` y `PromptModal` en `@merkiai/ui` (patrón "Pagos"); **Nueva página** = `WizardModal` de 2 pasos (tipo en tarjetas → nombre/URL con **validación de unicidad en vivo**); Duplicar/Guardar bloque/Importar = `PromptModal`; eliminar bloque/ítem/colección/registro y aplicar plantilla = `ConfirmDialog`. **Cero `prompt/confirm/alert`** en Constructor y `/colecciones` (AC-1…AC-4). admin 262 verde, tsc limpio.
 
 | # | Escenario | Resultado esperado |
 |---|-----------|-------------------|

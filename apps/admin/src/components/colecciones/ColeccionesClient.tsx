@@ -9,6 +9,7 @@
 import { useCallback, useEffect, useState } from 'react'
 import type { Collection, CollectionField, CollectionFieldType, CollectionItem } from '@merkiai/database'
 import { COLLECTION_FIELD_TYPES } from '@merkiai/database'
+import { ConfirmDialog, PromptModal } from '@merkiai/ui'
 
 const TYPE_LABELS: Record<CollectionFieldType, string> = {
   text: 'Texto', textarea: 'Texto largo', richtext: 'Texto enriquecido', number: 'Número',
@@ -21,14 +22,12 @@ export default function ColeccionesClient({ initialCollections }: { initialColle
   const [sel, setSel] = useState<string | null>(initialCollections[0]?.key ?? null)
   const [tab, setTab] = useState<'campos' | 'registros'>('campos')
   const [msg, setMsg] = useState('')
+  const [newOpen, setNewOpen] = useState(false)         // HU-364 · modal nueva colección
+  const [confirmDel, setConfirmDel] = useState(false)   // HU-364 · confirmar eliminar colección
   const current = collections.find((c) => c.key === sel) ?? null
 
   // ── Colecciones ──────────────────────────────────────────────────────────
-  async function createCollection() {
-    const label = prompt('Nombre de la colección (p. ej. Noticias):')?.trim()
-    if (!label) return
-    const key = prompt('Clave (slug, p. ej. noticias):', label.toLowerCase().replace(/[^a-z0-9]+/g, '-'))?.trim()
-    if (!key) return
+  async function createCollection(label: string, key: string) {
     const res = await fetch('/api/admin/cms/collections', {
       method: 'POST', headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ key, label, fields: [] }),
@@ -61,7 +60,7 @@ export default function ColeccionesClient({ initialCollections }: { initialColle
   }
 
   async function removeCollection() {
-    if (!current || !confirm(`¿Eliminar la colección "${current.label}" y sus registros?`)) return
+    if (!current) return
     const res = await fetch(`/api/admin/cms/collections?key=${encodeURIComponent(current.key)}`, { method: 'DELETE' })
     if (!res.ok) { setMsg('No se pudo eliminar'); return }
     setCollections((cs) => cs.filter((c) => c.key !== current.key)); setSel(null); setMsg('Colección eliminada ✓')
@@ -72,7 +71,7 @@ export default function ColeccionesClient({ initialCollections }: { initialColle
       <aside className="w-64 flex-shrink-0 border-r border-gray-100 overflow-y-auto p-4">
         <div className="flex items-center justify-between mb-3">
           <p className="font-brand text-xs font-semibold text-brand-primary/50 uppercase tracking-wide">Tipos</p>
-          <button onClick={createCollection} className="text-xs text-indigo-600 hover:text-indigo-800">+ Nueva</button>
+          <button onClick={() => setNewOpen(true)} className="text-xs text-indigo-600 hover:text-indigo-800">+ Nueva</button>
         </div>
         <div className="space-y-1">
           {collections.map((c) => (
@@ -99,7 +98,7 @@ export default function ColeccionesClient({ initialCollections }: { initialColle
                   <button onClick={() => setTab('campos')} className={`px-3 py-1.5 ${tab === 'campos' ? 'bg-brand-primary text-brand-cream' : 'text-slate-600'}`}>Campos</button>
                   <button onClick={() => setTab('registros')} className={`px-3 py-1.5 ${tab === 'registros' ? 'bg-brand-primary text-brand-cream' : 'text-slate-600'}`}>Registros</button>
                 </div>
-                <button onClick={removeCollection} className="text-xs text-red-400 hover:text-red-600">Eliminar</button>
+                <button onClick={() => setConfirmDel(true)} className="text-xs text-red-400 hover:text-red-600">Eliminar</button>
               </div>
             </div>
             {/* HU-354 AC-1 · plantilla de registro (página CMS con placeholders {{campo}}) */}
@@ -119,6 +118,28 @@ export default function ColeccionesClient({ initialCollections }: { initialColle
           </div>
         )}
       </main>
+
+      {/* HU-364 · modales de marca */}
+      <PromptModal
+        open={newOpen}
+        title="Nueva colección"
+        submitLabel="Crear"
+        fields={[
+          { key: 'label', label: 'Nombre (p. ej. Noticias)', required: true },
+          { key: 'key', label: 'Clave (slug)', required: true, help: 'a-z, 0-9 y guiones. Ej: noticias' },
+        ]}
+        validate={(v) => collections.some((c) => c.key === (v.key || '').trim().toLowerCase()) ? 'Ya existe una colección con esa clave.' : null}
+        onSubmit={(v) => { setNewOpen(false); void createCollection(v.label.trim(), v.key.trim().toLowerCase()) }}
+        onClose={() => setNewOpen(false)}
+      />
+      <ConfirmDialog
+        open={confirmDel}
+        title="Eliminar colección"
+        message={current ? `¿Eliminar la colección "${current.label}" y todos sus registros? Esta acción no se puede deshacer.` : ''}
+        danger confirmLabel="Eliminar"
+        onConfirm={() => { setConfirmDel(false); void removeCollection() }}
+        onCancel={() => setConfirmDel(false)}
+      />
     </div>
   )
 }
@@ -190,8 +211,8 @@ function RecordsManager({ collection, onError }: { collection: Collection; onErr
     if (!res.ok) { onError((data.details?.[0]) || data.error || 'No se pudo guardar'); return }
     setEditing(null); onError(''); await load()
   }
-  async function remove(id: number) {
-    if (!confirm('¿Eliminar este registro?')) return
+  const [delId, setDelId] = useState<number | null>(null) // HU-364 · confirmar eliminar registro
+  async function doRemove(id: number) {
     await fetch(`/api/admin/cms/collection-items?id=${id}`, { method: 'DELETE' }); await load()
   }
 
@@ -219,11 +240,19 @@ function RecordsManager({ collection, onError }: { collection: Collection; onErr
             <span className="text-sm flex-1 truncate">{it.title || it.slug}</span>
             <span className="text-[11px] text-slate-400">/{it.slug}</span>
             <button onClick={() => setEditing(it)} className="text-xs text-indigo-600 hover:text-indigo-800">Editar</button>
-            <button onClick={() => remove(it.id)} className="text-slate-300 hover:text-red-500">✕</button>
+            <button onClick={() => setDelId(it.id)} className="text-slate-300 hover:text-red-500">✕</button>
           </div>
         ))}
         {items.length === 0 && <p className="text-sm text-slate-400 py-4 text-center">Sin registros aún.</p>}
       </div>
+      <ConfirmDialog
+        open={delId !== null}
+        title="Eliminar registro"
+        message="¿Eliminar este registro? Esta acción no se puede deshacer."
+        danger confirmLabel="Eliminar"
+        onConfirm={() => { const id = delId; setDelId(null); if (id != null) void doRemove(id) }}
+        onCancel={() => setDelId(null)}
+      />
     </div>
   )
 }

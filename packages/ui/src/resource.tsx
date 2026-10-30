@@ -140,6 +140,107 @@ export function ResourceList({ title, description, addLabel, onAdd, addDisabled,
   )
 }
 
+// ── ConfirmDialog (confirmación de marca; reemplaza window.confirm) · HU-364 ──
+export function ConfirmDialog({ open, title, message, confirmLabel = 'Confirmar', cancelLabel = 'Cancelar', danger, onConfirm, onCancel, busy }: {
+  open: boolean
+  title: string
+  message?: React.ReactNode
+  confirmLabel?: string
+  cancelLabel?: string
+  danger?: boolean
+  onConfirm: () => void
+  onCancel: () => void
+  busy?: boolean
+}) {
+  if (!open) return null
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40" role="alertdialog" aria-modal="true" aria-label={title}>
+      <div className="bg-white rounded-2xl shadow-xl w-full max-w-md">
+        <div className="p-5">
+          <h2 className="font-display text-brand-primary text-lg">{title}</h2>
+          {message && <div className="font-brand text-sm text-brand-primary/60 mt-2">{message}</div>}
+        </div>
+        <div className="p-4 border-t border-brand-primary/10 flex items-center justify-end gap-2">
+          <button type="button" onClick={onCancel} className="font-brand text-sm text-brand-primary/60 hover:text-brand-primary px-3 py-2">{cancelLabel}</button>
+          <button type="button" onClick={onConfirm} disabled={busy}
+            className={`rounded-xl px-5 py-2.5 font-brand text-sm text-white transition-colors disabled:opacity-40 ${danger ? 'bg-red-600 hover:bg-red-700' : 'bg-brand-primary hover:bg-brand-dark'}`}>
+            {busy ? 'Procesando…' : confirmLabel}
+          </button>
+        </div>
+      </div>
+    </div>
+  )
+}
+
+// ── PromptModal (formulario breve de marca; reemplaza window.prompt) · HU-364 ──
+export interface PromptField {
+  key: string
+  label: string
+  placeholder?: string
+  required?: boolean
+  help?: string
+  defaultValue?: string
+}
+
+export function PromptModal({ open, title, fields, submitLabel = 'Guardar', onSubmit, onClose, validate, busy }: {
+  open: boolean
+  title: string
+  fields: PromptField[]
+  submitLabel?: string
+  onSubmit: (values: Record<string, string>) => void
+  onClose: () => void
+  /** Devuelve un mensaje de error (string) si los valores no son válidos, o null. */
+  validate?: (values: Record<string, string>) => string | null
+  busy?: boolean
+}) {
+  const [values, setValues] = useState<Record<string, string>>({})
+  React.useEffect(() => {
+    if (open) setValues(Object.fromEntries(fields.map((f) => [f.key, f.defaultValue ?? ''])))
+  }, [open]) // eslint-disable-line react-hooks/exhaustive-deps
+  if (!open) return null
+
+  const missing = fields.some((f) => f.required && !(values[f.key] ?? '').trim())
+  const err = validate ? validate(values) : null
+  const set = (k: string, v: string) => setValues((s) => ({ ...s, [k]: v }))
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40" role="dialog" aria-modal="true" aria-label={title}>
+      <form
+        className="bg-white rounded-2xl shadow-xl w-full max-w-md"
+        onSubmit={(e) => { e.preventDefault(); if (!missing && !err) onSubmit(values) }}
+      >
+        <div className="p-5 border-b border-brand-primary/10 flex items-center justify-between gap-3">
+          <h2 className="font-display text-brand-primary text-lg">{title}</h2>
+          <button type="button" onClick={onClose} className="text-brand-primary/40 hover:text-brand-primary" aria-label="Cerrar"><Icon name="close" size={18} /></button>
+        </div>
+        <div className="p-5 space-y-3">
+          {fields.map((f) => (
+            <div key={f.key}>
+              <label className="font-brand text-xs text-brand-primary/50 block mb-1">{f.label}{f.required ? ' *' : ''}</label>
+              <input
+                autoFocus={f === fields[0]}
+                value={values[f.key] ?? ''}
+                onChange={(e) => set(f.key, e.target.value)}
+                placeholder={f.placeholder}
+                className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-400"
+              />
+              {f.help && <p className="font-brand text-[11px] text-brand-primary/40 mt-0.5">{f.help}</p>}
+            </div>
+          ))}
+          {err && <p className="font-brand text-xs text-red-500">{err}</p>}
+        </div>
+        <div className="p-4 border-t border-brand-primary/10 flex items-center justify-end gap-2">
+          <button type="button" onClick={onClose} className="font-brand text-sm text-brand-primary/60 hover:text-brand-primary px-3 py-2">Cancelar</button>
+          <button type="submit" disabled={missing || !!err || busy}
+            className="rounded-xl px-5 py-2.5 font-brand text-sm bg-brand-primary text-brand-cream hover:bg-brand-dark transition-colors disabled:opacity-40">
+            {busy ? 'Guardando…' : submitLabel}
+          </button>
+        </div>
+      </form>
+    </div>
+  )
+}
+
 // ── WizardModal (alta/edición guiada por pasos) ──────────────────────────────
 export interface WizardStep {
   title: string

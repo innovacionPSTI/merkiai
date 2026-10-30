@@ -8,7 +8,7 @@
  */
 import { Fragment, useCallback, useEffect, useState } from 'react'
 import { getBlockSchema } from '@merkiai/database/blocks'
-import { Icon } from '@merkiai/ui'
+import { Icon, ConfirmDialog } from '@merkiai/ui'
 import { splitItemFields, resolveItemFields, itemTypeOf } from '@/lib/item-fields'
 import FieldInput from './FieldInput'
 
@@ -146,9 +146,10 @@ export default function ItemsEditor({ sectionId, sectionType, published = false,
     await load()
   }
 
-  async function remove(it: ItemRow) {
-    if (!confirm('¿Eliminar este ítem?')) return
-    await fetch(`${api}?id=${it.id}`, { method: 'DELETE' })
+  const [delId, setDelId] = useState<number | null>(null) // HU-364 · confirmar eliminar ítem
+  function remove(it: ItemRow) { setDelId(it.id) }
+  async function doRemove(id: number) {
+    await fetch(`${api}?id=${id}`, { method: 'DELETE' })
     await load()
   }
 
@@ -258,6 +259,14 @@ export default function ItemsEditor({ sectionId, sectionType, published = false,
           })}
         </ul>
       )}
+      <ConfirmDialog
+        open={delId !== null}
+        title="Eliminar ítem"
+        message="¿Eliminar este ítem? Esta acción no se puede deshacer."
+        danger confirmLabel="Eliminar"
+        onConfirm={() => { const id = delId; setDelId(null); if (id != null) void doRemove(id) }}
+        onCancel={() => setDelId(null)}
+      />
     </div>
   )
 }
