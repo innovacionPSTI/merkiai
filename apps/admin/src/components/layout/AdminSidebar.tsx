@@ -165,15 +165,20 @@ function navFor(pageBuilder: boolean, collections: boolean): NavNode[] {
   const hidden = new Set<string>()
   // HU-368 · con el Constructor disponible, "Páginas" (/contenido) se retira; sin
   // él, se conserva "Páginas" como editor de respaldo (cero regresión por plan).
-  if (pageBuilder) hidden.add('/contenido')
+  // HU-370 · ídem "Configuración → Legal" (se edita como páginas en el Constructor).
+  if (pageBuilder) { hidden.add('/contenido'); hidden.add('/configuracion/legal') }
   else hidden.add('/constructor')
   if (!collections) hidden.add('/colecciones')
   if (hidden.size === 0) return NAV
-  return NAV.map((node) =>
-    node.kind === 'group'
-      ? { ...node, children: node.children.filter((c) => !('href' in c && hidden.has(c.href as string))) }
-      : node,
-  )
+  return NAV.map((node) => {
+    if (node.kind === 'group') {
+      return { ...node, children: node.children.filter((c) => !('href' in c && hidden.has(c.href as string))) }
+    }
+    if (node.kind === 'leaf-group') {
+      return { ...node, children: node.children.filter((c) => !hidden.has(c.href)) }
+    }
+    return node
+  })
 }
 
 /** Devuelve el label del grupo/leaf-group activo si el pathname pertenece a él */

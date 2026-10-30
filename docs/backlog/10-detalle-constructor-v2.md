@@ -312,7 +312,7 @@
 
 > Como comerciante, quiero editar Términos y Política de privacidad como páginas normales del Constructor, con una sola fuente de verdad.
 
-**Estimación:** S (3 puntos) · **Módulo:** legales como `pages` (page_type `legal`) editables en el Constructor; migrar `store_config.terms_content/privacy_content` y retirar esa edición de *Configuración → Legal*. · **Estado:** 🔲 Pendiente.
+**Estimación:** S (3 puntos) · **Módulo:** legales como `pages` editables en el Constructor; migrar `store_config.terms_content/privacy_content` y retirar esa edición de *Configuración → Legal*. · **Estado:** ✅ (v192) — el storefront ya prefería el contenido de las páginas `terms`/`privacy` sobre `store_config` (fallback). **AC-1 ✅** fuente única: se editan como páginas en el Constructor. **AC-2 ✅** migración `e17/61` (copia `store_config.terms_content/privacy_content` al cuerpo del bloque de texto de esas páginas **solo cuando está vacío**, scoped por tenant, idempotente; no borra el legacy). **AC-3 ✅** retiro **condicional por plan**: con el Constructor disponible se **oculta "Configuración → Legal"** y `/configuracion/legal` **redirige** a `/constructor`; sin él, se conserva (cero regresión).
 
 | # | Escenario | Resultado esperado |
 |---|-----------|-------------------|
