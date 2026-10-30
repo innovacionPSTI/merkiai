@@ -34,7 +34,9 @@
 
 **Circuito Ola 2 operativo de punta a punta:** definir tipo (colección) → cargar registros (admin) → página pública por registro (`/[colección]/[slug]`) → listarlos en cualquier página (bloque `collection_list`). **Habilita** el catálogo de cursos (E20) y el portal (E23).
 
-**Épica Constructor v2 COMPLETA** (Ola 1 ✅ · Ola 2 ✅ · Ola 3 ✅). Único transversal abierto: **HU-359** — el gating por entitlement de las features de contenido (colecciones/medios/etc.) se afina según tiering comercial, pero el catálogo y el gating de las features base ya están.
+**Épica Constructor v2 — MOTOR COMPLETO** (Ola 1 ✅ · Ola 2 ✅ · Ola 3 ✅). Transversal abierto: **HU-359** (afinado de tiering).
+
+**Ola 4 propuesta (UX + autoría unificada v2):** HU-364…HU-375 — pulir la experiencia (matar diálogos nativos, patrón "Pagos", reorg por niveles), **dejar un solo Constructor** (retirar `/contenido`/"Páginas"), **mover al Constructor lo editorial** de *Configuración → General* y *Legal*, y la **estructura macro por plan** (header/footer editables, blueprint de sitio). Detalle abajo (sección "Ola 4") + ruta en "Orden de implementación". Es **UX e integración** sobre el motor ya construido.
 
 ---
 
@@ -225,6 +227,173 @@
 
 ---
 
+# Ola 4 — Autoría unificada v2: UX del Constructor + fusión de la configuración editorial · E3/E13
+
+> **Objetivo.** Dejar **un solo Constructor** (retirar la sección "Páginas"/`/contenido`), con la UI **organizada por niveles** (sitio → página → bloque), **sin diálogos nativos del navegador**, lo más **fluido** posible, y con el **alcance habilitado por plan**. Además, **mover al Constructor la edición editorial** que hoy vive en *Configuración → General* y *Configuración → Legal*, dejando en Configuración solo lo técnico (dominios, pagos, envíos, correos, usuarios). Todo es **UX + integración sobre el motor existente** (pages/page_sections/section_items/nav_items/store_config/entitlements); no reescribe el motor.
+>
+> **Principio rector (patrón "Pagos", HU-271/272):** wizard por pasos + selección por **tarjetas** + **chips de estado** + acciones por fila + "uno activo a la vez". Se reutiliza `WizardModal`/`ResourceList` del design system.
+
+## HU-364 — Modales de marca en el Constructor (eliminar `prompt/alert/confirm`) · E13
+
+> Como comerciante, quiero que crear/duplicar/guardar/eliminar use ventanas de la propia app (no las del navegador), para una experiencia consistente y con validación en vivo.
+
+**Estimación:** S (3 puntos) · **Módulo:** reemplazar `window.prompt/confirm/alert` del Constructor por `WizardModal`/modales de confirmación (HU-271). · **Estado:** 🔲 Pendiente — **mayor impacto / menor costo; primero.**
+
+| # | Escenario | Resultado esperado |
+|---|-----------|-------------------|
+| AC-1 | Nueva página | Wizard: paso 1 **tipo** (tarjetas) → paso 2 **nombre/URL**, con slug auto y **validación de unicidad en vivo** (no dos prompts encadenados) |
+| AC-2 | Duplicar / Guardar bloque | Modal de marca con nombre + confirmación; nada de `prompt()` |
+| AC-3 | Acciones destructivas | Eliminar página/bloque/colección usa modal de confirmación de la app (no `confirm()`) |
+| AC-4 | Cero diálogos nativos | No queda ningún `window.prompt/confirm/alert` en el Constructor ni en `/colecciones` |
+
+## HU-365 — Reorganización de la UI del Constructor por niveles · E13
+
+> Como comerciante, quiero que las acciones estén agrupadas por lo que afectan (sitio / página / bloque) y no en una barra plana, para encontrarlas con pocos clics.
+
+**Estimación:** M (5 puntos) · **Módulo:** reorg de la barra + `AddBlockCatalog` por categorías + drawer "Ajustes de página". · **Estado:** 🔲 Pendiente.
+
+| # | Escenario | Resultado esperado |
+|---|-----------|-------------------|
+| AC-1 | Barra de sitio | Arriba: selector de página · **+ Nueva** · Duplicar · (derecha) **Vista previa / Publicar** |
+| AC-2 | Avanzado en "···" | Exportar página, Exportar como preset, Backup del sitio, Importar pasan a un menú de overflow (acciones poco frecuentes) |
+| AC-3 | Ajustes de página (drawer) | Tipo, Ancho, Espaciado, Acento, SEO, Footer, vincular a nav se agrupan como propiedades de **esta página** (no inline en la barra) |
+| AC-4 | Catálogo por categorías | "Agregar bloque" en pestañas usando `category` del schema: **Contenido · Comercio · Dinámico (colecciones) · Globales (partials/guardados)** |
+| AC-5 | Acciones por bloque | Dejar 2–3 visibles (Editar, Visible) y el resto en "···" por bloque (como filas de Pagos) |
+
+## HU-366 — Outline / árbol del sitio (navegable y reordenable) · E13
+
+> Como comerciante, quiero ver la estructura completa (sitio → navegación → páginas → secciones) en un árbol para orientarme y reordenar.
+
+**Estimación:** M (5 puntos) · **Módulo:** panel izquierdo tipo outline sobre pages/nav_items/page_sections. · **Estado:** 🔲 Pendiente.
+
+| # | Escenario | Resultado esperado |
+|---|-----------|-------------------|
+| AC-1 | Árbol | Panel: **Sitio → Navegación → Páginas → Secciones**; refleja el orden real |
+| AC-2 | Navegar | Clic en una página/sección la abre/enfoca en el lienzo |
+| AC-3 | Reordenar | Arrastrar reordena secciones (y, cuando aplique, el orden de páginas/nav) |
+
+## HU-367 — Gestión de Navegación dentro del Constructor · E13
+
+> Como comerciante, quiero editar el menú (con jerarquías padre/hijo) desde el Constructor, para no saltar a otra sección.
+
+**Estimación:** M (5 puntos) · **Módulo:** traer el editor de `nav_items` (de `/contenido`) al hub. · **Estado:** 🔲 Pendiente.
+
+| # | Escenario | Resultado esperado |
+|---|-----------|-------------------|
+| AC-1 | CRUD de nav | Crear/editar/ordenar/eliminar ítems de menú desde el Constructor |
+| AC-2 | Jerarquía | Padre/hijo (1 nivel hoy); vincular ítem a una página (sincroniza href con slug) |
+| AC-3 | Niveles por plan | El nº de niveles permitidos puede limitarse por plan (ver HU-369/entitlements) |
+
+## HU-368 — Metadatos de página en el Constructor + retirar "Páginas" (`/contenido`) · E13
+
+> Como plataforma, quiero una sola superficie de autoría: el Constructor absorbe lo que hoy hace "Páginas" y esa sección se retira.
+
+**Estimación:** M (5 puntos) · **Módulo:** editor de metadatos (tipo/SEO/footer/nav) en el hub + retiro de `/contenido`. · **Estado:** 🔲 Pendiente — depende de HU-367.
+
+| # | Escenario | Resultado esperado |
+|---|-----------|-------------------|
+| AC-1 | Metadatos | Etiqueta, slug, tipo, SEO (meta título/descr.), mostrar en footer, vincular a nav — editables en el Constructor |
+| AC-2 | Retiro | Se elimina el ítem de menú "Páginas" y la ruta `/contenido` **redirige** al Constructor (301 interno); el permiso `contenido` pasa a gobernar el Constructor |
+| AC-3 | Cero pérdida | Todo lo editable en `/contenido` queda cubierto por el Constructor antes de retirarlo (nav incluido) |
+
+## HU-369 — "Modo contenido" por plan (estructura congelada) + candados suaves · E17 (toca E13)
+
+> Como operador, quiero que el plan básico solo elija una plantilla y edite **contenidos y parámetros** (sin tocar la estructura), y que las capacidades superiores se muestren como candados que invitan a mejorar de plan.
+
+**Estimación:** M (5 puntos) · **Módulo:** modo "solo contenido" (bloquea agregar/reordenar/eliminar bloques y layout) + candados visibles con upsell; extiende HU-359. · **Estado:** 🔲 Pendiente.
+
+| # | Escenario | Resultado esperado |
+|---|-----------|-------------------|
+| AC-1 | Estructura congelada | Sin `layout_avanzado`: no se puede agregar/reordenar/eliminar bloques ni cambiar filas; **sí** editar textos/imágenes/toggles |
+| AC-2 | Candados suaves | Las features bloqueadas se muestran con chip "Pro/Educación" y CTA de upgrade (no se ocultan), server-side siempre autoritativo |
+| AC-3 | Entitlements nuevos | Alta en el catálogo (HU-359) de `content_mode` (feature), `site_blueprints` (feature), `editable_chrome` (feature) y `max_nav_depth`/`max_niveles_nav` (limit) |
+
+## HU-370 — Páginas legales como páginas del Constructor; retirar *Configuración → Legal* · E13
+
+> Como comerciante, quiero editar Términos y Política de privacidad como páginas normales del Constructor, con una sola fuente de verdad.
+
+**Estimación:** S (3 puntos) · **Módulo:** legales como `pages` (page_type `legal`) editables en el Constructor; migrar `store_config.terms_content/privacy_content` y retirar esa edición de *Configuración → Legal*. · **Estado:** 🔲 Pendiente.
+
+| # | Escenario | Resultado esperado |
+|---|-----------|-------------------|
+| AC-1 | Fuente única | Términos y Privacidad se editan como páginas del Constructor (ya existen como `pages`); se deja de usar `store_config.terms_content/privacy_content` |
+| AC-2 | Migración | El contenido legal actual de `store_config` se migra a las páginas correspondientes (una vez, idempotente) |
+| AC-3 | Retiro | *Configuración → Legal* se retira (o queda solo como enlace a las páginas); el storefront lee las páginas |
+
+## HU-371 — Reparto Configuración ↔ Constructor (mover lo editorial/marca) · E13
+
+> Como plataforma, quiero que lo **editorial/de marca** (nombre, logo, favicon, redes, textos y toggles de footer/nav) se edite en el Constructor ("Ajustes de sitio"), y que *Configuración* quede solo para lo **técnico**.
+
+**Estimación:** M (5 puntos) · **Módulo:** panel "Ajustes de sitio" en el Constructor sobre el subconjunto editorial de `store_config`; *Configuración → General* se adelgaza. · **Estado:** 🔲 Pendiente.
+
+| # | Escenario | Resultado esperado |
+|---|-----------|-------------------|
+| AC-1 | Ajustes de sitio | Nombre, logo, favicon, redes, toggles de footer (`footer_show_*`) y de nav (`nav_show_*`) se editan en el Constructor |
+| AC-2 | Configuración técnica | *Configuración* conserva solo **dominios, pagos, envíos, correos, usuarios, plantillas de correo, legal→enlace** |
+| AC-3 | Sin duplicar | Cada ajuste tiene **un único lugar** de edición; nada queda editable en dos sitios |
+
+## HU-372 — Header y Footer como regiones editables (chrome por regiones/partials) · E3
+
+> Como comerciante, quiero construir el encabezado y el pie con bloques (como el resto), para controlar la estructura macro del sitio.
+
+**Estimación:** L (8 puntos) · **Módulo:** regiones globales "header"/"footer" como páginas-partial del sitio, consumidas por el chrome del storefront (reusa HU-356). · **Estado:** 🔲 Pendiente — gated por `editable_chrome`.
+
+| # | Escenario | Resultado esperado |
+|---|-----------|-------------------|
+| AC-1 | Regiones | Header y Footer existen como **regiones** editables en el Constructor (páginas-partial reservadas) |
+| AC-2 | Render | El storefront usa esas regiones como su chrome (con fallback al header/footer actual si no existen → cero regresión) |
+| AC-3 | Gating | Disponible por plan (`editable_chrome`); sin la feature, el chrome sigue siendo el de configuración |
+
+## HU-373 — "Blueprint de sitio": estructuras de sitio seleccionables por plan · E3/E17
+
+> Como comerciante, quiero elegir una **estructura de sitio** completa (varias páginas + navegación + regiones) y no solo el home, según mi plan.
+
+**Estimación:** L (8 puntos) · **Módulo:** *site blueprint* = preset que crea **N páginas + nav + regiones**; catálogo seleccionable, gated por plan (nº de páginas/estructuras). Extiende presets (HU-233/256) y `exportSite`/`importSite`. · **Estado:** 🔲 Pendiente.
+
+| # | Escenario | Resultado esperado |
+|---|-----------|-------------------|
+| AC-1 | Aplicar blueprint | Elegir una estructura crea de una vez sus páginas + nav + regiones (en borrador) |
+| AC-2 | Por plan | Básico: una estructura por defecto; planes superiores: catálogo de estructuras y más páginas (`max_paginas`, `site_blueprints`) |
+| AC-3 | Importación con límite | Al aplicar, respeta `max_paginas` (importa/omite según remanente, como los importadores existentes) |
+
+## HU-374 — El tipo de página siembra su estructura de arranque · E13
+
+> Como comerciante, quiero que al crear una página de un tipo (p. ej. "Servicios") nazca con los bloques típicos de ese tipo.
+
+**Estimación:** S (3 puntos) · **Módulo:** mapa `page_type → layout de arranque` que siembra bloques al crear (reusa el motor de "aplicar plantilla"). · **Estado:** 🔲 Pendiente.
+
+| # | Escenario | Resultado esperado |
+|---|-----------|-------------------|
+| AC-1 | Siembra por tipo | Crear una página de un tipo con estructura definida crea sus bloques por defecto |
+| AC-2 | Opt-out | "Página en blanco" sigue disponible; cero regresión para quien no lo use |
+
+## HU-375 — Autosave + estados de publicación + confirmaciones de marca · E13
+
+> Como comerciante, quiero guardado automático y ver claramente si estoy en borrador o publicado, para trabajar sin ansiedad.
+
+**Estimación:** S (3 puntos) · **Módulo:** autosave de ediciones + indicador de estado + un único botón "Publicar". · **Estado:** 🔲 Pendiente.
+
+| # | Escenario | Resultado esperado |
+|---|-----------|-------------------|
+| AC-1 | Autosave | Los cambios se guardan solos (con indicador "Guardado"), sin perder trabajo |
+| AC-2 | Estado | Indicador claro Borrador/Publicado por página (reusa el banner de preview existente) |
+| AC-3 | Publicar | Un solo botón "Publicar" aplica el borrador; confirmaciones con modal de marca |
+
+---
+
+## Entitlements nuevos de la Ola 4 (extienden HU-359)
+
+| Entitlement | Tipo | Cubre |
+|---|---|---|
+| `content_mode` | feature | Modo "solo contenido" (estructura congelada) · HU-369 |
+| `editable_chrome` | feature | Header/Footer editables como regiones · HU-372 |
+| `site_blueprints` | feature | Elegir entre estructuras de sitio · HU-373 |
+| `max_niveles_nav` | limit | Niveles permitidos en la navegación · HU-367/369 |
+
+**Tiering de referencia:** Básico = `content_mode` (estructura fija, edita contenidos; 1 blueprint; nav 1 nivel; `max_paginas` bajo). Pro = `layout_avanzado`+`estilo_por_pagina`+`editable_chrome`+más páginas. Educación/Portal = `site_blueprints` + `colecciones`/`plantillas_por_tipo` + límites altos.
+
+---
+
 ## Orden de implementación (olas) y dependencias
 
 1. **Ola 1 (fundación de autoría):** **HU-350** ✅ (shell unificado) → **HU-351** ✅ (Filas/Columnas) → **HU-352** ✅ (estilo por página). *Reorganiza + añade la capa de layout; cero regresión.* **→ Ola 1 completa.**
@@ -232,5 +401,12 @@
 3. **Ola 3 (facilidad transversal, en paralelo tras Ola 1):** **HU-356** ✅ (partials) · **HU-357** ✅ (biblioteca de medios) · **HU-358** ✅ (bloques guardados). **→ completa.**
 - **Transversal (con cada HU):** **HU-359** 🟡 (entitlements + tiering por plan) — catálogo completo; el gating se puebla a medida que cada feature se construye.
 4. **Habilita:** el **vertical educación** (E20: cursos como colección + plantilla por tipo) y el **Portal Institucional** (E23: HU-341 multiportal, HU-342 buscador/agregadores se apoyan en HU-353/355).
+5. **Ola 4 (autoría unificada v2 · UX + fusión de configuración) — PROPUESTA:** pulido de experiencia, un solo Constructor y migración de lo editorial. Se recomienda **en 5 pasos**, de mayor impacto/menor costo a mayor alcance:
+   - **Paso 1 · Quick-wins de UX (sin BD):** **HU-364** (matar diálogos nativos + wizard de Nueva página) → **HU-375** (autosave/estados) → **HU-365** (reorg por niveles + catálogo por categorías). *Alto impacto visible, bajo riesgo.*
+   - **Paso 2 · Fusión del hub:** **HU-367** (navegación en el Constructor) → **HU-368** (metadatos + retirar `/contenido`) → **HU-366** (outline del sitio).
+   - **Paso 3 · Config editorial → Constructor:** **HU-370** (Legal como páginas, retirar *Configuración → Legal*) → **HU-371** (mover lo editorial de *General* a "Ajustes de sitio").
+   - **Paso 4 · Gating por plan:** **HU-369** (modo contenido + candados suaves) + alta de los **entitlements nuevos** (`content_mode`, `editable_chrome`, `site_blueprints`, `max_niveles_nav`).
+   - **Paso 5 · Estructura macro:** **HU-372** (header/footer editables) → **HU-373** (blueprint de sitio) → **HU-374** (tipo de página siembra estructura). *Lo más grande; cierra la visión "estructura de sitio por plan".*
 
 > **Nota de dependencia inversa:** HU-341/342 (E23) y el catálogo de cursos (E20) **dependen** de HU-353/354/355. Conviene abordar Constructor v2 **antes** de esos tramos.
+> **Nota Ola 4:** es **UX e integración** sobre el motor ya construido (no reescribe nada); HU-368 depende de HU-367; HU-372/373 dependen de HU-356 (partials) y HU-373 de HU-233/256 (presets). El Paso 1 puede empezar de inmediato.
