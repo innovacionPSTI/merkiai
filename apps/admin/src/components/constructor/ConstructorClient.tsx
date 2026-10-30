@@ -31,6 +31,9 @@ const api = '/api/admin/cms/sections'
 
 export default function ConstructorClient({ pages, initialPageKey, initialTemplate }: { pages: PageOption[]; initialPageKey: string; initialTemplate: string }) {
   const [pageKey, setPageKey] = useState(initialPageKey)
+  // HU-350 · lista de páginas en estado local para poder crear/duplicar desde el
+  // propio hub (crear+construir en un solo lugar) sin recargar.
+  const [pageList, setPageList] = useState<PageOption[]>(pages)
   const [template, setTemplate] = useState(initialTemplate)
   const [tplMsg, setTplMsg] = useState('')
   const [sections, setSections] = useState<SectionRow[]>([])
@@ -62,7 +65,7 @@ export default function ConstructorClient({ pages, initialPageKey, initialTempla
   const [previewUrl, setPreviewUrl] = useState<string | null>(null)
   const [previewErr, setPreviewErr] = useState<string | null>(null)
   useEffect(() => {
-    const cp = pages.find((p) => p.key === pageKey)
+    const cp = pageList.find((p) => p.key === pageKey)
     const path = cp?.slug ? `/${cp.slug}` : '/'
     let cancelled = false
     getPreviewUrlAction(path).then((r) => {
@@ -71,7 +74,53 @@ export default function ConstructorClient({ pages, initialPageKey, initialTempla
       setPreviewErr(r.error ?? null)
     })
     return () => { cancelled = true }
-  }, [pageKey, previewKey, pages])
+  }, [pageKey, previewKey, pageList])
+
+  // HU-350 · crear una página nueva (cascarón) desde el hub → se abre el lienzo
+  // en ella. Nace como BORRADOR (enabled=false): no se expone hasta publicar.
+  function slugify(s: string) { return s.trim().toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '') }
+  async function createPage() {
+    const label = prompt('Nombre de la página nueva:')?.trim()
+    if (!label) return
+    const base = slugify(label) || `pagina-${Date.now()}`
+    const slug = (prompt('Slug (URL) de la página:', base)?.trim() || base).replace(/^\//, '')
+    const key = slugify(slug) || base
+    if (pageList.some((p) => p.key === key)) { setTplMsg('Ya existe una página con esa clave.'); return }
+    const res = await fetch('/api/admin/cms/pages', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ key, label, slug, page_type: 'content', enabled: false, show_in_footer: false }),
+    })
+    if (!res.ok) { setTplMsg((await res.json().catch(() => ({}))).error || 'No se pudo crear la página'); return }
+    setPageList((ps) => [...ps, { key, label, slug }])
+    setExpanded(null); setPageKey(key)
+    setTplMsg('Página creada (borrador). Agrega bloques y publícala cuando esté lista ✓')
+  }
+
+  // HU-350 · duplicar la página actual (export → import como página nueva en borrador).
+  async function duplicatePage() {
+    const current = pageList.find((p) => p.key === pageKey)
+    const label = prompt('Nombre de la copia:', `${current?.label ?? pageKey} (copia)`)?.trim()
+    if (!label) return
+    const base = slugify(label) || `${pageKey}-copia`
+    const slug = (prompt('Slug (URL) de la copia:', base)?.trim() || base).replace(/^\//, '')
+    const key = slugify(slug) || base
+    if (pageList.some((p) => p.key === key)) { setTplMsg('Ya existe una página con esa clave.'); return }
+    try {
+      const exp = await fetch(`/api/admin/cms/page-export?page_key=${encodeURIComponent(pageKey)}`)
+      if (!exp.ok) { setTplMsg('No se pudo leer la página a duplicar'); return }
+      const pkg = await exp.json()
+      const res = await fetch('/api/admin/cms/page-import', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ package: pkg, key, slug, label }),
+      })
+      if (!res.ok) { setTplMsg((await res.json().catch(() => ({}))).error || 'No se pudo duplicar'); return }
+      setPageList((ps) => [...ps, { key, label, slug }])
+      setExpanded(null); setPageKey(key)
+      setTplMsg('Página duplicada como borrador ✓')
+    } catch {
+      setTplMsg('No se pudo duplicar la página')
+    }
+  }
 
   async function addBlock(type: string) {
     if (!type) return
@@ -258,8 +307,11 @@ export default function ConstructorClient({ pages, initialPageKey, initialTempla
               value={pageKey}
               onChange={(e) => { setExpanded(null); setPageKey(e.target.value) }}
             >
-              {pages.map((p) => <option key={p.key} value={p.key}>{p.label}</option>)}
+              {pageList.map((p) => <option key={p.key} value={p.key}>{p.label}</option>)}
             </select>
+            {/* HU-350 · crear/duplicar página desde el hub */}
+            <button onClick={createPage} className="rounded-lg border border-indigo-300 px-3 py-2 text-sm font-medium text-indigo-700 hover:bg-indigo-50">+ Nueva página</button>
+            <button onClick={duplicatePage} className="rounded-lg border border-slate-300 px-3 py-2 text-sm text-slate-700 hover:bg-slate-50">Duplicar</button>
 
             <div className="ml-auto">
               <AddBlockCatalog onAdd={addBlock} />

@@ -19,7 +19,7 @@
 
 > Como comerciante, quiero crear una página y construirla en el mismo lugar, para no saltar entre "Páginas" (crear) y "Constructor" (editar) y entender el flujo de principio a fin.
 
-**Estimación:** M (5 puntos) · **Módulo:** reorganización de IA del admin (fusiona `/contenido` "Páginas" + `/constructor`), entrada "Nueva página" que abre el lienzo, graduar el Constructor fuera del flag `pageBuilder` · **Estado:** 🔲 Pendiente — *reorganiza piezas existentes, no reescribe el motor*. **Base de toda la ola.**
+**Estimación:** M (5 puntos) · **Módulo:** reorganización de IA del admin (fusiona `/contenido` "Páginas" + `/constructor`), entrada "Nueva página" que abre el lienzo, graduar el Constructor fuera del flag `pageBuilder` · **Estado:** 🟡 Parcial (v167) — **hecho:** **crear página** ("+ Nueva página") y **duplicar página** desde el propio Constructor (crear cascarón → abre el lienzo en la página nueva, nace en **borrador**; duplicar vía export→import); lista de páginas en estado local del hub (AC-1/AC-3/AC-4). **Pendiente:** fusionar la vista de lista completa de `/contenido` dentro del hub (AC-2) y **graduar el flag `pageBuilder` a entitlement `page_builder`** (HU-359, AC-5). *Reorganiza piezas existentes, no reescribe el motor.* **Base de toda la ola.**
 
 | # | Escenario | Resultado esperado |
 |---|-----------|-------------------|
