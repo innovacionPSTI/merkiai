@@ -5,7 +5,7 @@ import {
 
 const collection = {
   key: 'noticias', label: 'Noticias', label_plural: 'Noticias', description: null, icon: null,
-  enabled: true, order_index: 0,
+  enabled: true, order_index: 0, template_page_key: null,
   fields: [{ key: 'titulo', label: 'Título', type: 'text' as const, required: true }],
 }
 

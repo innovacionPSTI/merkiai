@@ -49,6 +49,17 @@ export default function ColeccionesClient({ initialCollections }: { initialColle
     setCollections((cs) => cs.map((c) => (c.key === current.key ? data : c))); setMsg('Campos guardados ✓')
   }
 
+  async function saveTemplate(template_page_key: string | null) {
+    if (!current) return
+    const res = await fetch('/api/admin/cms/collections', {
+      method: 'PATCH', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ key: current.key, template_page_key }),
+    })
+    const data = await res.json()
+    if (!res.ok) { setMsg(data.error || 'No se pudo guardar la plantilla'); return }
+    setCollections((cs) => cs.map((c) => (c.key === current.key ? data : c))); setMsg('Plantilla de registro actualizada ✓')
+  }
+
   async function removeCollection() {
     if (!current || !confirm(`¿Eliminar la colección "${current.label}" y sus registros?`)) return
     const res = await fetch(`/api/admin/cms/collections?key=${encodeURIComponent(current.key)}`, { method: 'DELETE' })
@@ -90,6 +101,17 @@ export default function ColeccionesClient({ initialCollections }: { initialColle
                 </div>
                 <button onClick={removeCollection} className="text-xs text-red-400 hover:text-red-600">Eliminar</button>
               </div>
+            </div>
+            {/* HU-354 AC-1 · plantilla de registro (página CMS con placeholders {{campo}}) */}
+            <div className="mb-4 flex items-center gap-2 text-xs text-slate-600">
+              <span title="Página del Constructor que se usa como plantilla; sus bloques pueden usar {{clave_de_campo}}. Vacío = plantilla automática.">Plantilla (clave de página)</span>
+              <input
+                defaultValue={current.template_page_key ?? ''}
+                onBlur={(e) => { const v = e.target.value.trim(); if (v !== (current.template_page_key ?? '')) saveTemplate(v || null) }}
+                placeholder="(automática)"
+                className="h-7 rounded border border-slate-300 px-2 text-xs font-mono w-56"
+                aria-label="Clave de la página plantilla"
+              />
             </div>
             {tab === 'campos'
               ? <FieldsEditor key={current.key} fields={current.fields} onSave={saveFields} />

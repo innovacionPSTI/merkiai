@@ -1,7 +1,8 @@
 // @jest-environment node
 import {
   slugifyCollection, normalizeFields, validateItemData, deriveItemTitle,
-  resolveCollectionList, COLLECTION_FIELD_TYPES, type CollectionField,
+  resolveCollectionList, recordTokens, substituteTokens, applyTokensDeep,
+  COLLECTION_FIELD_TYPES, type CollectionField,
 } from '../collections'
 import type { Db } from '../../client'
 
@@ -83,6 +84,25 @@ describe('deriveItemTitle (HU-353)', () => {
     expect(deriveItemTitle(fields, { title: 'Explícito', nombre: 'x' })).toBe('Explícito')
     expect(deriveItemTitle(fields, { nombre: 'Derivado' })).toBe('Derivado')
     expect(deriveItemTitle(fields, {})).toBeNull()
+  })
+})
+
+describe('tokens de plantilla (HU-354 AC-1)', () => {
+  const item = { slug: 'mi-nota', title: 'Mi Nota', status: 'published', data: { titulo: 'Hola', autor: 'Ana', meta: { x: 1 } } }
+  it('recordTokens incluye builtins y campos (objetos → JSON)', () => {
+    const t = recordTokens(item)
+    expect(t.slug).toBe('mi-nota'); expect(t.title).toBe('Mi Nota')
+    expect(t.autor).toBe('Ana'); expect(t.meta).toBe('{"x":1}')
+  })
+  it('substituteTokens reemplaza {{campo}} y vacía los desconocidos', () => {
+    const t = recordTokens(item)
+    expect(substituteTokens('Por {{autor}} — {{title}}', t)).toBe('Por Ana — Mi Nota')
+    expect(substituteTokens('{{ autor }} / {{nope}}', t)).toBe('Ana / ')
+  })
+  it('applyTokensDeep sustituye en strings anidados sin tocar otros tipos', () => {
+    const t = recordTokens(item)
+    const out = applyTokensDeep({ title: '{{title}}', n: 3, items: [{ body: 'de {{autor}}' }] }, t)
+    expect(out).toEqual({ title: 'Mi Nota', n: 3, items: [{ body: 'de Ana' }] })
   })
 })
 

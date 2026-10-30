@@ -11,11 +11,16 @@
  */
 import type { Metadata } from 'next'
 import { notFound } from 'next/navigation'
-import { getCollection, getCollectionItemBySlug, type CollectionField } from '@merkiai/database'
+import {
+  getCollection, getCollectionItemBySlug, getPageWithSections,
+  recordTokens, applyTokensDeep, type CollectionField,
+} from '@merkiai/database'
 import { getStoreContext } from '@/lib/store-context'
 import { getMachineDb } from '@/lib/machine-db'
 import { isPreviewMode } from '@/lib/preview'
 import { getRequestCatalogDb } from '@/lib/tenant-db'
+import SectionRenderer from '@/components/sections/SectionRenderer'
+import { groupSectionsIntoRows, cellSpanClass, cellResponsiveClasses } from '@/lib/section-rows'
 import PreviewBanner from '@/components/PreviewBanner'
 
 export const dynamic = 'force-dynamic'
@@ -68,6 +73,43 @@ export default async function CollectionItemPage({ params }: Props) {
   if (!coll) notFound()
   const rec = await getCollectionItemBySlug(slug, item, db, !preview).catch(() => null)
   if (!rec) notFound()
+
+  // HU-354 AC-1 · si la colección tiene plantilla (página CMS), se renderiza esa
+  // página sustituyendo los placeholders {{campo}} con los valores del registro.
+  // La plantilla se lee con cliente-máquina (tenant-scoped) para no depender de
+  // que la propia página esté publicada. Fallback: plantilla automática.
+  if (coll.template_page_key) {
+    const tplDb = getMachineDb(ctx.tenantId)
+    const tpl = await getPageWithSections(coll.template_page_key, false, tplDb).catch(() => null)
+    if (tpl && tpl.sections.length > 0) {
+      const tokens = recordTokens(rec)
+      const sections = tpl.sections.map((s) => applyTokensDeep(s, tokens))
+      return (
+        <div className="bg-brand-cream min-h-screen pt-16">
+          {preview && <PreviewBanner />}
+          {groupSectionsIntoRows(sections).map((row, ri) => {
+            if (row.single) {
+              const s = row.cells[0].section
+              return (
+                <div key={s.id} className={cellResponsiveClasses(s.settings) || undefined}>
+                  <SectionRenderer section={s} pageKey={coll.template_page_key as string} whatsappNumber={ctx.config?.whatsapp_number} />
+                </div>
+              )
+            }
+            return (
+              <div key={`row-${row.rowId}-${ri}`} className="mx-auto px-4 py-2 grid grid-cols-1 lg:grid-cols-12 items-start" style={{ maxWidth: '80rem', gap: '1.5rem' }}>
+                {row.cells.map(({ section: s, span }) => (
+                  <div key={s.id} className={`${cellSpanClass(span)} ${cellResponsiveClasses(s.settings)}`.trim()}>
+                    <SectionRenderer section={s} pageKey={coll.template_page_key as string} whatsappNumber={ctx.config?.whatsapp_number} />
+                  </div>
+                ))}
+              </div>
+            )
+          })}
+        </div>
+      )
+    }
+  }
 
   const hero = firstByType(coll.fields, rec.data, ['image'])
   const dateField = coll.fields.find((f) => f.type === 'date' && typeof rec.data[f.key] === 'string')

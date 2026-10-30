@@ -17,6 +17,8 @@ export const COLLECTION_PACKAGE_KIND = 'merkiai.collection' as const
 /** Campos de la definición que viajan (sin tenant/timestamps/id). */
 export const PACKAGE_COLLECTION_FIELDS = [
   'key', 'label', 'label_plural', 'description', 'icon', 'fields', 'enabled', 'order_index',
+  // HU-354 AC-1 · la plantilla por tipo (página CMS) viaja con la definición
+  'template_page_key',
 ] as const
 
 export interface CollectionPackage {
@@ -28,7 +30,7 @@ export interface CollectionPackage {
 
 /** Construye el paquete de una colección (pura). Records solo si se piden. */
 export function buildCollectionPackage(
-  collection: Pick<Collection, 'key' | 'label' | 'label_plural' | 'description' | 'icon' | 'fields' | 'enabled' | 'order_index'>,
+  collection: Pick<Collection, 'key' | 'label' | 'label_plural' | 'description' | 'icon' | 'fields' | 'enabled' | 'order_index' | 'template_page_key'>,
   records?: CollectionItem[],
 ): CollectionPackage {
   const def: Record<string, unknown> = {}
@@ -99,6 +101,7 @@ export async function importCollectionPackage(raw: unknown, db: Db, opts: Import
       fields: normalizeFields(definition.fields),
       enabled: definition.enabled !== false,
       order_index: typeof definition.order_index === 'number' ? definition.order_index : 0,
+      template_page_key: (definition.template_page_key as string) ?? null,
       tenant_id: opts.tenantId,
     }, db)
   }

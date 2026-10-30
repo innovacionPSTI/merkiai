@@ -56,6 +56,8 @@ export interface Collection {
   fields: CollectionField[]
   enabled: boolean
   order_index: number
+  /** HU-354 AC-1 · página CMS (por `key`) que actúa como plantilla del registro. */
+  template_page_key: string | null
   created_at: string
   updated_at: string
 }
@@ -168,6 +170,40 @@ export function validateItemData(fields: CollectionField[], data: unknown): Vali
   return { ok: errors.length === 0, errors, value }
 }
 
+// ─── HU-354 AC-1 · plantilla por tipo (placeholders {{campo}}) ────────────────
+
+/** Mapa de tokens de un registro: sus campos + builtins (slug/title/status). */
+export function recordTokens(item: Pick<CollectionItem, 'slug' | 'title' | 'status' | 'data'>): Record<string, string> {
+  const out: Record<string, string> = {
+    slug: item.slug ?? '',
+    title: item.title ?? '',
+    status: item.status ?? '',
+  }
+  for (const [k, v] of Object.entries(item.data ?? {})) {
+    if (v === null || v === undefined) out[k] = ''
+    else if (typeof v === 'object') out[k] = JSON.stringify(v)
+    else out[k] = String(v)
+  }
+  return out
+}
+
+/** Sustituye `{{campo}}` por su valor (token desconocido → cadena vacía). Puro. */
+export function substituteTokens(text: string, tokens: Record<string, string>): string {
+  return text.replace(/\{\{\s*([a-zA-Z0-9_]+)\s*\}\}/g, (_m, key) => tokens[key] ?? '')
+}
+
+/** Aplica la sustitución de tokens recursivamente a strings de un valor JSON (clona). */
+export function applyTokensDeep<T>(value: T, tokens: Record<string, string>): T {
+  if (typeof value === 'string') return substituteTokens(value, tokens) as unknown as T
+  if (Array.isArray(value)) return value.map((v) => applyTokensDeep(v, tokens)) as unknown as T
+  if (value && typeof value === 'object') {
+    const out: Record<string, unknown> = {}
+    for (const [k, v] of Object.entries(value as Record<string, unknown>)) out[k] = applyTokensDeep(v, tokens)
+    return out as T
+  }
+  return value
+}
+
 /** Título legible de un registro: data.title, o el primer campo de texto con valor. */
 export function deriveItemTitle(fields: CollectionField[], data: Record<string, unknown>): string | null {
   if (typeof data.title === 'string' && data.title.trim()) return data.title.trim()
@@ -214,6 +250,7 @@ export interface CreateCollectionInput {
   fields?: CollectionField[]
   enabled?: boolean
   order_index?: number
+  template_page_key?: string | null
   /** Requerido al insertar vía JWT de admin (la tabla no tiene default de tenant). */
   tenant_id?: string
 }
@@ -229,6 +266,7 @@ export async function createCollection(input: CreateCollectionInput, db: Db): Pr
     fields: normalizeFields(input.fields) as unknown as Json,
     enabled: input.enabled ?? true,
     order_index: input.order_index ?? 0,
+    ...(input.template_page_key !== undefined ? { template_page_key: input.template_page_key } : {}),
     ...(input.tenant_id ? { tenant_id: input.tenant_id } : {}),
     created_at: now,
     updated_at: now,
@@ -247,6 +285,7 @@ export async function updateCollection(key: string, input: UpdateCollectionInput
   if (input.icon !== undefined) patch.icon = input.icon
   if (input.enabled !== undefined) patch.enabled = input.enabled
   if (input.order_index !== undefined) patch.order_index = input.order_index
+  if (input.template_page_key !== undefined) patch.template_page_key = input.template_page_key
   if (input.fields !== undefined) patch.fields = normalizeFields(input.fields) as unknown as Json
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const { data, error } = await db.from('collections').update(patch as any).eq('key', key).select().single()

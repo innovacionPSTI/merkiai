@@ -23,18 +23,18 @@
 | **HU-351** | Layout Filas/Columnas | ✅ AC-1…AC-7 | `row_id`/`row_layout`/`col_index` (`e17/54`), render a CSS Grid en ambos paths, picker + responsive fino (ocultar/reordenar por breakpoint). |
 | **HU-352** | Estilo por página | ✅ AC-1…AC-4 | `pages.style` (`e17/55`): acento + ancho + espaciado por tokens, en `[slug]` y home; portable. |
 | **HU-353** | Colecciones (pieza madre) | ✅ AC-1…AC-6 | Tablas + RLS (`e17/56`), capa de datos + validación por esquema, API scoped, gestor admin `/colecciones`, gating por plan, **portabilidad** (`collection-package` + `exportSite.collections`). |
-| **HU-354** | Plantillas por tipo | 🟡 render | Ruta pública `/[slug]/[item]` con plantilla genérica + SEO/OG + preview. **Falta AC-1** (plantilla construida en lienzo). |
+| **HU-354** | Plantillas por tipo | ✅ AC-1…AC-5 | Ruta pública `/[slug]/[item]`: plantilla construida en el Constructor (`template_page_key` + placeholders `{{campo}}`, `e17/58`) con fallback a la automática; SEO/OG + preview; portable. |
 | **HU-355** | Listado dinámico | ✅ AC-1…AC-4 | Bloque `collection_list` (`e17/57`): colección + orden + filtro + límite + presentación; enlaza a los registros. |
 | **HU-356** | Partials globales | 🔲 Pendiente | Ola 3 (facilidad). |
 | **HU-357** | Biblioteca de medios | 🔲 Pendiente | Ola 3 (facilidad). |
 | **HU-358** | Bloques guardados | 🔲 Pendiente | Ola 3 (facilidad). |
 | **HU-359** | Entitlements + tiering | 🟡 transversal | Catálogo completo (8 features + 4 limits) + gating de las features vivas (`page_builder`/`layout_avanzado`/`estilo_por_pagina`/`colecciones`); el resto aterriza con cada HU futura. |
 
-**Migraciones de la ola:** `e17/54` (filas/columnas) · `e17/55` (estilo por página) · `e17/56` (colecciones) · `e17/57` (section_type `collection_list`).
+**Migraciones de la ola:** `e17/54` (filas/columnas) · `e17/55` (estilo por página) · `e17/56` (colecciones) · `e17/57` (section_type `collection_list`) · `e17/58` (plantilla por tipo).
 
 **Circuito Ola 2 operativo de punta a punta:** definir tipo (colección) → cargar registros (admin) → página pública por registro (`/[colección]/[slug]`) → listarlos en cualquier página (bloque `collection_list`). **Habilita** el catálogo de cursos (E20) y el portal (E23).
 
-**Pendientes (opcionales / pulido):** HU-354 AC-1 (override de plantilla construida en el lienzo con campos enlazados) y la Ola 3 completa (HU-356/357/358). El resto del gating de HU-359 se puebla junto a esas HU.
+**Pendientes (opcionales / pulido):** la Ola 3 completa (HU-356/357/358). El resto del gating de HU-359 se puebla junto a esas HU. (Ola 1 ✅ · Ola 2 ✅.)
 
 ---
 
@@ -111,7 +111,7 @@
 
 > Como editor, quiero construir una sola plantilla por tipo de contenido y que cada registro se renderice con ella, para publicar miles de páginas (noticias, cursos) sin armarlas una por una.
 
-**Estimación:** L (8 puntos) · **Módulo:** plantilla por colección (layout + bloques con *placeholders* que leen campos del registro) + ruta dinámica `/[collection]/[slug]` que resuelve el registro y aplica la plantilla · **Estado:** 🟡 Render público (v177) — **hecho:** ruta dinámica **`/[slug]/[item]`** (reusa el segmento `[slug]` del CMS + anida `[item]`; las rutas literales blog/shop/bundles tienen prioridad) que resuelve colección (habilitada) + registro (publicado; en preview también borradores vía machine-db) y lo renderiza con una **plantilla genérica dirigida por el esquema** (título, imagen hero, fecha, cuerpo richtext, enlaces/relaciones, booleanos…); **SEO/OG por registro** en `generateMetadata` (AC-2/AC-3); **preview por token + borrador** reusados (AC-4); ruta/tipo nuevo → **cero regresión** (AC-5). **Pendiente:** **AC-1** plantilla construida en el lienzo (Filas/Columnas + bloques con campos enlazados) como override de la plantilla automática. Depende de HU-351 + HU-353.
+**Estimación:** L (8 puntos) · **Módulo:** plantilla por colección (layout + bloques con *placeholders* que leen campos del registro) + ruta dinámica `/[collection]/[slug]` que resuelve el registro y aplica la plantilla · **Estado:** ✅ (v181, AC-1…AC-5) — **AC-1 (v181):** `collections.template_page_key` (`e17/58`) apunta a una **página del Constructor** como plantilla; sus bloques usan *placeholders* `{{campo}}` que se sustituyen con los valores del registro (`recordTokens`/`substituteTokens`/`applyTokensDeep`, puros + tests); la ruta pública la renderiza con `SectionRenderer` + grilla Filas/Columnas (cliente-máquina tenant-scoped, para no exigir que la plantilla esté publicada), con **fallback** a la plantilla automática; control en el gestor admin + la plantilla **viaja en el paquete** (`template_page_key` en `PACKAGE_COLLECTION_FIELDS`). **Render automático (v177):** ruta dinámica **`/[slug]/[item]`** (reusa el segmento `[slug]` del CMS + anida `[item]`; las rutas literales blog/shop/bundles tienen prioridad) que resuelve colección (habilitada) + registro (publicado; en preview también borradores vía machine-db) y lo renderiza con una **plantilla genérica dirigida por el esquema** (título, imagen hero, fecha, cuerpo richtext, enlaces/relaciones, booleanos…); **SEO/OG por registro** en `generateMetadata` (AC-2/AC-3); **preview por token + borrador** reusados (AC-4); ruta/tipo nuevo → **cero regresión** (AC-5). **Pendiente:** **AC-1** plantilla construida en el lienzo (Filas/Columnas + bloques con campos enlazados) como override de la plantilla automática. Depende de HU-351 + HU-353.
 
 | # | Escenario | Resultado esperado |
 |---|-----------|-------------------|
@@ -228,7 +228,7 @@
 ## Orden de implementación (olas) y dependencias
 
 1. **Ola 1 (fundación de autoría):** **HU-350** ✅ (shell unificado) → **HU-351** ✅ (Filas/Columnas) → **HU-352** ✅ (estilo por página). *Reorganiza + añade la capa de layout; cero regresión.* **→ Ola 1 completa.**
-2. **Ola 2 (contenido dirigido por datos):** **HU-353** ✅ (colecciones, pieza madre) → **HU-354** 🟡 (plantillas por tipo) → **HU-355** ✅ (listado dinámico). **→ Ola 2 operativa de punta a punta** (resta solo AC-1 de HU-354: plantilla en lienzo).
+2. **Ola 2 (contenido dirigido por datos):** **HU-353** ✅ (colecciones, pieza madre) → **HU-354** ✅ (plantillas por tipo) → **HU-355** ✅ (listado dinámico). **→ Ola 2 completa.**
 3. **Ola 3 (facilidad transversal, en paralelo tras Ola 1):** **HU-356** 🔲 (partials) · **HU-357** 🔲 (biblioteca de medios) · **HU-358** 🔲 (bloques guardados). **→ pendiente.**
 - **Transversal (con cada HU):** **HU-359** 🟡 (entitlements + tiering por plan) — catálogo completo; el gating se puebla a medida que cada feature se construye.
 4. **Habilita:** el **vertical educación** (E20: cursos como colección + plantilla por tipo) y el **Portal Institucional** (E23: HU-341 multiportal, HU-342 buscador/agregadores se apoyan en HU-353/355).

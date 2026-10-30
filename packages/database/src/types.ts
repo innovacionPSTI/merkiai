@@ -479,6 +479,7 @@ export type Database = {
           fields: Json
           enabled: boolean
           order_index: number
+          template_page_key: string | null
           created_at: string
           updated_at: string
         }
@@ -493,6 +494,7 @@ export type Database = {
           fields?: Json
           enabled?: boolean
           order_index?: number
+          template_page_key?: string | null
           created_at?: string
           updated_at?: string
         }
@@ -505,6 +507,7 @@ export type Database = {
           fields?: Json
           enabled?: boolean
           order_index?: number
+          template_page_key?: string | null
           updated_at?: string
         }
         Relationships: []
