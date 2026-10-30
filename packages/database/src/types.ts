@@ -551,6 +551,29 @@ export type Database = {
         }
         Relationships: []
       }
+      saved_blocks: {
+        Row: {
+          id: number
+          tenant_id: string
+          label: string
+          section_type: string
+          payload: Json
+          created_at: string
+        }
+        Insert: {
+          id?: number
+          tenant_id?: string
+          label: string
+          section_type: string
+          payload?: Json
+          created_at?: string
+        }
+        Update: {
+          label?: string
+          payload?: Json
+        }
+        Relationships: []
+      }
       redirects: {
         Row: {
           id: number

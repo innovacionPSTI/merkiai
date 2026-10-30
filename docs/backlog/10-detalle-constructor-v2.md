@@ -27,14 +27,14 @@
 | **HU-355** | Listado dinámico | ✅ AC-1…AC-4 | Bloque `collection_list` (`e17/57`): colección + orden + filtro + límite + presentación; enlaza a los registros. |
 | **HU-356** | Partials globales | ✅ AC-1…AC-3 | Bloque `partial_ref` (`e17/59`): página reutilizable inyectada por referencia; anti-recursión; preview + portabilidad por ser página. |
 | **HU-357** | Biblioteca de medios | 🔲 Pendiente | Ola 3 (facilidad). |
-| **HU-358** | Bloques guardados | 🔲 Pendiente | Ola 3 (facilidad). |
+| **HU-358** | Bloques guardados | ✅ AC-1…AC-3 | Tabla `saved_blocks` (`e17/60`): guardar una sección (con ítems) como reutilizable e insertarla como copia; viaja en el paquete de sitio. |
 | **HU-359** | Entitlements + tiering | 🟡 transversal | Catálogo completo (8 features + 4 limits) + gating de las features vivas (`page_builder`/`layout_avanzado`/`estilo_por_pagina`/`colecciones`); el resto aterriza con cada HU futura. |
 
-**Migraciones de la ola:** `e17/54` (filas/columnas) · `e17/55` (estilo por página) · `e17/56` (colecciones) · `e17/57` (section_type `collection_list`) · `e17/58` (plantilla por tipo) · `e17/59` (section_type `partial_ref`).
+**Migraciones de la ola:** `e17/54` (filas/columnas) · `e17/55` (estilo por página) · `e17/56` (colecciones) · `e17/57` (section_type `collection_list`) · `e17/58` (plantilla por tipo) · `e17/59` (section_type `partial_ref`) · `e17/60` (saved_blocks).
 
 **Circuito Ola 2 operativo de punta a punta:** definir tipo (colección) → cargar registros (admin) → página pública por registro (`/[colección]/[slug]`) → listarlos en cualquier página (bloque `collection_list`). **Habilita** el catálogo de cursos (E20) y el portal (E23).
 
-**Pendientes (opcionales / pulido):** la Ola 3 completa (HU-356/357/358). El resto del gating de HU-359 se puebla junto a esas HU. (Ola 1 ✅ · Ola 2 ✅.)
+**Pendientes (opcionales / pulido):** HU-357 (biblioteca de medios) de la Ola 3. El resto del gating de HU-359 se puebla junto a esa HU. (Ola 1 ✅ · Ola 2 ✅ · Ola 3: HU-356 ✅, HU-358 ✅.)
 
 ---
 
@@ -170,7 +170,7 @@
 
 > Como comerciante, quiero guardar una sección ya configurada como reutilizable y volver a insertarla, para acelerar la creación de páginas similares.
 
-**Estimación:** S (3 puntos) · **Módulo:** guardar un bloque/sección (con su contenido y estilo) como plantilla de bloque del tenant + reinserción desde "Agregar bloque" · **Estado:** 🔲 Pendiente — extiende la idea de "guardar como preset" (HU-256) al nivel de bloque.
+**Estimación:** S (3 puntos) · **Módulo:** guardar un bloque/sección (con su contenido y estilo) como plantilla de bloque del tenant + reinserción desde "Agregar bloque" · **Estado:** ✅ (v183) — tabla `saved_blocks` (`e17/60`, RLS admin-only) + capa de datos (`buildSavedBlockPayload` puro, `createSavedBlockFromSection` captura columnas+settings+**ítems**, `insertSavedBlock` crea copia editable) + API `/api/admin/cms/saved-blocks` + Constructor ("**Guardar**" por sección (AC-1) y selector "**Bloque guardado → Insertar…**" (AC-2)); **viaja en el paquete de sitio** (`exportSite.saved_blocks`, AC-3). Extiende "guardar como preset" (HU-256) al nivel de bloque.
 
 | # | Escenario | Resultado esperado |
 |---|-----------|-------------------|
@@ -229,7 +229,7 @@
 
 1. **Ola 1 (fundación de autoría):** **HU-350** ✅ (shell unificado) → **HU-351** ✅ (Filas/Columnas) → **HU-352** ✅ (estilo por página). *Reorganiza + añade la capa de layout; cero regresión.* **→ Ola 1 completa.**
 2. **Ola 2 (contenido dirigido por datos):** **HU-353** ✅ (colecciones, pieza madre) → **HU-354** ✅ (plantillas por tipo) → **HU-355** ✅ (listado dinámico). **→ Ola 2 completa.**
-3. **Ola 3 (facilidad transversal, en paralelo tras Ola 1):** **HU-356** ✅ (partials) · **HU-357** 🔲 (biblioteca de medios) · **HU-358** 🔲 (bloques guardados). **→ en curso.**
+3. **Ola 3 (facilidad transversal, en paralelo tras Ola 1):** **HU-356** ✅ (partials) · **HU-357** 🔲 (biblioteca de medios) · **HU-358** ✅ (bloques guardados). **→ en curso (resta HU-357).**
 - **Transversal (con cada HU):** **HU-359** 🟡 (entitlements + tiering por plan) — catálogo completo; el gating se puebla a medida que cada feature se construye.
 4. **Habilita:** el **vertical educación** (E20: cursos como colección + plantilla por tipo) y el **Portal Institucional** (E23: HU-341 multiportal, HU-342 buscador/agregadores se apoyan en HU-353/355).
 

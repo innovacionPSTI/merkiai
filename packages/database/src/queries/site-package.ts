@@ -17,6 +17,7 @@ import { exportPage, type PagePackage } from './page-package'
 import { buildCollectionPackage, type CollectionPackage } from './collection-package'
 import { getPages } from './content'
 import { listCollections, listCollectionItems } from './collections'
+import { listSavedBlocks } from './saved-blocks'
 import { getNavTree } from './nav'
 import type { Theme } from './themes'
 
@@ -55,6 +56,8 @@ export interface SitePackage {
   pages: PagePackage[]
   /** HU-353 AC-5 · definiciones de colección (con registros de ejemplo opcionales). */
   collections: CollectionPackage[]
+  /** HU-358 AC-3 · bloques guardados del tenant (label + section_type + payload). */
+  saved_blocks: { label: string; section_type: string; payload: unknown }[]
 }
 
 export interface BuildSiteInput {
@@ -63,6 +66,7 @@ export interface BuildSiteInput {
   nav: unknown
   pages: PagePackage[]
   collections?: CollectionPackage[]
+  savedBlocks?: { label: string; section_type: string; payload: unknown }[]
 }
 
 /** Arma el paquete de sitio (pura). */
@@ -76,17 +80,19 @@ export function buildSitePackage(input: BuildSiteInput): SitePackage {
     nav: input.nav ?? [],
     pages: input.pages,
     collections: input.collections ?? [],
+    saved_blocks: input.savedBlocks ?? [],
   }
 }
 
 /** Reúne todo el sitio del tenant y arma el backup (HU-123 v1 + HU-353 colecciones). */
 export async function exportSite(db: Db, tenantId: string, opts: { includeCollectionRecords?: boolean } = {}): Promise<SitePackage> {
-  const [{ data: themeRow }, { data: configRow }, nav, pages, collections] = await Promise.all([
+  const [{ data: themeRow }, { data: configRow }, nav, pages, collections, savedBlocks] = await Promise.all([
     db.from('themes').select('*').eq('is_active', true).maybeSingle(),
     db.from('store_config').select('*').eq('tenant_id', tenantId).maybeSingle(),
     getNavTree(db).catch(() => []),
     getPages(db).catch(() => []),
     listCollections(db).catch(() => []),
+    listSavedBlocks(db).catch(() => []),
   ])
   const pagePackages = await Promise.all(pages.map((p) => exportPage(p.key, db)))
   const collectionPackages = await Promise.all(collections.map(async (c) => {
@@ -101,5 +107,6 @@ export async function exportSite(db: Db, tenantId: string, opts: { includeCollec
     nav,
     pages: pagePackages,
     collections: collectionPackages,
+    savedBlocks: savedBlocks.map((b) => ({ label: b.label, section_type: b.section_type, payload: b.payload })),
   })
 }

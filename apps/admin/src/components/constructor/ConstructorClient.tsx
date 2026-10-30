@@ -63,6 +63,14 @@ export default function ConstructorClient({
   const [pageTypeF, setPageTypeF] = useState('')
   const [pageStatusF, setPageStatusF] = useState<'' | 'enabled' | 'draft'>('')
 
+  // HU-358 · biblioteca de bloques guardados del tenant.
+  const [savedBlocks, setSavedBlocks] = useState<{ id: number; label: string; section_type: string }[]>([])
+  const loadSaved = useCallback(async () => {
+    const res = await fetch('/api/admin/cms/saved-blocks')
+    if (res.ok) setSavedBlocks(await res.json())
+  }, [])
+  useEffect(() => { void loadSaved() }, [loadSaved])
+
   const bump = useCallback(() => setPreviewKey(Date.now()), [])
 
   // HU-350 AC-2 · tipos presentes en las páginas (para poblar el filtro).
@@ -162,6 +170,29 @@ export default function ConstructorClient({
       body: JSON.stringify({ page_key: pageKey, section_type: type, order_index: nextOrder, enabled: true }),
     })
     await load(pageKey)
+  }
+
+  // HU-358 · guardar una sección como bloque reutilizable del tenant.
+  async function saveBlock(s: SectionRow) {
+    const label = prompt('Nombre del bloque guardado:')?.trim()
+    if (!label) return
+    const res = await fetch('/api/admin/cms/saved-blocks', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ section_id: s.id, label }),
+    })
+    if (!res.ok) { setTplMsg((await res.json().catch(() => ({}))).error || 'No se pudo guardar el bloque'); return }
+    setTplMsg('Bloque guardado ✓'); await loadSaved()
+  }
+
+  // HU-358 · insertar un bloque guardado como copia editable en la página actual.
+  async function insertSavedBlock(id: number) {
+    const nextOrder = sections.length ? Math.max(...sections.map((s) => s.order_index)) + 1 : 0
+    const res = await fetch('/api/admin/cms/saved-blocks', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ insert_id: id, page_key: pageKey, order_index: nextOrder }),
+    })
+    if (!res.ok) { setTplMsg((await res.json().catch(() => ({}))).error || 'No se pudo insertar'); return }
+    setTplMsg('Bloque insertado ✓'); await load(pageKey)
   }
 
   async function toggle(s: SectionRow) {
@@ -511,6 +542,20 @@ export default function ConstructorClient({
               )
             })()}
 
+            {/* HU-358 · insertar un bloque guardado */}
+            {savedBlocks.length > 0 && (
+              <label className="flex items-center gap-1 text-xs text-slate-600" title="Insertar un bloque guardado como copia">
+                Bloque guardado
+                <select
+                  defaultValue=""
+                  onChange={(e) => { const id = Number(e.target.value); if (id) { insertSavedBlock(id); e.currentTarget.value = '' } }}
+                  className="h-7 rounded border border-slate-300 text-xs px-1" aria-label="Insertar bloque guardado"
+                >
+                  <option value="">Insertar…</option>
+                  {savedBlocks.map((b) => <option key={b.id} value={b.id}>{b.label}</option>)}
+                </select>
+              </label>
+            )}
             <div className="ml-auto">
               <AddBlockCatalog onAdd={addBlock} />
             </div>
@@ -608,6 +653,7 @@ export default function ConstructorClient({
                         {open ? 'Cerrar' : 'Editar'}
                       </button>
                       <button onClick={() => duplicate(s)} className="text-slate-400 hover:text-slate-700" title="Duplicar" aria-label="Duplicar bloque"><Icon name="grid" size={15} /></button>
+                      <button onClick={() => saveBlock(s)} className="text-[11px] text-slate-500 hover:text-indigo-700 border border-slate-200 rounded-lg px-2 py-1" title="Guardar como bloque reutilizable">Guardar</button>
                       <button onClick={() => remove(s)} className="text-slate-400 hover:text-red-600" title="Eliminar" aria-label="Eliminar bloque"><Icon name="trash" size={15} /></button>
                     </div>
                     {open && (
