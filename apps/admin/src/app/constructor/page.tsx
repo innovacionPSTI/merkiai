@@ -22,10 +22,17 @@ export default async function ConstructorPage() {
 
   const { db: supabase } = await requireAdminDb()
   const [{ data: pages }, { data: cfg }] = await Promise.all([
-    supabase.from('pages').select('key, label, slug, style').order('order_index'),
+    supabase.from('pages').select('key, label, slug, style, page_type, enabled').order('order_index'),
     supabase.from('store_config').select('template').maybeSingle(),
   ])
-  const pageOptions = (pages ?? []).map((p) => ({ key: p.key as string, label: p.label as string, slug: (p.slug as string) ?? '', style: (p as { style?: unknown }).style ?? null }))
+  const pageOptions = (pages ?? []).map((p) => ({
+    key: p.key as string,
+    label: p.label as string,
+    slug: (p.slug as string) ?? '',
+    style: (p as { style?: unknown }).style ?? null,
+    page_type: ((p as { page_type?: string }).page_type ?? 'custom'),
+    enabled: (p as { enabled?: boolean }).enabled ?? true,
+  }))
   const initialPageKey = pageOptions.find((p) => p.key === 'home')?.key ?? pageOptions[0]?.key ?? 'home'
   const initialTemplate = (cfg?.template as string | undefined) ?? 'default'
 

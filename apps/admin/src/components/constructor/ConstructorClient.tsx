@@ -16,7 +16,13 @@ import SectionEditor from './SectionEditor'
 import AddBlockCatalog from './AddBlockCatalog'
 import { getPreviewUrlAction } from '@/app/constructor/preview-action'
 
-interface PageOption { key: string; label: string; slug: string; style?: unknown }
+interface PageOption { key: string; label: string; slug: string; style?: unknown; page_type?: string; enabled?: boolean }
+
+// HU-350 AC-2 · etiquetas de tipo de página para el filtro de la lista.
+const PAGE_TYPE_LABELS: Record<string, string> = {
+  landing: 'Landing', services: 'Servicios', about: 'Acerca de',
+  faq: 'FAQ', content: 'Contenido', custom: 'Personalizada',
+}
 interface SectionRow {
   id: number
   page_key: string
@@ -43,8 +49,24 @@ export default function ConstructorClient({ pages, initialPageKey, initialTempla
   const [dragIdx, setDragIdx] = useState<number | null>(null) // HU-251 · DnD
   const [overIdx, setOverIdx] = useState<number | null>(null) // HU-126 · slot destino (efecto de desplazamiento)
   const [device, setDevice] = useState<'desktop' | 'tablet' | 'mobile'>('desktop') // HU-251 · preview
+  // HU-350 AC-2 · lista de páginas filtrable dentro del hub.
+  const [pagePanel, setPagePanel] = useState(false)
+  const [pageQuery, setPageQuery] = useState('')
+  const [pageTypeF, setPageTypeF] = useState('')
+  const [pageStatusF, setPageStatusF] = useState<'' | 'enabled' | 'draft'>('')
 
   const bump = useCallback(() => setPreviewKey(Date.now()), [])
+
+  // HU-350 AC-2 · tipos presentes en las páginas (para poblar el filtro).
+  const pageTypesPresent = Array.from(new Set(pageList.map((p) => p.page_type ?? 'custom')))
+  const filteredPages = pageList.filter((p) => {
+    if (pageQuery && !`${p.label} ${p.slug} ${p.key}`.toLowerCase().includes(pageQuery.toLowerCase())) return false
+    if (pageTypeF && (p.page_type ?? 'custom') !== pageTypeF) return false
+    if (pageStatusF === 'enabled' && p.enabled === false) return false
+    if (pageStatusF === 'draft' && p.enabled !== false) return false
+    return true
+  })
+  function selectPage(key: string) { setExpanded(null); setPageKey(key); setPagePanel(false) }
 
   const load = useCallback(async (key: string) => {
     setLoading(true)
@@ -91,7 +113,7 @@ export default function ConstructorClient({ pages, initialPageKey, initialTempla
       body: JSON.stringify({ key, label, slug, page_type: 'content', enabled: false, show_in_footer: false }),
     })
     if (!res.ok) { setTplMsg((await res.json().catch(() => ({}))).error || 'No se pudo crear la página'); return }
-    setPageList((ps) => [...ps, { key, label, slug }])
+    setPageList((ps) => [...ps, { key, label, slug, page_type: 'content', enabled: false }])
     setExpanded(null); setPageKey(key)
     setTplMsg('Página creada (borrador). Agrega bloques y publícala cuando esté lista ✓')
   }
@@ -114,7 +136,8 @@ export default function ConstructorClient({ pages, initialPageKey, initialTempla
         body: JSON.stringify({ package: pkg, key, slug, label }),
       })
       if (!res.ok) { setTplMsg((await res.json().catch(() => ({}))).error || 'No se pudo duplicar'); return }
-      setPageList((ps) => [...ps, { key, label, slug }])
+      const src = pageList.find((p) => p.key === pageKey)
+      setPageList((ps) => [...ps, { key, label, slug, page_type: src?.page_type ?? 'content', enabled: false }])
       setExpanded(null); setPageKey(key)
       setTplMsg('Página duplicada como borrador ✓')
     } catch {
@@ -381,13 +404,58 @@ export default function ConstructorClient({ pages, initialPageKey, initialTempla
         <div className="space-y-4">
           <div className="flex flex-wrap items-center gap-3">
             <label className="text-sm font-medium text-slate-600">Página</label>
-            <select
-              className="rounded-lg border border-slate-300 px-3 py-2 text-sm"
-              value={pageKey}
-              onChange={(e) => { setExpanded(null); setPageKey(e.target.value) }}
-            >
-              {pageList.map((p) => <option key={p.key} value={p.key}>{p.label}</option>)}
-            </select>
+            {/* HU-350 AC-2 · selector con lista filtrable (tipo/estado) dentro del hub */}
+            <div className="relative">
+              <button
+                type="button"
+                onClick={() => setPagePanel((v) => !v)}
+                className="flex items-center gap-2 rounded-lg border border-slate-300 px-3 py-2 text-sm hover:bg-slate-50"
+                aria-haspopup="listbox" aria-expanded={pagePanel}
+              >
+                <span className={`w-2 h-2 rounded-full ${(pageList.find((p) => p.key === pageKey)?.enabled === false) ? 'bg-amber-400' : 'bg-green-400'}`} />
+                <span className="font-medium text-slate-700">{pageList.find((p) => p.key === pageKey)?.label ?? pageKey}</span>
+                <span className="text-slate-400">▾</span>
+              </button>
+              {pagePanel && (
+                <>
+                  <div className="fixed inset-0 z-10" onClick={() => setPagePanel(false)} aria-hidden="true" />
+                  <div className="absolute left-0 top-full z-20 mt-1 w-80 rounded-xl border border-slate-200 bg-white shadow-lg p-3" role="listbox" aria-label="Páginas">
+                    <input
+                      type="text" value={pageQuery} onChange={(e) => setPageQuery(e.target.value)}
+                      placeholder="Buscar página…" aria-label="Buscar página"
+                      className="w-full rounded-lg border border-slate-300 px-2.5 py-1.5 text-sm mb-2"
+                    />
+                    <div className="flex gap-2 mb-2">
+                      <select value={pageTypeF} onChange={(e) => setPageTypeF(e.target.value)} className="flex-1 rounded-lg border border-slate-300 px-2 py-1.5 text-xs" aria-label="Filtrar por tipo">
+                        <option value="">Todos los tipos</option>
+                        {pageTypesPresent.map((t) => <option key={t} value={t}>{PAGE_TYPE_LABELS[t] ?? t}</option>)}
+                      </select>
+                      <select value={pageStatusF} onChange={(e) => setPageStatusF(e.target.value as '' | 'enabled' | 'draft')} className="flex-1 rounded-lg border border-slate-300 px-2 py-1.5 text-xs" aria-label="Filtrar por estado">
+                        <option value="">Todos</option>
+                        <option value="enabled">Publicadas</option>
+                        <option value="draft">Borrador</option>
+                      </select>
+                    </div>
+                    <ul className="max-h-72 overflow-y-auto -mx-1">
+                      {filteredPages.length === 0 && <li className="px-2 py-3 text-xs text-slate-400 text-center">Sin páginas que coincidan</li>}
+                      {filteredPages.map((p) => (
+                        <li key={p.key}>
+                          <button
+                            type="button" role="option" aria-selected={p.key === pageKey}
+                            onClick={() => selectPage(p.key)}
+                            className={`w-full flex items-center gap-2 px-2 py-2 rounded-lg text-left text-sm ${p.key === pageKey ? 'bg-indigo-50 text-indigo-700' : 'hover:bg-slate-50 text-slate-700'}`}
+                          >
+                            <span className={`w-2 h-2 rounded-full flex-shrink-0 ${p.enabled === false ? 'bg-amber-400' : 'bg-green-400'}`} title={p.enabled === false ? 'Borrador' : 'Publicada'} />
+                            <span className="flex-1 truncate">{p.label}</span>
+                            <span className="text-[10px] px-1.5 py-0.5 rounded bg-slate-100 text-slate-500">{PAGE_TYPE_LABELS[p.page_type ?? 'custom'] ?? p.page_type}</span>
+                          </button>
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                </>
+              )}
+            </div>
             {/* HU-350 · crear/duplicar página desde el hub */}
             <button onClick={createPage} className="rounded-lg border border-indigo-300 px-3 py-2 text-sm font-medium text-indigo-700 hover:bg-indigo-50">+ Nueva página</button>
             <button onClick={duplicatePage} className="rounded-lg border border-slate-300 px-3 py-2 text-sm text-slate-700 hover:bg-slate-50">Duplicar</button>
