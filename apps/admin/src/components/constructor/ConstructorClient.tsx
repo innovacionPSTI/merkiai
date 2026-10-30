@@ -205,6 +205,57 @@ export default function ConstructorClient({ pages, initialPageKey, initialTempla
     }
   }
 
+  // ── HU-351 · layout Filas/Columnas (picker) ───────────────────────────────
+  const rid = (s: SectionRow) => (s.row_id as string | null | undefined) ?? null
+  const rlayout = (s: SectionRow) => (s.row_layout as string | null | undefined) ?? null
+  const cidx = (s: SectionRow) => (s.col_index as number | null | undefined) ?? 0
+  const cellsOf = (rowId: string) => sections.filter((s) => rid(s) === rowId).sort((a, b) => cidx(a) - cidx(b))
+  const equalPreset = (n: number) => (n === 2 ? '6,6' : n === 3 ? '4,4,4' : n === 4 ? '3,3,3,3' : '')
+  const patchRow = (id: number, fields: Record<string, unknown>) =>
+    fetch(api, { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ id, ...fields }) })
+
+  // Une el bloque `index` con el anterior en una misma fila (como combinar celdas).
+  async function joinUp(index: number) {
+    if (index <= 0) return
+    const cur = sections[index], prev = sections[index - 1]
+    let rowId = rid(prev)
+    const ops: Promise<unknown>[] = []
+    if (!rowId) {
+      rowId = `r${prev.id}`
+      ops.push(patchRow(prev.id, { row_id: rowId, col_index: 0, row_layout: '6,6' }))
+      ops.push(patchRow(cur.id, { row_id: rowId, col_index: 1, row_layout: '6,6' }))
+    } else {
+      const cur_cells = cellsOf(rowId)
+      const maxCol = cur_cells.length ? Math.max(...cur_cells.map(cidx)) : 0
+      const eq = equalPreset(cur_cells.length + 1)
+      ops.push(patchRow(cur.id, { row_id: rowId, col_index: maxCol + 1, row_layout: eq }))
+      for (const c of cur_cells) ops.push(patchRow(c.id, { row_layout: eq }))
+    }
+    await Promise.all(ops)
+    setTplMsg('Bloques unidos en una fila ✓')
+    await load(pageKey)
+  }
+
+  // Saca el bloque de su fila (vuelve a ancho completo). Si queda 1 solo, también lo libera.
+  async function splitCell(s: SectionRow) {
+    const rowId = rid(s)
+    await patchRow(s.id, { row_id: null, col_index: null, row_layout: null })
+    if (rowId) {
+      const remaining = cellsOf(rowId).filter((x) => x.id !== s.id)
+      if (remaining.length === 1) await patchRow(remaining[0].id, { row_id: null, col_index: null, row_layout: null })
+    }
+    setTplMsg('Bloque separado de la fila ✓')
+    await load(pageKey)
+  }
+
+  async function setRowLayout(s: SectionRow, preset: string) {
+    const rowId = rid(s)
+    if (!rowId) return
+    await Promise.all(cellsOf(rowId).map((x) => patchRow(x.id, { row_layout: preset })))
+    setTplMsg('Proporciones de la fila actualizadas ✓')
+    await load(pageKey)
+  }
+
   async function changeTemplate(next: string) {
     setTemplate(next); setTplMsg('')
     const res = await fetch('/api/admin/config', {
@@ -327,6 +378,13 @@ export default function ConstructorClient({ pages, initialPageKey, initialTempla
               {sections.map((s, i) => {
                 const schema = getBlockSchema(s.section_type)
                 const open = expanded === s.id
+                // HU-351 · info de fila para el picker de columnas
+                const myRow = rid(s)
+                const rowCells = myRow ? cellsOf(myRow) : []
+                const isFirstCell = myRow ? rowCells[0]?.id === s.id : false
+                const presetOpts = rowCells.length === 2 ? ['6,6', '8,4', '4,8']
+                  : rowCells.length === 3 ? ['4,4,4', '6,3,3', '3,6,3']
+                  : rowCells.length === 4 ? ['3,3,3,3'] : []
                 // HU-126 · efecto de desplazamiento: se abre un hueco (con línea
                 // punteada) en el slot donde caería el bloque arrastrado. Para
                 // arrastre hacia abajo el hueco va DEBAJO del ítem bajo el cursor;
@@ -363,6 +421,20 @@ export default function ConstructorClient({ pages, initialPageKey, initialTempla
                         <p className="text-sm font-medium text-slate-800">{schema?.label ?? s.section_type}</p>
                         {schema?.description && <p className="text-xs text-slate-400">{schema.description}</p>}
                       </div>
+                      {/* HU-351 · picker de Filas/Columnas */}
+                      {myRow ? (
+                        <div className="flex items-center gap-1">
+                          <span className="rounded-full bg-indigo-50 text-indigo-600 text-[10px] font-semibold px-2 py-0.5" title="Este bloque está en una fila de columnas">Fila · {rowCells.length} col</span>
+                          {isFirstCell && presetOpts.length > 0 && (
+                            <select value={rlayout(s) ?? presetOpts[0]} onChange={(e) => setRowLayout(s, e.target.value)} className="rounded-lg border border-slate-300 px-1.5 py-1 text-[11px]" title="Proporciones de la fila" aria-label="Proporciones de la fila">
+                              {presetOpts.map((p) => <option key={p} value={p}>{p.replace(/,/g, ' · ')}</option>)}
+                            </select>
+                          )}
+                          <button onClick={() => splitCell(s)} className="text-[11px] text-slate-500 hover:text-red-600 border border-slate-200 rounded-lg px-2 py-1" title="Sacar de la fila (ancho completo)">Separar</button>
+                        </div>
+                      ) : i > 0 && (
+                        <button onClick={() => joinUp(i)} className="text-[11px] text-indigo-600 hover:bg-indigo-50 border border-indigo-200 rounded-lg px-2 py-1" title="Unir con el bloque de arriba en una fila de columnas">⬓ Unir ↑</button>
+                      )}
                       <button onClick={() => toggle(s)} className={`rounded-full px-3 py-1 text-xs font-medium ${s.enabled ? 'bg-green-100 text-green-700' : 'bg-slate-100 text-slate-500'}`}>
                         {s.enabled ? 'Visible' : 'Oculto'}
                       </button>

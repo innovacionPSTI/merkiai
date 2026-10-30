@@ -1313,6 +1313,9 @@ export type Database = {
           order_index: number
           settings: Json
           draft: Json | null
+          row_id: string | null
+          row_layout: string | null
+          col_index: number | null
           created_at: string
           updated_at: string
         }
@@ -1332,6 +1335,9 @@ export type Database = {
           order_index?: number
           settings?: Json
           draft?: Json | null
+          row_id?: string | null
+          row_layout?: string | null
+          col_index?: number | null
           created_at?: string
           updated_at?: string
         }
@@ -1351,6 +1357,9 @@ export type Database = {
           order_index?: number
           settings?: Json
           draft?: Json | null
+          row_id?: string | null
+          row_layout?: string | null
+          col_index?: number | null
           updated_at?: string
         }
         Relationships: [

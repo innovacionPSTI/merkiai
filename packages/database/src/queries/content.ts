@@ -41,6 +41,10 @@ export type CreatePageSectionInput = {
   enabled?: boolean
   order_index?: number
   settings?: Record<string, unknown>
+  // HU-351 · layout Filas/Columnas (opt-in)
+  row_id?: string | null
+  row_layout?: string | null
+  col_index?: number | null
 }
 
 export type UpdatePageSectionInput = Partial<Omit<CreatePageSectionInput, 'page_key'>>

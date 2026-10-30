@@ -25,6 +25,8 @@ export const PACKAGE_PAGE_FIELDS = [
 export const PACKAGE_SECTION_COLS = [
   'section_type', 'title', 'subtitle', 'body', 'image_url', 'cta_label', 'cta_url',
   'enabled', 'order_index', 'settings',
+  // HU-351 · layout Filas/Columnas (portabilidad del layout en el paquete)
+  'row_id', 'row_layout', 'col_index',
 ] as const
 
 /** Columnas de ítem que viajan. */
@@ -156,6 +158,10 @@ export async function importPagePackage(raw: unknown, db: Db, opts: ImportPageOp
       enabled: s.enabled !== false,
       order_index: typeof s.order_index === 'number' ? s.order_index : i,
       settings: (s.settings && typeof s.settings === 'object') ? s.settings as Record<string, unknown> : {},
+      // HU-351 · restaura el layout de fila/columna si venía en el paquete
+      row_id: (typeof s.row_id === 'string' ? s.row_id : null),
+      row_layout: (typeof s.row_layout === 'string' ? s.row_layout : null),
+      col_index: (typeof s.col_index === 'number' ? s.col_index : null),
     }, db)
 
     for (const [j, it] of (s.items ?? []).entries()) {
