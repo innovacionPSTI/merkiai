@@ -42,6 +42,7 @@ describe('buildSitePackage (HU-123)', () => {
     expect((pkg.store_config as any).resend_api_key).toBeUndefined()
     expect(pkg.nav).toEqual([{ id: 1 }])
     expect(pkg.pages).toEqual([])
+    expect(pkg.collections).toEqual([]) // HU-353 AC-5 · default vacío
   })
 
   it('tolera tienda sin tema activo', () => {

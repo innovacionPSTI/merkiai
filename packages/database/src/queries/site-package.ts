@@ -14,7 +14,9 @@
 import type { Db } from '../client'
 import { buildTemplatePackage, type TemplatePackage } from './template-package'
 import { exportPage, type PagePackage } from './page-package'
+import { buildCollectionPackage, type CollectionPackage } from './collection-package'
 import { getPages } from './content'
+import { listCollections, listCollectionItems } from './collections'
 import { getNavTree } from './nav'
 import type { Theme } from './themes'
 
@@ -51,6 +53,8 @@ export interface SitePackage {
   store_config: Record<string, unknown>
   nav: unknown
   pages: PagePackage[]
+  /** HU-353 AC-5 · definiciones de colección (con registros de ejemplo opcionales). */
+  collections: CollectionPackage[]
 }
 
 export interface BuildSiteInput {
@@ -58,6 +62,7 @@ export interface BuildSiteInput {
   storeConfig: unknown
   nav: unknown
   pages: PagePackage[]
+  collections?: CollectionPackage[]
 }
 
 /** Arma el paquete de sitio (pura). */
@@ -70,22 +75,31 @@ export function buildSitePackage(input: BuildSiteInput): SitePackage {
     store_config: safeStoreConfig(input.storeConfig),
     nav: input.nav ?? [],
     pages: input.pages,
+    collections: input.collections ?? [],
   }
 }
 
-/** Reúne todo el sitio del tenant y arma el backup (HU-123 v1). */
-export async function exportSite(db: Db, tenantId: string): Promise<SitePackage> {
-  const [{ data: themeRow }, { data: configRow }, nav, pages] = await Promise.all([
+/** Reúne todo el sitio del tenant y arma el backup (HU-123 v1 + HU-353 colecciones). */
+export async function exportSite(db: Db, tenantId: string, opts: { includeCollectionRecords?: boolean } = {}): Promise<SitePackage> {
+  const [{ data: themeRow }, { data: configRow }, nav, pages, collections] = await Promise.all([
     db.from('themes').select('*').eq('is_active', true).maybeSingle(),
     db.from('store_config').select('*').eq('tenant_id', tenantId).maybeSingle(),
     getNavTree(db).catch(() => []),
     getPages(db).catch(() => []),
+    listCollections(db).catch(() => []),
   ])
   const pagePackages = await Promise.all(pages.map((p) => exportPage(p.key, db)))
+  const collectionPackages = await Promise.all(collections.map(async (c) => {
+    const records = opts.includeCollectionRecords
+      ? await listCollectionItems(db, { collectionKey: c.key }).catch(() => [])
+      : undefined
+    return buildCollectionPackage(c, records)
+  }))
   return buildSitePackage({
     theme: (themeRow as unknown as Theme) ?? null,
     storeConfig: configRow,
     nav,
     pages: pagePackages,
+    collections: collectionPackages,
   })
 }
