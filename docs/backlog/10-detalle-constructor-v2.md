@@ -104,7 +104,7 @@
 
 > Como editor, quiero insertar un bloque que liste registros de una colección (con filtros, orden y paginación) en cualquier página, para armar portadas, índices y secciones de "últimas noticias / próximos eventos / cursos".
 
-**Estimación:** M (5 puntos) · **Módulo:** nuevo `section_type` de **listado dinámico** que consulta una colección (fuente configurable: toda / filtro por campo / manual) con orden/límite/paginación; render server-side scoped · **Estado:** 🔲 Pendiente — **generaliza `product_carousel` (HU-286 v2)** a cualquier colección; depende de HU-353.
+**Estimación:** M (5 puntos) · **Módulo:** nuevo `section_type` de **listado dinámico** que consulta una colección (fuente configurable: toda / filtro por campo / manual) con orden/límite/paginación; render server-side scoped · **Estado:** ✅ (v178) — nuevo bloque **`collection_list`** (`e17/57` amplía el CHECK de `section_type`): schema con **colección + orden** (recientes/antiguos/título/manual) **+ filtro por campo/valor + límite + presentación** (rejilla/lista); aparece en «Agregar bloque» (AC-2) y cae en una celda de la grilla (HU-351); resolver puro `resolveCollectionList` (RLS del storefront filtra publicados+tenant) con tests; componente server `CollectionList` (cards por **tokens** de tema, enlaza a `/[colección]/[slug]` de HU-354) cableado en `SectionRenderer` y en el registry del home; config **viaja en el paquete** (está en `settings`, AC-3); **generaliza `product_carousel`** a cualquier colección (AC-4 · `product_carousel` se mantiene como caso de productos). Depende de HU-353 ✅.
 
 | # | Escenario | Resultado esperado |
 |---|-----------|-------------------|

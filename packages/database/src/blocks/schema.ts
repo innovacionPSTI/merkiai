@@ -244,6 +244,36 @@ export const blockSchemas: Record<string, BlockSchema> = {
     },
   },
 
+  // HU-355 · listado dinámico de registros de una COLECCIÓN (HU-353). Generaliza
+  // `product_carousel` a cualquier tipo de contenido: noticias, eventos, cursos…
+  // Insertable en cualquier página; estilos por tokens de tema.
+  collection_list: {
+    type: 'collection_list',
+    label: 'Listado de colección',
+    description: 'Lista registros de una colección (noticias, eventos, cursos…) con orden, filtro y límite. Enlaza a cada registro.',
+    category: 'content',
+    fields: {
+      title: { label: 'Título de la sección', type: 'text', storage: 'column' },
+      collection_key: { label: 'Colección (clave)', type: 'text', storage: 'settings', help: 'La clave de la colección a listar. Ej: noticias' },
+      limit: { label: 'Cantidad', type: 'number', storage: 'settings', default: 6 },
+      order_by: {
+        label: 'Ordenar por', type: 'select', storage: 'settings', default: 'recent',
+        options: [
+          { value: 'recent', label: 'Más recientes' },
+          { value: 'oldest', label: 'Más antiguos' },
+          { value: 'title',  label: 'Título (A-Z)' },
+          { value: 'manual', label: 'Orden manual' },
+        ],
+      },
+      filter_field: { label: 'Filtrar por campo (clave)', type: 'text', storage: 'settings', help: 'Opcional. Clave de un campo del registro a filtrar.' },
+      filter_value: { label: 'Valor del filtro', type: 'text', storage: 'settings', help: 'Opcional. Solo se muestran registros cuyo campo coincida.' },
+      layout: {
+        label: 'Presentación', type: 'select', storage: 'settings', default: 'grid',
+        options: [{ value: 'grid', label: 'Rejilla' }, { value: 'list', label: 'Lista' }],
+      },
+    },
+  },
+
   historia: {
     type: 'historia',
     label: 'Bloque de historia',

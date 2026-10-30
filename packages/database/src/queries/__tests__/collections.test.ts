@@ -1,8 +1,9 @@
 // @jest-environment node
 import {
   slugifyCollection, normalizeFields, validateItemData, deriveItemTitle,
-  COLLECTION_FIELD_TYPES, type CollectionField,
+  resolveCollectionList, COLLECTION_FIELD_TYPES, type CollectionField,
 } from '../collections'
+import type { Db } from '../../client'
 
 describe('slugifyCollection (HU-353)', () => {
   it('normaliza acentos, espacios y mayúsculas', () => {
@@ -82,5 +83,44 @@ describe('deriveItemTitle (HU-353)', () => {
     expect(deriveItemTitle(fields, { title: 'Explícito', nombre: 'x' })).toBe('Explícito')
     expect(deriveItemTitle(fields, { nombre: 'Derivado' })).toBe('Derivado')
     expect(deriveItemTitle(fields, {})).toBeNull()
+  })
+})
+
+describe('resolveCollectionList (HU-355)', () => {
+  const collection = {
+    key: 'noticias', label: 'Noticias', fields: [{ key: 'categoria', label: 'Cat', type: 'select' }],
+  }
+  const items = [
+    { id: 1, slug: 'a', title: 'B noticia', status: 'published', order_index: 2, created_at: '2026-01-01', data: { categoria: 'local' } },
+    { id: 2, slug: 'b', title: 'A noticia', status: 'published', order_index: 1, created_at: '2026-03-01', data: { categoria: 'global' } },
+    { id: 3, slug: 'c', title: 'C noticia', status: 'published', order_index: 0, created_at: '2026-02-01', data: { categoria: 'local' } },
+  ]
+  function mockDb(): Db {
+    const itemsChain = {
+      select: () => itemsChain, eq: () => itemsChain, order: () => itemsChain,
+      then: (resolve: (v: unknown) => void) => resolve({ data: items, error: null }),
+    }
+    const collChain = {
+      select: () => collChain, eq: () => collChain,
+      maybeSingle: () => Promise.resolve({ data: collection, error: null }),
+    }
+    return { from: (t: string) => (t === 'collections' ? collChain : itemsChain) } as unknown as Db
+  }
+
+  it('ordena por recientes (default) y respeta el límite', async () => {
+    const { items: r } = await resolveCollectionList(mockDb(), { collectionKey: 'noticias', limit: 2 })
+    expect(r.map((i) => i.slug)).toEqual(['b', 'c']) // 2026-03, 2026-02
+  })
+
+  it('ordena por título y por orden manual', async () => {
+    const t = await resolveCollectionList(mockDb(), { collectionKey: 'noticias', orderBy: 'title', limit: 9 })
+    expect(t.items.map((i) => i.title)).toEqual(['A noticia', 'B noticia', 'C noticia'])
+    const m = await resolveCollectionList(mockDb(), { collectionKey: 'noticias', orderBy: 'manual', limit: 9 })
+    expect(m.items.map((i) => i.slug)).toEqual(['c', 'b', 'a']) // order_index 0,1,2
+  })
+
+  it('filtra por campo/valor', async () => {
+    const { items: r } = await resolveCollectionList(mockDb(), { collectionKey: 'noticias', filterField: 'categoria', filterValue: 'local', limit: 9 })
+    expect(r.map((i) => i.slug).sort()).toEqual(['a', 'c'])
   })
 })

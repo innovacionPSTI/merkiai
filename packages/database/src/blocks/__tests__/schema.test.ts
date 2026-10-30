@@ -25,6 +25,8 @@ const ALLOWED_TYPES = [
   'content_section', 'columns', 'media_banner', 'spacer',
   // HU-286 v2 · carrusel de productos
   'product_carousel',
+  // HU-355 · listado dinámico de colección
+  'collection_list',
 ]
 
 describe('blockSchemas', () => {

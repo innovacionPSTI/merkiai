@@ -27,6 +27,7 @@ import ColumnsSection      from './ColumnsSection'
 import MediaBanner         from './MediaBanner'
 import SpacerSection       from './SpacerSection'
 import ProductCarousel     from './ProductCarousel'
+import CollectionList      from './CollectionList'
 import SectionShell        from './SectionShell'
 
 interface Props {
@@ -85,6 +86,10 @@ function renderSection(
     // HU-286 v2 · carrusel de productos (cross-sell / recomendaciones)
     case 'product_carousel':
       return <ProductCarousel section={section} />
+
+    // HU-355 · listado dinámico de una colección (HU-353)
+    case 'collection_list':
+      return <CollectionList section={section} />
 
     default:
       // Tipo desconocido: renderizar como texto plano para no perder contenido

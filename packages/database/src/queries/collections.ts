@@ -274,6 +274,42 @@ export async function listCollectionItems(
   return (data ?? []).map((r) => toItem(r as Record<string, unknown>))
 }
 
+/**
+ * HU-355 · resuelve los registros para el bloque "Listado de colección".
+ * Fuente: registros PUBLICADOS de una colección (RLS del storefront ya filtra
+ * publicados + tenant); aplica filtro por campo, orden y límite. Devuelve también
+ * la colección (para que el render conozca el esquema y arme enlaces/tarjetas).
+ */
+export interface CollectionListOptions {
+  collectionKey: string
+  limit?: number
+  orderBy?: 'recent' | 'oldest' | 'title' | 'manual'
+  filterField?: string | null
+  filterValue?: string | null
+}
+
+export async function resolveCollectionList(
+  db: Db, opts: CollectionListOptions,
+): Promise<{ collection: Collection | null; items: CollectionItem[] }> {
+  const collection = await getCollection(opts.collectionKey, db).catch(() => null)
+  if (!collection) return { collection: null, items: [] }
+  let items = await listCollectionItems(db, { collectionKey: opts.collectionKey, onlyPublished: true }).catch(() => [])
+
+  const ff = opts.filterField?.trim()
+  const fv = opts.filterValue?.trim()
+  if (ff && fv) items = items.filter((it) => String(it.data?.[ff] ?? '') === fv)
+
+  switch (opts.orderBy) {
+    case 'oldest': items = [...items].sort((a, b) => a.created_at.localeCompare(b.created_at)); break
+    case 'title':  items = [...items].sort((a, b) => (a.title ?? a.slug).localeCompare(b.title ?? b.slug)); break
+    case 'manual': items = [...items].sort((a, b) => a.order_index - b.order_index); break
+    case 'recent':
+    default:       items = [...items].sort((a, b) => b.created_at.localeCompare(a.created_at)); break
+  }
+  const limit = Number(opts.limit) || 6
+  return { collection, items: items.slice(0, Math.max(1, limit)) }
+}
+
 export async function getCollectionItemBySlug(
   collectionKey: string, slug: string, db: Db, onlyPublished = true,
 ): Promise<CollectionItem | null> {

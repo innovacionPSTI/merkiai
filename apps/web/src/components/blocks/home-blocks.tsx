@@ -28,6 +28,7 @@ import FaqSection from '@/components/sections/FaqSection'
 import CtaSection from '@/components/sections/CtaSection'
 import TestimonialsSection from '@/components/sections/TestimonialsSection'
 import ProductCarousel from '@/components/sections/ProductCarousel'
+import CollectionList from '@/components/sections/CollectionList'
 
 export type HomeData = Awaited<ReturnType<typeof getWebHomeData>>
 export type HomeSection = HomeData['homeSections'][number]
@@ -199,6 +200,10 @@ function TestimonialsBlock({ section }: BlockProps) {
 async function ProductCarouselBlock({ section, template }: BlockProps) {
   return <ProductCarousel section={section as never} template={template} />
 }
+// HU-355 · listado dinámico de colección (server component async: fetchea registros).
+async function CollectionListBlock({ section, template }: BlockProps) {
+  return <CollectionList section={section as never} template={template} />
+}
 
 // ── Registry + preset ────────────────────────────────────────────────────────
 
@@ -223,6 +228,7 @@ const DEFAULT_BLOCKS: Record<string, HomeBlock> = {
   testimonials:      TestimonialsBlock,
   // HU-286 v2 · carrusel de productos (async server component)
   product_carousel:  ProductCarouselBlock as unknown as HomeBlock,
+  collection_list:   CollectionListBlock as unknown as HomeBlock,
 }
 
 /** Registry de bloques para un template (hoy solo 'default'). */
