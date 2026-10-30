@@ -8,6 +8,9 @@
 export const FEATURES = {
   /** HU-218.3 · Constructor de páginas schema-driven (beta, convive con /contenido). */
   pageBuilder: process.env.NEXT_PUBLIC_FEATURE_PAGE_BUILDER === 'true',
+  /** HU-353 · Colecciones (tipos de contenido dinámicos). Escape de dev; en prod
+   *  manda el entitlement `colecciones` del plan. */
+  collections: process.env.NEXT_PUBLIC_FEATURE_COLLECTIONS === 'true',
 } as const
 
 export type FeatureName = keyof typeof FEATURES

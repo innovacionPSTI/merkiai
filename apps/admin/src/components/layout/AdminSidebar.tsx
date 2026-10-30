@@ -108,6 +108,8 @@ const NAV: NavNode[] = [
       // HU-350/HU-359 · "Constructor" se filtra en runtime según `pageBuilder`
       // (flag legacy o entitlement page_builder); ver `navFor()` abajo.
       { kind: 'leaf', href: '/constructor', icon: <Icon name="builder" />, label: 'Constructor', section: 'contenido' },
+      // HU-353 · "Colecciones" se filtra en runtime según `collections` (flag/entitlement).
+      { kind: 'leaf', href: '/colecciones', icon: <Icon name="grid" />, label: 'Colecciones', section: 'contenido' },
       { kind: 'leaf', href: '/blog',       icon: <Icon name="blog" />,       label: 'Blog',       section: 'blog' },
       { kind: 'leaf', href: '/newsletter', icon: <Icon name="newsletter" />, label: 'Newsletter', section: 'newsletter' },
     ],
@@ -159,11 +161,14 @@ const NAV: NavNode[] = [
 
 /** HU-350/HU-359 · aplica el gating runtime del Constructor sobre el NAV estático
  *  (filtra el leaf `/constructor` cuando el plan/flag no lo habilita). */
-function navFor(pageBuilder: boolean): NavNode[] {
-  if (pageBuilder) return NAV
+function navFor(pageBuilder: boolean, collections: boolean): NavNode[] {
+  const hidden = new Set<string>()
+  if (!pageBuilder) hidden.add('/constructor')
+  if (!collections) hidden.add('/colecciones')
+  if (hidden.size === 0) return NAV
   return NAV.map((node) =>
     node.kind === 'group'
-      ? { ...node, children: node.children.filter((c) => !('href' in c && c.href === '/constructor')) }
+      ? { ...node, children: node.children.filter((c) => !('href' in c && hidden.has(c.href as string))) }
       : node,
   )
 }
@@ -185,9 +190,9 @@ function getActiveGroupId(nodes: NavNode[], pathname: string): string | null {
 
 // ── Componente principal ─────────────────────────────────────────────────────
 
-interface Props { role: AdminRole; allowedSections?: AdminSection[]; pageBuilder?: boolean }
+interface Props { role: AdminRole; allowedSections?: AdminSection[]; pageBuilder?: boolean; collections?: boolean }
 
-export default function AdminSidebar({ role, allowedSections: allowedSectionsProp, pageBuilder }: Props) {
+export default function AdminSidebar({ role, allowedSections: allowedSectionsProp, pageBuilder, collections }: Props) {
   const pathname = usePathname()
   const app = useStackApp()
 
@@ -197,7 +202,8 @@ export default function AdminSidebar({ role, allowedSections: allowedSectionsPro
 
   // HU-350/HU-359 · NAV con el Constructor gated. Prop ausente → flag legacy.
   const pbEnabled = pageBuilder ?? FEATURES.pageBuilder
-  const nav = useMemo(() => navFor(pbEnabled), [pbEnabled])
+  const collEnabled = collections ?? FEATURES.collections
+  const nav = useMemo(() => navFor(pbEnabled, collEnabled), [pbEnabled, collEnabled])
 
   // Drawer móvil
   const [drawerOpen, setDrawerOpen] = useState(false)

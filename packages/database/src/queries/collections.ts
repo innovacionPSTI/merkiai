@@ -214,6 +214,8 @@ export interface CreateCollectionInput {
   fields?: CollectionField[]
   enabled?: boolean
   order_index?: number
+  /** Requerido al insertar vía JWT de admin (la tabla no tiene default de tenant). */
+  tenant_id?: string
 }
 
 export async function createCollection(input: CreateCollectionInput, db: Db): Promise<Collection> {
@@ -227,6 +229,7 @@ export async function createCollection(input: CreateCollectionInput, db: Db): Pr
     fields: normalizeFields(input.fields) as unknown as Json,
     enabled: input.enabled ?? true,
     order_index: input.order_index ?? 0,
+    ...(input.tenant_id ? { tenant_id: input.tenant_id } : {}),
     created_at: now,
     updated_at: now,
   }).select().single()
@@ -295,6 +298,8 @@ export interface CreateCollectionItemInput {
   status?: 'draft' | 'published'
   data?: Record<string, unknown>
   order_index?: number
+  /** Requerido al insertar vía JWT de admin (la tabla no tiene default de tenant). */
+  tenant_id?: string
 }
 
 /** Crea un registro validando `data` contra el esquema de la colección. */
@@ -315,6 +320,7 @@ export async function createCollectionItem(input: CreateCollectionItemInput, db:
     data: v.value as unknown as Json,
     order_index: input.order_index ?? 0,
     published_at: status === 'published' ? now : null,
+    ...(input.tenant_id ? { tenant_id: input.tenant_id } : {}),
     created_at: now,
     updated_at: now,
   }).select().single()

@@ -112,12 +112,11 @@ export default async function AdminRootLayout({ children }: { children: React.Re
 
   // HU-350/HU-359 · Constructor disponible por flag legacy o entitlement del plan
   // (fail-open: sin control-plane → default del catálogo). Gobierna el menú.
-  const pageBuilderEnabled = adminUser
-    ? (FLAGS.pageBuilder || resolveFeature(
-        (await getTenantEntitlements().catch(() => ({ entitlements: null }))).entitlements,
-        FEATURES.PAGE_BUILDER,
-      ))
-    : false
+  const layoutEntitlements = adminUser
+    ? (await getTenantEntitlements().catch(() => ({ entitlements: null }))).entitlements
+    : null
+  const pageBuilderEnabled = adminUser ? (FLAGS.pageBuilder || resolveFeature(layoutEntitlements, FEATURES.PAGE_BUILDER)) : false
+  const collectionsEnabled = adminUser ? (FLAGS.collections || resolveFeature(layoutEntitlements, FEATURES.COLLECTIONS)) : false
 
   return (
     <html lang="es" className={`${cormorant.variable} ${dmSans.variable}`}>
@@ -130,7 +129,7 @@ export default async function AdminRootLayout({ children }: { children: React.Re
           <StackTheme>
             {isProtectedRoute && adminUser ? (
               <div className="flex min-h-screen">
-                <AdminSidebar role={adminUser.role} allowedSections={adminUser.allowedSections} pageBuilder={pageBuilderEnabled} />
+                <AdminSidebar role={adminUser.role} allowedSections={adminUser.allowedSections} pageBuilder={pageBuilderEnabled} collections={collectionsEnabled} />
                 <div className="flex-1 flex flex-col min-w-0">
                   {/* Topbar */}
                   <header className="bg-white border-b border-gray-100 pl-14 pr-6 md:px-6 py-4 flex items-center justify-between shadow-sm sticky top-0 z-10">
