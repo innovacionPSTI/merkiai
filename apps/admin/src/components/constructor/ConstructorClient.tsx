@@ -86,6 +86,10 @@ export default function ConstructorClient({
   const askConfirm = (o: NonNullable<typeof confirmState>) => setConfirmState(o)
   const askPrompt = (o: NonNullable<typeof promptState>) => setPromptState(o)
 
+  // HU-369 · "modo contenido": sin layout avanzado, la estructura se congela
+  // (no agregar/duplicar/eliminar bloques ni páginas); solo se editan contenidos.
+  const contentMode = !features.layoutAdvanced
+
   const bump = useCallback(() => setPreviewKey(Date.now()), [])
 
   // HU-350 AC-2 · tipos presentes en las páginas (para poblar el filtro).
@@ -483,7 +487,7 @@ export default function ConstructorClient({
           >
             {listTemplates().map((t) => <option key={t.name} value={t.name}>{t.label}</option>)}
           </select>
-          {isHome && (
+          {isHome && !contentMode && (
             <button onClick={applyTemplate} className="rounded-lg border border-indigo-300 px-3 py-2 text-sm font-medium text-indigo-700 hover:bg-indigo-50">
               Aplicar plantilla a esta página
             </button>
@@ -578,9 +582,9 @@ export default function ConstructorClient({
                 </>
               )}
             </div>
-            {/* HU-350 · crear/duplicar página desde el hub */}
-            <button onClick={openNewPage} className="rounded-lg border border-indigo-300 px-3 py-2 text-sm font-medium text-indigo-700 hover:bg-indigo-50">+ Nueva página</button>
-            <button onClick={openDuplicate} className="rounded-lg border border-slate-300 px-3 py-2 text-sm text-slate-700 hover:bg-slate-50">Duplicar</button>
+            {/* HU-350 · crear/duplicar página desde el hub (HU-369 · solo con estructura editable) */}
+            {!contentMode && <button onClick={openNewPage} className="rounded-lg border border-indigo-300 px-3 py-2 text-sm font-medium text-indigo-700 hover:bg-indigo-50">+ Nueva página</button>}
+            {!contentMode && <button onClick={openDuplicate} className="rounded-lg border border-slate-300 px-3 py-2 text-sm text-slate-700 hover:bg-slate-50">Duplicar</button>}
             {/* HU-375 · estado de publicación + publicar/despublicar */}
             {(() => {
               const published = pageList.find((p) => p.key === pageKey)?.enabled !== false
@@ -617,8 +621,8 @@ export default function ConstructorClient({
               </button>
             )}
 
-            {/* HU-358 · insertar un bloque guardado */}
-            {savedBlocks.length > 0 && (
+            {/* HU-358 · insertar un bloque guardado (HU-369 · solo con estructura editable) */}
+            {!contentMode && savedBlocks.length > 0 && (
               <label className="flex items-center gap-1 text-xs text-slate-600" title="Insertar un bloque guardado como copia">
                 Bloque guardado
                 <select
@@ -632,7 +636,9 @@ export default function ConstructorClient({
               </label>
             )}
             <div className="ml-auto">
-              <AddBlockCatalog onAdd={addBlock} />
+              {contentMode
+                ? <span className="inline-flex items-center gap-1 rounded-full bg-indigo-50 text-indigo-700 text-[11px] px-2.5 py-1" title="Tu plan permite editar contenidos; la estructura está fija">🔒 Modo contenido · <a href="/configuracion" className="underline">mejora a Pro</a> para editar la estructura</span>
+                : <AddBlockCatalog onAdd={addBlock} />}
             </div>
           </div>
 
@@ -672,6 +678,7 @@ export default function ConstructorClient({
                     onDrop={(e) => { e.preventDefault(); if (dragIdx !== null) void reorderTo(dragIdx, i); setDragIdx(null); setOverIdx(null) }}
                   >
                     <div className="flex items-center gap-3 px-4 py-3">
+                      {!contentMode && (
                       <div
                         className="cursor-grab active:cursor-grabbing text-slate-300 hover:text-slate-600 select-none"
                         draggable
@@ -680,10 +687,13 @@ export default function ConstructorClient({
                         title="Arrastra para reordenar"
                         aria-label="Arrastrar para reordenar"
                       ><Icon name="grid" size={16} /></div>
+                      )}
+                      {!contentMode && (
                       <div className="flex flex-col">
                         <button onClick={() => move(i, -1)} disabled={i === 0} className="text-slate-400 hover:text-slate-700 disabled:opacity-30 leading-none" aria-label="Subir bloque"><Icon name="chevron-right" size={14} className="-rotate-90" /></button>
                         <button onClick={() => move(i, 1)} disabled={i === sections.length - 1} className="text-slate-400 hover:text-slate-700 disabled:opacity-30 leading-none" aria-label="Bajar bloque"><Icon name="chevron-right" size={14} className="rotate-90" /></button>
                       </div>
+                      )}
                       <div className="flex-1">
                         <p className="text-sm font-medium text-slate-800">{schema?.label ?? s.section_type}</p>
                         {schema?.description && <p className="text-xs text-slate-400">{schema.description}</p>}
@@ -727,9 +737,9 @@ export default function ConstructorClient({
                       <button onClick={() => setExpanded(open ? null : s.id)} className="rounded-lg border border-slate-300 px-3 py-1 text-xs font-medium text-slate-700 hover:bg-slate-50">
                         {open ? 'Cerrar' : 'Editar'}
                       </button>
-                      <button onClick={() => duplicate(s)} className="text-slate-400 hover:text-slate-700" title="Duplicar" aria-label="Duplicar bloque"><Icon name="grid" size={15} /></button>
-                      <button onClick={() => saveBlock(s)} className="text-[11px] text-slate-500 hover:text-indigo-700 border border-slate-200 rounded-lg px-2 py-1" title="Guardar como bloque reutilizable">Guardar</button>
-                      <button onClick={() => remove(s)} className="text-slate-400 hover:text-red-600" title="Eliminar" aria-label="Eliminar bloque"><Icon name="trash" size={15} /></button>
+                      {!contentMode && <button onClick={() => duplicate(s)} className="text-slate-400 hover:text-slate-700" title="Duplicar" aria-label="Duplicar bloque"><Icon name="grid" size={15} /></button>}
+                      {!contentMode && <button onClick={() => saveBlock(s)} className="text-[11px] text-slate-500 hover:text-indigo-700 border border-slate-200 rounded-lg px-2 py-1" title="Guardar como bloque reutilizable">Guardar</button>}
+                      {!contentMode && <button onClick={() => remove(s)} className="text-slate-400 hover:text-red-600" title="Eliminar" aria-label="Eliminar bloque"><Icon name="trash" size={15} /></button>}
                     </div>
                     {open && (
                       <div className="border-t border-slate-100 px-4 py-4">

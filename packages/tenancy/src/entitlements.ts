@@ -128,6 +128,13 @@ export const FEATURES = {
   MEDIA_LIBRARY: 'biblioteca_medios',
   /** HU-358 · biblioteca de bloques guardados. */
   SAVED_BLOCKS: 'bloques_guardados',
+  // ── Ola 4 (HU-369) ──────────────────────────────────────────────────────────
+  /** Modo "solo contenido": edita textos/imágenes pero NO la estructura. */
+  CONTENT_MODE: 'content_mode',
+  /** Header/Footer editables como regiones (HU-372). */
+  EDITABLE_CHROME: 'editable_chrome',
+  /** Elegir entre estructuras de sitio / blueprints (HU-373). */
+  SITE_BLUEPRINTS: 'site_blueprints',
 } as const
 
 /** Claves de límite (cuantitativas; null = ilimitado). */
@@ -143,6 +150,8 @@ export const LIMITS = {
   MAX_COLLECTIONS: 'max_colecciones',
   MAX_COLLECTION_RECORDS: 'max_registros_coleccion',
   MAX_MEDIA_MB: 'max_medios_mb',
+  /** HU-369 · niveles permitidos en la navegación. */
+  MAX_NAV_DEPTH: 'max_niveles_nav',
 } as const
 
 export const ENTITLEMENTS_CATALOG: EntitlementDef[] = [
@@ -162,6 +171,9 @@ export const ENTITLEMENTS_CATALOG: EntitlementDef[] = [
   { key: FEATURES.GLOBAL_PARTIALS,   kind: 'feature', label: 'Partials globales',     description: 'Bloques globales reutilizables (encabezados, pies, avisos).', default: false },
   { key: FEATURES.MEDIA_LIBRARY,     kind: 'feature', label: 'Biblioteca de medios',  description: 'Gestor central de imágenes y archivos.', default: false },
   { key: FEATURES.SAVED_BLOCKS,      kind: 'feature', label: 'Bloques guardados',     description: 'Guardar y reutilizar bloques entre páginas.', default: false },
+  { key: FEATURES.CONTENT_MODE,      kind: 'feature', label: 'Modo solo contenido',   description: 'Edita textos/imágenes pero no la estructura (plan básico).', default: false },
+  { key: FEATURES.EDITABLE_CHROME,   kind: 'feature', label: 'Header/Footer editables', description: 'Construir el encabezado y el pie con bloques (regiones).', default: false },
+  { key: FEATURES.SITE_BLUEPRINTS,   kind: 'feature', label: 'Estructuras de sitio',   description: 'Elegir entre estructuras de sitio (blueprints) por plan.', default: false },
   { key: LIMITS.PRODUCTS,             kind: 'limit', label: 'Productos',            description: 'Máximo de productos publicables.',        default: null },
   { key: LIMITS.USERS,                kind: 'limit', label: 'Usuarios del panel',   description: 'Máximo de usuarios del admin.',           default: null },
   { key: LIMITS.CATEGORIES,           kind: 'limit', label: 'Categorías',           description: 'Máximo de categorías.',                   default: null },
@@ -172,6 +184,7 @@ export const ENTITLEMENTS_CATALOG: EntitlementDef[] = [
   { key: LIMITS.MAX_COLLECTIONS,      kind: 'limit', label: 'Colecciones',          description: 'Máximo de colecciones (tipos de contenido).', default: null },
   { key: LIMITS.MAX_COLLECTION_RECORDS, kind: 'limit', label: 'Registros por colección', description: 'Máximo de registros por colección.', default: null },
   { key: LIMITS.MAX_MEDIA_MB,         kind: 'limit', label: 'Almacenamiento de medios (MB)', description: 'Tamaño máximo de la biblioteca de medios.', default: null },
+  { key: LIMITS.MAX_NAV_DEPTH,        kind: 'limit', label: 'Niveles de navegación', description: 'Niveles permitidos en el menú (1 = sin subelementos).', default: null },
 ]
 
 export function entitlementDef(key: string): EntitlementDef | undefined {

@@ -300,7 +300,7 @@
 
 > Como operador, quiero que el plan básico solo elija una plantilla y edite **contenidos y parámetros** (sin tocar la estructura), y que las capacidades superiores se muestren como candados que invitan a mejorar de plan.
 
-**Estimación:** M (5 puntos) · **Módulo:** modo "solo contenido" (bloquea agregar/reordenar/eliminar bloques y layout) + candados visibles con upsell; extiende HU-359. · **Estado:** 🔲 Pendiente.
+**Estimación:** M (5 puntos) · **Módulo:** modo "solo contenido" (bloquea agregar/reordenar/eliminar bloques y layout) + candados visibles con upsell; extiende HU-359. · **Estado:** ✅ (v194) — **AC-1 ✅** "modo contenido" (= sin `layout_avanzado`): se **ocultan** agregar/duplicar/eliminar/reordenar (DnD + flechas) bloques, nueva/duplicar página, aplicar plantilla, guardar/insertar bloque; **sí** se editan textos/imágenes/toggles. **AC-2 ✅** candado suave con **CTA de upgrade** en lugar del "Agregar bloque" ("🔒 Modo contenido · mejora a Pro"); gating server-side por entitlement (las features quedan OFF). **AC-3 ✅** alta en el catálogo (HU-359) de `content_mode`, `editable_chrome`, `site_blueprints` (features) y `max_niveles_nav` (limit).
 
 | # | Escenario | Resultado esperado |
 |---|-----------|-------------------|
