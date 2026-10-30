@@ -177,6 +177,27 @@ export default function ConstructorClient({
     }
   }
 
+  // HU-375 · publicar / despublicar la página actual (pages.enabled).
+  async function setPublished(enabled: boolean) {
+    const res = await fetch('/api/admin/cms/pages', {
+      method: 'PATCH', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ key: pageKey, enabled }),
+    })
+    if (!res.ok) { setTplMsg((await res.json().catch(() => ({}))).error || 'No se pudo actualizar el estado'); return }
+    setPageList((ps) => ps.map((p) => (p.key === pageKey ? { ...p, enabled } : p)))
+    setTplMsg(enabled ? 'Página publicada ✓' : 'Página pasada a borrador ✓')
+    bump()
+  }
+  function publishPage() { void setPublished(true) }
+  function unpublishPage() {
+    askConfirm({
+      title: 'Pasar a borrador',
+      message: 'La página dejará de ser visible en el sitio hasta que vuelvas a publicarla.',
+      confirmLabel: 'Pasar a borrador',
+      onConfirm: () => { setConfirmState(null); void setPublished(false) },
+    })
+  }
+
   async function addBlock(type: string) {
     if (!type) return
     const nextOrder = sections.length ? Math.max(...sections.map((s) => s.order_index)) + 1 : 0
@@ -542,6 +563,25 @@ export default function ConstructorClient({
             {/* HU-350 · crear/duplicar página desde el hub */}
             <button onClick={openNewPage} className="rounded-lg border border-indigo-300 px-3 py-2 text-sm font-medium text-indigo-700 hover:bg-indigo-50">+ Nueva página</button>
             <button onClick={openDuplicate} className="rounded-lg border border-slate-300 px-3 py-2 text-sm text-slate-700 hover:bg-slate-50">Duplicar</button>
+            {/* HU-375 · estado de publicación + publicar/despublicar */}
+            {(() => {
+              const published = pageList.find((p) => p.key === pageKey)?.enabled !== false
+              return (
+                <span className="flex items-center gap-2">
+                  <span className={`inline-flex items-center gap-1 rounded-full px-2 py-1 text-[11px] font-medium ${published ? 'bg-green-100 text-green-700' : 'bg-amber-100 text-amber-700'}`}>
+                    <span className={`w-1.5 h-1.5 rounded-full ${published ? 'bg-green-500' : 'bg-amber-500'}`} />
+                    {published ? 'Publicada' : 'Borrador'}
+                  </span>
+                  {published
+                    ? <button onClick={unpublishPage} className="rounded-lg border border-slate-300 px-3 py-2 text-sm text-slate-700 hover:bg-slate-50">Pasar a borrador</button>
+                    : <button onClick={publishPage} className="rounded-lg bg-brand-primary text-brand-cream px-3 py-2 text-sm hover:bg-brand-dark">Publicar</button>}
+                </span>
+              )
+            })()}
+            {/* HU-375 · autoguardado (cada cambio persiste en el acto) */}
+            <span className="inline-flex items-center gap-1 text-[11px] text-slate-400" title="Los cambios se guardan automáticamente">
+              <Icon name="check" size={12} /> Autoguardado
+            </span>
             {/* HU-352 · estilo por página: acento + ancho de contenedor + espaciado
                 (HU-359 · gated por el entitlement estilo_por_pagina). */}
             {features.pageStyle && (() => {

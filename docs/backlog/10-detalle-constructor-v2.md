@@ -371,7 +371,7 @@
 
 > Como comerciante, quiero guardado automático y ver claramente si estoy en borrador o publicado, para trabajar sin ansiedad.
 
-**Estimación:** S (3 puntos) · **Módulo:** autosave de ediciones + indicador de estado + un único botón "Publicar". · **Estado:** 🔲 Pendiente.
+**Estimación:** S (3 puntos) · **Módulo:** autosave de ediciones + indicador de estado + un único botón "Publicar". · **Estado:** ✅ (v187) — indicador **"Autoguardado"** (cada edición ya persiste en el acto vía el CMS API) · **chip Borrador/Publicada** por página + botón único **Publicar / Pasar a borrador** (`pages.enabled`, con confirmación de marca al despublicar). Reusa el banner de preview existente.
 
 | # | Escenario | Resultado esperado |
 |---|-----------|-------------------|
