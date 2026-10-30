@@ -111,6 +111,23 @@ export const FEATURES = {
   PAGE_BUILDER: 'page_builder',
   /** E19 · Club VIP / acceso anticipado (segmentos + campañas VIP). */
   VIP_EARLY_ACCESS: 'vip_early_access',
+  // ── Constructor v2 (HU-359) · cada capacidad se habilita por plan ──────────
+  /** HU-351 · layout Filas/Columnas por presets. */
+  LAYOUT_ADVANCED: 'layout_avanzado',
+  /** HU-352 · overrides de estilo por página (acento/ancho/espaciado). */
+  PAGE_STYLE: 'estilo_por_pagina',
+  /** HU-353 · tipos de contenido dinámicos (colecciones). */
+  COLLECTIONS: 'colecciones',
+  /** HU-354 · plantillas por tipo (`/[colección]/[slug]`). */
+  TEMPLATES_BY_TYPE: 'plantillas_por_tipo',
+  /** HU-355 · bloque de listado/agregador dinámico. */
+  DYNAMIC_LIST: 'listado_dinamico',
+  /** HU-356 · partials globales reutilizables. */
+  GLOBAL_PARTIALS: 'partials_globales',
+  /** HU-357 · biblioteca de medios. */
+  MEDIA_LIBRARY: 'biblioteca_medios',
+  /** HU-358 · biblioteca de bloques guardados. */
+  SAVED_BLOCKS: 'bloques_guardados',
 } as const
 
 /** Claves de límite (cuantitativas; null = ilimitado). */
@@ -121,6 +138,11 @@ export const LIMITS = {
   LOCATIONS: 'locations',
   ORDERS_MONTH: 'orders_month',
   AI_GENERATIONS_MONTH: 'ai_generations_month',
+  // ── Constructor v2 (HU-359) ────────────────────────────────────────────────
+  MAX_PAGES: 'max_paginas',
+  MAX_COLLECTIONS: 'max_colecciones',
+  MAX_COLLECTION_RECORDS: 'max_registros_coleccion',
+  MAX_MEDIA_MB: 'max_medios_mb',
 } as const
 
 export const ENTITLEMENTS_CATALOG: EntitlementDef[] = [
@@ -129,12 +151,27 @@ export const ENTITLEMENTS_CATALOG: EntitlementDef[] = [
   { key: FEATURES.AI_DESIGN,      kind: 'feature', label: 'Diseño por IA',             description: 'Generar el diseño/contenido de la tienda con IA.',              default: false },
   { key: FEATURES.PAGE_BUILDER,   kind: 'feature', label: 'Constructor de páginas',    description: 'Editor visual de páginas por bloques.',                        default: false },
   { key: FEATURES.VIP_EARLY_ACCESS, kind: 'feature', label: 'Club VIP / acceso anticipado', description: 'Segmentos de clientes y campañas de venta exclusiva por tiempo limitado.', default: false },
+  // Constructor v2 (HU-359) · features por plan. Default false salvo las dos
+  // capacidades base (layout y estilo por página) para no degradar a quien ya
+  // construye páginas; el render del contenido ya creado nunca se bloquea (AC-4).
+  { key: FEATURES.LAYOUT_ADVANCED,   kind: 'feature', label: 'Layout avanzado (Filas/Columnas)', description: 'Organizar bloques en columnas por presets de proporción.', default: true },
+  { key: FEATURES.PAGE_STYLE,        kind: 'feature', label: 'Estilo por página',     description: 'Overrides de acento, ancho de contenedor y espaciado por página.', default: true },
+  { key: FEATURES.COLLECTIONS,       kind: 'feature', label: 'Colecciones',           description: 'Tipos de contenido dinámicos (noticias, eventos, cursos, personas).', default: false },
+  { key: FEATURES.TEMPLATES_BY_TYPE, kind: 'feature', label: 'Plantillas por tipo',   description: 'Render dinámico de registros de una colección en /[colección]/[slug].', default: false },
+  { key: FEATURES.DYNAMIC_LIST,      kind: 'feature', label: 'Listado dinámico',      description: 'Bloque de listado/agregador sobre colecciones.', default: false },
+  { key: FEATURES.GLOBAL_PARTIALS,   kind: 'feature', label: 'Partials globales',     description: 'Bloques globales reutilizables (encabezados, pies, avisos).', default: false },
+  { key: FEATURES.MEDIA_LIBRARY,     kind: 'feature', label: 'Biblioteca de medios',  description: 'Gestor central de imágenes y archivos.', default: false },
+  { key: FEATURES.SAVED_BLOCKS,      kind: 'feature', label: 'Bloques guardados',     description: 'Guardar y reutilizar bloques entre páginas.', default: false },
   { key: LIMITS.PRODUCTS,             kind: 'limit', label: 'Productos',            description: 'Máximo de productos publicables.',        default: null },
   { key: LIMITS.USERS,                kind: 'limit', label: 'Usuarios del panel',   description: 'Máximo de usuarios del admin.',           default: null },
   { key: LIMITS.CATEGORIES,           kind: 'limit', label: 'Categorías',           description: 'Máximo de categorías.',                   default: null },
   { key: LIMITS.LOCATIONS,            kind: 'limit', label: 'Sucursales',           description: 'Máximo de ubicaciones (requiere multi_location).', default: null },
   { key: LIMITS.ORDERS_MONTH,         kind: 'limit', label: 'Pedidos por mes',      description: 'Máximo de pedidos mensuales.',            default: null },
   { key: LIMITS.AI_GENERATIONS_MONTH, kind: 'limit', label: 'Generaciones IA/mes',  description: 'Máximo de generaciones de diseño IA al mes.', default: null },
+  { key: LIMITS.MAX_PAGES,            kind: 'limit', label: 'Páginas',              description: 'Máximo de páginas del sitio (Constructor/Contenido).', default: null },
+  { key: LIMITS.MAX_COLLECTIONS,      kind: 'limit', label: 'Colecciones',          description: 'Máximo de colecciones (tipos de contenido).', default: null },
+  { key: LIMITS.MAX_COLLECTION_RECORDS, kind: 'limit', label: 'Registros por colección', description: 'Máximo de registros por colección.', default: null },
+  { key: LIMITS.MAX_MEDIA_MB,         kind: 'limit', label: 'Almacenamiento de medios (MB)', description: 'Tamaño máximo de la biblioteca de medios.', default: null },
 ]
 
 export function entitlementDef(key: string): EntitlementDef | undefined {

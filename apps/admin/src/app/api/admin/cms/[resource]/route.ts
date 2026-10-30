@@ -13,6 +13,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { getAdminUser } from '@/lib/auth'
 import { getAdminDb } from '@/lib/admin-db'
 import { validateSectionPayload, validateItemByItemType } from '@/lib/section-validation'
+import { getTenantEntitlements, enforceLimit, EntitlementError, LIMITS } from '@/lib/entitlements'
 
 // ── Tipo de tabla CMS reconocida ─────────────────────────────────────────────
 // Note: section_settings and banners were dropped in migration 19 (unified CMS)
@@ -133,6 +134,28 @@ export async function POST(req: NextRequest, { params }: RouteParams) {
 
   const now = new Date().toISOString()
   const supabase = getAdminDb(adminUser!.tenantId)
+
+  // HU-359 · límite de páginas por plan (regla de negocio, fail-open: sin
+  // control-plane/entitlements no bloquea). Aplica al alta de páginas, sea desde
+  // el Constructor o desde Contenido (mismo endpoint).
+  if (resource === 'pages') {
+    const { entitlements } = await getTenantEntitlements(adminUser!.tenantId)
+    if (entitlements) {
+      const { count } = await supabase
+        .from('pages')
+        .select('key', { count: 'exact', head: true })
+        .eq('tenant_id', adminUser!.tenantId)
+      try {
+        enforceLimit(entitlements, LIMITS.MAX_PAGES, count ?? 0)
+      } catch (e) {
+        if (e instanceof EntitlementError) {
+          return NextResponse.json({ error: e.message, code: e.code, key: e.key }, { status: 403 })
+        }
+        throw e
+      }
+    }
+  }
+
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const { data, error } = await (supabase.from(config.table) as any)
     .insert({ ...body, tenant_id: adminUser!.tenantId, created_at: now, updated_at: now })

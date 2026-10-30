@@ -35,7 +35,15 @@ interface SectionRow {
 
 const api = '/api/admin/cms/sections'
 
-export default function ConstructorClient({ pages, initialPageKey, initialTemplate }: { pages: PageOption[]; initialPageKey: string; initialTemplate: string }) {
+interface ConstructorFeatures { layoutAdvanced: boolean; pageStyle: boolean }
+
+export default function ConstructorClient({
+  pages, initialPageKey, initialTemplate,
+  features = { layoutAdvanced: true, pageStyle: true },
+}: {
+  pages: PageOption[]; initialPageKey: string; initialTemplate: string
+  features?: ConstructorFeatures
+}) {
   const [pageKey, setPageKey] = useState(initialPageKey)
   // HU-350 · lista de páginas en estado local para poder crear/duplicar desde el
   // propio hub (crear+construir en un solo lugar) sin recargar.
@@ -459,8 +467,9 @@ export default function ConstructorClient({ pages, initialPageKey, initialTempla
             {/* HU-350 · crear/duplicar página desde el hub */}
             <button onClick={createPage} className="rounded-lg border border-indigo-300 px-3 py-2 text-sm font-medium text-indigo-700 hover:bg-indigo-50">+ Nueva página</button>
             <button onClick={duplicatePage} className="rounded-lg border border-slate-300 px-3 py-2 text-sm text-slate-700 hover:bg-slate-50">Duplicar</button>
-            {/* HU-352 · estilo por página: acento + ancho de contenedor + espaciado */}
-            {(() => {
+            {/* HU-352 · estilo por página: acento + ancho de contenedor + espaciado
+                (HU-359 · gated por el entitlement estilo_por_pagina). */}
+            {features.pageStyle && (() => {
               const st = (pageList.find((p) => p.key === pageKey)?.style as { accent?: string; container?: string; space?: string } | undefined) ?? {}
               const a = st.accent ?? ''
               return (
@@ -559,21 +568,24 @@ export default function ConstructorClient({ pages, initialPageKey, initialTempla
                         <p className="text-sm font-medium text-slate-800">{schema?.label ?? s.section_type}</p>
                         {schema?.description && <p className="text-xs text-slate-400">{schema.description}</p>}
                       </div>
-                      {/* HU-351 · picker de Filas/Columnas */}
+                      {/* HU-351 · picker de Filas/Columnas (HU-359 · gated por layout_avanzado).
+                          Si el plan no incluye layout avanzado pero el bloque YA está en una fila
+                          (contenido previo), se muestra "Separar" para no dejarlo atrapado (AC-4). */}
                       {myRow ? (
                         <div className="flex items-center gap-1">
                           <span className="rounded-full bg-indigo-50 text-indigo-600 text-[10px] font-semibold px-2 py-0.5" title="Este bloque está en una fila de columnas">Fila · {rowCells.length} col</span>
-                          {isFirstCell && presetOpts.length > 0 && (
+                          {features.layoutAdvanced && isFirstCell && presetOpts.length > 0 && (
                             <select value={rlayout(s) ?? presetOpts[0]} onChange={(e) => setRowLayout(s, e.target.value)} className="rounded-lg border border-slate-300 px-1.5 py-1 text-[11px]" title="Proporciones de la fila" aria-label="Proporciones de la fila">
                               {presetOpts.map((p) => <option key={p} value={p}>{p.replace(/,/g, ' · ')}</option>)}
                             </select>
                           )}
                           <button onClick={() => splitCell(s)} className="text-[11px] text-slate-500 hover:text-red-600 border border-slate-200 rounded-lg px-2 py-1" title="Sacar de la fila (ancho completo)">Separar</button>
                         </div>
-                      ) : i > 0 && (
+                      ) : features.layoutAdvanced && i > 0 && (
                         <button onClick={() => joinUp(i)} className="text-[11px] text-indigo-600 hover:bg-indigo-50 border border-indigo-200 rounded-lg px-2 py-1" title="Unir con el bloque de arriba en una fila de columnas">⬓ Unir ↑</button>
                       )}
-                      {/* HU-351 responsive fino · ocultar por breakpoint */}
+                      {/* HU-351 responsive fino · ocultar por breakpoint (gated por layout_avanzado) */}
+                      {features.layoutAdvanced && (
                       <div className="flex items-center gap-0.5" title="Visibilidad por dispositivo">
                         <button
                           onClick={() => toggleSectionVisibility(s, 'hideMobile')}
@@ -588,6 +600,7 @@ export default function ConstructorClient({ pages, initialPageKey, initialTempla
                           aria-label="Alternar visibilidad en escritorio" aria-pressed={!!sSettings(s).hideDesktop}
                         >Escritorio {sSettings(s).hideDesktop ? '⃠' : ''}</button>
                       </div>
+                      )}
                       <button onClick={() => toggle(s)} className={`rounded-full px-3 py-1 text-xs font-medium ${s.enabled ? 'bg-green-100 text-green-700' : 'bg-slate-100 text-slate-500'}`}>
                         {s.enabled ? 'Visible' : 'Oculto'}
                       </button>

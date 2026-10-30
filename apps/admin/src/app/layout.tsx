@@ -11,6 +11,9 @@ import { getAdminDb } from '@/lib/admin-db'
 import { getAdminConfig } from '@merkiai/database'
 import { getActiveTenantId } from '@/lib/active-tenant'
 import { listWorkspaces } from '@/lib/workspaces'
+import { FEATURES as FLAGS } from '@/lib/features'
+import { getTenantEntitlements } from '@/lib/entitlements'
+import { resolveFeature, FEATURES } from '@merkiai/tenancy'
 
 const cormorant = Cormorant_Garamond({
   subsets: ['latin'],
@@ -107,6 +110,15 @@ export default async function AdminRootLayout({ children }: { children: React.Re
   const workspaces = adminUser ? await listWorkspaces() : []
   const activeWorkspace = workspaces.find((w) => w.tenantId === activeTenantId)
 
+  // HU-350/HU-359 · Constructor disponible por flag legacy o entitlement del plan
+  // (fail-open: sin control-plane → default del catálogo). Gobierna el menú.
+  const pageBuilderEnabled = adminUser
+    ? (FLAGS.pageBuilder || resolveFeature(
+        (await getTenantEntitlements().catch(() => ({ entitlements: null }))).entitlements,
+        FEATURES.PAGE_BUILDER,
+      ))
+    : false
+
   return (
     <html lang="es" className={`${cormorant.variable} ${dmSans.variable}`}>
       <head>
@@ -118,7 +130,7 @@ export default async function AdminRootLayout({ children }: { children: React.Re
           <StackTheme>
             {isProtectedRoute && adminUser ? (
               <div className="flex min-h-screen">
-                <AdminSidebar role={adminUser.role} allowedSections={adminUser.allowedSections} />
+                <AdminSidebar role={adminUser.role} allowedSections={adminUser.allowedSections} pageBuilder={pageBuilderEnabled} />
                 <div className="flex-1 flex flex-col min-w-0">
                   {/* Topbar */}
                   <header className="bg-white border-b border-gray-100 pl-14 pr-6 md:px-6 py-4 flex items-center justify-between shadow-sm sticky top-0 z-10">

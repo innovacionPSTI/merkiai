@@ -2,22 +2,33 @@ import { getAdminUser } from '@/lib/auth'
 import PreviewButton from './PreviewButton'
 import { redirect, notFound } from 'next/navigation'
 import { requireAdminDb } from '@/lib/admin-context'
-import { FEATURES } from '@/lib/features'
+import { FEATURES as FLAGS } from '@/lib/features'
+import { getTenantEntitlements } from '@/lib/entitlements'
+import { resolveFeature, FEATURES } from '@merkiai/tenancy'
 import ConstructorClient from '@/components/constructor/ConstructorClient'
 
 export const dynamic = 'force-dynamic'
 
 /**
- * Constructor de páginas (HU-218.3, beta). Tras el flag `pageBuilder`; convive
- * con `/contenido`. Editor único schema-driven para cualquier página.
+ * Constructor de páginas (HU-218.3 → HU-350 hub). Acceso: entitlement
+ * `page_builder` del plan (HU-359) **o** el flag técnico legacy `pageBuilder`
+ * (graduación sin pérdida de funcionalidad, AC-5). Convive con `/contenido`.
  */
 export default async function ConstructorPage() {
-  if (!FEATURES.pageBuilder) notFound()
-
   try {
     await getAdminUser()
   } catch {
     redirect('/sign-in')
+  }
+
+  // HU-359 · entitlements del plan (fail-open: sin control-plane → defaults del catálogo).
+  const { entitlements } = await getTenantEntitlements().catch(() => ({ entitlements: null }))
+  const pageBuilderEnabled = FLAGS.pageBuilder || resolveFeature(entitlements, FEATURES.PAGE_BUILDER)
+  if (!pageBuilderEnabled) notFound()
+
+  const constructorFeatures = {
+    layoutAdvanced: resolveFeature(entitlements, FEATURES.LAYOUT_ADVANCED),
+    pageStyle: resolveFeature(entitlements, FEATURES.PAGE_STYLE),
   }
 
   const { db: supabase } = await requireAdminDb()
@@ -52,7 +63,7 @@ export default async function ConstructorPage() {
       </div>
       <div className="flex-1 overflow-y-auto px-6 py-6 bg-slate-50">
         <div className="max-w-6xl mx-auto">
-          <ConstructorClient pages={pageOptions} initialPageKey={initialPageKey} initialTemplate={initialTemplate} />
+          <ConstructorClient pages={pageOptions} initialPageKey={initialPageKey} initialTemplate={initialTemplate} features={constructorFeatures} />
         </div>
       </div>
     </div>

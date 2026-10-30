@@ -80,6 +80,41 @@ describe('catálogo canónico de entitlements (HU-239)', () => {
   })
 })
 
+describe('entitlements del Constructor v2 (HU-359)', () => {
+  it('declara todas las features/limits del Constructor en el catálogo', () => {
+    const keys = ENTITLEMENTS_CATALOG.map((e) => e.key)
+    for (const k of [
+      FEATURES.PAGE_BUILDER, FEATURES.LAYOUT_ADVANCED, FEATURES.PAGE_STYLE,
+      FEATURES.COLLECTIONS, FEATURES.TEMPLATES_BY_TYPE, FEATURES.DYNAMIC_LIST,
+      FEATURES.GLOBAL_PARTIALS, FEATURES.MEDIA_LIBRARY, FEATURES.SAVED_BLOCKS,
+      LIMITS.MAX_PAGES, LIMITS.MAX_COLLECTIONS, LIMITS.MAX_COLLECTION_RECORDS, LIMITS.MAX_MEDIA_MB,
+    ]) {
+      expect(keys).toContain(k)
+    }
+  })
+
+  it('defaults: layout y estilo por página ON; colecciones/medios OFF (cero regresión)', () => {
+    const empty: PlanEntitlements = { features: {}, limits: {} }
+    expect(resolveFeature(empty, FEATURES.LAYOUT_ADVANCED)).toBe(true)
+    expect(resolveFeature(empty, FEATURES.PAGE_STYLE)).toBe(true)
+    expect(resolveFeature(empty, FEATURES.COLLECTIONS)).toBe(false)
+    expect(resolveFeature(empty, FEATURES.MEDIA_LIBRARY)).toBe(false)
+    expect(resolveFeature(empty, FEATURES.PAGE_BUILDER)).toBe(false)
+  })
+
+  it('un plan puede apagar layout avanzado y encender colecciones', () => {
+    const plan: PlanEntitlements = { features: { [FEATURES.LAYOUT_ADVANCED]: false, [FEATURES.COLLECTIONS]: true }, limits: {} }
+    expect(resolveFeature(plan, FEATURES.LAYOUT_ADVANCED)).toBe(false)
+    expect(resolveFeature(plan, FEATURES.COLLECTIONS)).toBe(true)
+  })
+
+  it('max_paginas default ilimitado; un plan puede fijarlo', () => {
+    expect(resolveLimit({ features: {}, limits: {} }, LIMITS.MAX_PAGES)).toBeNull()
+    expect(() => enforceLimit({ features: {}, limits: { [LIMITS.MAX_PAGES]: 3 } }, LIMITS.MAX_PAGES, 3)).toThrow(EntitlementError)
+    expect(() => enforceLimit({ features: {}, limits: { [LIMITS.MAX_PAGES]: 3 } }, LIMITS.MAX_PAGES, 2)).not.toThrow()
+  })
+})
+
 describe('effectiveSectionsForRole (HU-281)', () => {
   const DEF = ['dashboard', 'productos', 'pedidos', 'clientes', 'cupones']
 

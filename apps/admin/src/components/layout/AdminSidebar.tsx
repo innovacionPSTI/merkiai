@@ -2,7 +2,7 @@
 
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
-import { useState, useEffect, type ReactNode } from 'react'
+import { useState, useEffect, useMemo, type ReactNode } from 'react'
 import { useStackApp } from '@stackframe/stack'
 import { Icon } from '@merkiai/ui'
 import type { AdminRole, AdminSection } from '@/lib/roles'
@@ -105,10 +105,9 @@ const NAV: NavNode[] = [
     sections: ['contenido', 'blog', 'newsletter'],
     children: [
       { kind: 'leaf', href: '/contenido',  icon: <Icon name="content" />, label: 'Páginas',    section: 'contenido' },
-      // HU-218.3 (beta, tras flag pageBuilder): convive con Páginas.
-      ...(FEATURES.pageBuilder
-        ? [{ kind: 'leaf' as const, href: '/constructor', icon: <Icon name="builder" />, label: 'Constructor', section: 'contenido' as const }]
-        : []),
+      // HU-350/HU-359 · "Constructor" se filtra en runtime según `pageBuilder`
+      // (flag legacy o entitlement page_builder); ver `navFor()` abajo.
+      { kind: 'leaf', href: '/constructor', icon: <Icon name="builder" />, label: 'Constructor', section: 'contenido' },
       { kind: 'leaf', href: '/blog',       icon: <Icon name="blog" />,       label: 'Blog',       section: 'blog' },
       { kind: 'leaf', href: '/newsletter', icon: <Icon name="newsletter" />, label: 'Newsletter', section: 'newsletter' },
     ],
@@ -158,6 +157,17 @@ const NAV: NavNode[] = [
 
 // ── Helpers ──────────────────────────────────────────────────────────────────
 
+/** HU-350/HU-359 · aplica el gating runtime del Constructor sobre el NAV estático
+ *  (filtra el leaf `/constructor` cuando el plan/flag no lo habilita). */
+function navFor(pageBuilder: boolean): NavNode[] {
+  if (pageBuilder) return NAV
+  return NAV.map((node) =>
+    node.kind === 'group'
+      ? { ...node, children: node.children.filter((c) => !('href' in c && c.href === '/constructor')) }
+      : node,
+  )
+}
+
 /** Devuelve el label del grupo/leaf-group activo si el pathname pertenece a él */
 function getActiveGroupId(nodes: NavNode[], pathname: string): string | null {
   for (const node of nodes) {
@@ -175,9 +185,9 @@ function getActiveGroupId(nodes: NavNode[], pathname: string): string | null {
 
 // ── Componente principal ─────────────────────────────────────────────────────
 
-interface Props { role: AdminRole; allowedSections?: AdminSection[] }
+interface Props { role: AdminRole; allowedSections?: AdminSection[]; pageBuilder?: boolean }
 
-export default function AdminSidebar({ role, allowedSections: allowedSectionsProp }: Props) {
+export default function AdminSidebar({ role, allowedSections: allowedSectionsProp, pageBuilder }: Props) {
   const pathname = usePathname()
   const app = useStackApp()
 
@@ -185,21 +195,25 @@ export default function AdminSidebar({ role, allowedSections: allowedSectionsPro
   const allowedSections = allowedSectionsProp ?? ROLE_CONFIG[role].sections
   const fullAccess = role === 'super_admin' || role === 'admin'
 
+  // HU-350/HU-359 · NAV con el Constructor gated. Prop ausente → flag legacy.
+  const pbEnabled = pageBuilder ?? FEATURES.pageBuilder
+  const nav = useMemo(() => navFor(pbEnabled), [pbEnabled])
+
   // Drawer móvil
   const [drawerOpen, setDrawerOpen] = useState(false)
 
   // Grupos abiertos: se inicializan con el grupo activo actual
   const [openGroups, setOpenGroups] = useState<Set<string>>(() => {
-    const active = getActiveGroupId(NAV, pathname)
+    const active = getActiveGroupId(nav, pathname)
     return active ? new Set([active]) : new Set()
   })
 
   // Si el pathname cambia (navegación), abrir el grupo correspondiente y cerrar drawer
   useEffect(() => {
-    const active = getActiveGroupId(NAV, pathname)
+    const active = getActiveGroupId(nav, pathname)
     if (active) setOpenGroups((prev) => new Set([...prev, active]))
     setDrawerOpen(false)
-  }, [pathname])
+  }, [pathname, nav])
 
   function toggleGroup(label: string) {
     setOpenGroups((prev) => {
@@ -212,7 +226,7 @@ export default function AdminSidebar({ role, allowedSections: allowedSectionsPro
   async function handleSignOut() { await app.signOut() }
 
   // Filtra los nodos visibles según el rol
-  const visibleNodes = NAV.filter((node) => {
+  const visibleNodes = nav.filter((node) => {
     if (node.kind === 'leaf') return allowedSections.includes(node.section)
     if (node.kind === 'leaf-group') return allowedSections.includes(node.section)
     // Grupo: visible si el usuario tiene acceso a al menos un hijo
