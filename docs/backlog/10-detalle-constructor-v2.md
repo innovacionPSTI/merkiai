@@ -25,12 +25,12 @@
 | **HU-353** | Colecciones (pieza madre) | ✅ AC-1…AC-6 | Tablas + RLS (`e17/56`), capa de datos + validación por esquema, API scoped, gestor admin `/colecciones`, gating por plan, **portabilidad** (`collection-package` + `exportSite.collections`). |
 | **HU-354** | Plantillas por tipo | ✅ AC-1…AC-5 | Ruta pública `/[slug]/[item]`: plantilla construida en el Constructor (`template_page_key` + placeholders `{{campo}}`, `e17/58`) con fallback a la automática; SEO/OG + preview; portable. |
 | **HU-355** | Listado dinámico | ✅ AC-1…AC-4 | Bloque `collection_list` (`e17/57`): colección + orden + filtro + límite + presentación; enlaza a los registros. |
-| **HU-356** | Partials globales | 🔲 Pendiente | Ola 3 (facilidad). |
+| **HU-356** | Partials globales | ✅ AC-1…AC-3 | Bloque `partial_ref` (`e17/59`): página reutilizable inyectada por referencia; anti-recursión; preview + portabilidad por ser página. |
 | **HU-357** | Biblioteca de medios | 🔲 Pendiente | Ola 3 (facilidad). |
 | **HU-358** | Bloques guardados | 🔲 Pendiente | Ola 3 (facilidad). |
 | **HU-359** | Entitlements + tiering | 🟡 transversal | Catálogo completo (8 features + 4 limits) + gating de las features vivas (`page_builder`/`layout_avanzado`/`estilo_por_pagina`/`colecciones`); el resto aterriza con cada HU futura. |
 
-**Migraciones de la ola:** `e17/54` (filas/columnas) · `e17/55` (estilo por página) · `e17/56` (colecciones) · `e17/57` (section_type `collection_list`) · `e17/58` (plantilla por tipo).
+**Migraciones de la ola:** `e17/54` (filas/columnas) · `e17/55` (estilo por página) · `e17/56` (colecciones) · `e17/57` (section_type `collection_list`) · `e17/58` (plantilla por tipo) · `e17/59` (section_type `partial_ref`).
 
 **Circuito Ola 2 operativo de punta a punta:** definir tipo (colección) → cargar registros (admin) → página pública por registro (`/[colección]/[slug]`) → listarlos en cualquier página (bloque `collection_list`). **Habilita** el catálogo de cursos (E20) y el portal (E23).
 
@@ -142,7 +142,7 @@
 
 > Como editor, quiero editar una vez elementos compartidos (franja superior, CTA, pie, aviso) y que se reflejen en todo el sitio, imprescindible para portales con muchas páginas.
 
-**Estimación:** M (5 puntos) · **Módulo:** bloque "global" (definición única referenciada desde varias páginas) + resolución en el renderer + edición centralizada · **Estado:** 🔲 Pendiente.
+**Estimación:** M (5 puntos) · **Módulo:** bloque "global" (definición única referenciada desde varias páginas) + resolución en el renderer + edición centralizada · **Estado:** ✅ (v182) — un **partial = página CMS** (editable una sola vez, AC-1); nuevo bloque **`partial_ref`** (`e17/59` amplía el CHECK) con `partial_key` lo inserta por referencia en N páginas y el renderer inyecta sus secciones con `SectionRenderer` (AC-2), con **guarda anti-recursión** (ignora `partial_ref` anidados); al ser una página, respeta **borrador/preview (HU-128) y viaja en el paquete de sitio (HU-123)** (AC-3). Helper `getSectionsWithItems(pageKey)` + registro en SectionRenderer y home-blocks.
 
 | # | Escenario | Resultado esperado |
 |---|-----------|-------------------|
@@ -229,7 +229,7 @@
 
 1. **Ola 1 (fundación de autoría):** **HU-350** ✅ (shell unificado) → **HU-351** ✅ (Filas/Columnas) → **HU-352** ✅ (estilo por página). *Reorganiza + añade la capa de layout; cero regresión.* **→ Ola 1 completa.**
 2. **Ola 2 (contenido dirigido por datos):** **HU-353** ✅ (colecciones, pieza madre) → **HU-354** ✅ (plantillas por tipo) → **HU-355** ✅ (listado dinámico). **→ Ola 2 completa.**
-3. **Ola 3 (facilidad transversal, en paralelo tras Ola 1):** **HU-356** 🔲 (partials) · **HU-357** 🔲 (biblioteca de medios) · **HU-358** 🔲 (bloques guardados). **→ pendiente.**
+3. **Ola 3 (facilidad transversal, en paralelo tras Ola 1):** **HU-356** ✅ (partials) · **HU-357** 🔲 (biblioteca de medios) · **HU-358** 🔲 (bloques guardados). **→ en curso.**
 - **Transversal (con cada HU):** **HU-359** 🟡 (entitlements + tiering por plan) — catálogo completo; el gating se puebla a medida que cada feature se construye.
 4. **Habilita:** el **vertical educación** (E20: cursos como colección + plantilla por tipo) y el **Portal Institucional** (E23: HU-341 multiportal, HU-342 buscador/agregadores se apoyan en HU-353/355).
 

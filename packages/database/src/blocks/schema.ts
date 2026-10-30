@@ -274,6 +274,17 @@ export const blockSchemas: Record<string, BlockSchema> = {
     },
   },
 
+  // HU-356 · referencia a un PARTIAL (página reutilizable editada una sola vez).
+  partial_ref: {
+    type: 'partial_ref',
+    label: 'Bloque global (partial)',
+    description: 'Inserta por referencia una página reutilizable (franja, CTA, pie, aviso). Se edita una vez y cambia en todas.',
+    category: 'content',
+    fields: {
+      partial_key: { label: 'Clave del partial (página)', type: 'text', storage: 'settings', help: 'La clave de la página reutilizable a insertar.' },
+    },
+  },
+
   historia: {
     type: 'historia',
     label: 'Bloque de historia',

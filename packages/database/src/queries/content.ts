@@ -251,6 +251,31 @@ export async function getPageSections(
   return (data ?? []) as PageSection[]
 }
 
+/**
+ * HU-356 · Secciones (con ítems) de una página por su `key` — para inyectar un
+ * PARTIAL referenciado. Mismo patrón que getPageWithSections pero keyed y sin
+ * necesitar el slug. Respeta `onlyEnabled` (preview = false ve borradores).
+ */
+export async function getSectionsWithItems(
+  pageKey: string, onlyEnabled = true, db?: Db,
+): Promise<(PageSection & { items: SectionItem[] })[]> {
+  const supabase = db as Db
+  const sectionsQuery = supabase.from('page_sections').select('*').eq('page_key', pageKey).order('order_index')
+  if (onlyEnabled) sectionsQuery.eq('enabled', true)
+  const { data: sectionsData, error: sErr } = await sectionsQuery
+  if (sErr) throw sErr
+  const sections = (sectionsData ?? []) as PageSection[]
+  if (sections.length === 0) return []
+  const itemsQuery = supabase.from('section_items').select('*').in('section_id', sections.map((s) => s.id)).order('order_index')
+  if (onlyEnabled) itemsQuery.eq('enabled', true)
+  const { data: itemsData } = await itemsQuery
+  const items = (itemsData ?? []) as SectionItem[]
+  const bySection = items.reduce<Record<number, SectionItem[]>>((acc, it) => {
+    (acc[it.section_id] ??= []).push(it); return acc
+  }, {})
+  return sections.map((s) => ({ ...s, items: bySection[s.id] ?? [] }))
+}
+
 /** Crea una sección dentro de una página. */
 export async function createPageSection(input: CreatePageSectionInput, db: Db): Promise<PageSection> {
   const supabase = db

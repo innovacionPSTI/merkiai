@@ -28,6 +28,7 @@ import MediaBanner         from './MediaBanner'
 import SpacerSection       from './SpacerSection'
 import ProductCarousel     from './ProductCarousel'
 import CollectionList      from './CollectionList'
+import PartialRef          from './PartialRef'
 import SectionShell        from './SectionShell'
 
 interface Props {
@@ -90,6 +91,10 @@ function renderSection(
     // HU-355 · listado dinámico de una colección (HU-353)
     case 'collection_list':
       return <CollectionList section={section} />
+
+    // HU-356 · bloque global (partial) referenciado
+    case 'partial_ref':
+      return <PartialRef section={section} />
 
     default:
       // Tipo desconocido: renderizar como texto plano para no perder contenido

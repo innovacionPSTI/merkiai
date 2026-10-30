@@ -27,6 +27,8 @@ const ALLOWED_TYPES = [
   'product_carousel',
   // HU-355 · listado dinámico de colección
   'collection_list',
+  // HU-356 · referencia a partial
+  'partial_ref',
 ]
 
 describe('blockSchemas', () => {

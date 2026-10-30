@@ -29,6 +29,7 @@ import CtaSection from '@/components/sections/CtaSection'
 import TestimonialsSection from '@/components/sections/TestimonialsSection'
 import ProductCarousel from '@/components/sections/ProductCarousel'
 import CollectionList from '@/components/sections/CollectionList'
+import PartialRef from '@/components/sections/PartialRef'
 
 export type HomeData = Awaited<ReturnType<typeof getWebHomeData>>
 export type HomeSection = HomeData['homeSections'][number]
@@ -204,6 +205,10 @@ async function ProductCarouselBlock({ section, template }: BlockProps) {
 async function CollectionListBlock({ section, template }: BlockProps) {
   return <CollectionList section={section as never} template={template} />
 }
+// HU-356 · bloque global (partial) referenciado.
+async function PartialRefBlock({ section }: BlockProps) {
+  return <PartialRef section={section as never} />
+}
 
 // ── Registry + preset ────────────────────────────────────────────────────────
 
@@ -229,6 +234,7 @@ const DEFAULT_BLOCKS: Record<string, HomeBlock> = {
   // HU-286 v2 · carrusel de productos (async server component)
   product_carousel:  ProductCarouselBlock as unknown as HomeBlock,
   collection_list:   CollectionListBlock as unknown as HomeBlock,
+  partial_ref:       PartialRefBlock as unknown as HomeBlock,
 }
 
 /** Registry de bloques para un template (hoy solo 'default'). */
