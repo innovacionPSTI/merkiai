@@ -324,7 +324,7 @@
 
 > Como plataforma, quiero que lo **editorial/de marca** (nombre, logo, favicon, redes, textos y toggles de footer/nav) se edite en el Constructor ("Ajustes de sitio"), y que *Configuración* quede solo para lo **técnico**.
 
-**Estimación:** M (5 puntos) · **Módulo:** panel "Ajustes de sitio" en el Constructor sobre el subconjunto editorial de `store_config`; *Configuración → General* se adelgaza. · **Estado:** 🔲 Pendiente.
+**Estimación:** M (5 puntos) · **Módulo:** panel "Ajustes de sitio" en el Constructor sobre el subconjunto editorial de `store_config`; *Configuración → General* se adelgaza. · **Estado:** 🟡 Parcial (v193) — **AC-1 ✅** drawer **"Ajustes de sitio"** en el Constructor: nombre, descripción, logo, favicon, **redes** (url + toggle), toggles de **footer** y **navbar**, persistiendo en `/api/admin/config`. **Pendiente AC-2/AC-3:** adelgazar *Configuración → General* (ocultar/retirar esos campos editoriales cuando el Constructor está disponible, para no duplicar) — pendiente de refactor del formulario General.
 
 | # | Escenario | Resultado esperado |
 |---|-----------|-------------------|

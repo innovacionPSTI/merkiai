@@ -32,10 +32,27 @@ export default async function ConstructorPage() {
   }
 
   const { db: supabase } = await requireAdminDb()
-  const [{ data: pages }, { data: cfg }] = await Promise.all([
+  const [{ data: pages }, { data: cfgRow }] = await Promise.all([
     supabase.from('pages').select('key, label, slug, style, page_type, enabled, meta_title, meta_description, show_in_footer').order('order_index'),
-    supabase.from('store_config').select('template').maybeSingle(),
+    supabase.from('store_config').select('*').maybeSingle(),
   ])
+  // HU-371 · subconjunto EDITORIAL de la configuración para "Ajustes de sitio".
+  const cfg = (cfgRow ?? null) as Record<string, unknown> | null
+  const siteConfig = {
+    store_name: (cfg?.store_name as string) ?? '',
+    store_description: (cfg?.store_description as string | null) ?? null,
+    logo_url: (cfg?.logo_url as string | null) ?? null,
+    favicon_url: (cfg?.favicon_url as string | null) ?? null,
+    instagram_url: (cfg?.instagram_url as string | null) ?? null, instagram_enabled: (cfg?.instagram_enabled as boolean) ?? false,
+    facebook_url: (cfg?.facebook_url as string | null) ?? null, facebook_enabled: (cfg?.facebook_enabled as boolean) ?? false,
+    tiktok_url: (cfg?.tiktok_url as string | null) ?? null, tiktok_enabled: (cfg?.tiktok_enabled as boolean) ?? false,
+    footer_show_store: (cfg?.footer_show_store as boolean) ?? true,
+    footer_show_blog: (cfg?.footer_show_blog as boolean) ?? true,
+    footer_show_legal: (cfg?.footer_show_legal as boolean) ?? true,
+    nav_show_cart: (cfg?.nav_show_cart as boolean) ?? true,
+    nav_show_auth: (cfg?.nav_show_auth as boolean) ?? true,
+    nav_show_wishlist: (cfg?.nav_show_wishlist as boolean) ?? true,
+  }
   const pageOptions = (pages ?? []).map((p) => ({
     key: p.key as string,
     label: p.label as string,
@@ -66,7 +83,7 @@ export default async function ConstructorPage() {
       </div>
       <div className="flex-1 overflow-y-auto px-6 py-6 bg-slate-50">
         <div className="max-w-6xl mx-auto">
-          <ConstructorClient pages={pageOptions} initialPageKey={initialPageKey} initialTemplate={initialTemplate} features={constructorFeatures} />
+          <ConstructorClient pages={pageOptions} initialPageKey={initialPageKey} initialTemplate={initialTemplate} features={constructorFeatures} siteConfig={siteConfig} />
         </div>
       </div>
     </div>

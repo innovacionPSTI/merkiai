@@ -15,6 +15,7 @@ import { Icon, ConfirmDialog, PromptModal, WizardModal } from '@merkiai/ui'
 import SectionEditor from './SectionEditor'
 import AddBlockCatalog from './AddBlockCatalog'
 import NavEditor from './NavEditor'
+import SiteSettings, { type SiteConfig } from './SiteSettings'
 import { getPreviewUrlAction } from '@/app/constructor/preview-action'
 
 interface PageOption { key: string; label: string; slug: string; style?: unknown; page_type?: string; enabled?: boolean; meta_title?: string | null; meta_description?: string | null; show_in_footer?: boolean }
@@ -41,9 +42,11 @@ interface ConstructorFeatures { layoutAdvanced: boolean; pageStyle: boolean }
 export default function ConstructorClient({
   pages, initialPageKey, initialTemplate,
   features = { layoutAdvanced: true, pageStyle: true },
+  siteConfig,
 }: {
   pages: PageOption[]; initialPageKey: string; initialTemplate: string
   features?: ConstructorFeatures
+  siteConfig?: SiteConfig
 }) {
   const [pageKey, setPageKey] = useState(initialPageKey)
   // HU-350 · lista de páginas en estado local para poder crear/duplicar desde el
@@ -79,6 +82,7 @@ export default function ConstructorClient({
   const [advOpen, setAdvOpen] = useState(false) // HU-365 · menú "···" de acciones avanzadas
   const [pageSettingsOpen, setPageSettingsOpen] = useState(false) // HU-365 AC-3 · drawer Ajustes de página
   const [navOpen, setNavOpen] = useState(false) // HU-367 · drawer Navegación
+  const [siteOpen, setSiteOpen] = useState(false) // HU-371 · drawer Ajustes de sitio
   const askConfirm = (o: NonNullable<typeof confirmState>) => setConfirmState(o)
   const askPrompt = (o: NonNullable<typeof promptState>) => setPromptState(o)
 
@@ -606,6 +610,12 @@ export default function ConstructorClient({
             <button onClick={() => setNavOpen(true)} className="inline-flex items-center gap-1 rounded-lg border border-slate-300 px-3 py-2 text-sm text-slate-700 hover:bg-slate-50" title="Editar el menú del sitio">
               <Icon name="content" size={14} /> Navegación
             </button>
+            {/* HU-371 · ajustes de sitio (marca/footer/nav) dentro del Constructor */}
+            {siteConfig && (
+              <button onClick={() => setSiteOpen(true)} className="inline-flex items-center gap-1 rounded-lg border border-slate-300 px-3 py-2 text-sm text-slate-700 hover:bg-slate-50" title="Nombre, logo, redes, footer y navbar del sitio">
+                <Icon name="settings" size={14} /> Ajustes de sitio
+              </button>
+            )}
 
             {/* HU-358 · insertar un bloque guardado */}
             {savedBlocks.length > 0 && (
@@ -880,6 +890,9 @@ export default function ConstructorClient({
           </div>
         </div>
       )}
+
+      {/* HU-371 · drawer "Ajustes de sitio" */}
+      {siteOpen && siteConfig && <SiteSettings initial={siteConfig} onClose={() => setSiteOpen(false)} />}
 
       {/* HU-364 · modales de marca (reemplazan prompt/confirm/alert nativos) */}
       <ConfirmDialog
