@@ -1,4 +1,4 @@
-import { groupSectionsIntoRows, parseLayout, cellSpanClass } from '../section-rows'
+import { groupSectionsIntoRows, parseLayout, cellSpanClass, cellResponsiveClasses } from '../section-rows'
 
 const S = (id: number, extra: Partial<{ row_id: string | null; row_layout: string | null; col_index: number | null }> = {}) => ({ id, ...extra })
 
@@ -71,5 +71,29 @@ describe('groupSectionsIntoRows (HU-351)', () => {
       S(1, { row_id: 'r' }), S(2), S(3, { row_id: 'r' }),
     ])
     expect(rows).toHaveLength(3)
+  })
+})
+
+describe('cellResponsiveClasses (HU-351 responsive fino)', () => {
+  it('sin settings = vacío (cero regresión)', () => {
+    expect(cellResponsiveClasses(undefined)).toBe('')
+    expect(cellResponsiveClasses(null)).toBe('')
+    expect(cellResponsiveClasses({})).toBe('')
+  })
+  it('hideMobile oculta en móvil y muestra desde lg', () => {
+    expect(cellResponsiveClasses({ hideMobile: true })).toBe('hidden lg:block')
+  })
+  it('hideDesktop muestra en móvil y oculta desde lg', () => {
+    expect(cellResponsiveClasses({ hideDesktop: true })).toBe('block lg:hidden')
+  })
+  it('ambos = oculto siempre', () => {
+    expect(cellResponsiveClasses({ hideMobile: true, hideDesktop: true })).toBe('hidden')
+  })
+  it('mobileOrder reordena en móvil y resetea en lg', () => {
+    expect(cellResponsiveClasses({ mobileOrder: 2 })).toBe('order-2 lg:order-none')
+    expect(cellResponsiveClasses({ mobileOrder: 99 })).toBe('order-11 lg:order-none')
+  })
+  it('combina visibilidad + orden', () => {
+    expect(cellResponsiveClasses({ hideMobile: true, mobileOrder: 1 })).toBe('hidden lg:block order-1 lg:order-none')
   })
 })

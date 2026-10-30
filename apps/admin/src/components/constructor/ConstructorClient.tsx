@@ -256,20 +256,33 @@ export default function ConstructorClient({ pages, initialPageKey, initialTempla
     await load(pageKey)
   }
 
-  // HU-352 · acento por página (override sobre el tema). Guarda en pages.style.
-  async function setPageAccent(accent: string | null) {
+  // HU-351 responsive fino · visibilidad por breakpoint (opt-in, en `settings`).
+  const sSettings = (s: SectionRow) => (s.settings && typeof s.settings === 'object' ? s.settings : {}) as Record<string, unknown>
+  async function toggleSectionVisibility(s: SectionRow, key: 'hideMobile' | 'hideDesktop') {
+    const settings = { ...sSettings(s) }
+    if (settings[key]) delete settings[key]; else settings[key] = true
+    await patchRow(s.id, { settings })
+    setTplMsg('Visibilidad del bloque actualizada ✓')
+    await load(pageKey)
+  }
+
+  // HU-352 · estilo por página (override sobre el tema). Guarda en pages.style.
+  // Genérico: `prop` ∈ {accent, container, space}; valor vacío/null borra la clave.
+  async function setPageStyleProp(prop: 'accent' | 'container' | 'space', value: string | null, okMsg: string) {
     const cur = pageList.find((p) => p.key === pageKey)
     const style: Record<string, unknown> = { ...((cur?.style as Record<string, unknown>) ?? {}) }
-    if (accent) style.accent = accent; else delete style.accent
+    if (value) style[prop] = value; else delete style[prop]
     const res = await fetch('/api/admin/cms/pages', {
       method: 'PATCH', headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ key: pageKey, style }),
     })
-    if (!res.ok) { setTplMsg((await res.json().catch(() => ({}))).error || 'No se pudo actualizar el acento'); return }
+    if (!res.ok) { setTplMsg((await res.json().catch(() => ({}))).error || 'No se pudo actualizar el estilo'); return }
     setPageList((ps) => ps.map((p) => (p.key === pageKey ? { ...p, style } : p)))
-    setTplMsg(accent ? 'Acento de la página actualizado ✓' : 'Acento de la página quitado ✓')
+    setTplMsg(okMsg)
     bump()
   }
+  const setPageAccent = (accent: string | null) =>
+    setPageStyleProp('accent', accent, accent ? 'Acento de la página actualizado ✓' : 'Acento de la página quitado ✓')
 
   async function changeTemplate(next: string) {
     setTemplate(next); setTplMsg('')
@@ -378,15 +391,46 @@ export default function ConstructorClient({ pages, initialPageKey, initialTempla
             {/* HU-350 · crear/duplicar página desde el hub */}
             <button onClick={createPage} className="rounded-lg border border-indigo-300 px-3 py-2 text-sm font-medium text-indigo-700 hover:bg-indigo-50">+ Nueva página</button>
             <button onClick={duplicatePage} className="rounded-lg border border-slate-300 px-3 py-2 text-sm text-slate-700 hover:bg-slate-50">Duplicar</button>
-            {/* HU-352 · acento por página */}
+            {/* HU-352 · estilo por página: acento + ancho de contenedor + espaciado */}
             {(() => {
-              const a = ((pageList.find((p) => p.key === pageKey)?.style as { accent?: string } | undefined)?.accent) ?? ''
+              const st = (pageList.find((p) => p.key === pageKey)?.style as { accent?: string; container?: string; space?: string } | undefined) ?? {}
+              const a = st.accent ?? ''
               return (
-                <label className="flex items-center gap-1 text-xs text-slate-600" title="Acento de esta página (en cascada sobre el tema)">
-                  Acento
-                  <input type="color" value={a || '#000000'} onChange={(e) => setPageAccent(e.target.value)} className="h-7 w-9 rounded border border-slate-300 p-0.5 cursor-pointer" aria-label="Acento de la página" />
-                  {a && <button onClick={() => setPageAccent(null)} className="text-slate-400 hover:text-red-600" title="Quitar acento" aria-label="Quitar acento">✕</button>}
-                </label>
+                <>
+                  <label className="flex items-center gap-1 text-xs text-slate-600" title="Acento de esta página (en cascada sobre el tema)">
+                    Acento
+                    <input type="color" value={a || '#000000'} onChange={(e) => setPageAccent(e.target.value)} className="h-7 w-9 rounded border border-slate-300 p-0.5 cursor-pointer" aria-label="Acento de la página" />
+                    {a && <button onClick={() => setPageAccent(null)} className="text-slate-400 hover:text-red-600" title="Quitar acento" aria-label="Quitar acento">✕</button>}
+                  </label>
+                  <label className="flex items-center gap-1 text-xs text-slate-600" title="Ancho del contenedor de esta página">
+                    Ancho
+                    <select
+                      value={st.container ?? ''}
+                      onChange={(e) => setPageStyleProp('container', e.target.value || null, 'Ancho de la página actualizado ✓')}
+                      className="h-7 rounded border border-slate-300 text-xs px-1" aria-label="Ancho de contenedor de la página"
+                    >
+                      <option value="">Tema</option>
+                      <option value="sm">Estrecho</option>
+                      <option value="md">Medio</option>
+                      <option value="lg">Normal</option>
+                      <option value="xl">Ancho</option>
+                      <option value="full">Completo</option>
+                    </select>
+                  </label>
+                  <label className="flex items-center gap-1 text-xs text-slate-600" title="Escala de espaciado de esta página">
+                    Espaciado
+                    <select
+                      value={st.space ?? ''}
+                      onChange={(e) => setPageStyleProp('space', e.target.value || null, 'Espaciado de la página actualizado ✓')}
+                      className="h-7 rounded border border-slate-300 text-xs px-1" aria-label="Escala de espaciado de la página"
+                    >
+                      <option value="">Tema</option>
+                      <option value="compact">Compacto</option>
+                      <option value="normal">Normal</option>
+                      <option value="relaxed">Amplio</option>
+                    </select>
+                  </label>
+                </>
               )
             })()}
 
@@ -461,6 +505,21 @@ export default function ConstructorClient({ pages, initialPageKey, initialTempla
                       ) : i > 0 && (
                         <button onClick={() => joinUp(i)} className="text-[11px] text-indigo-600 hover:bg-indigo-50 border border-indigo-200 rounded-lg px-2 py-1" title="Unir con el bloque de arriba en una fila de columnas">⬓ Unir ↑</button>
                       )}
+                      {/* HU-351 responsive fino · ocultar por breakpoint */}
+                      <div className="flex items-center gap-0.5" title="Visibilidad por dispositivo">
+                        <button
+                          onClick={() => toggleSectionVisibility(s, 'hideMobile')}
+                          className={`rounded-lg border px-2 py-1 text-[11px] ${sSettings(s).hideMobile ? 'border-amber-300 bg-amber-50 text-amber-700' : 'border-slate-200 text-slate-500 hover:bg-slate-50'}`}
+                          title={sSettings(s).hideMobile ? 'Oculto en móvil — clic para mostrar' : 'Ocultar en móvil'}
+                          aria-label="Alternar visibilidad en móvil" aria-pressed={!!sSettings(s).hideMobile}
+                        >Móvil {sSettings(s).hideMobile ? '⃠' : ''}</button>
+                        <button
+                          onClick={() => toggleSectionVisibility(s, 'hideDesktop')}
+                          className={`rounded-lg border px-2 py-1 text-[11px] ${sSettings(s).hideDesktop ? 'border-amber-300 bg-amber-50 text-amber-700' : 'border-slate-200 text-slate-500 hover:bg-slate-50'}`}
+                          title={sSettings(s).hideDesktop ? 'Oculto en escritorio — clic para mostrar' : 'Ocultar en escritorio'}
+                          aria-label="Alternar visibilidad en escritorio" aria-pressed={!!sSettings(s).hideDesktop}
+                        >Escritorio {sSettings(s).hideDesktop ? '⃠' : ''}</button>
+                      </div>
                       <button onClick={() => toggle(s)} className={`rounded-full px-3 py-1 text-xs font-medium ${s.enabled ? 'bg-green-100 text-green-700' : 'bg-slate-100 text-slate-500'}`}>
                         {s.enabled ? 'Visible' : 'Oculto'}
                       </button>

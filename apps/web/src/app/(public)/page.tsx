@@ -4,7 +4,8 @@ import { getMachineDb } from '@/lib/machine-db'
 import { isPreviewMode } from '@/lib/preview'
 import { getHomeBlocks, getHomeLayout, type HomeSection } from '@/components/blocks/home-blocks'
 import SectionShell from '@/components/sections/SectionShell'
-import { groupSectionsIntoRows, cellSpanClass } from '@/lib/section-rows'
+import { groupSectionsIntoRows, cellSpanClass, cellResponsiveClasses } from '@/lib/section-rows'
+import { pageStyleVars } from '@/lib/page-style'
 import PreviewBanner from '@/components/PreviewBanner'
 
 // E17/HU-157: la home lee datos del tenant resuelto por Host → render dinámico.
@@ -37,7 +38,7 @@ export default async function HomePage() {
     const Block = blocks[type]
     if (!Block) return null
     return (
-      <div key={keyStr} style={hidden ? HIDDEN : undefined}>
+      <div key={keyStr} className={cellResponsiveClasses(section?.settings) || undefined} style={hidden ? HIDDEN : undefined}>
         <SectionShell settings={section?.settings}>
           <Block section={section} data={data} template={template} />
         </SectionShell>
@@ -48,8 +49,12 @@ export default async function HomePage() {
   // HU-351 · en el path de secciones propias, agrupa en Filas/Columnas (opt-in).
   // Sin row_id = fila full-width (idéntico a antes). El fallback de plantilla
   // queda lineal (su layout ya lo define el preset).
+  // HU-352 · estilo por página de la home (acento/contenedor/espaciado) vía
+  // CSS vars; `display:contents` no genera caja → cero impacto en el layout,
+  // pero las custom properties sí heredan a los bloques hijos.
+  const homeStyleVars = pageStyleVars(data.homeStyle)
   return (
-    <>
+    <div style={{ display: 'contents', ...homeStyleVars }}>
       {preview && <PreviewBanner />}
       {hasOwnSections
         ? groupSectionsIntoRows(data.homeSections as unknown as Array<HomeSection & { id: number }>).map((row, ri) => {
@@ -58,14 +63,18 @@ export default async function HomePage() {
               return renderOne(s, s.section_type, `${s.section_type}-${s.id ?? ri}`)
             }
             return (
-              <div key={`row-${row.rowId}-${ri}`} className="mx-auto max-w-7xl px-4 py-2 grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
+              <div
+                key={`row-${row.rowId}-${ri}`}
+                className="mx-auto px-4 py-2 grid grid-cols-1 lg:grid-cols-12 items-start"
+                style={{ maxWidth: 'var(--page-max, 80rem)', gap: 'var(--page-space, 1.5rem)' }}
+              >
                 {row.cells.map(({ section: s, span }) => {
                   const hidden = (s.enabled ?? true) === false
                   if (hidden && !preview) return null
                   const Block = blocks[s.section_type]
                   if (!Block) return null
                   return (
-                    <div key={`${s.section_type}-${s.id}`} className={cellSpanClass(span)} style={hidden ? HIDDEN : undefined}>
+                    <div key={`${s.section_type}-${s.id}`} className={`${cellSpanClass(span)} ${cellResponsiveClasses(s.settings)}`.trim()} style={hidden ? HIDDEN : undefined}>
                       <SectionShell settings={s.settings}>
                         <Block section={s} data={data} template={template} />
                       </SectionShell>
@@ -76,6 +85,6 @@ export default async function HomePage() {
             )
           })
         : getHomeLayout(template).map((type) => renderOne(sectionsByType.get(type), type, type))}
-    </>
+    </div>
   )
 }

@@ -72,3 +72,35 @@ function normId(v: string | null | undefined): string | null {
   const s = v == null ? '' : String(v).trim()
   return s.length ? s : null
 }
+
+// ─── Responsive fino (HU-351) ─────────────────────────────────────────────────
+// Visibilidad por breakpoint y orden en móvil, **opt-in** desde `settings` de la
+// sección (sin migración): `hideMobile`, `hideDesktop`, `mobileOrder` (0..11).
+// Clases literales (no arbitrarias) → Tailwind las detecta sin safelist.
+
+const ORDER_CLASS: Record<number, string> = {
+  0: 'order-none', 1: 'order-1', 2: 'order-2', 3: 'order-3', 4: 'order-4',
+  5: 'order-5', 6: 'order-6', 7: 'order-7', 8: 'order-8', 9: 'order-9',
+  10: 'order-10', 11: 'order-11',
+}
+
+/**
+ * Clases responsive de una celda/sección a partir de su `settings` (puro).
+ * - `hideMobile` → oculto en móvil, visible desde `lg`.
+ * - `hideDesktop` → visible en móvil, oculto desde `lg`.
+ * - ambos → oculto siempre.
+ * - `mobileOrder` (0..11) → reordena en móvil; en `lg` vuelve al orden natural.
+ * Sin settings = '' (cero regresión).
+ */
+export function cellResponsiveClasses(settings: unknown): string {
+  const s = (settings && typeof settings === 'object' ? settings : {}) as Record<string, unknown>
+  const out: string[] = []
+  const hideMobile = s.hideMobile === true
+  const hideDesktop = s.hideDesktop === true
+  if (hideMobile && hideDesktop) out.push('hidden')
+  else if (hideMobile) out.push('hidden', 'lg:block')
+  else if (hideDesktop) out.push('block', 'lg:hidden')
+  const mo = typeof s.mobileOrder === 'number' ? Math.min(11, Math.max(0, Math.round(s.mobileOrder))) : null
+  if (mo != null && ORDER_CLASS[mo]) out.push(ORDER_CLASS[mo], 'lg:order-none')
+  return out.join(' ')
+}

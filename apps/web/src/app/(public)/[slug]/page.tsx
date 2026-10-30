@@ -18,7 +18,7 @@ import { getStoreContext } from '@/lib/store-context'
 import { getMachineDb } from '@/lib/machine-db'
 import { isPreviewMode } from '@/lib/preview'
 import SectionRenderer from '@/components/sections/SectionRenderer'
-import { groupSectionsIntoRows, cellSpanClass } from '@/lib/section-rows'
+import { groupSectionsIntoRows, cellSpanClass, cellResponsiveClasses } from '@/lib/section-rows'
 import { pageStyleVars } from '@/lib/page-style'
 import { getRequestCatalogDb } from '@/lib/tenant-db'
 import PreviewBanner from '@/components/PreviewBanner'
@@ -62,15 +62,19 @@ export default async function CmsPage({ params }: Props) {
         if (row.single) {
           const section = row.cells[0].section
           return (
-            <div key={section.id} style={section.enabled === false ? hiddenStyle : undefined}>
+            <div key={section.id} className={cellResponsiveClasses(section.settings) || undefined} style={section.enabled === false ? hiddenStyle : undefined}>
               <SectionRenderer section={section} pageKey={pageData.key} whatsappNumber={ctx.config?.whatsapp_number} />
             </div>
           )
         }
         return (
-          <div key={`row-${row.rowId}-${ri}`} className="mx-auto max-w-7xl px-4 py-2 grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
+          <div
+            key={`row-${row.rowId}-${ri}`}
+            className="mx-auto px-4 py-2 grid grid-cols-1 lg:grid-cols-12 items-start"
+            style={{ maxWidth: 'var(--page-max, 80rem)', gap: 'var(--page-space, 1.5rem)' }}
+          >
             {row.cells.map(({ section, span }) => (
-              <div key={section.id} className={cellSpanClass(span)} style={section.enabled === false ? hiddenStyle : undefined}>
+              <div key={section.id} className={`${cellSpanClass(span)} ${cellResponsiveClasses(section.settings)}`.trim()} style={section.enabled === false ? hiddenStyle : undefined}>
                 <SectionRenderer section={section} pageKey={pageData.key} whatsappNumber={ctx.config?.whatsapp_number} />
               </div>
             ))}

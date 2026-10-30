@@ -42,10 +42,11 @@ const fakeBestSeller = { product_id: 11, product_name: 'Espresso', price: 25000 
 const fakePost       = { id: 5, title: 'Blog post', slug: 'blog-post' } as any
 const fakeCategory   = { id: 3, name: 'Café', slug: 'cafe' } as any
 
-// Supabase mock that returns home sections + items
+// Supabase mock that returns home sections + items (+ HU-352 estilo de la home)
 function makeSupabaseMock(
   sectionsData: unknown[] = [fakeSection],
-  itemsData: unknown[] = [fakeItem]
+  itemsData: unknown[] = [fakeItem],
+  styleRow: unknown = null
 ) {
   const selectChain = (data: unknown[]) => ({
     select: jest.fn().mockReturnThis(),
@@ -53,10 +54,18 @@ function makeSupabaseMock(
     in:     jest.fn().mockReturnThis(),
     order:  jest.fn().mockResolvedValue({ data, error: null }),
   })
+  // La home consulta `pages.select('style').eq('key','home').maybeSingle()`.
+  const pagesChain = () => ({
+    select:      jest.fn().mockReturnThis(),
+    eq:          jest.fn().mockReturnThis(),
+    maybeSingle: jest.fn().mockResolvedValue({ data: styleRow, error: null }),
+  })
   return {
-    from: jest.fn((table: string) =>
-      table === 'page_sections' ? selectChain(sectionsData) : selectChain(itemsData)
-    ),
+    from: jest.fn((table: string) => {
+      if (table === 'page_sections') return selectChain(sectionsData)
+      if (table === 'pages') return pagesChain()
+      return selectChain(itemsData)
+    }),
   }
 }
 
@@ -73,13 +82,26 @@ beforeEach(() => {
 // Shape y datos
 // ─────────────────────────────────────────────
 describe('getWebHomeData(mockCreateServerClient())', () => {
-  it('devuelve las 5 propiedades esperadas', async () => {
+  it('devuelve las propiedades esperadas (incl. homeStyle · HU-352)', async () => {
     const data = await getWebHomeData(mockCreateServerClient())
     expect(data).toHaveProperty('homeSections')
     expect(data).toHaveProperty('featuredProducts')
     expect(data).toHaveProperty('blogPosts')
     expect(data).toHaveProperty('bestSellers')
     expect(data).toHaveProperty('categories')
+    expect(data).toHaveProperty('homeStyle')
+  })
+
+  it('homeStyle = null cuando la home no tiene estilo (cero regresión)', async () => {
+    const data = await getWebHomeData(mockCreateServerClient())
+    expect(data.homeStyle).toBeNull()
+  })
+
+  it('homeStyle refleja pages.style de la home (HU-352)', async () => {
+    const style = { accent: '#1e90ff', container: 'xl' }
+    mockCreateServerClient.mockReturnValue(makeSupabaseMock([fakeSection], [fakeItem], { style }) as any)
+    const data = await getWebHomeData(mockCreateServerClient())
+    expect(data.homeStyle).toEqual(style)
   })
 
   it('las secciones incluyen sus items anidados', async () => {

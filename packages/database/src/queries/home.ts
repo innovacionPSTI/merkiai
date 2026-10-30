@@ -25,6 +25,8 @@ export interface WebHomeData {
   blogPosts:        Awaited<ReturnType<typeof getBlogPosts>>
   bestSellers:      BestSellingProduct[]
   categories:       Awaited<ReturnType<typeof getCategories>>
+  /** HU-352 · estilo por página de la home (`pages.style`, page_key='home'). */
+  homeStyle:        Record<string, unknown> | null
 }
 
 /**
@@ -71,13 +73,20 @@ export async function getWebHomeData(db: Db, opts: { preview?: boolean } = {}): 
   // HU-207: propagar el cliente tenant-scoped a TODAS las sub-queries (antes
   // usaban service-role → tenant por defecto, filtrando contenido del default
   // en la home de cualquier tenant).
-  const [homeSections, featuredProducts, blogPosts, bestSellers, categories] = await Promise.all([
+  async function fetchHomeStyle(): Promise<Record<string, unknown> | null> {
+    const { data } = await supabase.from('pages').select('style').eq('key', 'home').maybeSingle()
+    const style = (data as { style?: unknown } | null)?.style
+    return style && typeof style === 'object' ? (style as Record<string, unknown>) : null
+  }
+
+  const [homeSections, featuredProducts, blogPosts, bestSellers, categories, homeStyle] = await Promise.all([
     fetchHomeSections().catch(() => [] as HomeSection[]),
     getFeaturedProducts(3, db).catch(() => []),
     getBlogPosts({ limit: 2 }, db).catch(() => []),
     getBestSellingProducts(4, db).catch(() => [] as BestSellingProduct[]),
     getCategories(db).catch(() => []),
+    fetchHomeStyle().catch(() => null),
   ])
 
-  return { homeSections, featuredProducts, blogPosts, bestSellers, categories }
+  return { homeSections, featuredProducts, blogPosts, bestSellers, categories, homeStyle }
 }
