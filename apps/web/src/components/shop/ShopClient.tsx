@@ -5,6 +5,7 @@ import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { Icon } from '@merkiai/ui'
 import { useCartStore } from '@/store/cart'
+import { useEcommerceEnabled } from '@/components/EcommerceProvider'
 import type { CartItem } from '@/store/cart'
 import type { ProductWithVariants, CatalogFacets } from '@merkiai/database'
 import { getProductOptions, getVariantAttrs, getVariantLabel, isColorValue, swatchColor } from '@/lib/variant-utils'
@@ -374,6 +375,7 @@ function ProductCard({ product, fmt, addItem, colorMap }: {
   addItem: (item: CartItem) => void
   colorMap?: Record<string, string>
 }) {
+  const ecommerceEnabled = useEcommerceEnabled() // HU-173 · modo vitrina
   const image = product.images[0]
   const activeVariants = product.variants.filter((v) => v.active)
   const defaultVariant = activeVariants[0] ?? product.variants[0]
@@ -461,7 +463,7 @@ function ProductCard({ product, fmt, addItem, colorMap }: {
               )}
             </p>
           </div>
-          {canQuickAdd ? (
+          {canQuickAdd && ecommerceEnabled ? (
             outOfStock ? (
               <span className="shrink-0 whitespace-nowrap rounded-full border border-brand-primary/20 text-brand-primary/40 px-3 py-1 text-xs font-brand">Agotado</span>
             ) : (

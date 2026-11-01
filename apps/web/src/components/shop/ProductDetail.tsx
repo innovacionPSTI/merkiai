@@ -3,6 +3,7 @@
 import { useState, useMemo, useCallback, useEffect, useRef } from 'react'
 import Link from 'next/link'
 import { useCartStore } from '@/store/cart'
+import { useEcommerceEnabled } from '@/components/EcommerceProvider'
 import type { ProductWithVariants, TrustBadge } from '@merkiai/database'
 import { getProductOptions, getVariantAttrs, getVariantLabel, isColorValue, swatchColor } from '@/lib/variant-utils'
 import WishlistButton from './WishlistButton'
@@ -79,6 +80,7 @@ export default function ProductDetail({ product, related, trustBadges = [], layo
   const [qty, setQty] = useState(1)
   const [addedFeedback, setAddedFeedback] = useState(false)
   const addItem = useCartStore((s) => s.addItem)
+  const ecommerceEnabled = useEcommerceEnabled() // HU-173 · modo vitrina oculta la compra
 
   const fmt = (n: number) =>
     new Intl.NumberFormat('es-CO', { style: 'currency', currency: 'COP', maximumFractionDigits: 0 }).format(n)
@@ -557,7 +559,7 @@ export default function ProductDetail({ product, related, trustBadges = [], layo
               {!vipLocked && vipMember && vipCampaign && (
                 <VipCountdown endsAt={vipCampaign.ends_at} campaignName={vipCampaign.name} variant="member" />
               )}
-              {!vipLocked && (
+              {!vipLocked && ecommerceEnabled && (
                 <>
                   <button
                     onClick={handleAddToCart}
@@ -693,7 +695,7 @@ export default function ProductDetail({ product, related, trustBadges = [], layo
       )}
 
       {/* HU-284 · Barra de compra pegajosa en móvil (oculta si el acceso VIP bloquea la compra) */}
-      {stickyEnabled && showSticky && !vipLocked && (
+      {stickyEnabled && showSticky && !vipLocked && ecommerceEnabled && (
         <div className="lg:hidden fixed bottom-0 inset-x-0 z-40 bg-brand-cream/95 backdrop-blur border-t border-brand-primary/10 shadow-[0_-4px_12px_rgba(0,0,0,0.06)] px-4 py-3 flex items-center gap-3">
           <div className="min-w-0 flex-1">
             <p className="font-brand text-xs text-brand-primary/60 truncate">{product.name}</p>

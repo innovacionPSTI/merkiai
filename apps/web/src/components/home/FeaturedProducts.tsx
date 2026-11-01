@@ -2,6 +2,7 @@
 
 import Link from 'next/link'
 import { useCartStore } from '@/store/cart'
+import { useEcommerceEnabled } from '@/components/EcommerceProvider'
 import type { ProductWithVariants } from '@merkiai/database'
 import { getProductOptions, getVariantAttrs, getVariantLabel, swatchColor } from '@/lib/variant-utils'
 
@@ -19,6 +20,7 @@ const DENSITY_GRID: Record<string, string> = {
 
 export default function FeaturedProducts({ products, title = 'Productos Destacados', density = 'comfortable' }: FeaturedProductsProps) {
   const addItem = useCartStore((s) => s.addItem)
+  const ecommerceEnabled = useEcommerceEnabled() // HU-173 · modo vitrina
 
   const fmt = (n: number) =>
     new Intl.NumberFormat('es-CO', { style: 'currency', currency: 'COP', maximumFractionDigits: 0 }).format(n)
@@ -149,7 +151,7 @@ export default function FeaturedProducts({ products, title = 'Productos Destacad
                         <span className="shrink-0 whitespace-nowrap rounded-full border border-brand-primary/20 text-brand-primary/40 px-4 py-1.5 text-sm font-brand">
                           Agotado
                         </span>
-                      ) : (
+                      ) : ecommerceEnabled ? (
                       <button
                         onClick={() => {
                           if (!defaultVariant) return
@@ -175,7 +177,7 @@ export default function FeaturedProducts({ products, title = 'Productos Destacad
                       >
                         Agregar
                       </button>
-                      )
+                      ) : null
                     ) : (
                       <Link
                         href={`/shop/${product.slug}`}
