@@ -1,6 +1,8 @@
 ## Detalle · E18 — Inventario multi-ubicación y fulfillment (HU-176…183)  *(roadmap)*
 
-> **Épica nueva.** Introduce el concepto de **ubicaciones** (tipo Shopify Locations): el stock pasa de `por variante` a `por (variante, ubicación)`, con fulfillment por lugar, transferencias y retiro por punto. Es un **cambio de modelo fundacional** que toca inventario (E9), envíos (E7), catálogo (E4) y admin (E13), y hereda el aislamiento de E17. Incluye una HU dedicada a **migrar lo ya implementado** sin ruptura. Todo **🔲 (roadmap)**.
+> **Épica.** Introduce el concepto de **ubicaciones** (bodegas, tiendas físicas, puntos de retiro): el stock pasa de "por variante" a **por `(ítem, ubicación)`**, con fulfillment por lugar, transferencias y retiro por punto.
+>
+> **⚠️ Reconciliación con E24 (Operaciones e inventario).** Tras formalizar la épica **E24**, la **fundación del inventario es el `stock_item` + unidad de medida + libro de movimientos (`stock_movement`)** (E24 · HU-400/401). Por decisión de coherencia, **E18 se construye *sobre* esa fundación, no en paralelo**: la **ubicación es una dimensión del ledger** y el "stock por ubicación" es una **proyección de lectura** del libro de movimientos, no un modelo de escritura propio. Esto evita una doble migración (primero por-variante, luego al ledger). En consecuencia, las HU de abajo que decían `(variante, ubicación)` se entienden como **`(stock_item, ubicación)`** (la variante vendible es una *clase* de `stock_item`), y los RPC de stock por ubicación son **envoltorios finos que anexan movimientos al ledger**. **Orden:** E24 · HU-400/401 (stock_item/UoM + ledger) preceden a esta épica. Sigue siendo **🔲 (roadmap)**; toca inventario (E9), envíos (E7), catálogo (E4) y admin (E13), y hereda el aislamiento de E17.
 
 ### HU-176 — Modelo de ubicaciones (`locations`) · E18
 
@@ -18,20 +20,20 @@
 
 ---
 
-### HU-177 — Inventario por ubicación (`inventory_levels`) + RPCs por ubicación · E18
+### HU-177 — Disponibilidad por ubicación (`inventory_levels` como proyección) + RPCs por ubicación · E18
 
-> Como plataforma, quiero llevar el stock por `(variante, ubicación)` con operaciones atómicas por ubicación, para reflejar existencias reales por lugar.
+> Como plataforma, quiero conocer el stock por `(ítem, ubicación)` con operaciones atómicas por ubicación, para reflejar existencias reales por lugar.
 
 **Estimación:** L (8 puntos)
-**Módulo:** tabla `inventory_levels`, RPCs `decrement/restore` con `p_location_id`
-**Estado:** 🔲 Pendiente (roadmap) — **enabler del modelo**
+**Módulo:** proyección `inventory_levels` derivada del ledger (E24 · HU-401), RPCs `decrement/restore` con `p_location_id`
+**Estado:** 🔲 Pendiente (roadmap) — **enabler del modelo; depende de E24 · HU-400/401**
 
 | # | Escenario | Resultado esperado |
 |---|-----------|-------------------|
-| AC-1 | Modelo | `inventory_levels(variant_id, location_id, stock)` único por par |
-| AC-2 | RPCs por ubicación | `decrement/restore_variant_stock` reciben `location_id`; respetan `allow_backorder`; atómicos e idempotentes |
-| AC-3 | Disponibilidad agregada | Vista de stock total por variante (suma de ubicaciones) para consumidores que no distinguen ubicación |
-| AC-4 | Concurrencia | Mismo control de carrera que el modelo actual |
+| AC-1 | Modelo | `inventory_levels(stock_item_id, location_id, qty)` es una **proyección** del libro de movimientos (E24 · HU-401), única por par; **no** es la fuente de escritura |
+| AC-2 | RPCs por ubicación | `decrement/restore` reciben `location_id` y **anexan un movimiento tipificado al ledger** (envoltorio fino); respetan `allow_backorder`; atómicos e idempotentes |
+| AC-3 | Disponibilidad agregada | Vista de stock total por ítem (suma de ubicaciones) para consumidores que no distinguen ubicación |
+| AC-4 | Concurrencia | Mismo control de carrera que el modelo actual; el ledger es append-only |
 
 ---
 
@@ -45,11 +47,12 @@
 
 | # | Escenario | Resultado esperado |
 |---|-----------|-------------------|
-| AC-1 | Backfill | Se crea la ubicación por defecto y el `product_variants.stock` actual se copia a `inventory_levels` de esa ubicación |
+| AC-1 | Backfill | Se crea la ubicación por defecto y el `product_variants.stock` actual se materializa como **saldo de apertura** en el ledger (E24 · HU-401) de esa ubicación; `inventory_levels` se reconstruye como proyección |
 | AC-2 | Compatibilidad | `product_variants.stock` se conserva como **agregado derivado** (o se deprecia) con lectura agregada durante la transición |
-| AC-3 | Refactor de consumidores | Se adaptan: `stock.ts` (`applyStockForOrder`/`restoreStockForOrder` → por ubicación de fulfillment), RPCs (HU-098), topes del front `getStockForVariants`/PDP (HU-100), back-in-stock (HU-105), alertas (HU-106), validación 409 del checkout y el campo de stock en `ProductForm` (admin) |
+| AC-3 | Refactor de consumidores | Se adaptan: `stock.ts` (`applyStockForOrder`/`restoreStockForOrder` → **movimiento en el ledger** por ubicación de fulfillment), RPCs (HU-098), topes del front `getStockForVariants`/PDP (HU-100), back-in-stock (HU-105), alertas (HU-106), validación 409 del checkout y el campo de stock en `ProductForm` (admin) |
 | AC-4 | Cutover por fases | Con retrocompatibilidad; se prueba que el flujo actual (una sola ubicación) queda idéntico |
 | AC-5 | Seguro | No rompe órdenes ni stock existentes; reversible |
+| AC-6 | Migración única | Esta es **la** migración del inventario (no hay un segundo refactor posterior): se adopta de una vez el modelo `stock_item` + ledger (E24) |
 
 ---
 
@@ -80,8 +83,8 @@
 
 | # | Escenario | Resultado esperado |
 |---|-----------|-------------------|
-| AC-1 | Transferencia | Origen → destino con cantidades; ajusta ambos `inventory_levels` atómicamente |
-| AC-2 | Trazabilidad | Historial de movimientos auditable (HU-146) |
+| AC-1 | Transferencia | Origen → destino con cantidades; se registra como **dos movimientos tipificados en el ledger** (salida en origen / entrada en destino) atómicos; `inventory_levels` se recalcula por proyección |
+| AC-2 | Trazabilidad | Historial de movimientos auditable (ledger E24 · HU-401 + HU-146) |
 | AC-3 | Estados | Pendiente / en tránsito / recibida (si aplica) |
 
 ---
@@ -113,7 +116,7 @@
 | # | Escenario | Resultado esperado |
 |---|-----------|-------------------|
 | AC-1 | Ubicaciones | CRUD (HU-176) desde el panel |
-| AC-2 | Niveles | Edición de stock por `(variante, ubicación)`; vista de niveles en el producto |
+| AC-2 | Niveles | Ajuste de stock por `(ítem, ubicación)` **vía movimiento de ajuste en el ledger** (no edición directa del nivel); vista de niveles en el producto/ítem |
 | AC-3 | Permisos | Por rol; en multi-tenant, acotado a la tienda (E17) |
 
 ---
@@ -123,13 +126,13 @@
 > Como operador, quiero ver el inventario y recibir alertas de stock bajo por ubicación, para reponer donde falta.
 
 **Estimación:** M (5 puntos)
-**Módulo:** reportes por ubicación (extiende HU-106/116)
+**Módulo:** reportes por ubicación (extiende HU-106/116; se consolidan en E24 · HU-409)
 **Estado:** 🔲 Pendiente (roadmap)
 
 | # | Escenario | Resultado esperado |
 |---|-----------|-------------------|
 | AC-1 | Inventario por ubicación | Vista con filtros; export (compatible con HU-116/130) |
-| AC-2 | Alertas | Stock bajo por `(variante, ubicación)` — extiende el umbral de HU-106 |
+| AC-2 | Alertas | Stock bajo por `(ítem, ubicación)` — extiende el umbral de HU-106 y se generaliza en E24 · HU-409 |
 | AC-3 | Permisos | Solo roles autorizados |
 
 ---

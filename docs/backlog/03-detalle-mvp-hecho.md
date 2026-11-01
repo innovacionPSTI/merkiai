@@ -1218,6 +1218,8 @@
 | AC-6 | Una orden ya `approved` se cancela o su pago se rechaza | Se **repone** el stock descontado (una sola vez) |
 | AC-7 | Descuento con `allow_backorder = true` | Se permite y el stock puede quedar en negativo (indicador de faltante para el operador) |
 
+> **Evolución (E18 · HU-178 + E24 · HU-401).** Este descuento "implícito" por pedido es la base que luego se **generaliza a un libro de movimientos (`stock_movement`)** de primera clase: el disponible pasa a ser una **proyección** del ledger y el descuento se vuelve un **movimiento tipificado** con referencia al pedido. La atomicidad/idempotencia aquí probadas se **preservan** (los RPC pasan a anexar movimientos). No cambia el comportamiento actual; es el punto de partida de la migración única del inventario (E18 · HU-178).
+
 ---
 
 ### HU-099 — Límites de stock en el frontend

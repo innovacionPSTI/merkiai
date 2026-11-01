@@ -112,6 +112,8 @@
 | AC-2 | Stock ≤ umbral | Badge/indicador en el dashboard y en el listado de productos | ✅ |
 | AC-3 | Filtro "stock bajo" | `?stock=bajo` lista solo los productos por debajo del umbral | ✅ |
 
+> **Evolución (E18 · HU-183 + E24 · HU-409).** El umbral global por producto se **generaliza** a **mínimo por `(ítem, ubicación)`** y a **todas las clases de ítem** (materia prima, insumos, terminados), con la alerta disparada por **eventos del ledger**. El motor de alertas de E24 (HU-409) absorbe esta HU como su caso base; no se rompe el comportamiento actual.
+
 ---
 
 ### HU-107 — Devoluciones y reembolsos (RMA) · E6  *(dividida en 107a/107b)*

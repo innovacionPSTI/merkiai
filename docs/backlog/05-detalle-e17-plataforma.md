@@ -280,6 +280,8 @@
 | AC-3 | Precio | El precio del bundle entra al pipeline (HU-164) |
 | AC-4 | Stock | Backorder/disponibilidad según el componente más restrictivo |
 
+> **Evolución (E24 · HU-404).** El bundle es, conceptualmente, el caso **`al_vender`** de la **receta/BOM de un nivel**: vender la unidad descuenta sus componentes. Cuando se formalice el BOM con **política de consumo** (E24), este motor **se generaliza/reutiliza** (no se duplica): el BOM añade además el caso **`al_producir`** (orden de producción que crea stock de terminado) y los **modificadores** que consumen inventario. HU-168 queda como instancia ya implementada del mismo concepto.
+
 ---
 
 ### HU-169 — Onboarding / asistente de configuración inicial · E13
