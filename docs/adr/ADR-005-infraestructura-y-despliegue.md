@@ -63,3 +63,61 @@ Dos piezas del roadmap conviene resolver con un runtime con más estado/tiempo q
 
 - **Kubernetes desde el inicio:** máximo control y portabilidad, pero **costo operativo alto** injustificado para el arranque; se reserva al tier dedicado.
 - **VPS/servidores administrados a mano:** contradice el bajo costo operativo y el escalado automático; solo se consideraría si un cliente lo exige por política propia, como extensión sobre la misma costura de enrutamiento.
+
+## 8. Niveles de aislamiento × peldaños y gobernanza de roles
+
+> **Propiedad y operación.** La plataforma es operada por **Merkiai** (producto de
+> Néstor Cardona); las decisiones de infraestructura y aislamiento son de Merkiai.
+> **ParqueSoft TI** figura únicamente como **canal comercial** y como marca
+> **«Powered by ParqueSoft TI»** (consola, admin y futura página comercial); no es
+> el operador de la plataforma.
+
+### 8.1 El aislamiento es ortogonal a los peldaños
+
+Los **peldaños de capacidad** (presencia → vitrina → e-commerce → punto de venta →
+institucional) definen **qué funciones** tiene el tenant. El **nivel de aislamiento
+de datos** (`shared` → `schema` → `dedicated`, HU-200) define **dónde viven** sus
+datos. Son **ejes independientes**: un tenant elige su peldaño y, por separado, su
+nivel de aislamiento. No se "sube" de aislamiento por vender más funciones.
+
+### 8.2 Recomendación por nivel
+
+| Nivel | Cuándo | Para qué perfil |
+|---|---|---|
+| **`shared`** (BD compartida + RLS) | Default | La mayoría: presencia, vitrina, e-commerce e incluso **POS pequeño/mediano**. Barato, escala solo; la RLS garantiza el aislamiento lógico |
+| **`schema` dedicado** | Por **volumen/rendimiento** o separación lógica más fuerte | Tenants **grandes** (mucho catálogo/pedidos/tráfico) sin costo de BD propia |
+| **`dedicated`** (BD/proyecto propio → despliegue dedicado, HU-360–363) | Por **exigencia de cumplimiento/residencia de datos**, no por volumen | Tier **institucional/enterprise**: cuando el cliente exige datos en su propia infraestructura o región |
+
+**Criterio:** la gran mayoría vive en `shared`; se recomienda `schema` **por tamaño**
+y `dedicated` **solo cuando el cliente lo exige** (normativa/residencia),
+típicamente a partir del tier institucional/enterprise. Es **por-tenant**: un tenant
+puntual puede promoverse a dedicado como *add-on*, sin cambiar de plan.
+
+### 8.3 Dónde está modelado
+
+- **Planes:** `plans.data_isolation` (CHECK `shared`/`schema`/`dedicated`) + selector
+  en el editor de planes de la consola → el nivel es un **atributo del plan**.
+- **Tenant:** hereda `tenants.data_isolation` + `tenants.db_ref` (costura de
+  enrutamiento); el *connection factory* resuelve el cliente de datos por tenant.
+- **Pendiente (HU-200 + HU-360–363):** la **materialización** (aprovisionar el
+  esquema/BD dedicada, migración multi-destino, promoción auditada). El campo y el
+  enrutamiento existen; el provisioning automático es roadmap.
+
+### 8.4 Roles y gobernanza
+
+Dos planos de roles **separados**:
+
+- **Roles del tenant (panel de administración):** `super_admin`, `admin`,
+  `vendedor`, `gestor_tienda`, `miembro`. Son del **comerciante** y operan *su*
+  tienda; **no gestionan infraestructura**.
+- **Rol de plataforma (consola):** `platform:operate` — el **operador de Merkiai**.
+  Gestiona planes, tenants, `data_isolation`, `db_ref` y (futuro) la promoción a
+  dedicado. El aprovisionamiento de infra vive **solo** aquí.
+
+**¿Nuevos roles?** **No para el MVP:** el comerciante no gestiona su infraestructura
+y `platform:operate` ya cubre la operación. **Al materializar el tier dedicado**
+(HU-360–363) se recomienda, por **mínimo privilegio**, **escindir** `platform:operate`
+en: (a) **operación comercial** (planes, tenants, soporte, cobro manual) y
+(b) **`platform:infra`** (promoción a BD/despliegue dedicado y **custodia de secretos
+de infra**, HU-362), lo más sensible. Opcional: un rol de **soporte de solo-lectura**
+en la consola. Para el **tenant**, esto nunca requiere un rol nuevo.
