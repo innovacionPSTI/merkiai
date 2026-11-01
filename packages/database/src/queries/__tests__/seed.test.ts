@@ -63,13 +63,14 @@ function fakeDb(opts: { errorOn?: string | null; existingHomeSections?: number }
 }
 
 describe('seedTenantConfig (HU-207)', () => {
-  it('siembra las 4 configs + página home, todas con tenant_id e idempotentes', async () => {
+  it('siembra las 4 configs + página home + regiones de chrome, todas con tenant_id e idempotentes', async () => {
     const db = fakeDb()
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const res = await seedTenantConfig(T, { storeName: 'Café Prueba' }, db as any)
 
     const tables = db.upserts.map((c) => c.table)
-    expect(tables).toEqual(['store_config', 'payment_config', 'shipping_config', 'admin_config', 'pages'])
+    // HU-372 · además de home se siembran region_header/region_footer (3 upserts a pages).
+    expect(tables).toEqual(['store_config', 'payment_config', 'shipping_config', 'admin_config', 'pages', 'pages', 'pages'])
     for (const c of db.upserts) {
       expect(c.row.tenant_id).toBe(T)
       expect(c.ignoreDuplicates).toBe(true)
@@ -77,6 +78,9 @@ describe('seedTenantConfig (HU-207)', () => {
     expect(db.upserts[0].row).toMatchObject({ store_name: 'Café Prueba', template: 'default' })
     expect(db.upserts[4].onConflict).toBe('tenant_id,key')
     expect(db.upserts[4].row).toMatchObject({ key: 'home', page_type: 'home' })
+    // Regiones reservadas (HU-372): no enrutables.
+    expect(db.upserts[5].row).toMatchObject({ key: 'region_header', page_type: 'region', enabled: false })
+    expect(db.upserts[6].row).toMatchObject({ key: 'region_footer', page_type: 'region', enabled: false })
     expect(res.results.store_config).toBe('ok')
   })
 

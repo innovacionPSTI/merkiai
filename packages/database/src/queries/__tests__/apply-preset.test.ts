@@ -149,4 +149,14 @@ describe('applyPresetToStore (HU-235)', () => {
     expect(db.log.updates.find((u) => u.table === 'store_config' && 'inventory_model' in u.row)?.row)
       .toEqual({ inventory_model: 'multi_location' })
   })
+
+  it('blueprint: se ignora si el plan no habilita site_blueprints (HU-373)', async () => {
+    const db = fakeDb()
+    const preset: PresetPayload = { ...PRESET, blueprint: { pages: [{ key: 'blog', label: 'Blog', slug: 'blog' }] } }
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const res = await applyPresetToStore(T, preset, { allowBlueprint: false }, db as any)
+    expect(res.results['blueprint']).toMatch(/skipped/)
+    // No se crean páginas del blueprint sin la feature.
+    expect(db.log.inserts.some((i) => i.table === 'pages')).toBe(false)
+  })
 })

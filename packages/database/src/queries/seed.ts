@@ -125,6 +125,16 @@ export async function seedTenantConfig(
     tenant_id: tenantId, key: 'home', label: 'Inicio', slug: '',
     page_type: 'home', enabled: true, show_in_footer: false, order_index: 0,
   }, 'tenant_id,key')
+  // HU-372 · regiones de chrome reservadas (header/footer) para tenants nuevos
+  // (la migración e17/62 cubre los existentes). No enrutables (enabled=false).
+  await step('pages', {
+    tenant_id: tenantId, key: 'region_header', label: 'Región · Encabezado', slug: 'region-header',
+    page_type: 'region', enabled: false, show_in_footer: false, order_index: 100,
+  }, 'tenant_id,key')
+  await step('pages', {
+    tenant_id: tenantId, key: 'region_footer', label: 'Región · Pie de página', slug: 'region-footer',
+    page_type: 'region', enabled: false, show_in_footer: false, order_index: 101,
+  }, 'tenant_id,key')
 
   // HU-234: secciones de arranque del home (solo si no existen aún).
   results.home_sections = await seedHomeSections(

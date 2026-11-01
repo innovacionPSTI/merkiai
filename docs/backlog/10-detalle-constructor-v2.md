@@ -348,7 +348,7 @@
 
 > Como comerciante, quiero elegir una **estructura de sitio** completa (varias páginas + navegación + regiones) y no solo el home, según mi plan.
 
-**Estimación:** L (8 puntos) · **Módulo:** *site blueprint* = preset que crea **N páginas + nav + regiones**; catálogo seleccionable, gated por plan (nº de páginas/estructuras). Extiende presets (HU-233/256) y `exportSite`/`importSite`. · **Estado:** 🔲 Pendiente.
+**Estimación:** L (8 puntos) · **Módulo:** *site blueprint* = preset que crea **N páginas + nav + regiones**; catálogo seleccionable, gated por plan (nº de páginas/estructuras). Extiende presets (HU-233/256) y `exportSite`/`importSite`. · **Estado:** ✅ Motor completo (v198) — nuevo `blueprint.ts`: `normalizeBlueprint` (**pura**, slugifica/deduplica/omite `home`/recorta a `maxPages` + tests) y `seedBlueprint` (**idempotente**, service-role): crea páginas que no existen + siembra sus secciones solo si están vacías (AC-1), siembra el **nav** solo si no hay menú y las **regiones** de chrome (HU-372) asegurando sus páginas reservadas. Integrado en `applyPresetToStore` detrás de `opts.allowBlueprint` (= `site_blueprints`, HU-359): sin la feature el `blueprint` del preset se ignora → **cero regresión** (AC-2 base); el tope de páginas se pasa en `opts.limits.pages` (AC-3). `seedTenantConfig` ahora también siembra las regiones para tenants nuevos. Verificado: database 521 · admin/web tsc limpios. **Pendiente (UI, follow-up):** editor de blueprints en la consola y galería seleccionable en el admin (el motor y el gating ya están).
 
 | # | Escenario | Resultado esperado |
 |---|-----------|-------------------|

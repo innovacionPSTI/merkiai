@@ -24,6 +24,7 @@
  */
 import type { Db } from '../client'
 import { seedHomeSections, type StarterSection } from './seed'
+import { seedBlueprint, type SiteBlueprint } from './blueprint'
 
 export interface SampleCategory {
   name: string
@@ -51,12 +52,16 @@ export interface PresetPayload {
   sample_categories?: SampleCategory[]
   sample_products?: SampleProduct[]
   inventory_model?: 'single' | 'multi_location'
+  /** HU-373 · estructura de sitio (páginas + nav + regiones). Gated por plan. */
+  blueprint?: SiteBlueprint
 }
 
 /** Topes del plan (undefined = sin tope). Resueltos por el llamador (HU-239). */
 export interface ApplyPresetLimits {
   categories?: number
   products?: number
+  /** HU-373 · tope de páginas del blueprint (p. ej. `max_paginas` del plan). */
+  pages?: number
 }
 
 export interface ApplyPresetOptions {
@@ -67,6 +72,12 @@ export interface ApplyPresetOptions {
    * `multi_location` se degrada a `single` en lugar de fallar.
    */
   allowMultiLocation?: boolean
+  /**
+   * ¿El plan habilita estructuras de sitio? (HU-373, feature `site_blueprints`).
+   * Lo resuelve el llamador. Si es false, el `blueprint` del preset se ignora
+   * (solo se siembra el home) → cero regresión.
+   */
+  allowBlueprint?: boolean
 }
 
 export interface ApplyPresetResult {
@@ -135,6 +146,15 @@ export async function applyPresetToStore(
   results.products = await seedSampleProducts(
     supabase, tenantId, cap(preset.sample_products, opts.limits?.products),
   )
+
+  // HU-373 · estructura de sitio (páginas + nav + regiones). Solo si el plan la
+  // habilita; si no, se ignora (cero regresión). Idempotente dentro de seedBlueprint.
+  if (opts.allowBlueprint && preset.blueprint) {
+    const bpResults = await seedBlueprint(supabase, tenantId, preset.blueprint, { maxPages: opts.limits?.pages })
+    for (const [k, v] of Object.entries(bpResults)) results[`blueprint.${k}`] = v
+  } else if (preset.blueprint) {
+    results['blueprint'] = 'skipped (plan sin site_blueprints)'
+  }
 
   return { tenantId, results }
 }
