@@ -23,9 +23,11 @@ export async function seedTenantConfigViaAdmin(
     storeName?: string
     // HU-235: preset a aplicar + topes del plan ya resueltos por la consola.
     preset?: Record<string, unknown>
-    limits?: { categories?: number; products?: number }
+    limits?: { categories?: number; products?: number; pages?: number }
     // HU-237: si el plan habilita multi-ubicación.
     allowMultiLocation?: boolean
+    // HU-373: si el plan habilita estructuras de sitio (blueprints).
+    allowBlueprint?: boolean
   },
 ): Promise<{ ok: boolean; error?: string }> {
   const base = (process.env.ADMIN_APP_URL ?? 'https://admin.merkiai.com').replace(/\/$/, '')
@@ -43,6 +45,7 @@ export async function seedTenantConfigViaAdmin(
         preset: input.preset,
         limits: input.limits,
         allowMultiLocation: input.allowMultiLocation,
+        allowBlueprint: input.allowBlueprint,
       }),
     })
     if (res.type === 'opaqueredirect' || (res.status >= 300 && res.status < 400)) {

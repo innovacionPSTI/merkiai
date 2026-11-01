@@ -41,8 +41,16 @@ describe('parsePresetForm (HU-233)', () => {
         key: 'cafe-basico', name: 'Café básico', niche: 'cafe',
         theme: { primary: '#0f766e' }, template: 'default',
         inventory_model: 'single', available_in_plans: ['free', 'pro'], active: true,
+        blueprint: {}, // HU-373 · sin blueprint por defecto
       })
     }
+  })
+
+  it('HU-373 · blueprint vacío → {}, objeto ok, array/inválido → error', () => {
+    expect(parsePresetForm(base).ok && parsePresetForm(base)).toMatchObject({ value: { blueprint: {} } })
+    const ok = parsePresetForm({ ...base, blueprint: '{"pages":[{"key":"blog","label":"Blog","slug":"blog"}]}' })
+    expect(ok.ok && ok.value.blueprint).toMatchObject({ pages: [{ key: 'blog' }] })
+    expect(parsePresetForm({ ...base, blueprint: '[1,2]' })).toMatchObject({ ok: false })
   })
 
   it('rechaza key inválida', () => {

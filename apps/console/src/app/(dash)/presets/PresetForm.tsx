@@ -141,6 +141,20 @@ export default function PresetForm() {
         <button type="button" onClick={() => setProds((a) => [...a, { name: '', price: '', category: '', featured: false }])} style={{ ...btn, background: 'var(--ui-surface-2)', color: 'var(--ui-text)' }}>+ Producto</button>
       </fieldset>
 
+      {/* HU-373 · Blueprint de sitio (estructura: páginas + nav + regiones) */}
+      <fieldset style={section}>
+        <legend style={lbl}>Estructura de sitio (blueprint) · opcional</legend>
+        <p style={{ fontSize: 12, color: 'var(--ui-text-dim)', margin: '0 0 6px' }}>
+          JSON con <code>pages</code> (key, label, slug, page_type, sections), <code>nav</code> (label, page_key, children) y
+          <code> regions</code> (header/footer). Solo se aplica en planes con la feature <code>site_blueprints</code>; vacío = sin estructura.
+        </p>
+        <textarea
+          style={{ ...input, width: '100%', minHeight: 120, fontFamily: 'monospace' }}
+          name="blueprint"
+          placeholder={'{\n  "pages": [{ "key": "nosotros", "label": "Nosotros", "slug": "nosotros", "page_type": "about", "sections": [{ "section_type": "text", "title": "Historia" }] }],\n  "nav": [{ "label": "Nosotros", "page_key": "nosotros" }],\n  "regions": { "footer": [{ "section_type": "cta", "title": "Suscríbete" }] }\n}'}
+        />
+      </fieldset>
+
       <label style={{ maxWidth: 220 }}><span style={lbl}>Estado</span>
         <select style={{ ...input, width: '100%' }} name="active" defaultValue="true"><option value="true">Activo</option><option value="false">Inactivo</option></select>
       </label>

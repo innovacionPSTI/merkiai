@@ -36,7 +36,11 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ id: 
     limits: {
       categories: resolveLimit(entitlements, LIMITS.CATEGORIES),
       products: resolveLimit(entitlements, LIMITS.PRODUCTS),
+      // HU-373 · tope de páginas del blueprint.
+      pages: resolveLimit(entitlements, LIMITS.MAX_PAGES),
     },
     allowMultiLocation: resolveFeature(entitlements, FEATURES.MULTI_LOCATION),
+    // HU-373 · ¿el plan habilita estructuras de sitio (blueprints)?
+    allowBlueprint: resolveFeature(entitlements, FEATURES.SITE_BLUEPRINTS),
   })
 }

@@ -35,13 +35,17 @@ export interface OnboardingPreset {
   available_in_plans: string[]
   /** HU-257 · miniatura curada (null = placeholder en la galería). */
   thumbnail_url?: string | null
+  /** HU-373 · estructura de sitio opcional (pages/nav/regions). */
+  blueprint?: Record<string, unknown>
 }
 
 export interface OnboardingOptions {
   plan: string
   presets: OnboardingPreset[]
-  limits: { categories: number | null; products: number | null }
+  limits: { categories: number | null; products: number | null; pages?: number | null }
   allowMultiLocation: boolean
+  /** HU-373 · ¿el plan habilita estructuras de sitio (blueprints)? */
+  allowBlueprint?: boolean
 }
 
 /** Pide al control plane los presets aplicables al plan del tenant. */
@@ -70,6 +74,7 @@ function toPayload(p: OnboardingPreset): PresetPayload {
     sample_categories: p.sample_categories as PresetPayload['sample_categories'],
     sample_products: p.sample_products as PresetPayload['sample_products'],
     inventory_model: p.inventory_model,
+    blueprint: p.blueprint as PresetPayload['blueprint'],
   }
 }
 
@@ -104,8 +109,9 @@ export async function applyOnboardingPreset(
       tenantId,
       payload,
       {
-        limits: { categories: opts.limits.categories ?? undefined, products: opts.limits.products ?? undefined },
+        limits: { categories: opts.limits.categories ?? undefined, products: opts.limits.products ?? undefined, pages: opts.limits.pages ?? undefined },
         allowMultiLocation: opts.allowMultiLocation,
+        allowBlueprint: opts.allowBlueprint ?? false,
       },
       db,
     )

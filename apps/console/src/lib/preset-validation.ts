@@ -22,6 +22,8 @@ export interface PresetInput {
   active: boolean
   /** HU-257 · URL de la miniatura (null = placeholder en la galería). */
   thumbnail_url: string | null
+  /** HU-373 · estructura de sitio opcional (pages/nav/regions). {} = sin blueprint. */
+  blueprint: Record<string, unknown>
 }
 
 /** '' → {}. null si no es objeto JSON. */
@@ -68,6 +70,7 @@ export interface PresetFormFields {
   available_in_plans?: string
   active?: string
   thumbnail_url?: string
+  blueprint?: string
 }
 
 export function parsePresetForm(
@@ -95,6 +98,9 @@ export function parsePresetForm(
   const inventory_model = (f.inventory_model ?? 'single') as InventoryModel
   if (!INVENTORY_MODELS.includes(inventory_model)) return { ok: false, error: 'inventory_model inválido' }
 
+  const blueprint = parseJsonObject(f.blueprint)
+  if (!blueprint) return { ok: false, error: 'blueprint debe ser un objeto JSON' }
+
   return {
     ok: true,
     value: {
@@ -111,6 +117,7 @@ export function parsePresetForm(
       available_in_plans: parsePlanList(f.available_in_plans),
       active: f.active !== 'false',
       thumbnail_url: (f.thumbnail_url ?? '').trim() || null,
+      blueprint,
     },
   }
 }

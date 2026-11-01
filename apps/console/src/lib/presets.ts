@@ -21,10 +21,12 @@ export interface PresetRow {
   version: number
   /** HU-257 · miniatura curada para la galería (null = placeholder). */
   thumbnail_url: string | null
+  /** HU-373 · estructura de sitio opcional (pages/nav/regions). {} = sin blueprint. */
+  blueprint: Record<string, unknown>
 }
 
 const COLS =
-  'key, name, niche, description, theme, template, home_sections, sample_categories, sample_products, inventory_model, available_in_plans, active, version, thumbnail_url'
+  'key, name, niche, description, theme, template, home_sections, sample_categories, sample_products, inventory_model, available_in_plans, active, version, thumbnail_url, blueprint'
 
 export async function getPresets(): Promise<PresetRow[]> {
   const { data } = await platformDb()
@@ -61,5 +63,6 @@ export function toPresetPayload(p: PresetRow): Record<string, unknown> {
     sample_categories: p.sample_categories,
     sample_products: p.sample_products,
     inventory_model: p.inventory_model,
+    blueprint: p.blueprint,
   }
 }
