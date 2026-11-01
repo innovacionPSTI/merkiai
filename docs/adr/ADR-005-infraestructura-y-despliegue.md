@@ -121,3 +121,35 @@ en: (a) **operación comercial** (planes, tenants, soporte, cobro manual) y
 (b) **`platform:infra`** (promoción a BD/despliegue dedicado y **custodia de secretos
 de infra**, HU-362), lo más sensible. Opcional: un rol de **soporte de solo-lectura**
 en la consola. Para el **tenant**, esto nunca requiere un rol nuevo.
+
+## 9. Almacén de coordinación y caché (¿Redis?)
+
+**Decisión: hoy NO se usa Redis; Postgres es el almacén de coordinación.** Todo lo
+que típicamente motivaría un Redis está resuelto con la base de datos gestionada y
+cachés livianas:
+
+- **Rate-limit "distribuido"** (HU-300): tabla `rate_limit_counters` + RPC
+  `rate_limit_hit` (`FOR UPDATE`, efectivo entre instancias) con **fallback en
+  memoria**. Sin Redis.
+- **Idempotencia** (canje de valor, movimientos de inventario, webhooks): claves de
+  idempotencia en tablas Postgres (`store_value_redemptions`, `op_key` del libro de
+  movimientos…).
+- **Caché de lectura:** `React.cache` por request + TTL corto en memoria por
+  instancia (p. ej. resolución host→tenant, 60 s) + CDN/edge para estático.
+- **Sesiones/auth:** JWT (Stack Auth), sin estado de sesión en servidor.
+
+**Cuándo convendría introducir Redis (no ahora):**
+
+- El **volumen de rate-limit/contadores** empiece a cargar Postgres (cada *hit* es
+  una escritura con lock): un `INCR`+TTL en Redis es más barato y rápido.
+- Se necesite un **caché caliente compartido entre instancias** (host→tenant,
+  entitlements, config) a escala, en vez del caché por-instancia actual.
+- Lleguen los **trabajos de fondo / colas** (retries, cron, **sincronización del
+  POS offline-first** E25): una cola durable (BullMQ sobre Redis, o una cola
+  gestionada).
+
+**Forma recomendada cuando llegue:** por coherencia con el modelo serverless
+(§1–§3), usar un **Redis/KV gestionado y serverless** (Upstash, Vercel KV o
+equivalente), **no** un Redis autogestionado. Un Redis en servidor propio solo
+tendría sentido dentro del tier de infraestructura dedicada o junto a un servicio
+en contenedor de fondo (§4).
