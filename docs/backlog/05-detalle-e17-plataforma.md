@@ -47,7 +47,7 @@
 
 **Estimación:** XL (13+ puntos)
 **Módulo:** `tenant_id` en el modelo de datos, RLS por tenant, minteo de JWT con claim `tenant_id` (+ GUC/rol dedicado como fallback), `packages/@merkiai/tenancy`, migraciones
-**Estado:** 🔲 Pendiente (roadmap v18) — materializa la **Arquitectura de referencia** (arriba); depende de HU-171
+**Estado:** ✅ Implementado (código) · activación por ops pendiente — `tenant_id` + RLS en catálogo y contenido, JWT por tenant, `@merkiai/tenancy`, *hardening* que exige `db` por tenant en todas las lecturas (PROGRESS v69/v48). **Pendiente (ops, no build):** activar `SESSION_RLS_ENABLED` en staging→prod, secretos por entorno, DNS wildcard de subdominios y **prueba de aislamiento A≠B**. La costura `db_ref`+connection factory (AC-7) queda lista; la materialización de BD dedicada es HU-200.
 
 | # | Escenario | Resultado esperado |
 |---|-----------|-------------------|
@@ -68,7 +68,7 @@
 
 **Estimación:** L (8 puntos)
 **Módulo:** middleware de resolución de tenant, mapeo dominio→tienda, `apps/web`
-**Estado:** 🔲 Pendiente (roadmap v18) — depende de HU-156
+**Estado:** ✅ Implementado (código) · activación por ops pendiente — `resolve-tenant` host→tenant con caché/TTL, `getRequestCatalogDb` por Host, multi-dominio (HU-279). Activación compartida con HU-156 (DNS wildcard + prueba A≠B).
 
 | # | Escenario | Resultado esperado |
 |---|-----------|-------------------|
@@ -84,7 +84,7 @@
 
 **Estimación:** L (8 puntos)
 **Módulo:** admin (selector de tienda, scoping de vistas y permisos por tienda)
-**Estado:** 🔲 Pendiente (roadmap v18) — depende de HU-156
+**Estado:** ✅ Implementado — el admin opera 100% por `getAdminDb`/RLS por tenant (`getAdminUser` resuelve el tenant por `profiles`); aislamiento del panel cerrado (PROGRESS v48). El operador multi-tienda de plataforma vive en `apps/console`.
 
 | # | Escenario | Resultado esperado |
 |---|-----------|-------------------|
@@ -398,7 +398,7 @@
 
 **Estimación:** L (8 puntos)
 **Módulo:** `plans` + `entitlements`, guard `can(tenant, feature)` en UI y API (`@merkiai/tenancy`)
-**Estado:** 🔶 Parcial — **hecho:** catálogo `plans` (features/limits JSONB) en la BD de plataforma + FK `tenants.plan` + seed free/pro/enterprise (`platform/03_plans.sql`); módulo de entitlements puro `@merkiai/tenancy/entitlements` (`hasFeature`/`withinLimit`/`limitOf`, 3 tests verdes); `resolve-tenant` devuelve los entitlements del plan y el plano de tienda los transporta en `ResolvedTenant`; **guard reusable** en `apps/web/src/lib/entitlements.ts` (`tenantHasFeature` para UI, `requireFeature`/`requireWithinLimit` → 403 para API), **sin cablear a ninguna feature aún** (cada módulo aplicará el suyo al construirse). **Pendiente:** cablear el gating a features reales cuando existan (POS/dropshipping/IA no están construidos) y límites (products/users) al iniciar onboarding; gestión de planes en la consola. Se acopla a billing (HU-192/193)
+**Estado:** 🔶 Parcial — **hecho:** catálogo `plans` (features/limits JSONB) en la BD de plataforma + FK `tenants.plan` + seed free/pro/enterprise (`platform/03_plans.sql`); módulo de entitlements puro `@merkiai/tenancy/entitlements` (`hasFeature`/`withinLimit`/`limitOf`, 3 tests verdes); `resolve-tenant` devuelve los entitlements del plan y el plano de tienda los transporta en `ResolvedTenant`; **guard reusable** en `apps/web/src/lib/entitlements.ts` (`tenantHasFeature` para UI, `requireFeature`/`requireWithinLimit` → 403 para API), **sin cablear a ninguna feature aún** (cada módulo aplicará el suyo al construirse). **Avance adicional:** catálogo de entitlements ampliado y con *enforcement* transversal (HU-239/359), **gestión de planes en la consola ✅** (HU-239 v2), y gating ya aplicado en el Constructor ("modo contenido", features de contenido). **Pendiente (trabajo recomendado ahora, SaaS manual):** (1) **definir la escalera de peldaños vendibles como features** (`presencia`/`vitrina`/`ecommerce`) y **cablear su gating** en el storefront/admin con *default fail-open* (cero regresión); (2) **aplicar límites** (`max_productos`/`max_paginas`/`max_usuarios`) al **onboarding/creación**; (3) exponer el plan efectivo en el admin. El **billing automático** que "alimentaba" el plan (HU-192/193) queda ⏸️ diferido: el plan se asigna a mano desde la consola.
 
 | # | Escenario | Resultado esperado |
 |---|-----------|-------------------|
@@ -463,7 +463,7 @@
 
 **Estimación:** L (8 puntos)
 **Módulo:** `packages/@merkiai/billing` (interfaz + factory), config en control plane
-**Estado:** 🔲 Pendiente (roadmap) — **enabler de HU-193/194**
+**Estado:** ⏸️ Diferido (decisión de negocio, nov-2026) — **el cobro SaaS se hace MANUAL** por fuera de la plataforma mientras se resuelve **PayZen** + las configuraciones de **cuentas bancarias y códigos de venta**. No se construye el `BillingProvider` automático por ahora. **enabler de HU-193/194** cuando se retome.
 
 | # | Escenario | Resultado esperado |
 |---|-----------|-------------------|
@@ -481,7 +481,7 @@
 
 **Estimación:** L (8 puntos)
 **Módulo:** tablas `plans` (ext. HU-173) + `subscriptions`, webhooks de billing → estado, control plane
-**Estado:** 🔲 Pendiente (roadmap) — usa HU-192; alimenta el plan efectivo de HU-173
+**Estado:** ⏸️ Diferido (SaaS manual) — depende de HU-192 (billing automático). Lo mínimo para operar manual (suscribir un tenant a un plan + **estado activo/suspendido manual**) se cubre con la versión recortada de **HU-194** y con la gestión de planes ya existente (HU-239/239v2).
 
 | # | Escenario | Resultado esperado |
 |---|-----------|-------------------|
@@ -499,7 +499,7 @@
 
 **Estimación:** M (5 puntos)
 **Módulo:** gate de tenant en middleware (`@merkiai/tenancy`), estados de dunning, control plane
-**Estado:** 🔲 Pendiente (roadmap) — usa HU-193
+**Estado:** 🟡 Recortado para SaaS manual — se implementa **solo el "estado manual del tenant"** (campo de estado `activo`/`suspendido` en el registro de tenants + **gate en middleware** que bloquea storefront/admin de un tenant suspendido, con página clara), manejado **a mano** desde la consola. El **dunning automático** (sincronización con el proveedor de billing) queda ⏸️ diferido hasta retomar HU-192/193. Es la palanca que reemplaza el cobro automático mientras es manual.
 
 | # | Escenario | Resultado esperado |
 |---|-----------|-------------------|
