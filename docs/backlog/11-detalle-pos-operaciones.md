@@ -364,7 +364,7 @@ stock único) es **prerequisito del POS**. Ajustes de maduración:
 
 > Como plataforma, quiero un libro de movimientos tipificado como única verdad del stock, para registrar toda entrada/salida con su motivo y referencia, con o sin factura.
 
-**Estimación:** XL (13 puntos) · **Módulo:** `stock_movement` (append-only) + proyección `disponible por (ítem, ubicación)` + RPCs idempotentes · **Estado:** 🔲 Pendiente — **fundacional; base de E18 · HU-178**
+**Estimación:** XL (13 puntos) · **Módulo:** `stock_movement` (append-only) + proyección `disponible por (ítem, ubicación)` + RPCs idempotentes · **Estado:** 🟢 Datos + capa (v205) — migración `e17/64`: tabla **`stock_movements`** (append-only, tipada: purchase/production_consume/production_output/sale/waste/adjustment/transfer/sample/return + `direction`, `qty`+`uom`+`qty_base` con signo, `location_id` E18-ready, `ref_type/ref_id`, **idempotencia por `op_key`** con índice único parcial), **vista de proyección `stock_item_available`** (suma por ítem/ubicación), RLS admin-only. Helpers **puros** `stock-movements.ts` (`buildMovementRow` resuelve dirección+signo, `defaultDirection`, `isMovementType`) + capa `recordMovement` (idempotente), `listMovements` (kardex), `getAvailable`/`getAvailableMap`. **Aditiva y paralela:** NO cambia el descuento actual (HU-098). Tests: **database 540 (+8)**, tsc limpio admin/web. **Pendiente (AC-4, con E18·HU-178):** migrar el descuento implícito del checkout al libro (cutover coordinado) + UI kardex.
 
 | # | Escenario | Resultado esperado |
 |---|-----------|-------------------|

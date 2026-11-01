@@ -643,6 +643,59 @@ export type Database = {
         }
         Relationships: []
       }
+      stock_movements: {
+        Row: {
+          id: number
+          tenant_id: string
+          stock_item_id: number
+          location_id: number | null
+          movement_type: string
+          direction: string
+          qty: number
+          uom_id: number | null
+          qty_base: number
+          reason: string | null
+          ref_type: string | null
+          ref_id: string | null
+          op_key: string | null
+          created_by: string | null
+          created_at: string
+        }
+        Insert: {
+          id?: number
+          tenant_id?: string
+          stock_item_id: number
+          location_id?: number | null
+          movement_type: string
+          direction: string
+          qty: number
+          uom_id?: number | null
+          qty_base: number
+          reason?: string | null
+          ref_type?: string | null
+          ref_id?: string | null
+          op_key?: string | null
+          created_by?: string | null
+          created_at?: string
+        }
+        Update: {
+          reason?: string | null
+          ref_type?: string | null
+          ref_id?: string | null
+        }
+        Relationships: []
+      }
+      stock_item_available: {
+        Row: {
+          tenant_id: string
+          stock_item_id: number
+          location_id: number | null
+          available: number
+        }
+        Insert: Record<string, never>
+        Update: Record<string, never>
+        Relationships: []
+      }
       redirects: {
         Row: {
           id: number
