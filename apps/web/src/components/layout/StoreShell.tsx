@@ -26,7 +26,7 @@ const FOOTER_REGION = 'region_footer'
 
 export default async function StoreShell({ children }: { children: React.ReactNode }) {
   // HU-229: si el host no resuelve a un tenant (modo estricto), 404 limpio.
-  const { config, navItems, footerPages, db, entitlements } = await requireStoreContext()
+  const { config, navItems, footerPages, db, entitlements, ecommerceEnabled } = await requireStoreContext()
 
   // HU-372 · chrome editable por regiones, gated por plan. Solo se consultan las
   // regiones si la feature está activa; si no hay secciones se cae al chrome
@@ -55,7 +55,7 @@ export default async function StoreShell({ children }: { children: React.ReactNo
         logoUrl={config?.logo_url}
         storeName={config?.store_name}
         navItems={navItems}
-        showCart={config?.nav_show_cart ?? true}
+        showCart={ecommerceEnabled && (config?.nav_show_cart ?? true)}
         showAuth={config?.nav_show_auth ?? true}
         showWishlist={config?.nav_show_wishlist ?? true}
       />

@@ -96,6 +96,9 @@ describe('entitlements del Constructor v2 (HU-359)', () => {
   it('defaults: layout y estilo por página ON; colecciones/medios OFF (cero regresión)', () => {
     const empty: PlanEntitlements = { features: {}, limits: {} }
     expect(resolveFeature(empty, FEATURES.LAYOUT_ADVANCED)).toBe(true)
+    // HU-173 · e-commerce por defecto ON (cero regresión); un plan "vitrina" lo apaga.
+    expect(resolveFeature(empty, FEATURES.ECOMMERCE)).toBe(true)
+    expect(resolveFeature({ features: { [FEATURES.ECOMMERCE]: false }, limits: {} }, FEATURES.ECOMMERCE)).toBe(false)
     expect(resolveFeature(empty, FEATURES.PAGE_STYLE)).toBe(true)
     expect(resolveFeature(empty, FEATURES.COLLECTIONS)).toBe(false)
     expect(resolveFeature(empty, FEATURES.MEDIA_LIBRARY)).toBe(false)

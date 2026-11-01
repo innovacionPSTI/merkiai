@@ -12,7 +12,7 @@
  */
 import { cache } from 'react'
 import { notFound } from 'next/navigation'
-import { MissingTenantContextError } from '@merkiai/tenancy'
+import { MissingTenantContextError, resolveFeature, FEATURES } from '@merkiai/tenancy'
 import { getStoreConfig, getFooterPages, getNavTree, getActiveTheme } from '@merkiai/database'
 import { getRequestCatalogDb } from './tenant-db'
 import { resolveTenant } from './tenant-context'
@@ -30,7 +30,11 @@ export const getStoreContext = cache(async () => {
   // manda el tema activo; si no declara uno, cae al legacy de store_config y
   // finalmente a 'default'.
   const template = theme?.template || config?.template || 'default'
-  return { tenantId, db, config, navItems, footerPages, theme, template, entitlements }
+  // HU-173 · peldaño e-commerce. Default true (fail-open); un plan "vitrina"
+  // lo pone en false y la UI oculta carrito/compra (el checkout ya se bloquea
+  // server-side). El render del catálogo nunca se afecta.
+  const ecommerceEnabled = resolveFeature(entitlements, FEATURES.ECOMMERCE)
+  return { tenantId, db, config, navItems, footerPages, theme, template, entitlements, ecommerceEnabled }
 })
 
 export type StoreContext = Awaited<ReturnType<typeof getStoreContext>>

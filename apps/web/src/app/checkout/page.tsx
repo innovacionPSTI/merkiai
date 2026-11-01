@@ -1,8 +1,10 @@
 import { Suspense } from 'react'
 import type { Metadata } from 'next'
+import { redirect } from 'next/navigation'
 import { stackServerApp } from '@/stack'
 import CheckoutClient from '@/components/checkout/CheckoutClient'
 import { getRequestUserDb } from '@/lib/tenant-db'
+import { getStoreContext } from '@/lib/store-context'
 
 export const metadata: Metadata = { title: 'Checkout' }
 
@@ -59,6 +61,12 @@ async function getDefaultAddress(): Promise<SavedAddress | null> {
 }
 
 export default async function CheckoutPage() {
+  // HU-173 · peldaño e-commerce: en modo vitrina/catálogo no hay checkout.
+  // El carrito (store-context) ya está gated; aquí se redirige por si se llega
+  // por URL directa. El checkout API también lo bloquea (barrera dura).
+  const ctx = await getStoreContext().catch(() => null)
+  if (ctx && ctx.ecommerceEnabled === false) redirect('/')
+
   const [defaultAddress, user] = await Promise.all([
     getDefaultAddress(),
     stackServerApp.getUser().catch(() => null),

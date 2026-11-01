@@ -3,6 +3,7 @@ import { createOrder, createServerClient, resolveActivePayment, gatewayFromInsta
 import { stackServerApp } from '@/stack'
 import { baseUrlFromRequest } from '@/lib/base-url'
 import { resolveTenant } from '@/lib/tenant-context';
+import { resolveFeature, FEATURES } from '@merkiai/tenancy'
 import { getMachineDb } from '@/lib/machine-db'
 import { findLockedVariants, computeVipMemberDiscount } from '@/lib/vip-access'
 
@@ -162,7 +163,14 @@ export async function POST(req: NextRequest) {
 
     // Tenant del pedido (resolución por host; siempre un tenantId). Necesario
     // antes del stock para expandir bundles por tenant (server-authoritative).
-    const { tenantId } = await resolveTenant()
+    const { tenantId, entitlements } = await resolveTenant()
+
+    // HU-173 · gate del peldaño e-commerce (server-authoritative). Sin la feature
+    // `ecommerce` la tienda es vitrina/catálogo: no se procesan pedidos. Default
+    // true → cero regresión. La UI oculta el checkout; esta es la barrera dura.
+    if (!resolveFeature(entitlements, FEATURES.ECOMMERCE)) {
+      return NextResponse.json({ error: 'Esta tienda opera en modo catálogo; la compra en línea no está disponible.' }, { status: 403 })
+    }
 
     // ── HU-168 Fase 2 · expandir líneas de BUNDLE a sus componentes. Guarded:
     // si no hay líneas de bundle, `orderItems` es la lista normal sin cambios.

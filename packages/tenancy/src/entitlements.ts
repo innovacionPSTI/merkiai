@@ -109,6 +109,10 @@ export const FEATURES = {
   MULTI_LOCATION: 'multi_location',
   AI_DESIGN: 'ai_design',
   PAGE_BUILDER: 'page_builder',
+  /** HU-173 · peldaño e-commerce: carrito + checkout habilitados. Sin esta
+   *  feature la tienda opera en modo "vitrina/catálogo" (sin venta en línea).
+   *  Default true → cero regresión; un plan básico puede ponerla en false. */
+  ECOMMERCE: 'ecommerce',
   /** E19 · Club VIP / acceso anticipado (segmentos + campañas VIP). */
   VIP_EARLY_ACCESS: 'vip_early_access',
   // ── Constructor v2 (HU-359) · cada capacidad se habilita por plan ──────────
@@ -159,6 +163,7 @@ export const ENTITLEMENTS_CATALOG: EntitlementDef[] = [
   { key: FEATURES.MULTI_LOCATION, kind: 'feature', label: 'Sucursales (multi-ubicación)', description: 'Inventario por ubicación, fulfillment por sucursal, click & collect.', default: false },
   { key: FEATURES.AI_DESIGN,      kind: 'feature', label: 'Diseño por IA',             description: 'Generar el diseño/contenido de la tienda con IA.',              default: false },
   { key: FEATURES.PAGE_BUILDER,   kind: 'feature', label: 'Constructor de páginas',    description: 'Editor visual de páginas por bloques.',                        default: false },
+  { key: FEATURES.ECOMMERCE,      kind: 'feature', label: 'Comercio electrónico',      description: 'Carrito y checkout (venta en línea). Sin esta feature la tienda opera como vitrina/catálogo.', default: true },
   { key: FEATURES.VIP_EARLY_ACCESS, kind: 'feature', label: 'Club VIP / acceso anticipado', description: 'Segmentos de clientes y campañas de venta exclusiva por tiempo limitado.', default: false },
   // Constructor v2 (HU-359) · features por plan. Default false salvo las dos
   // capacidades base (layout y estilo por página) para no degradar a quien ya
