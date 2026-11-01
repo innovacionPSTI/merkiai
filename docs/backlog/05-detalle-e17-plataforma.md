@@ -499,7 +499,7 @@
 
 **Estimación:** M (5 puntos)
 **Módulo:** gate de tenant en middleware (`@merkiai/tenancy`), estados de dunning, control plane
-**Estado:** 🟡 Recortado para SaaS manual — se implementa **solo el "estado manual del tenant"** (campo de estado `activo`/`suspendido` en el registro de tenants + **gate en middleware** que bloquea storefront/admin de un tenant suspendido, con página clara), manejado **a mano** desde la consola. El **dunning automático** (sincronización con el proveedor de billing) queda ⏸️ diferido hasta retomar HU-192/193. Es la palanca que reemplaza el cobro automático mientras es manual.
+**Estado:** 🟢 Estado manual implementado (SaaS manual) · dunning automático diferido — **hecho:** campo `tenants.status` (`active/trialing/past_due/suspended/canceled`) en la BD de plataforma, **editable desde la consola** (`PATCH /api/internal/tenants/{id}`); **gate del storefront** (middleware → `/servicio-pausado` para `suspended/canceled`, preexistente); y **gate del admin (nuevo)**: el panel se bloquea con una pantalla "Servicio en pausa" cuando el estado es `suspended/canceled` (`isTenantBlocked` + `TenantSuspended`, consultando el estado por el control-plane, **fail-open**). Es la palanca que reemplaza el cobro automático mientras es manual. **Diferido (⏸️):** el **dunning automático** (sincronización con el proveedor de billing, HU-192/193) hasta retomar el billing. Tests: admin 264 verde.
 
 | # | Escenario | Resultado esperado |
 |---|-----------|-------------------|

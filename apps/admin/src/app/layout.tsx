@@ -13,7 +13,9 @@ import { getActiveTenantId } from '@/lib/active-tenant'
 import { listWorkspaces } from '@/lib/workspaces'
 import { FEATURES as FLAGS } from '@/lib/features'
 import { getTenantEntitlements } from '@/lib/entitlements'
+import { isTenantBlocked } from '@/lib/tenant-status'
 import { resolveFeature, FEATURES } from '@merkiai/tenancy'
+import TenantSuspended from '@/components/TenantSuspended'
 
 const cormorant = Cormorant_Garamond({
   subsets: ['latin'],
@@ -112,11 +114,16 @@ export default async function AdminRootLayout({ children }: { children: React.Re
 
   // HU-350/HU-359 · Constructor disponible por flag legacy o entitlement del plan
   // (fail-open: sin control-plane → default del catálogo). Gobierna el menú.
-  const layoutEntitlements = adminUser
-    ? (await getTenantEntitlements().catch(() => ({ entitlements: null }))).entitlements
-    : null
+  const tenantInfo = adminUser
+    ? await getTenantEntitlements().catch(() => ({ entitlements: null, status: null }))
+    : { entitlements: null, status: null }
+  const layoutEntitlements = tenantInfo.entitlements
   const pageBuilderEnabled = adminUser ? (FLAGS.pageBuilder || resolveFeature(layoutEntitlements, FEATURES.PAGE_BUILDER)) : false
   const collectionsEnabled = adminUser ? (FLAGS.collections || resolveFeature(layoutEntitlements, FEATURES.COLLECTIONS)) : false
+
+  // HU-194 · gate de suspensión: si el tenant está suspendido/cancelado, el panel
+  // se bloquea (espejo del storefront). Fail-open (ver isTenantBlocked).
+  const tenantBlocked = Boolean(adminUser) && isProtectedRoute && isTenantBlocked(tenantInfo.status)
 
   return (
     <html lang="es" className={`${cormorant.variable} ${dmSans.variable}`}>
@@ -127,7 +134,9 @@ export default async function AdminRootLayout({ children }: { children: React.Re
       <body className="bg-gray-50">
         <StackProvider app={stackServerApp}>
           <StackTheme>
-            {isProtectedRoute && adminUser ? (
+            {tenantBlocked ? (
+              <TenantSuspended />
+            ) : isProtectedRoute && adminUser ? (
               <div className="flex min-h-screen">
                 <AdminSidebar role={adminUser.role} allowedSections={adminUser.allowedSections} pageBuilder={pageBuilderEnabled} collections={collectionsEnabled} />
                 <div className="flex-1 flex flex-col min-w-0">

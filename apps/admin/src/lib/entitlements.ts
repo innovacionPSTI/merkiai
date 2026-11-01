@@ -27,26 +27,31 @@ export {
 
 export async function getTenantEntitlements(
   tenantId?: string,
-): Promise<{ tenantId: string; entitlements: PlanEntitlements | null }> {
+): Promise<{ tenantId: string; entitlements: PlanEntitlements | null; status: string | null }> {
   // HU-158: el tenant sale del **tenant activo** (cookie del workspace elegido);
   // fallback al por defecto (single-tenant interino).
   const tid = tenantId ?? (await getActiveTenantId())
   return fetchEntitlements(tid)
 }
 
-async function fetchEntitlements(tenantId: string): Promise<{ tenantId: string; entitlements: PlanEntitlements | null }> {
+async function fetchEntitlements(tenantId: string): Promise<{ tenantId: string; entitlements: PlanEntitlements | null; status: string | null }> {
   const base = process.env.CONTROL_PLANE_URL
   const secret = process.env.INTERNAL_API_SECRET
-  if (!base || !secret) return { tenantId, entitlements: null }
+  if (!base || !secret) return { tenantId, entitlements: null, status: null }
   try {
     const res = await fetch(`${base.replace(/\/$/, '')}/api/internal/tenants/${tenantId}`, {
       headers: { 'x-internal-secret': secret },
       cache: 'no-store',
     })
-    if (!res.ok) return { tenantId, entitlements: null }
+    if (!res.ok) return { tenantId, entitlements: null, status: null }
     const d = await res.json()
-    return { tenantId, entitlements: (d?.entitlements as PlanEntitlements) ?? null }
+    return {
+      tenantId,
+      entitlements: (d?.entitlements as PlanEntitlements) ?? null,
+      // HU-194 · estado del tenant (activo/suspendido…) para el gate del admin.
+      status: (d?.status as string | undefined) ?? null,
+    }
   } catch {
-    return { tenantId, entitlements: null }
+    return { tenantId, entitlements: null, status: null }
   }
 }
