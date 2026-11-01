@@ -378,7 +378,7 @@ stock único) es **prerequisito del POS**. Ajustes de maduración:
 
 > Como operador, quiero registrar compras y recibir mercancía, para aumentar existencias y alimentar el costo, y saber qué debo reponer.
 
-**Estimación:** L (8 puntos) · **Módulo:** `supplier`, `purchase_order`, `purchase_receipt` → entrada al ledger + costo · **Estado:** 🔲 Pendiente — feature `procurement`
+**Estimación:** L (8 puntos) · **Módulo:** `supplier`, `purchase_order`, `purchase_receipt` → entrada al ledger + costo · **Estado:** 🟢 Datos + capa (v206) — migración `e17/65`: `suppliers`, `purchases` (cabecera, estado draft/received/cancelled), `purchase_items` (líneas con `qty`/UoM/`unit_cost`), `location_id` E18-ready, RLS admin-only, + `stock_movements.unit_cost` (costo por unidad base, para costeo). Capa `procurement.ts`: CRUD proveedores/compras + **`receivePurchase`** (anexa un movimiento 'purchase' por línea con costo por unidad base, **idempotente** por `op_key=purchase:<id>:<item>`, marca la compra recibida) + helpers puros `purchaseLineTotal`/`purchaseTotal`/`costPerBase`. Tests: **database 543 (+3)**, tsc limpio. **Pendiente:** UI admin de compras/proveedores + sugerencia de reposición (enlaza HU-409).
 
 | # | Escenario | Resultado esperado |
 |---|-----------|-------------------|

@@ -55,6 +55,8 @@ export interface MovementInput {
   ref_id?: string | null
   op_key?: string | null
   created_by?: string | null
+  /** Costo por **unidad base** (solo entradas con costo: compra/producción). */
+  unit_cost?: number | null
 }
 
 export interface MovementRow {
@@ -71,6 +73,7 @@ export interface MovementRow {
   ref_id: string | null
   op_key: string | null
   created_by: string | null
+  unit_cost: number | null
 }
 
 /**
@@ -98,6 +101,7 @@ export function buildMovementRow(input: MovementInput): MovementRow {
     ref_id: input.ref_id ?? null,
     op_key: input.op_key ?? null,
     created_by: input.created_by ?? null,
+    unit_cost: input.unit_cost ?? null,
   }
 }
 

@@ -659,6 +659,7 @@ export type Database = {
           ref_id: string | null
           op_key: string | null
           created_by: string | null
+          unit_cost: number | null
           created_at: string
         }
         Insert: {
@@ -676,6 +677,7 @@ export type Database = {
           ref_id?: string | null
           op_key?: string | null
           created_by?: string | null
+          unit_cost?: number | null
           created_at?: string
         }
         Update: {
@@ -694,6 +696,103 @@ export type Database = {
         }
         Insert: Record<string, never>
         Update: Record<string, never>
+        Relationships: []
+      }
+      suppliers: {
+        Row: {
+          id: number
+          tenant_id: string
+          name: string
+          email: string | null
+          phone: string | null
+          notes: string | null
+          active: boolean
+          created_at: string
+          updated_at: string
+        }
+        Insert: {
+          id?: number
+          tenant_id?: string
+          name: string
+          email?: string | null
+          phone?: string | null
+          notes?: string | null
+          active?: boolean
+          created_at?: string
+          updated_at?: string
+        }
+        Update: {
+          name?: string
+          email?: string | null
+          phone?: string | null
+          notes?: string | null
+          active?: boolean
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      purchases: {
+        Row: {
+          id: number
+          tenant_id: string
+          supplier_id: number | null
+          location_id: number | null
+          reference: string | null
+          status: string
+          notes: string | null
+          received_at: string | null
+          created_at: string
+          updated_at: string
+        }
+        Insert: {
+          id?: number
+          tenant_id?: string
+          supplier_id?: number | null
+          location_id?: number | null
+          reference?: string | null
+          status?: string
+          notes?: string | null
+          received_at?: string | null
+          created_at?: string
+          updated_at?: string
+        }
+        Update: {
+          supplier_id?: number | null
+          location_id?: number | null
+          reference?: string | null
+          status?: string
+          notes?: string | null
+          received_at?: string | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      purchase_items: {
+        Row: {
+          id: number
+          tenant_id: string
+          purchase_id: number
+          stock_item_id: number
+          qty: number
+          uom_id: number | null
+          unit_cost: number
+          created_at: string
+        }
+        Insert: {
+          id?: number
+          tenant_id?: string
+          purchase_id: number
+          stock_item_id: number
+          qty: number
+          uom_id?: number | null
+          unit_cost?: number
+          created_at?: string
+        }
+        Update: {
+          qty?: number
+          uom_id?: number | null
+          unit_cost?: number
+        }
         Relationships: []
       }
       redirects: {
