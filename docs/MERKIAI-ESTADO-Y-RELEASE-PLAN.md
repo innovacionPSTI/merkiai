@@ -48,6 +48,23 @@ sobre un mismo núcleo, sin bifurcaciones por vertical.
   **blueprints de sitio**.
 - **Capa de IA**: prevista como transversal e intercambiable (roadmap).
 
+### 2.1 Infraestructura y despliegue
+
+El modelo por defecto es **serverless + CDN**: la aplicación se publica como contenido
+estático/prerenderizado servido por **CDN** más **funciones serverless** para lo
+dinámico (render en servidor, APIs, webhooks); **no** se administran servidores,
+imágenes de contenedor ni clústeres. La base de datos es **Postgres gestionado**,
+separada de la app, con **niveles de aislamiento por plan** (compartido, esquema
+dedicado o BD dedicada) resueltos por enrutamiento (`db_ref` + *connection factory*).
+
+**Contenedores (Docker) y Kubernetes** no son el camino por defecto: la app es
+portable y contenerizable, y esa vía se reserva para el **tier de infraestructura
+dedicada** (despliegue aislado/on-premise/residencia de datos) o para **servicios de
+fondo con estado** (colas, cron, sincronización del POS offline-first). Los
+proveedores concretos no se comprometen en el código (interfaces estándar), y se
+confirman al desplegar. El detalle de esta decisión está en **ADR-005 ·
+Arquitectura de infraestructura y despliegue**.
+
 ---
 
 ## 3. Qué está implementado (estado actual)
