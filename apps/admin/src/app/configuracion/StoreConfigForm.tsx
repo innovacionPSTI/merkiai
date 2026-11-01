@@ -6,9 +6,13 @@ import ImageUpload from '@/components/ImageUpload'
 
 interface Props {
   initialConfig: StoreConfig | null
+  /** HU-371 · si el Constructor está disponible, lo editorial (marca/redes/footer/
+   *  navbar/nombre/descr.) se edita en "Ajustes de sitio" del Constructor y se
+   *  retira de aquí para no duplicar. */
+  editorialInConstructor?: boolean
 }
 
-export default function StoreConfigForm({ initialConfig }: Props) {
+export default function StoreConfigForm({ initialConfig, editorialInConstructor }: Props) {
   const [logoUrl, setLogoUrl]           = useState(initialConfig?.logo_url         ?? '')
   const [faviconUrl, setFaviconUrl]     = useState(initialConfig?.favicon_url       ?? '')
   const [whatsapp, setWhatsapp]         = useState(initialConfig?.whatsapp_number   ?? '')
@@ -84,33 +88,37 @@ export default function StoreConfigForm({ initialConfig }: Props) {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          logo_url:           logoUrl           || null,
-          favicon_url:        faviconUrl        || null,
+          // Operacional (siempre vive en Configuración → General)
           whatsapp_number:    whatsapp          || null,
-          store_name:         storeName         || 'Mi Tienda',
           order_prefix:       (orderPrefix || 'ORD').toUpperCase().replace(/[^A-Z0-9_-]/g, '').slice(0, 10) || 'ORD',
-          store_description:  storeDescription  || null,
           seo_keywords:       seoKeywords       || null,
           store_email:        storeEmail        || null,
-          instagram_url:      igUrl      || null,
-          instagram_enabled:  igEnabled,
-          facebook_url:       fbUrl      || null,
-          facebook_enabled:   fbEnabled,
-          tiktok_url:         ttUrl      || null,
-          tiktok_enabled:     ttEnabled,
           maintenance_mode:   maintenanceMode,
           analytics_enabled:  analyticsEnabled,
-          nav_show_cart:      navShowCart,
-          nav_show_auth:      navShowAuth,
-          nav_show_wishlist:  navShowWishlist,
-          footer_show_store:  footerShowStore,
-          footer_show_blog:   footerShowBlog,
-          footer_show_legal:  footerShowLegal,
           pdp_shipping_estimator: pdpShippingEstimator,
           pdp_recommendations:    pdpRecommendations,
           pdp_share_enabled:      pdpShareEnabled,
           low_stock_threshold:    lowStockThreshold,
           trust_badges:       badges,
+          // HU-371 · editorial: solo se envía si NO está en el Constructor (evita sobrescribir)
+          ...(editorialInConstructor ? {} : {
+            logo_url:           logoUrl           || null,
+            favicon_url:        faviconUrl        || null,
+            store_name:         storeName         || 'Mi Tienda',
+            store_description:  storeDescription  || null,
+            instagram_url:      igUrl      || null,
+            instagram_enabled:  igEnabled,
+            facebook_url:       fbUrl      || null,
+            facebook_enabled:   fbEnabled,
+            tiktok_url:         ttUrl      || null,
+            tiktok_enabled:     ttEnabled,
+            nav_show_cart:      navShowCart,
+            nav_show_auth:      navShowAuth,
+            nav_show_wishlist:  navShowWishlist,
+            footer_show_store:  footerShowStore,
+            footer_show_blog:   footerShowBlog,
+            footer_show_legal:  footerShowLegal,
+          }),
         }),
       })
       const data = await res.json()
@@ -132,7 +140,19 @@ export default function StoreConfigForm({ initialConfig }: Props) {
   return (
     <div className="space-y-6">
 
-      {/* Marca: logo + favicon */}
+      {/* HU-371 · puntero: lo editorial vive en el Constructor para no duplicar */}
+      {editorialInConstructor && (
+        <div className="rounded-2xl border border-indigo-100 bg-indigo-50/60 px-5 py-4">
+          <p className="font-brand text-sm text-brand-primary">
+            La <strong>marca, redes, navegación y pie de página</strong> ahora se editan en el{' '}
+            <a href="/constructor" className="underline font-semibold hover:text-indigo-700">Constructor → Ajustes de sitio</a>.
+            Aquí quedan solo los ajustes operativos.
+          </p>
+        </div>
+      )}
+
+      {/* Marca: logo + favicon — HU-371: se oculta si se edita en el Constructor */}
+      {!editorialInConstructor && (
       <div className="bg-white rounded-2xl p-6 shadow-sm">
         <h2 className="font-display text-brand-primary text-lg mb-4">Marca</h2>
         <p className="font-brand text-xs font-semibold text-brand-primary mb-1">Logo de la tienda</p>
@@ -175,6 +195,7 @@ export default function StoreConfigForm({ initialConfig }: Props) {
         )}
         </div>
       </div>
+      )}
 
       <div className="bg-white rounded-2xl p-6 shadow-sm space-y-4">
         <h2 className="font-display text-brand-primary text-lg">Información de la tienda</h2>
@@ -195,7 +216,8 @@ export default function StoreConfigForm({ initialConfig }: Props) {
           />
         </div>
 
-        {/* Nombre */}
+        {/* Nombre — HU-371: editorial, se edita en el Constructor cuando está disponible */}
+        {!editorialInConstructor && (
         <div>
           <label className="font-brand text-xs font-semibold text-brand-primary block mb-1">
             Nombre de la tienda
@@ -208,6 +230,7 @@ export default function StoreConfigForm({ initialConfig }: Props) {
             className="w-64 border border-gray-200 rounded-xl px-4 py-2.5 font-brand text-sm focus:outline-none focus:border-brand-primary"
           />
         </div>
+        )}
 
         {/* Prefijo del número de orden */}
         <div>
@@ -227,7 +250,8 @@ export default function StoreConfigForm({ initialConfig }: Props) {
           />
         </div>
 
-        {/* Descripción SEO */}
+        {/* Descripción SEO — HU-371: editorial, se edita en el Constructor cuando está disponible */}
+        {!editorialInConstructor && (
         <div>
           <label className="font-brand text-xs font-semibold text-brand-primary block mb-1">
             Descripción SEO
@@ -247,6 +271,7 @@ export default function StoreConfigForm({ initialConfig }: Props) {
             {storeDescription.length}/300
           </p>
         </div>
+        )}
 
         {/* Keywords SEO */}
         <div>
@@ -280,7 +305,8 @@ export default function StoreConfigForm({ initialConfig }: Props) {
         </div>
       </div>
 
-      {/* Redes sociales */}
+      {/* Redes sociales — HU-371: editorial, se edita en el Constructor cuando está disponible */}
+      {!editorialInConstructor && (
       <div className="bg-white rounded-2xl p-6 shadow-sm space-y-4">
         <div>
           <h2 className="font-display text-brand-primary text-lg mb-0.5">Redes sociales</h2>
@@ -345,6 +371,7 @@ export default function StoreConfigForm({ initialConfig }: Props) {
           </div>
         ))}
       </div>
+      )}
 
       {/* Operaciones del sitio */}
       <div className="bg-white rounded-2xl p-6 shadow-sm space-y-4">
@@ -407,7 +434,8 @@ export default function StoreConfigForm({ initialConfig }: Props) {
         </div>
       </div>
 
-      {/* Navbar */}
+      {/* Navbar — HU-371: editorial, se edita en el Constructor cuando está disponible */}
+      {!editorialInConstructor && (
       <div className="bg-white rounded-2xl p-6 shadow-sm space-y-4">
         <div>
           <h2 className="font-display text-brand-primary text-lg mb-0.5">Barra de navegación</h2>
@@ -442,8 +470,10 @@ export default function StoreConfigForm({ initialConfig }: Props) {
           </div>
         ))}
       </div>
+      )}
 
-      {/* Columnas del footer */}
+      {/* Columnas del footer — HU-371: editorial, se edita en el Constructor cuando está disponible */}
+      {!editorialInConstructor && (
       <div className="bg-white rounded-2xl p-6 shadow-sm space-y-4">
         <div>
           <h2 className="font-display text-brand-primary text-lg mb-0.5">Pie de página</h2>
@@ -476,6 +506,7 @@ export default function StoreConfigForm({ initialConfig }: Props) {
           </div>
         ))}
       </div>
+      )}
 
       {/* Página de producto (ola PDP · HU-285/286/287) */}
       <div className="bg-white rounded-2xl p-6 shadow-sm space-y-4">

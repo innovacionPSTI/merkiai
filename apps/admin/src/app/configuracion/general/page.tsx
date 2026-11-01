@@ -5,6 +5,9 @@ import { getStoreConfig } from '@merkiai/database'
 import { getAdminUser } from '@/lib/auth'
 import { getAdminDb } from '@/lib/admin-db'
 import { userCanAccess, userCanManageData } from '@/lib/roles'
+import { FEATURES as FLAGS } from '@/lib/features'
+import { getTenantEntitlements } from '@/lib/entitlements'
+import { resolveFeature, FEATURES } from '@merkiai/tenancy'
 import StoreConfigForm from '../StoreConfigForm'
 import DataTransferWidget from '../DataTransferWidget'
 import BackupWidget from '../BackupWidget'
@@ -20,13 +23,17 @@ export default async function ConfigGeneralPage() {
 
   const storeConfig = await getStoreConfig(getAdminDb(adminUser.tenantId), adminUser.tenantId).catch(() => null)
 
+  // HU-371 · si el Constructor está disponible, lo editorial se edita allí (no duplicar).
+  const { entitlements } = await getTenantEntitlements().catch(() => ({ entitlements: null }))
+  const editorialInConstructor = FLAGS.pageBuilder || resolveFeature(entitlements, FEATURES.PAGE_BUILDER)
+
   return (
     <div>
       <div className="mb-8">
         <PageHeader title="General" description="Datos de contacto y nombre de la tienda." />
       </div>
 
-      <StoreConfigForm initialConfig={storeConfig} />
+      <StoreConfigForm initialConfig={storeConfig} editorialInConstructor={editorialInConstructor} />
 
       <div className="mt-8">
         <h2 className="font-display text-brand-primary text-xl mb-1">Contenido del sitio</h2>
