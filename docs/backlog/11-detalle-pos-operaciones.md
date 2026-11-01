@@ -414,7 +414,7 @@ stock único) es **prerequisito del POS**. Ajustes de maduración:
 
 > Como operador, quiero registrar la transformación de insumos en producto terminado, controlando lo consumido, lo obtenido y la merma.
 
-**Estimación:** L (8 puntos) · **Módulo:** `production_order` sobre BOM `al_producir` + ledger + costeo · **Estado:** 🔲 Pendiente — feature `bom_production`
+**Estimación:** L (8 puntos) · **Módulo:** `production_order` sobre BOM `al_producir` + ledger + costeo · **Estado:** 🟢 Datos + capa (v209) — migración `e17/67`: `production_orders` (ítem de salida + BOM + `planned_qty`/`produced_qty` + estado), RLS admin-only. Capa `production.ts`: `createProductionOrder`, `listProductionOrders` y **`completeProductionOrder`** — explota la receta (HU-404), descuenta componentes (movimientos `production_consume`) y **crea stock del terminado** (`production_output`) con el **costo del lote** (de los componentes vía costeo HU-403), idempotente por `op_key`; devuelve **rendimiento/merma** y si el costo quedó completo. Helpers puros `yieldRatio`, `producedLotUnitCost`. Tests: **database 554 (+2)**, tsc limpio. **Con esto el caso `al_producir` queda cerrado** (café/manufactura). **Pendiente:** UI de órdenes de producción.
 
 | # | Escenario | Resultado esperado |
 |---|-----------|-------------------|

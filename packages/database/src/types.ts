@@ -852,6 +852,47 @@ export type Database = {
         }
         Relationships: []
       }
+      production_orders: {
+        Row: {
+          id: number
+          tenant_id: string
+          output_stock_item_id: number
+          bom_id: number | null
+          location_id: number | null
+          planned_qty: number
+          produced_qty: number | null
+          status: string
+          notes: string | null
+          completed_at: string | null
+          created_at: string
+          updated_at: string
+        }
+        Insert: {
+          id?: number
+          tenant_id?: string
+          output_stock_item_id: number
+          bom_id?: number | null
+          location_id?: number | null
+          planned_qty: number
+          produced_qty?: number | null
+          status?: string
+          notes?: string | null
+          completed_at?: string | null
+          created_at?: string
+          updated_at?: string
+        }
+        Update: {
+          bom_id?: number | null
+          location_id?: number | null
+          planned_qty?: number
+          produced_qty?: number | null
+          status?: string
+          notes?: string | null
+          completed_at?: string | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
       redirects: {
         Row: {
           id: number
