@@ -795,6 +795,63 @@ export type Database = {
         }
         Relationships: []
       }
+      boms: {
+        Row: {
+          id: number
+          tenant_id: string
+          output_stock_item_id: number
+          name: string | null
+          consumption_policy: string
+          yield_qty: number
+          active: boolean
+          created_at: string
+          updated_at: string
+        }
+        Insert: {
+          id?: number
+          tenant_id?: string
+          output_stock_item_id: number
+          name?: string | null
+          consumption_policy?: string
+          yield_qty?: number
+          active?: boolean
+          created_at?: string
+          updated_at?: string
+        }
+        Update: {
+          name?: string | null
+          consumption_policy?: string
+          yield_qty?: number
+          active?: boolean
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      bom_components: {
+        Row: {
+          id: number
+          tenant_id: string
+          bom_id: number
+          component_stock_item_id: number
+          qty: number
+          uom_id: number | null
+          created_at: string
+        }
+        Insert: {
+          id?: number
+          tenant_id?: string
+          bom_id: number
+          component_stock_item_id: number
+          qty: number
+          uom_id?: number | null
+          created_at?: string
+        }
+        Update: {
+          qty?: number
+          uom_id?: number | null
+        }
+        Relationships: []
+      }
       redirects: {
         Row: {
           id: number

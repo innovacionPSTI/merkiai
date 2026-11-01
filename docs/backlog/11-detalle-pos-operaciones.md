@@ -402,7 +402,7 @@ stock único) es **prerequisito del POS**. Ajustes de maduración:
 
 > Como negocio, quiero definir de qué se compone un producto y cuándo se descuentan sus insumos, para cubrir tanto la elaboración al momento como la producción a inventario.
 
-**Estimación:** L (8 puntos) · **Módulo:** `bom` (salida ← componentes, multinivel) + `consumption_policy` · **Estado:** 🔲 Pendiente — feature `bom_production`; **reutiliza/generaliza HU-168**
+**Estimación:** L (8 puntos) · **Módulo:** `bom` (salida ← componentes, multinivel) + `consumption_policy` · **Estado:** 🟢 Datos + capa (v208) — migración `e17/66`: `boms` (ítem de salida + **`consumption_policy`** `al_vender`/`al_producir` + `yield_qty`) y `bom_components` (cualquier `stock_item` + qty/UoM), RLS admin-only. Helpers **puros** `bom.ts`: `explodeComponents` (escala por `outputQty/yield`), `bomUnitCost` (roll-up directo de un nivel → **costo del terminado**, con flag `complete`), `isConsumptionPolicy`; capa `getBomByOutput`/`listBoms`/`createBom`/`deleteBom`. Cierra el **roll-up de costeo** de HU-403 (un nivel). Tests: **database 552 (+5)**, tsc limpio. **Pendiente:** multinivel (resolver recursivo), aplicación en venta/producción (HU-405) y **refactor de bundles** para reusar el motor (hoy HU-168 sigue siendo la instancia implementada de `al_vender`).
 
 | # | Escenario | Resultado esperado |
 |---|-----------|-------------------|
