@@ -163,6 +163,7 @@ export type Database = {
           width_cm: number | null
           height_cm: number | null
           attributes: Json | null
+          stock_item_id: number | null
         }
         Insert: {
           tenant_id?: string
@@ -180,6 +181,7 @@ export type Database = {
           width_cm?: number | null
           height_cm?: number | null
           attributes?: Json | null
+          stock_item_id?: number | null
         }
         Update: {
           tenant_id?: string
@@ -197,6 +199,7 @@ export type Database = {
           width_cm?: number | null
           height_cm?: number | null
           attributes?: Json | null
+          stock_item_id?: number | null
         }
         Relationships: [
           {
@@ -571,6 +574,72 @@ export type Database = {
         Update: {
           label?: string
           payload?: Json
+        }
+        Relationships: []
+      }
+      uoms: {
+        Row: {
+          id: number
+          tenant_id: string
+          code: string
+          name: string
+          dimension: string
+          to_base_factor: number
+          created_at: string
+          updated_at: string
+        }
+        Insert: {
+          id?: number
+          tenant_id?: string
+          code: string
+          name: string
+          dimension?: string
+          to_base_factor?: number
+          created_at?: string
+          updated_at?: string
+        }
+        Update: {
+          code?: string
+          name?: string
+          dimension?: string
+          to_base_factor?: number
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      stock_items: {
+        Row: {
+          id: number
+          tenant_id: string
+          key: string
+          name: string
+          item_class: string
+          uom_id: number | null
+          sellable: boolean
+          active: boolean
+          created_at: string
+          updated_at: string
+        }
+        Insert: {
+          id?: number
+          tenant_id?: string
+          key: string
+          name: string
+          item_class?: string
+          uom_id?: number | null
+          sellable?: boolean
+          active?: boolean
+          created_at?: string
+          updated_at?: string
+        }
+        Update: {
+          key?: string
+          name?: string
+          item_class?: string
+          uom_id?: number | null
+          sellable?: boolean
+          active?: boolean
+          updated_at?: string
         }
         Relationships: []
       }

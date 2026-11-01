@@ -351,7 +351,7 @@ stock único) es **prerequisito del POS**. Ajustes de maduración:
 
 > Como plataforma, quiero un sujeto de inventario único con unidad de medida y clase, para contar cualquier existencia (materia prima, insumo, terminado) sin casos especiales.
 
-**Estimación:** L (8 puntos) · **Módulo:** `stock_item` + UoM + conversiones; la variante vendible pasa a ser una clase de `stock_item` · **Estado:** 🔲 Pendiente — **fundacional**
+**Estimación:** L (8 puntos) · **Módulo:** `stock_item` + UoM + conversiones; la variante vendible pasa a ser una clase de `stock_item` · **Estado:** 🟢 Datos + capa (v204) — migración `e17/63` (`uoms` con dimensión + `to_base_factor`, `stock_items` con clase/UoM/sellable, enlace opcional `product_variants.stock_item_id`, RLS admin-only, seed de unidades base por tenant); helpers **puros** `uom.ts` (`toBase`/`fromBase`/`convertUom` por dimensión, `normalizeQty`, `isItemClass`, `normalizeStockItemInput`) + CRUD `stock-items.ts`; tipos en `types.ts`. Tests: **database 532 (+11)**, tsc limpio admin/web. **Pendiente:** UI de gestión en el admin + seed de UoM para tenants nuevos (onboarding/preset, HU-410).
 
 | # | Escenario | Resultado esperado |
 |---|-----------|-------------------|
