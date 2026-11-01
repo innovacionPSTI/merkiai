@@ -390,7 +390,7 @@ stock único) es **prerequisito del POS**. Ajustes de maduración:
 
 > Como negocio, quiero conocer el costo de cada ítem y de cada producto elaborado, para fijar precios y medir margen.
 
-**Estimación:** L (8 puntos) · **Módulo:** motor puro de costeo sobre el ledger + recepciones; roll-up por BOM · **Estado:** 🔲 Pendiente — feature `costing`
+**Estimación:** L (8 puntos) · **Módulo:** motor puro de costeo sobre el ledger + recepciones; roll-up por BOM · **Estado:** 🟢 Costo directo (v207) — motor **puro** `costing.ts`: `weightedAverageCost` (promedio ponderado por unidad base sobre las **entradas con costo** del libro — compra/producción; ignora salidas y movimientos sin costo) + `inventoryValue` (disponible × costo). Capa `getItemCost`/`getItemCostMap` lee `stock_movements` (con `unit_cost`). Sin migración (usa `e17/65`). Tests: **database 547 (+4)**, tsc limpio. **Pendiente:** FIFO configurable + **roll-up por BOM** (costo del terminado) → se habilita con **HU-404** (receta/BOM).
 
 | # | Escenario | Resultado esperado |
 |---|-----------|-------------------|
