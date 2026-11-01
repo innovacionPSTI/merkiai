@@ -11,14 +11,46 @@
  */
 import Navbar from './Navbar'
 import Footer from './Footer'
+import SectionRenderer from '@/components/sections/SectionRenderer'
 import { requireStoreContext } from '@/lib/store-context'
+import { getSectionsWithItems } from '@merkiai/database'
+import { resolveFeature, FEATURES } from '@merkiai/tenancy'
+
+/**
+ * Claves reservadas de las REGIONES de chrome (HU-372). Son páginas del CMS
+ * (`page_type='region'`, no enrutables) cuyos bloques componen el encabezado y
+ * el pie cuando el plan tiene `editable_chrome`.
+ */
+const HEADER_REGION = 'region_header'
+const FOOTER_REGION = 'region_footer'
 
 export default async function StoreShell({ children }: { children: React.ReactNode }) {
   // HU-229: si el host no resuelve a un tenant (modo estricto), 404 limpio.
-  const { config, navItems, footerPages } = await requireStoreContext()
+  const { config, navItems, footerPages, db, entitlements } = await requireStoreContext()
+
+  // HU-372 · chrome editable por regiones, gated por plan. Solo se consultan las
+  // regiones si la feature está activa; si no hay secciones se cae al chrome
+  // config-driven (Navbar/Footer) → cero regresión.
+  const editableChrome = resolveFeature(entitlements, FEATURES.EDITABLE_CHROME)
+  const [headerSections, footerSections] = editableChrome && db
+    ? await Promise.all([
+        getSectionsWithItems(HEADER_REGION, true, db).catch(() => []),
+        getSectionsWithItems(FOOTER_REGION, true, db).catch(() => []),
+      ])
+    : [[], []]
+  // Anti-recursión: ignora partials anidados dentro de la región.
+  const headerBlocks = headerSections.filter((s) => s.section_type !== 'partial_ref')
+  const footerBlocks = footerSections.filter((s) => s.section_type !== 'partial_ref')
 
   return (
     <>
+      {headerBlocks.length > 0 ? (
+        <header>
+          {headerBlocks.map((s) => (
+            <SectionRenderer key={s.id} section={s} pageKey={HEADER_REGION} whatsappNumber={config?.whatsapp_number} />
+          ))}
+        </header>
+      ) : (
       <Navbar
         logoUrl={config?.logo_url}
         storeName={config?.store_name}
@@ -27,7 +59,15 @@ export default async function StoreShell({ children }: { children: React.ReactNo
         showAuth={config?.nav_show_auth ?? true}
         showWishlist={config?.nav_show_wishlist ?? true}
       />
+      )}
       {children}
+      {footerBlocks.length > 0 ? (
+        <footer>
+          {footerBlocks.map((s) => (
+            <SectionRenderer key={s.id} section={s} pageKey={FOOTER_REGION} whatsappNumber={config?.whatsapp_number} />
+          ))}
+        </footer>
+      ) : (
       <Footer
         logoUrl={config?.logo_url}
         storeName={config?.store_name}
@@ -47,6 +87,7 @@ export default async function StoreShell({ children }: { children: React.ReactNo
           showLegal: config?.footer_show_legal ?? true,
         }}
       />
+      )}
     </>
   )
 }

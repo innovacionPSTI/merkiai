@@ -25,6 +25,13 @@ const PAGE_TYPE_LABELS: Record<string, string> = {
   landing: 'Landing', services: 'Servicios', about: 'Acerca de',
   faq: 'FAQ', content: 'Contenido', custom: 'Personalizada',
 }
+// HU-372 · etiquetas solo-visualización (incluye las regiones de chrome, que son
+// páginas reservadas: no se crean desde el wizard ni se convierten desde el
+// selector de tipo, pero sí se listan y editan).
+const PAGE_TYPE_DISPLAY: Record<string, string> = {
+  ...PAGE_TYPE_LABELS,
+  region: 'Región',
+}
 
 // HU-374 · estructura de arranque por tipo de página (bloques típicos). 'custom'
 // y lo no listado nacen en blanco. Reusa los section_type del catálogo de bloques.
@@ -573,7 +580,7 @@ export default function ConstructorClient({
                     <div className="flex gap-2 mb-2">
                       <select value={pageTypeF} onChange={(e) => setPageTypeF(e.target.value)} className="flex-1 rounded-lg border border-slate-300 px-2 py-1.5 text-xs" aria-label="Filtrar por tipo">
                         <option value="">Todos los tipos</option>
-                        {pageTypesPresent.map((t) => <option key={t} value={t}>{PAGE_TYPE_LABELS[t] ?? t}</option>)}
+                        {pageTypesPresent.map((t) => <option key={t} value={t}>{PAGE_TYPE_DISPLAY[t] ?? t}</option>)}
                       </select>
                       <select value={pageStatusF} onChange={(e) => setPageStatusF(e.target.value as '' | 'enabled' | 'draft')} className="flex-1 rounded-lg border border-slate-300 px-2 py-1.5 text-xs" aria-label="Filtrar por estado">
                         <option value="">Todos</option>
@@ -592,7 +599,7 @@ export default function ConstructorClient({
                           >
                             <span className={`w-2 h-2 rounded-full flex-shrink-0 ${p.enabled === false ? 'bg-amber-400' : 'bg-green-400'}`} title={p.enabled === false ? 'Borrador' : 'Publicada'} />
                             <span className="flex-1 truncate">{p.label}</span>
-                            <span className="text-[10px] px-1.5 py-0.5 rounded bg-slate-100 text-slate-500">{PAGE_TYPE_LABELS[p.page_type ?? 'custom'] ?? p.page_type}</span>
+                            <span className="text-[10px] px-1.5 py-0.5 rounded bg-slate-100 text-slate-500">{PAGE_TYPE_DISPLAY[p.page_type ?? 'custom'] ?? p.page_type}</span>
                           </button>
                         </li>
                       ))}

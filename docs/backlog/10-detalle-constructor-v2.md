@@ -336,7 +336,7 @@
 
 > Como comerciante, quiero construir el encabezado y el pie con bloques (como el resto), para controlar la estructura macro del sitio.
 
-**Estimación:** L (8 puntos) · **Módulo:** regiones globales "header"/"footer" como páginas-partial del sitio, consumidas por el chrome del storefront (reusa HU-356). · **Estado:** 🔲 Pendiente — gated por `editable_chrome`.
+**Estimación:** L (8 puntos) · **Módulo:** regiones globales "header"/"footer" como páginas-partial del sitio, consumidas por el chrome del storefront (reusa HU-356). · **Estado:** ✅ Completo (v197) — regiones `region_header`/`region_footer` como **páginas reservadas** (`page_type='region'`, `enabled=false`, no enrutables) sembradas por tenant (`e17/62`); se editan en el Constructor como cualquier página (aparecen en la lista con etiqueta "Región", no en el wizard). `StoreShell` resuelve sus secciones con `getSectionsWithItems` y las renderiza como `<header>`/`<footer>` **solo** si el plan tiene `editable_chrome` **y** la región tiene bloques; si no, cae al Navbar/Footer config-driven (cero regresión). Guard en la ruta `[slug]` ignora `page_type='region'` (doble candado anti-enrutado, también en preview). Verificado: web 387 · admin 262 verdes, tsc limpio.
 
 | # | Escenario | Resultado esperado |
 |---|-----------|-------------------|

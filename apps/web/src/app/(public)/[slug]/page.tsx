@@ -51,6 +51,9 @@ export default async function CmsPage({ params }: Props) {
   const db = preview ? getMachineDb(ctx.tenantId) : ctx.db
   const pageData = await getPageWithSections(slug, !preview, db).catch(() => null)
   if (!pageData) notFound()
+  // HU-372 · las REGIONES de chrome (header/footer) son páginas reservadas: se
+  // consumen desde StoreShell, nunca se enrutan por su slug (ni en preview).
+  if ((pageData as { page_type?: string }).page_type === 'region') notFound()
 
   return (
     <div className="bg-brand-cream min-h-screen pt-16" style={pageStyleVars((pageData as { style?: unknown }).style)}>
