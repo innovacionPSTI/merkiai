@@ -1035,6 +1035,90 @@ export type Database = {
         }
         Relationships: []
       }
+      quotes: {
+        Row: {
+          id: number
+          tenant_id: string
+          quote_number: string
+          customer_name: string
+          customer_email: string
+          customer_phone: string | null
+          status: 'draft' | 'sent' | 'accepted' | 'converted' | 'expired' | 'cancelled'
+          subtotal: number
+          discount: number
+          total: number
+          valid_until: string | null
+          notes: string | null
+          converted_order_id: number | null
+          created_at: string
+          updated_at: string
+        }
+        Insert: {
+          id?: number
+          tenant_id?: string
+          quote_number: string
+          customer_name?: string
+          customer_email?: string
+          customer_phone?: string | null
+          status?: 'draft' | 'sent' | 'accepted' | 'converted' | 'expired' | 'cancelled'
+          subtotal?: number
+          discount?: number
+          total?: number
+          valid_until?: string | null
+          notes?: string | null
+          converted_order_id?: number | null
+          created_at?: string
+          updated_at?: string
+        }
+        Update: {
+          quote_number?: string
+          customer_name?: string
+          customer_email?: string
+          customer_phone?: string | null
+          status?: 'draft' | 'sent' | 'accepted' | 'converted' | 'expired' | 'cancelled'
+          subtotal?: number
+          discount?: number
+          total?: number
+          valid_until?: string | null
+          notes?: string | null
+          converted_order_id?: number | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      quote_items: {
+        Row: {
+          id: number
+          tenant_id: string
+          quote_id: number
+          product_id: number | null
+          variant_id: number | null
+          name: string
+          qty: number
+          unit_price: number
+          line_total: number
+          created_at: string
+        }
+        Insert: {
+          id?: number
+          tenant_id?: string
+          quote_id: number
+          product_id?: number | null
+          variant_id?: number | null
+          name: string
+          qty: number
+          unit_price: number
+          line_total: number
+          created_at?: string
+        }
+        Update: {
+          name?: string
+          qty?: number
+          unit_price?: number
+          line_total?: number
+        }
+        Relationships: []
+      }
       redirects: {
         Row: {
           id: number
