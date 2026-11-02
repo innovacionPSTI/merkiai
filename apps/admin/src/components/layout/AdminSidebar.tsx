@@ -108,6 +108,7 @@ const NAV: NavNode[] = [
       { kind: 'leaf', href: '/inventario', icon: <Icon name="grid" />,    label: 'Inventario', section: 'productos' },
       { kind: 'leaf', href: '/compras',    icon: <Icon name="money" />,   label: 'Compras',    section: 'productos' },
       { kind: 'leaf', href: '/produccion', icon: <Icon name="product" />, label: 'Producción', section: 'productos' },
+      { kind: 'leaf', href: '/modificadores', icon: <Icon name="product" />, label: 'Modificadores', section: 'productos' },
     ],
   },
   {
@@ -182,7 +183,7 @@ function navFor(pageBuilder: boolean, collections: boolean, inventory: boolean):
   else hidden.add('/constructor')
   if (!collections) hidden.add('/colecciones')
   // E24 · sin el módulo de inventario, se oculta "Operaciones" (sus leaves).
-  if (!inventory) { hidden.add('/inventario'); hidden.add('/compras'); hidden.add('/produccion') }
+  if (!inventory) { hidden.add('/inventario'); hidden.add('/compras'); hidden.add('/produccion'); hidden.add('/modificadores') }
   if (hidden.size === 0) return NAV
   return NAV.map((node) => {
     if (node.kind === 'group') {
