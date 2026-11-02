@@ -59,11 +59,11 @@ export async function countStockItems(db: Db): Promise<number> {
 
 export async function createStockItem(
   db: Db,
-  input: { tenant_id?: string; key?: string; name?: string; item_class?: string; uom_id?: number | null; sellable?: boolean; active?: boolean },
+  input: { tenant_id?: string; key?: string; name?: string; item_class?: string; uom_id?: number | null; sellable?: boolean; active?: boolean; reorder_point?: number | null },
 ): Promise<StockItem> {
   const norm = normalizeStockItemInput(input)
   if (!norm) throw new Error('[stock-items] nombre/clave requeridos')
-  const row = { tenant_id: input.tenant_id, ...norm }
+  const row = { tenant_id: input.tenant_id, ...norm, ...(input.reorder_point !== undefined ? { reorder_point: input.reorder_point } : {}) }
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const { data, error } = await db.from('stock_items').insert(row as any).select().single()
   if (error) throw error
@@ -73,7 +73,7 @@ export async function createStockItem(
 export async function updateStockItem(
   db: Db,
   key: string,
-  patch: Partial<{ name: string; item_class: string; uom_id: number | null; sellable: boolean; active: boolean }>,
+  patch: Partial<{ name: string; item_class: string; uom_id: number | null; sellable: boolean; active: boolean; reorder_point: number | null }>,
 ): Promise<StockItem> {
   const { data, error } = await db
     .from('stock_items')
@@ -89,7 +89,7 @@ export async function updateStockItem(
 export async function updateStockItemById(
   db: Db,
   id: number,
-  patch: Partial<{ name: string; item_class: string; uom_id: number | null; sellable: boolean; active: boolean }>,
+  patch: Partial<{ name: string; item_class: string; uom_id: number | null; sellable: boolean; active: boolean; reorder_point: number | null }>,
 ): Promise<StockItem> {
   const { data, error } = await db
     .from('stock_items')

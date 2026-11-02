@@ -1,7 +1,7 @@
 import { redirect, notFound } from 'next/navigation'
 import type { Metadata } from 'next'
 import { PageHeader } from '@merkiai/ui'
-import { inventorySummary, movementsSummarySince } from '@merkiai/database'
+import { inventorySummary, movementsSummarySince, inventoryAlerts } from '@merkiai/database'
 import { requireAdminDb } from '@/lib/admin-context'
 import { userCanAccess } from '@/lib/roles'
 import { FEATURES as FLAGS } from '@/lib/features'
@@ -29,11 +29,30 @@ export default async function OperacionesPage() {
   if (!(FLAGS.inventory || resolveFeature(entitlements, FEATURES.INVENTORY))) notFound()
 
   const since = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString()
-  const [inv, mov] = await Promise.all([inventorySummary(db), movementsSummarySince(db, since)])
+  const [inv, mov, alerts] = await Promise.all([inventorySummary(db), movementsSummarySince(db, since), inventoryAlerts(db)])
 
   return (
     <div className="space-y-6">
       <PageHeader title="Operaciones" description="Tablero sobre el libro de inventario: valor a costo, existencias por clase y movimientos de los últimos 30 días." />
+
+      {/* Alertas (HU-409 F2a) */}
+      {alerts.length > 0 && (
+        <section className="bg-white rounded-2xl p-5 shadow-sm">
+          <h2 className="font-display text-brand-primary text-lg mb-3">Alertas de inventario <span className="font-brand text-sm text-brand-primary/40">({alerts.length})</span></h2>
+          <ul className="space-y-2">
+            {alerts.map((a) => (
+              <li key={a.stock_item_id} className="flex items-center justify-between gap-3 border-t border-gray-100 pt-2 first:border-t-0 first:pt-0">
+                <span className="flex items-center gap-2 font-brand text-sm">
+                  <span className={`inline-block w-2 h-2 rounded-full ${a.severity === 'critical' ? 'bg-red-500' : 'bg-amber-400'}`} />
+                  <a href={`/inventario/${a.key}`} className="text-brand-primary underline">{a.name}</a>
+                  <span className="text-brand-primary/50">{a.kind === 'out_of_stock' ? 'agotado' : 'bajo mínimo'}</span>
+                </span>
+                <span className="font-brand text-sm tabular-nums text-brand-primary/60">{num(a.available)} / mín {num(a.reorder_point)}</span>
+              </li>
+            ))}
+          </ul>
+        </section>
+      )}
 
       {/* KPIs */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">

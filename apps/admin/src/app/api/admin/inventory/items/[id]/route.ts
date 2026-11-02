@@ -27,6 +27,7 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
   if ('uom_id' in body) patch.uom_id = body.uom_id ?? null
   if (typeof body?.sellable === 'boolean') patch.sellable = body.sellable
   if (typeof body?.active === 'boolean') patch.active = body.active
+  if ('reorder_point' in body) patch.reorder_point = body.reorder_point == null || body.reorder_point === '' ? null : Number(body.reorder_point)
   if (Object.keys(patch).length === 0) return NextResponse.json({ error: 'Nada que actualizar' }, { status: 400 })
 
   try {

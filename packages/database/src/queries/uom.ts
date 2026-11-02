@@ -32,6 +32,8 @@ export interface StockItem {
   uom_id: number | null
   sellable: boolean
   active: boolean
+  /** HU-409 · punto de reorden en unidad base; null = sin alerta de bajo mínimo. */
+  reorder_point?: number | null
 }
 
 export { slugifyKey }

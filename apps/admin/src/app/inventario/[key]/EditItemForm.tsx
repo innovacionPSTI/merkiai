@@ -8,7 +8,7 @@
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 
-interface Item { id: number; name: string; item_class: string; uom_id: number | null; sellable: boolean; active: boolean }
+interface Item { id: number; name: string; item_class: string; uom_id: number | null; sellable: boolean; active: boolean; reorder_point: number | null }
 const CLASS_LABEL: Record<string, string> = { materia_prima: 'Materia prima', insumo: 'Insumo', terminado: 'Terminado', servicio: 'Servicio' }
 
 export default function EditItemForm({ item, uoms }: { item: Item; uoms: Array<{ id: number; code: string }> }) {
@@ -19,6 +19,7 @@ export default function EditItemForm({ item, uoms }: { item: Item; uoms: Array<{
   const [uomId, setUomId] = useState<number | ''>(item.uom_id ?? '')
   const [sellable, setSellable] = useState(item.sellable)
   const [active, setActive] = useState(item.active)
+  const [reorder, setReorder] = useState<number | ''>(item.reorder_point ?? '')
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
@@ -28,7 +29,7 @@ export default function EditItemForm({ item, uoms }: { item: Item; uoms: Array<{
     try {
       const res = await fetch(`/api/admin/inventory/items/${item.id}`, {
         method: 'PATCH', headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ name: name.trim(), item_class: itemClass, uom_id: uomId === '' ? null : uomId, sellable, active }),
+        body: JSON.stringify({ name: name.trim(), item_class: itemClass, uom_id: uomId === '' ? null : uomId, sellable, active, reorder_point: reorder === '' ? null : reorder }),
       })
       if (!res.ok) throw new Error((await res.json().catch(() => ({})))?.error ?? 'No se pudo guardar')
       setOpen(false); router.refresh()
@@ -59,6 +60,10 @@ export default function EditItemForm({ item, uoms }: { item: Item; uoms: Array<{
             <option value="">—</option>
             {uoms.map((u) => <option key={u.id} value={u.id}>{u.code}</option>)}
           </select>
+        </label>
+        <label>
+          <span className="font-brand text-xs font-semibold text-brand-primary block mb-1">Punto de reorden</span>
+          <input type="number" min={0} value={reorder} onChange={(e) => setReorder(e.target.value === '' ? '' : Number(e.target.value))} placeholder="—" className="w-28 border border-gray-200 rounded-xl px-3 py-2 font-brand text-sm" />
         </label>
         <label className="flex items-center gap-2 font-brand text-sm text-brand-primary">
           <input type="checkbox" checked={sellable} onChange={(e) => setSellable(e.target.checked)} /> Vendible

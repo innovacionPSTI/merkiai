@@ -617,6 +617,7 @@ export type Database = {
           uom_id: number | null
           sellable: boolean
           active: boolean
+          reorder_point: number | null
           created_at: string
           updated_at: string
         }
@@ -629,6 +630,7 @@ export type Database = {
           uom_id?: number | null
           sellable?: boolean
           active?: boolean
+          reorder_point?: number | null
           created_at?: string
           updated_at?: string
         }
@@ -639,6 +641,7 @@ export type Database = {
           uom_id?: number | null
           sellable?: boolean
           active?: boolean
+          reorder_point?: number | null
           updated_at?: string
         }
         Relationships: []

@@ -479,6 +479,8 @@ stock único) es **prerequisito del POS**. Ajustes de maduración:
 | AC-2 | Tableros | Operación del día, inventario (valor a costo, bajo mínimo), producción, comparativo multi-sede; como **vistas configurables** (encaja con el tipo *dashboard* del Constructor) |
 | AC-3 | Alertas | Bajo mínimo por `(ítem, ubicación)` (generaliza HU-106), merma fuera de rango, descuadre de caja, traslado/compra por recibir, **fallo de sincronización POS** y fallo de integración — por los canales existentes |
 
+> **Fase 2a (v220) — alertas de bajo mínimo por ítem.** Migración `e17/70`: `stock_items.reorder_point` (numeric, nullable; sin valor → sin alerta). Motor **puro** `operations-alerts.ts` · `evaluateInventoryAlerts` (emite `low_stock`/`out_of_stock` con severidad `warning`/`critical`, ordena crítico primero) + query `inventoryAlerts` sobre el disponible del ledger. UI: sección **Alertas de inventario** en `/operaciones` (enlaza al kardex) + campo **punto de reorden** en la edición de ítem. Generaliza HU-106 al ledger (por ítem; `(ítem, ubicación)` y merma/caja/sync quedan para fases siguientes, dependen de E18/E25). Tests: **database 573 (+3)**, admin 266. **Pendiente:** merma fuera de rango, por recibir, descuadre de caja, fallo de sync POS/integración + envío por canales (correo).
+
 ### HU-410 — Preset + plan "Operaciones" (entitlements) · E24
 
 > Como operador de plataforma, quiero un preset/plan que encienda el vertical de operaciones, para aprovisionar este tipo de tienda sin trabajo manual.
