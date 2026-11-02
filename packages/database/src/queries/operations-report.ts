@@ -12,6 +12,7 @@ import { listStockItems } from './stock-items'
 import { getAvailableMap } from './stock-movements'
 import { getItemCostMap } from './costing'
 import { inventoryValue } from './costing'
+import { objectsToCsv } from '../lib/product-import'
 
 /* ───────────────────────────── Tipos ──────────────────────────────────────── */
 
@@ -137,4 +138,47 @@ export async function movementsSummarySince(db: Db, fromISO: string): Promise<Mo
     .gte('created_at', fromISO)
   if (error) throw error
   return summarizeMovements((data ?? []) as unknown as MovementLite[], fromISO)
+}
+
+/* ───────────────────────────── Exportes CSV (HU-409 AC-1) ──────────────────── */
+
+export interface InventoryValuationRow {
+  key: string
+  name: string
+  item_class: string
+  available: number
+  unit_cost: number | null
+  value: number
+}
+
+/** Valorización por ítem: disponible × costo unitario (a partir del ledger). */
+export async function inventoryValuationRows(db: Db): Promise<InventoryValuationRow[]> {
+  const items = await listStockItems(db, { activeOnly: true })
+  const ids = items.map((i) => i.id)
+  const [availableMap, costMap] = await Promise.all([getAvailableMap(db, ids), getItemCostMap(db, ids)])
+  return items
+    .map((i) => {
+      const available = availableMap[i.id] ?? 0
+      const unit_cost = costMap[i.id] ?? null
+      return { key: i.key, name: i.name, item_class: i.item_class, available, unit_cost, value: inventoryValue(available, unit_cost) }
+    })
+    .sort((a, b) => b.value - a.value)
+}
+
+/** CSV de valorización de inventario (puro). */
+export function inventoryValuationToCsv(rows: InventoryValuationRow[]): string {
+  const headers = ['clave', 'nombre', 'clase', 'disponible', 'costo_unitario', 'valor']
+  return objectsToCsv(headers, rows.map((r) => ({
+    clave: r.key, nombre: r.name, clase: r.item_class,
+    disponible: r.available, costo_unitario: r.unit_cost ?? '',
+    valor: Math.round(r.value * 100) / 100,
+  })))
+}
+
+/** CSV del resumen de movimientos por tipo (puro). */
+export function movementsSummaryToCsv(summary: MovementsSummary): string {
+  const headers = ['tipo', 'movimientos', 'entradas', 'salidas', 'valor_entradas']
+  return objectsToCsv(headers, summary.byType.map((t) => ({
+    tipo: t.movement_type, movimientos: t.count, entradas: t.qtyIn, salidas: t.qtyOut, valor_entradas: t.valueIn,
+  })))
 }

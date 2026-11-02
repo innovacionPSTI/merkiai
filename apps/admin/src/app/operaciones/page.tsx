@@ -33,7 +33,13 @@ export default async function OperacionesPage() {
 
   return (
     <div className="space-y-6">
-      <PageHeader title="Operaciones" description="Tablero sobre el libro de inventario: valor a costo, existencias por clase y movimientos de los últimos 30 días." />
+      <div className="flex items-start justify-between gap-4 flex-wrap">
+        <PageHeader title="Operaciones" description="Tablero sobre el libro de inventario: valor a costo, existencias por clase y movimientos de los últimos 30 días." />
+        <div className="flex gap-2 pt-1">
+          <a href="/api/admin/operations/export?type=valuation" className="rounded-full border border-gray-200 text-brand-primary px-4 py-2 font-brand text-sm hover:bg-slate-50">Exportar valorización</a>
+          <a href="/api/admin/operations/export?type=movements&days=30" className="rounded-full border border-gray-200 text-brand-primary px-4 py-2 font-brand text-sm hover:bg-slate-50">Exportar movimientos (30d)</a>
+        </div>
+      </div>
 
       {/* Alertas (HU-409 F2a) */}
       {alerts.length > 0 && (
