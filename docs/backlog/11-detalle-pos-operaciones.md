@@ -447,7 +447,7 @@ stock único) es **prerequisito del POS**. Ajustes de maduración:
 
 > Como negocio, quiero precios distintos según el canal, la sede o el tipo de cliente, para vender al precio correcto en cada contexto.
 
-**Estimación:** M (5 puntos) · **Módulo:** `price_list` + resolución de precio efectivo por contexto · **Estado:** 🔲 Pendiente — feature `price_lists`
+**Estimación:** M (5 puntos) · **Módulo:** `price_list` + resolución de precio efectivo por contexto · **Estado:** 🟢 Datos + capa + UI (v217) — migración `e17/69`: `price_lists` (ámbito `channel/location/segment/generic` + `scope_value` + `priority` + `active`) y `price_list_items` (precio por `(lista, producto)` o `(lista, variante)`, exactamente uno), RLS tenant_read + admin_all. Helpers **puros** en `price-lists.ts`: `selectApplicableLists` (filtra por contexto; genéricas siempre), `resolveEffectivePrice` (variante > producto; mayor `priority`; empate → más reciente; **sin entradas → precio base**, AC-3). Capa `listPriceLists`/`getPriceListItems`/`createPriceList`/`updatePriceList`/`setPriceListItem` (upsert)/`deletePriceListItem`. Feature `price_lists` (default false). **UI** `/listas-precio` (grupo "Operaciones", gated por `price_lists`): crear listas con ámbito/prioridad, activar/desactivar y definir precios por producto; APIs `/api/admin/price-lists` (+ `[id]`, `[id]/items`, `items/[itemId]`). Tests: **database 563 (+6)**, admin 266, tsc limpio. **Pendiente:** aplicación del precio efectivo en venta/PDP (coordinada con el checkout); precios por variante en la UI.
 
 | # | Escenario | Resultado esperado |
 |---|-----------|-------------------|

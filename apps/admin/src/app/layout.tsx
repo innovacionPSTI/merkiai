@@ -121,6 +121,7 @@ export default async function AdminRootLayout({ children }: { children: React.Re
   const pageBuilderEnabled = adminUser ? (FLAGS.pageBuilder || resolveFeature(layoutEntitlements, FEATURES.PAGE_BUILDER)) : false
   const collectionsEnabled = adminUser ? (FLAGS.collections || resolveFeature(layoutEntitlements, FEATURES.COLLECTIONS)) : false
   const inventoryEnabled = adminUser ? (FLAGS.inventory || resolveFeature(layoutEntitlements, FEATURES.INVENTORY)) : false
+  const priceListsEnabled = adminUser ? resolveFeature(layoutEntitlements, FEATURES.PRICE_LISTS) : false
 
   // HU-194 · gate de suspensión: si el tenant está suspendido/cancelado, el panel
   // se bloquea (espejo del storefront). Fail-open (ver isTenantBlocked).
@@ -139,7 +140,7 @@ export default async function AdminRootLayout({ children }: { children: React.Re
               <TenantSuspended />
             ) : isProtectedRoute && adminUser ? (
               <div className="flex min-h-screen">
-                <AdminSidebar role={adminUser.role} allowedSections={adminUser.allowedSections} pageBuilder={pageBuilderEnabled} collections={collectionsEnabled} inventory={inventoryEnabled} />
+                <AdminSidebar role={adminUser.role} allowedSections={adminUser.allowedSections} pageBuilder={pageBuilderEnabled} collections={collectionsEnabled} inventory={inventoryEnabled} priceLists={priceListsEnabled} />
                 <div className="flex-1 flex flex-col min-w-0">
                   {/* Topbar */}
                   <header className="bg-white border-b border-gray-100 pl-14 pr-6 md:px-6 py-4 flex items-center justify-between shadow-sm sticky top-0 z-10">

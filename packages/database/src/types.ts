@@ -969,6 +969,69 @@ export type Database = {
         }
         Relationships: []
       }
+      price_lists: {
+        Row: {
+          id: number
+          tenant_id: string
+          key: string
+          name: string
+          scope_type: string
+          scope_value: string | null
+          priority: number
+          active: boolean
+          created_at: string
+          updated_at: string
+        }
+        Insert: {
+          id?: number
+          tenant_id?: string
+          key: string
+          name: string
+          scope_type?: string
+          scope_value?: string | null
+          priority?: number
+          active?: boolean
+          created_at?: string
+          updated_at?: string
+        }
+        Update: {
+          key?: string
+          name?: string
+          scope_type?: string
+          scope_value?: string | null
+          priority?: number
+          active?: boolean
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      price_list_items: {
+        Row: {
+          id: number
+          tenant_id: string
+          price_list_id: number
+          product_id: number | null
+          variant_id: number | null
+          price: number
+          created_at: string
+          updated_at: string
+        }
+        Insert: {
+          id?: number
+          tenant_id?: string
+          price_list_id: number
+          product_id?: number | null
+          variant_id?: number | null
+          price: number
+          created_at?: string
+          updated_at?: string
+        }
+        Update: {
+          price?: number
+          updated_at?: string
+        }
+        Relationships: []
+      }
       redirects: {
         Row: {
           id: number

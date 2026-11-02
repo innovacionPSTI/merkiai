@@ -115,6 +115,8 @@ export const FEATURES = {
   ECOMMERCE: 'ecommerce',
   /** E24 · módulo de Operaciones e inventario (ítems/kardex/compras/producción). */
   INVENTORY: 'inventory',
+  /** E24 · HU-407 · listas de precio por canal/ubicación/segmento. */
+  PRICE_LISTS: 'price_lists',
   /** E19 · Club VIP / acceso anticipado (segmentos + campañas VIP). */
   VIP_EARLY_ACCESS: 'vip_early_access',
   // ── Constructor v2 (HU-359) · cada capacidad se habilita por plan ──────────
@@ -167,6 +169,7 @@ export const ENTITLEMENTS_CATALOG: EntitlementDef[] = [
   { key: FEATURES.PAGE_BUILDER,   kind: 'feature', label: 'Constructor de páginas',    description: 'Editor visual de páginas por bloques.',                        default: false },
   { key: FEATURES.ECOMMERCE,      kind: 'feature', label: 'Comercio electrónico',      description: 'Carrito y checkout (venta en línea). Sin esta feature la tienda opera como vitrina/catálogo.', default: true },
   { key: FEATURES.INVENTORY,      kind: 'feature', label: 'Operaciones e inventario',   description: 'Ítems de inventario, libro de movimientos, compras, recetas y producción.', default: false },
+  { key: FEATURES.PRICE_LISTS,    kind: 'feature', label: 'Listas de precio',          description: 'Precios por canal (en línea/mostrador), sede o segmento de cliente, por encima del precio único.', default: false },
   { key: FEATURES.VIP_EARLY_ACCESS, kind: 'feature', label: 'Club VIP / acceso anticipado', description: 'Segmentos de clientes y campañas de venta exclusiva por tiempo limitado.', default: false },
   // Constructor v2 (HU-359) · features por plan. Default false salvo las dos
   // capacidades base (layout y estilo por página) para no degradar a quien ya

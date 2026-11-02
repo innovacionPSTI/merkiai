@@ -109,6 +109,7 @@ const NAV: NavNode[] = [
       { kind: 'leaf', href: '/compras',    icon: <Icon name="money" />,   label: 'Compras',    section: 'productos' },
       { kind: 'leaf', href: '/produccion', icon: <Icon name="product" />, label: 'Producción', section: 'productos' },
       { kind: 'leaf', href: '/modificadores', icon: <Icon name="product" />, label: 'Modificadores', section: 'productos' },
+      { kind: 'leaf', href: '/listas-precio', icon: <Icon name="money" />, label: 'Listas de precio', section: 'productos' },
     ],
   },
   {
@@ -174,7 +175,7 @@ const NAV: NavNode[] = [
 
 /** HU-350/HU-359 · aplica el gating runtime del Constructor sobre el NAV estático
  *  (filtra el leaf `/constructor` cuando el plan/flag no lo habilita). */
-function navFor(pageBuilder: boolean, collections: boolean, inventory: boolean): NavNode[] {
+function navFor(pageBuilder: boolean, collections: boolean, inventory: boolean, priceLists: boolean): NavNode[] {
   const hidden = new Set<string>()
   // HU-368 · con el Constructor disponible, "Páginas" (/contenido) se retira; sin
   // él, se conserva "Páginas" como editor de respaldo (cero regresión por plan).
@@ -184,6 +185,8 @@ function navFor(pageBuilder: boolean, collections: boolean, inventory: boolean):
   if (!collections) hidden.add('/colecciones')
   // E24 · sin el módulo de inventario, se oculta "Operaciones" (sus leaves).
   if (!inventory) { hidden.add('/inventario'); hidden.add('/compras'); hidden.add('/produccion'); hidden.add('/modificadores') }
+  // E24 · HU-407 · "Listas de precio" se gatea por su propia feature `price_lists`.
+  if (!priceLists) hidden.add('/listas-precio')
   if (hidden.size === 0) return NAV
   return NAV.map((node) => {
     if (node.kind === 'group') {
@@ -214,9 +217,9 @@ function getActiveGroupId(nodes: NavNode[], pathname: string): string | null {
 
 // ── Componente principal ─────────────────────────────────────────────────────
 
-interface Props { role: AdminRole; allowedSections?: AdminSection[]; pageBuilder?: boolean; collections?: boolean; inventory?: boolean }
+interface Props { role: AdminRole; allowedSections?: AdminSection[]; pageBuilder?: boolean; collections?: boolean; inventory?: boolean; priceLists?: boolean }
 
-export default function AdminSidebar({ role, allowedSections: allowedSectionsProp, pageBuilder, collections, inventory }: Props) {
+export default function AdminSidebar({ role, allowedSections: allowedSectionsProp, pageBuilder, collections, inventory, priceLists }: Props) {
   const pathname = usePathname()
   const app = useStackApp()
 
@@ -228,7 +231,8 @@ export default function AdminSidebar({ role, allowedSections: allowedSectionsPro
   const pbEnabled = pageBuilder ?? FEATURES.pageBuilder
   const collEnabled = collections ?? FEATURES.collections
   const invEnabled = inventory ?? FEATURES.inventory
-  const nav = useMemo(() => navFor(pbEnabled, collEnabled, invEnabled), [pbEnabled, collEnabled, invEnabled])
+  const plEnabled = priceLists ?? false
+  const nav = useMemo(() => navFor(pbEnabled, collEnabled, invEnabled, plEnabled), [pbEnabled, collEnabled, invEnabled, plEnabled])
 
   // Drawer móvil
   const [drawerOpen, setDrawerOpen] = useState(false)
