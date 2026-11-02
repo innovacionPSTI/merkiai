@@ -893,6 +893,82 @@ export type Database = {
         }
         Relationships: []
       }
+      modifier_groups: {
+        Row: {
+          id: number
+          tenant_id: string
+          product_id: number
+          name: string
+          min_select: number
+          max_select: number
+          required: boolean
+          active: boolean
+          order_index: number
+          created_at: string
+          updated_at: string
+        }
+        Insert: {
+          id?: number
+          tenant_id?: string
+          product_id: number
+          name: string
+          min_select?: number
+          max_select?: number
+          required?: boolean
+          active?: boolean
+          order_index?: number
+          created_at?: string
+          updated_at?: string
+        }
+        Update: {
+          name?: string
+          min_select?: number
+          max_select?: number
+          required?: boolean
+          active?: boolean
+          order_index?: number
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      modifier_options: {
+        Row: {
+          id: number
+          tenant_id: string
+          group_id: number
+          name: string
+          price_delta: number
+          consume_stock_item_id: number | null
+          consume_qty: number | null
+          consume_uom_id: number | null
+          active: boolean
+          order_index: number
+          created_at: string
+        }
+        Insert: {
+          id?: number
+          tenant_id?: string
+          group_id: number
+          name: string
+          price_delta?: number
+          consume_stock_item_id?: number | null
+          consume_qty?: number | null
+          consume_uom_id?: number | null
+          active?: boolean
+          order_index?: number
+          created_at?: string
+        }
+        Update: {
+          name?: string
+          price_delta?: number
+          consume_stock_item_id?: number | null
+          consume_qty?: number | null
+          consume_uom_id?: number | null
+          active?: boolean
+          order_index?: number
+        }
+        Relationships: []
+      }
       redirects: {
         Row: {
           id: number

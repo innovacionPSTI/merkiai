@@ -426,7 +426,7 @@ stock único) es **prerequisito del POS**. Ajustes de maduración:
 
 > Como negocio, quiero ofrecer opciones que ajusten precio y, si aplica, consuman inventario, para personalizar productos sin crear variantes nuevas.
 
-**Estimación:** M (5 puntos) · **Módulo:** `modifier_group` sobre producto; consumo opcional de `stock_item` · **Estado:** 🔲 Pendiente — feature `modifiers`
+**Estimación:** M (5 puntos) · **Módulo:** `modifier_group` sobre producto; consumo opcional de `stock_item` · **Estado:** 🟢 Datos + capa (v210) — migración `e17/68`: `modifier_groups` (sobre producto, min/max/required) y `modifier_options` (ajuste de precio + consumo opcional de `stock_item`), **lectura pública por tenant** (storefront) + admin_all. Helpers **puros** `modifiers.ts`: `validateSelection` (required/min/max), `selectionPriceDelta`, `selectionConsumption` (inventario a descontar, escalado por cantidad); capa `getProductModifiers`/`createModifierGroup`/`createModifierOption`. Transversal (sala/online/retail). Tests: **database 557 (+3)**, tsc limpio. **Pendiente:** aplicación en venta/POS (ajuste de precio + movimientos de consumo) + UI.
 
 | # | Escenario | Resultado esperado |
 |---|-----------|-------------------|
