@@ -105,6 +105,7 @@ const NAV: NavNode[] = [
     label: 'Operaciones',
     sections: ['productos'],
     children: [
+      { kind: 'leaf', href: '/operaciones', icon: <Icon name="grid" />,   label: 'Tablero',    section: 'productos' },
       { kind: 'leaf', href: '/inventario', icon: <Icon name="grid" />,    label: 'Inventario', section: 'productos' },
       { kind: 'leaf', href: '/compras',    icon: <Icon name="money" />,   label: 'Compras',    section: 'productos' },
       { kind: 'leaf', href: '/produccion', icon: <Icon name="product" />, label: 'Producción', section: 'productos' },
@@ -184,7 +185,7 @@ function navFor(pageBuilder: boolean, collections: boolean, inventory: boolean, 
   else hidden.add('/constructor')
   if (!collections) hidden.add('/colecciones')
   // E24 · sin el módulo de inventario, se oculta "Operaciones" (sus leaves).
-  if (!inventory) { hidden.add('/inventario'); hidden.add('/compras'); hidden.add('/produccion'); hidden.add('/modificadores') }
+  if (!inventory) { hidden.add('/operaciones'); hidden.add('/inventario'); hidden.add('/compras'); hidden.add('/produccion'); hidden.add('/modificadores') }
   // E24 · HU-407 · "Listas de precio" se gatea por su propia feature `price_lists`.
   if (!priceLists) hidden.add('/listas-precio')
   if (hidden.size === 0) return NAV

@@ -471,7 +471,7 @@ stock único) es **prerequisito del POS**. Ajustes de maduración:
 
 > Como operador, quiero ver existencias, compras, producción, costo y movimientos, y recibir alertas, para decidir con datos.
 
-**Estimación:** L (8 puntos) · **Módulo:** reportes/tableros sobre proyecciones del ledger + motor de alertas por eventos; **absorbe** HU-106/116/183 como casos base · **Estado:** 🔲 Pendiente
+**Estimación:** L (8 puntos) · **Módulo:** reportes/tableros sobre proyecciones del ledger + motor de alertas por eventos; **absorbe** HU-106/116/183 como casos base · **Estado:** 🟡 Fase 1 (v218) — tablero base. Capa `operations-report.ts` con helpers **puros** `summarizeInventory` (existencias por clase + valor a costo + ítems sin costo, AC-1/AC-2) y `summarizeMovements` (conteo/entradas/salidas/valor por tipo), sobre las proyecciones del ledger (disponible + costo ponderado); queries `inventorySummary` y `movementsSummarySince`. **UI** `/operaciones` (grupo "Operaciones", gated por `inventory`): KPIs (valor a costo, ítems activos/vendibles, movimientos 30 días, ítems sin costo), existencias por clase y resumen de movimientos de 30 días. Tests: **database 566 (+3)**, admin 266, tsc limpio. **Pendiente (Fase 2):** reportes exportables (AC-1), tableros configurables/multi-sede (AC-2) y **motor de alertas** (AC-3: bajo mínimo por `(ítem, ubicación)`, merma fuera de rango, por recibir, fallo de sync POS/integración).
 
 | # | Escenario | Resultado esperado |
 |---|-----------|-------------------|
