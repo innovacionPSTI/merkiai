@@ -483,7 +483,7 @@ stock único) es **prerequisito del POS**. Ajustes de maduración:
 
 > Como operador de plataforma, quiero un preset/plan que encienda el vertical de operaciones, para aprovisionar este tipo de tienda sin trabajo manual.
 
-**Estimación:** S (3 puntos) · **Módulo:** preset de nicho (HU-233/235) + entitlements (HU-239/359) que encienden E24 · **Estado:** 🔲 Pendiente
+**Estimación:** S (3 puntos) · **Módulo:** preset de nicho (HU-233/235) + entitlements (HU-239/359) que encienden E24 · **Estado:** 🟢 (v219) — **AC-1**: el preset acepta un bloque `operations` (UoMs + ítems + recetas de ejemplo, **datos no código**); `normalizeOperationsPreset` (puro) deriva claves, aplica defaults (clase `insumo`, política `al_vender`, rendimiento 1) y descarta referencias inválidas; `seedOperations` (en `applyPresetToStore`) siembra **idempotente** (UoMs por `code`, ítems por `key`, recetas por `output`) reusando la capa del ledger. **AC-2**: gated por `opts.allowInventory` (feature `inventory`); sin el plan, el bloque se omite (`skipped`, comportamiento solo-tienda idéntico). Cableado en la ruta de aprovisionamiento de la consola (`resolveFeature(INVENTORY)`) y en el onboarding del admin. El **plan "Operaciones"** se arma en el editor de planes de la consola (HU-239) encendiendo `inventory`/`price_lists` (config, no código). Tests: **database 570 (+4)**; tsc admin/console limpio.
 
 | # | Escenario | Resultado esperado |
 |---|-----------|-------------------|

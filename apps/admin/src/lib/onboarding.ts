@@ -46,6 +46,8 @@ export interface OnboardingOptions {
   allowMultiLocation: boolean
   /** HU-373 · ¿el plan habilita estructuras de sitio (blueprints)? */
   allowBlueprint?: boolean
+  /** HU-410 · ¿el plan habilita el vertical de Operaciones? */
+  allowInventory?: boolean
 }
 
 /** Pide al control plane los presets aplicables al plan del tenant. */
@@ -112,6 +114,7 @@ export async function applyOnboardingPreset(
         limits: { categories: opts.limits.categories ?? undefined, products: opts.limits.products ?? undefined, pages: opts.limits.pages ?? undefined },
         allowMultiLocation: opts.allowMultiLocation,
         allowBlueprint: opts.allowBlueprint ?? false,
+        allowInventory: opts.allowInventory ?? false,
       },
       db,
     )

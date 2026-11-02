@@ -25,6 +25,9 @@
 import type { Db } from '../client'
 import { seedHomeSections, type StarterSection } from './seed'
 import { seedBlueprint, type SiteBlueprint } from './blueprint'
+import { listUoms, createUom, getStockItem, createStockItem } from './stock-items'
+import { getBomByOutput, createBom, isConsumptionPolicy, type ConsumptionPolicy } from './bom'
+import { isItemClass } from './uom'
 
 export interface SampleCategory {
   name: string
@@ -54,6 +57,50 @@ export interface PresetPayload {
   inventory_model?: 'single' | 'multi_location'
   /** HU-373 · estructura de sitio (páginas + nav + regiones). Gated por plan. */
   blueprint?: SiteBlueprint
+  /** HU-410 · datos de arranque del vertical Operaciones (UoMs/ítems/recetas).
+   *  Solo se siembra si el plan habilita `inventory` (opts.allowInventory). */
+  operations?: OperationsPreset
+}
+
+/* ── HU-410 · Preset de Operaciones (datos, no código) ──────────────────────── */
+
+/** Unidad de medida de ejemplo (idempotente por `code`). */
+export interface OpUom {
+  code: string
+  name?: string
+  dimension?: string
+  to_base_factor?: number
+}
+
+/** Ítem de inventario de ejemplo. `uom` referencia una UoM por su `code`. */
+export interface OpStockItem {
+  key?: string
+  name: string
+  item_class?: string
+  uom?: string
+  sellable?: boolean
+}
+
+/** Componente de una receta: referencia un ítem por `key` y una UoM por `code`. */
+export interface OpBomComponent {
+  item: string     // key del ítem componente
+  qty: number
+  uom?: string
+}
+
+/** Receta de ejemplo. `output` referencia el ítem terminado por `key`. */
+export interface OpBom {
+  output: string
+  name?: string
+  consumption_policy?: string
+  yield_qty?: number
+  components: OpBomComponent[]
+}
+
+export interface OperationsPreset {
+  uoms?: OpUom[]
+  stock_items?: OpStockItem[]
+  boms?: OpBom[]
 }
 
 /** Topes del plan (undefined = sin tope). Resueltos por el llamador (HU-239). */
@@ -78,6 +125,12 @@ export interface ApplyPresetOptions {
    * (solo se siembra el home) → cero regresión.
    */
   allowBlueprint?: boolean
+  /**
+   * ¿El plan habilita el vertical de Operaciones? (HU-410, feature `inventory`).
+   * Lo resuelve el llamador. Si es false, el bloque `operations` del preset se
+   * ignora (comportamiento solo-tienda idéntico, AC-2) → cero regresión.
+   */
+  allowInventory?: boolean
 }
 
 export interface ApplyPresetResult {
@@ -154,6 +207,15 @@ export async function applyPresetToStore(
     for (const [k, v] of Object.entries(bpResults)) results[`blueprint.${k}`] = v
   } else if (preset.blueprint) {
     results['blueprint'] = 'skipped (plan sin site_blueprints)'
+  }
+
+  // HU-410 · datos de arranque de Operaciones (UoMs/ítems/recetas). Solo si el
+  // plan habilita `inventory`; si no, se ignora (cero regresión, AC-2).
+  if (opts.allowInventory && preset.operations) {
+    const opResults = await seedOperations(db, tenantId, preset.operations)
+    for (const [k, v] of Object.entries(opResults)) results[`operations.${k}`] = v
+  } else if (preset.operations) {
+    results['operations'] = 'skipped (plan sin inventory)'
   }
 
   return { tenantId, results }
@@ -287,4 +349,138 @@ async function seedSampleProducts(supabase: any, tenantId: string, prods: Sample
   } catch (e) {
     return `error: ${e instanceof Error ? e.message : String(e)}`
   }
+}
+
+/* ── HU-410 · Operaciones: normalización pura + siembra idempotente ─────────── */
+
+export interface NormalizedOperations {
+  uoms: Array<{ code: string; name: string; dimension: string; to_base_factor: number }>
+  stock_items: Array<{ key: string; name: string; item_class: string; uom: string | null; sellable: boolean }>
+  boms: Array<{ output: string; name: string | null; consumption_policy: ConsumptionPolicy; yield_qty: number; components: Array<{ item: string; qty: number; uom: string | null }> }>
+}
+
+/**
+ * Normaliza (puro, sin BD) el bloque `operations` de un preset: deriva claves
+ * (`slugify(name)`), aplica defaults (clase `insumo`, política `al_vender`,
+ * rendimiento 1), descarta ítems sin nombre y recetas cuyo `output`/componentes
+ * no referencien un ítem declarado. Idempotente: dedup por clave de ítem y por
+ * `output` de receta. No valida existencia en BD (eso lo hace el seeder).
+ */
+export function normalizeOperationsPreset(op: OperationsPreset | undefined): NormalizedOperations {
+  const uoms = (op?.uoms ?? [])
+    .filter((u) => u?.code && u.code.trim())
+    .map((u) => ({
+      code: u.code.trim(),
+      name: (u.name ?? u.code).trim(),
+      dimension: u.dimension ?? 'count',
+      to_base_factor: typeof u.to_base_factor === 'number' && u.to_base_factor > 0 ? u.to_base_factor : 1,
+    }))
+
+  const seenItem = new Set<string>()
+  const stock_items: NormalizedOperations['stock_items'] = []
+  for (const it of op?.stock_items ?? []) {
+    if (!it?.name || !it.name.trim()) continue
+    const key = (it.key?.trim() || slugify(it.name))
+    if (!key || seenItem.has(key)) continue
+    seenItem.add(key)
+    stock_items.push({
+      key,
+      name: it.name.trim(),
+      item_class: isItemClass(it.item_class) ? it.item_class : 'insumo',
+      uom: it.uom?.trim() || null,
+      sellable: it.sellable ?? false,
+    })
+  }
+  const itemKeys = new Set(stock_items.map((i) => i.key))
+
+  const seenBom = new Set<string>()
+  const boms: NormalizedOperations['boms'] = []
+  for (const b of op?.boms ?? []) {
+    const output = b?.output?.trim()
+    if (!output || !itemKeys.has(output) || seenBom.has(output)) continue
+    const components = (b.components ?? [])
+      .map((c) => ({ item: c?.item?.trim() ?? '', qty: Number(c?.qty), uom: c?.uom?.trim() || null }))
+      .filter((c) => c.item && itemKeys.has(c.item) && c.qty > 0)
+    if (!components.length) continue
+    seenBom.add(output)
+    boms.push({
+      output,
+      name: b.name?.trim() || null,
+      consumption_policy: isConsumptionPolicy(b.consumption_policy) ? b.consumption_policy : 'al_vender',
+      yield_qty: typeof b.yield_qty === 'number' && b.yield_qty > 0 ? b.yield_qty : 1,
+      components,
+    })
+  }
+
+  return { uoms, stock_items, boms }
+}
+
+/**
+ * Siembra el vertical de Operaciones en el tenant (idempotente): UoMs por `code`,
+ * ítems por `key` y recetas por `output`. Reusa las queries del ledger. No pisa
+ * lo existente. El llamador ya verificó `allowInventory`.
+ */
+async function seedOperations(db: Db, tenantId: string, op: OperationsPreset): Promise<Record<string, 'ok' | string>> {
+  const plan = normalizeOperationsPreset(op)
+  const results: Record<string, 'ok' | string> = {}
+
+  // 1) UoMs (idempotente por code sobre las ya sembradas por la migración/tenant).
+  const uomByCode = new Map<string, number>()
+  try {
+    const existing = await listUoms(db)
+    for (const u of existing) uomByCode.set(u.code, u.id)
+    let created = 0
+    for (const u of plan.uoms) {
+      if (uomByCode.has(u.code)) continue
+      const row = await createUom(db, { tenant_id: tenantId, code: u.code, name: u.name, dimension: u.dimension, to_base_factor: u.to_base_factor })
+      uomByCode.set(u.code, row.id)
+      created += 1
+    }
+    results.uoms = `ok (${created} nuevas)`
+  } catch (e) {
+    results.uoms = `error: ${e instanceof Error ? e.message : String(e)}`
+  }
+
+  // 2) Ítems (idempotente por key). Resuelve uom_id por code.
+  const itemByKey = new Map<string, number>()
+  try {
+    let created = 0
+    for (const it of plan.stock_items) {
+      const found = await getStockItem(db, it.key)
+      if (found) { itemByKey.set(it.key, found.id); continue }
+      const row = await createStockItem(db, {
+        tenant_id: tenantId, key: it.key, name: it.name, item_class: it.item_class,
+        uom_id: it.uom ? (uomByCode.get(it.uom) ?? null) : null, sellable: it.sellable,
+      })
+      itemByKey.set(it.key, row.id)
+      created += 1
+    }
+    results.stock_items = `ok (${created} nuevos)`
+  } catch (e) {
+    results.stock_items = `error: ${e instanceof Error ? e.message : String(e)}`
+  }
+
+  // 3) Recetas (idempotente por output). Omite si falta algún id resuelto.
+  try {
+    let created = 0
+    for (const b of plan.boms) {
+      const outputId = itemByKey.get(b.output)
+      if (outputId == null) continue
+      if (await getBomByOutput(db, outputId)) continue
+      const components = b.components
+        .map((c) => ({ component_stock_item_id: itemByKey.get(c.item), qty: c.qty, uom_id: c.uom ? (uomByCode.get(c.uom) ?? null) : null }))
+        .filter((c): c is { component_stock_item_id: number; qty: number; uom_id: number | null } => c.component_stock_item_id != null)
+      if (!components.length) continue
+      await createBom(db, {
+        tenant_id: tenantId, output_stock_item_id: outputId, name: b.name,
+        consumption_policy: b.consumption_policy, yield_qty: b.yield_qty, components,
+      })
+      created += 1
+    }
+    results.boms = `ok (${created} nuevas)`
+  } catch (e) {
+    results.boms = `error: ${e instanceof Error ? e.message : String(e)}`
+  }
+
+  return results
 }

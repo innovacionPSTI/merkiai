@@ -42,5 +42,7 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ id: 
     allowMultiLocation: resolveFeature(entitlements, FEATURES.MULTI_LOCATION),
     // HU-373 · ¿el plan habilita estructuras de sitio (blueprints)?
     allowBlueprint: resolveFeature(entitlements, FEATURES.SITE_BLUEPRINTS),
+    // HU-410 · ¿el plan habilita el vertical de Operaciones?
+    allowInventory: resolveFeature(entitlements, FEATURES.INVENTORY),
   })
 }

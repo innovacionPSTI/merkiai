@@ -37,6 +37,7 @@ export const POST = withInternalAuth(async (req: NextRequest) => {
     limits?: ApplyPresetLimits
     allowMultiLocation?: boolean
     allowBlueprint?: boolean
+    allowInventory?: boolean
   }
   const tenantId = String(body.tenantId ?? '').trim()
   if (!tenantId) {
@@ -57,7 +58,7 @@ export const POST = withInternalAuth(async (req: NextRequest) => {
     // HU-235: copiar el resto del preset (Tema/Template/categorías/productos).
     if (preset) {
       const applied = await applyPresetToStore(
-        tenantId, preset, { limits: body.limits, allowMultiLocation: body.allowMultiLocation, allowBlueprint: body.allowBlueprint }, db,
+        tenantId, preset, { limits: body.limits, allowMultiLocation: body.allowMultiLocation, allowBlueprint: body.allowBlueprint, allowInventory: body.allowInventory }, db,
       )
       results.preset = applied.results
     }

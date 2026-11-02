@@ -28,6 +28,8 @@ export async function seedTenantConfigViaAdmin(
     allowMultiLocation?: boolean
     // HU-373: si el plan habilita estructuras de sitio (blueprints).
     allowBlueprint?: boolean
+    // HU-410: si el plan habilita el vertical de Operaciones.
+    allowInventory?: boolean
   },
 ): Promise<{ ok: boolean; error?: string }> {
   const base = (process.env.ADMIN_APP_URL ?? 'https://admin.merkiai.com').replace(/\/$/, '')
@@ -46,6 +48,7 @@ export async function seedTenantConfigViaAdmin(
         limits: input.limits,
         allowMultiLocation: input.allowMultiLocation,
         allowBlueprint: input.allowBlueprint,
+        allowInventory: input.allowInventory,
       }),
     })
     if (res.type === 'opaqueredirect' || (res.status >= 300 && res.status < 400)) {
