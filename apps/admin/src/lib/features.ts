@@ -11,6 +11,9 @@ export const FEATURES = {
   /** HU-353 · Colecciones (tipos de contenido dinámicos). Escape de dev; en prod
    *  manda el entitlement `colecciones` del plan. */
   collections: process.env.NEXT_PUBLIC_FEATURE_COLLECTIONS === 'true',
+  /** E24 · módulo de Operaciones e inventario. Escape de dev; en prod manda el
+   *  entitlement `inventory` del plan. */
+  inventory: process.env.NEXT_PUBLIC_FEATURE_INVENTORY === 'true',
 } as const
 
 export type FeatureName = keyof typeof FEATURES

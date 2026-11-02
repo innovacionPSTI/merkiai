@@ -65,6 +65,17 @@ describe('AdminSidebar', () => {
     expect(screen.queryByText('Páginas')).not.toBeInTheDocument()
   })
 
+  it('E24 · sin inventory: no aparece el grupo "Operaciones"', () => {
+    render(<AdminSidebar role="super_admin" inventory={false} />)
+    expect(screen.queryByText('Operaciones')).not.toBeInTheDocument()
+  })
+
+  it('E24 · con inventory: aparece "Operaciones" → "Inventario"', () => {
+    render(<AdminSidebar role="super_admin" inventory={true} />)
+    fireEvent.click(screen.getByRole('button', { name: /Operaciones/ }))
+    expect(screen.getByText('Inventario')).toBeInTheDocument()
+  })
+
   it('oculta secciones sin permiso según el rol (vendedor no ve Configuración)', () => {
     render(<AdminSidebar role="vendedor" />)
     expect(screen.getByText('Dashboard')).toBeInTheDocument()

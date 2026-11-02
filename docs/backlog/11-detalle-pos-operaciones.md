@@ -347,6 +347,15 @@ stock único) es **prerequisito del POS**. Ajustes de maduración:
 > `quotes`) son **nombres abstractos de capacidad**; su alta en el catálogo de
 > entitlements (HU-239/359) se define al priorizar.
 
+> **UI (v211):** primera pantalla del módulo — **admin `/inventario`** (gated por el
+> entitlement `inventory`, nuevo en el catálogo + flag de dev): lista de ítems con
+> **disponible** (proyección del libro), **costo** (promedio ponderado) y unidad de
+> medida; alta rápida de ítems (API `POST /api/admin/inventory/items`, gated); y
+> **kardex** por ítem (`/inventario/[key]`) con el historial de movimientos.
+> Grupo **"Operaciones"** en el sidebar, oculto sin la feature. Tests: admin 266,
+> tenancy 30 verdes. **Pendiente de UI:** compras/proveedores, recetas, producción,
+> edición de ítems y ajustes manuales de stock.
+
 ### HU-400 — Ítem de inventario unificado (`stock_item`) + clases + unidad de medida · E24
 
 > Como plataforma, quiero un sujeto de inventario único con unidad de medida y clase, para contar cualquier existencia (materia prima, insumo, terminado) sin casos especiales.
