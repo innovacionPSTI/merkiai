@@ -43,7 +43,7 @@
 
 **Estimación:** L (8 puntos)
 **Módulo:** migración de datos + refactor de los consumidores existentes
-**Estado:** 🔲 Pendiente (roadmap) — **contempla los cambios de lo ya implementado**
+**Estado:** 🟡 Fase 1 (v224) — **motor venta→ledger listo, sin cablear**. `queries/sale-ledger.ts`: `planSaleMovements` (puro: terminado directo vs. componentes `al_vender` escalados, agregado por ítem; variantes sin `stock_item_id` se omiten → descuento legacy intacto, AC-4), `resolveVariantConsumptions` (resuelve variante→`stock_item`, explota BOM `al_vender` a unidad base con factor de UoM y rendimiento) y `applyLedgerSaleForOrder`/`reverseLedgerSaleForOrder` (anexan `sale`/`return` al libro, **idempotentes por `op_key`** `sale:<order>:<item>`). **No** toca `product_variants.stock`. Tests: database 582 (+3). **Pendiente (Fase 2):** cablear en `stock.ts`/webhooks detrás de flag (convivencia con legacy), backfill del `stock` actual como saldo de apertura (AC-1/AC-2), y adaptar topes/validación 409 por ubicación.
 
 | # | Escenario | Resultado esperado |
 |---|-----------|-------------------|
