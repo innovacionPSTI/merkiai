@@ -7,6 +7,7 @@ import { userCanAccess } from '@/lib/roles'
 import { FEATURES as FLAGS } from '@/lib/features'
 import { getTenantEntitlements } from '@/lib/entitlements'
 import { resolveFeature, FEATURES } from '@merkiai/tenancy'
+import AdjustForm from './AdjustForm'
 
 export const metadata: Metadata = { title: 'Kardex' }
 export const dynamic = 'force-dynamic'
@@ -40,6 +41,7 @@ export default async function KardexPage({ params }: { params: Promise<{ key: st
     <div className="space-y-6">
       <PageHeader title={`Kardex · ${item.name}`} description={`Disponible: ${fmt(available)} · Costo unitario: ${cost == null ? '—' : fmt(cost)}`} />
       <a href="/inventario" className="font-brand text-sm text-brand-primary/60 underline">← Volver a Inventario</a>
+      <AdjustForm itemId={item.id} uoms={uoms.map((u) => ({ id: u.id, code: u.code }))} />
       <div className="bg-white rounded-2xl shadow-sm overflow-hidden">
         <table className="w-full text-sm font-brand">
           <thead className="bg-slate-50 text-brand-primary/60 text-xs uppercase">
