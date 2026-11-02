@@ -86,6 +86,22 @@ export async function updateStockItem(
   return data as unknown as StockItem
 }
 
+export async function updateStockItemById(
+  db: Db,
+  id: number,
+  patch: Partial<{ name: string; item_class: string; uom_id: number | null; sellable: boolean; active: boolean }>,
+): Promise<StockItem> {
+  const { data, error } = await db
+    .from('stock_items')
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    .update({ ...patch, updated_at: new Date().toISOString() } as any)
+    .eq('id', id)
+    .select()
+    .single()
+  if (error) throw error
+  return data as unknown as StockItem
+}
+
 export async function deleteStockItem(db: Db, key: string): Promise<void> {
   const { error } = await db.from('stock_items').delete().eq('key', key)
   if (error) throw error
