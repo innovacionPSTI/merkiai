@@ -504,9 +504,14 @@ export default function ConstructorClient({
 
   return (
     <div className="space-y-6">
+      {/* HU-365 AC-1 · ÁMBITO "SITIO": plantilla + estructura/navegación/ajustes de sitio */}
       <div className="rounded-xl border border-slate-200 bg-white p-4">
+        <div className="flex items-center gap-2 mb-3">
+          <span className="inline-flex items-center gap-1 rounded-full bg-slate-100 text-slate-600 text-[11px] font-semibold uppercase tracking-wide px-2.5 py-1"><Icon name="settings" size={12} /> Sitio</span>
+          <span className="text-xs text-slate-400">Identidad, estructura y navegación de toda la tienda</span>
+        </div>
         <div className="flex flex-wrap items-center gap-3">
-          <label className="text-sm font-medium text-slate-700">Plantilla de la tienda</label>
+          <label className="text-sm font-medium text-slate-700">Plantilla</label>
           <select
             className="rounded-lg border border-slate-300 px-3 py-2 text-sm"
             value={template}
@@ -516,7 +521,22 @@ export default function ConstructorClient({
           </select>
           {isHome && !contentMode && (
             <button onClick={applyTemplate} className="rounded-lg border border-indigo-300 px-3 py-2 text-sm font-medium text-indigo-700 hover:bg-indigo-50">
-              Aplicar plantilla a esta página
+              Aplicar a esta página
+            </button>
+          )}
+          <span className="h-5 w-px bg-slate-200" aria-hidden="true" />
+          {/* HU-366 · estructura (outline) */}
+          <button onClick={() => setOutlineOpen(true)} className="inline-flex items-center gap-1 rounded-lg border border-slate-300 px-3 py-2 text-sm text-slate-700 hover:bg-slate-50" title="Mapa del sitio: páginas, regiones y navegación">
+            <Icon name="list" size={14} /> Estructura
+          </button>
+          {/* HU-367 · navegación (menú) */}
+          <button onClick={() => setNavOpen(true)} className="inline-flex items-center gap-1 rounded-lg border border-slate-300 px-3 py-2 text-sm text-slate-700 hover:bg-slate-50" title="Editar el menú del sitio">
+            <Icon name="content" size={14} /> Navegación
+          </button>
+          {/* HU-371 · ajustes de sitio (marca/footer/navbar) */}
+          {siteConfig && (
+            <button onClick={() => setSiteOpen(true)} className="inline-flex items-center gap-1 rounded-lg border border-slate-300 px-3 py-2 text-sm text-slate-700 hover:bg-slate-50" title="Nombre, logo, redes, footer y navbar del sitio">
+              <Icon name="settings" size={14} /> Ajustes de sitio
             </button>
           )}
           <span role="status" aria-live="polite" className="text-sm text-green-600">{tplMsg}</span>
@@ -555,8 +575,13 @@ export default function ConstructorClient({
       {/* Editor (izquierda) + Vista previa en vivo (derecha) */}
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
         <div className="space-y-4">
+          {/* HU-365 AC-1 · ÁMBITO "PÁGINA": selección, estado y contenido de la página */}
+          <div className="flex items-center gap-2">
+            <span className="inline-flex items-center gap-1 rounded-full bg-indigo-50 text-indigo-700 text-[11px] font-semibold uppercase tracking-wide px-2.5 py-1"><Icon name="content" size={12} /> Página</span>
+            <span className="text-xs text-slate-400">Selección, estado y contenido (bloques) de esta página</span>
+          </div>
           <div className="flex flex-wrap items-center gap-3">
-            <label className="text-sm font-medium text-slate-600">Página</label>
+            <label className="text-sm font-medium text-slate-600 sr-only">Página</label>
             {/* HU-350 AC-2 · selector con lista filtrable (tipo/estado) dentro del hub */}
             <div className="relative">
               <button
@@ -633,22 +658,8 @@ export default function ConstructorClient({
             </span>
             {/* HU-365 · AC-3 · ajustes de página agrupados en un drawer */}
             {features.pageStyle && (
-              <button onClick={() => setPageSettingsOpen(true)} className="inline-flex items-center gap-1 rounded-lg border border-slate-300 px-3 py-2 text-sm text-slate-700 hover:bg-slate-50" title="Ancho, espaciado y acento de esta página">
+              <button onClick={() => setPageSettingsOpen(true)} className="inline-flex items-center gap-1 rounded-lg border border-slate-300 px-3 py-2 text-sm text-slate-700 hover:bg-slate-50" title="Nombre, slug, tipo, SEO, ancho, espaciado y acento de esta página">
                 <Icon name="settings" size={14} /> Ajustes de página
-              </button>
-            )}
-            {/* HU-366 · outline / árbol del sitio (mapa de páginas + regiones) */}
-            <button onClick={() => setOutlineOpen(true)} className="inline-flex items-center gap-1 rounded-lg border border-slate-300 px-3 py-2 text-sm text-slate-700 hover:bg-slate-50" title="Mapa del sitio: páginas, regiones y navegación">
-              <Icon name="list" size={14} /> Estructura
-            </button>
-            {/* HU-367 · navegación (menú) dentro del Constructor */}
-            <button onClick={() => setNavOpen(true)} className="inline-flex items-center gap-1 rounded-lg border border-slate-300 px-3 py-2 text-sm text-slate-700 hover:bg-slate-50" title="Editar el menú del sitio">
-              <Icon name="content" size={14} /> Navegación
-            </button>
-            {/* HU-371 · ajustes de sitio (marca/footer/nav) dentro del Constructor */}
-            {siteConfig && (
-              <button onClick={() => setSiteOpen(true)} className="inline-flex items-center gap-1 rounded-lg border border-slate-300 px-3 py-2 text-sm text-slate-700 hover:bg-slate-50" title="Nombre, logo, redes, footer y navbar del sitio">
-                <Icon name="settings" size={14} /> Ajustes de sitio
               </button>
             )}
 
