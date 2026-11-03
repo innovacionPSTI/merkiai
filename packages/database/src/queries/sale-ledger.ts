@@ -17,6 +17,7 @@ import type { Db } from '../client'
 import { recordMovement } from './stock-movements'
 import { getBomByOutput } from './bom'
 import { listUoms } from './stock-items'
+import { listLocations, pickDefaultLocationId } from './locations'
 
 const round6 = (n: number) => Math.round(n * 1e6) / 1e6
 
@@ -116,11 +117,15 @@ export async function applyLedgerSaleForOrder(db: Db, orderNumber: string): Prom
   if (!order) return 0
   const consumptions = await resolveVariantConsumptions(db, order.items.map((i) => i.variant_id))
   const plan = planSaleMovements(order.items, consumptions)
+  // E18·HU-177: fija la ubicación de fulfillment (la predeterminada del tenant;
+  // null si no hay ninguna definida → libro sin ubicación, como hasta hoy).
+  const locationId = pickDefaultLocationId(await listLocations(db, { activeOnly: true }))
   let applied = 0
   for (const m of plan) {
     const res = await recordMovement(db, {
       tenant_id: order.tenant_id,
       stock_item_id: m.stock_item_id,
+      location_id: locationId,
       movement_type: 'sale',
       qty: m.qty_base,
       uom_factor: 1,
@@ -144,11 +149,13 @@ export async function reverseLedgerSaleForOrder(db: Db, orderNumber: string): Pr
   if (!order) return 0
   const consumptions = await resolveVariantConsumptions(db, order.items.map((i) => i.variant_id))
   const plan = planSaleMovements(order.items, consumptions)
+  const locationId = pickDefaultLocationId(await listLocations(db, { activeOnly: true }))
   let applied = 0
   for (const m of plan) {
     const res = await recordMovement(db, {
       tenant_id: order.tenant_id,
       stock_item_id: m.stock_item_id,
+      location_id: locationId,
       movement_type: 'return',
       qty: m.qty_base,
       uom_factor: 1,

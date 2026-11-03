@@ -150,6 +150,17 @@ export async function getAvailable(db: Db, stockItemId: number, locationId?: num
   return rows.reduce((s, r) => s + Number(r.available ?? 0), 0)
 }
 
+/** Disponible de un ítem desglosado por ubicación (E18·HU-176/177). */
+export async function getAvailableByLocation(db: Db, stockItemId: number): Promise<Array<{ location_id: number | null; available: number }>> {
+  const { data } = await db
+    .from('stock_item_available').select('location_id, available').eq('stock_item_id', stockItemId)
+  const agg = new Map<number | null, number>()
+  for (const r of (data ?? []) as Array<{ location_id: number | null; available: number | string }>) {
+    agg.set(r.location_id, (agg.get(r.location_id) ?? 0) + Number(r.available ?? 0))
+  }
+  return [...agg.entries()].map(([location_id, available]) => ({ location_id, available }))
+}
+
 /** Disponible de varios ítems (agregado por ítem, todas las ubicaciones). */
 export async function getAvailableMap(db: Db, stockItemIds: number[]): Promise<Record<number, number>> {
   if (!stockItemIds.length) return {}

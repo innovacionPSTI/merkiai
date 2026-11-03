@@ -1,7 +1,7 @@
 import { redirect, notFound } from 'next/navigation'
 import type { Metadata } from 'next'
 import { PageHeader } from '@merkiai/ui'
-import { getStockItem, listMovements, getAvailable, getItemCost, listUoms } from '@merkiai/database'
+import { getStockItem, listMovements, getAvailable, getItemCost, listUoms, getAvailableByLocation, listLocations } from '@merkiai/database'
 import { requireAdminDb } from '@/lib/admin-context'
 import { userCanAccess } from '@/lib/roles'
 import { FEATURES as FLAGS } from '@/lib/features'
@@ -30,13 +30,19 @@ export default async function KardexPage({ params }: { params: Promise<{ key: st
   const item = await getStockItem(db, key)
   if (!item) notFound()
 
-  const [movs, available, cost, uoms] = await Promise.all([
+  const [movs, available, cost, uoms, byLocation, locations] = await Promise.all([
     listMovements(db, { stockItemId: item.id, limit: 200 }),
     getAvailable(db, item.id),
     getItemCost(db, item.id),
     listUoms(db),
+    getAvailableByLocation(db, item.id),
+    listLocations(db),
   ])
   const uomCode = new Map(uoms.map((u) => [u.id, u.code]))
+  const locName = new Map(locations.map((l) => [l.id, l.name]))
+  // Mostrar desglose por ubicación solo si hay ubicaciones definidas y algún
+  // movimiento quedó asignado a una (E18·HU-177).
+  const showByLocation = locations.length > 0 && byLocation.some((b) => b.location_id != null)
 
   return (
     <div className="space-y-6">
@@ -45,6 +51,21 @@ export default async function KardexPage({ params }: { params: Promise<{ key: st
         <a href="/inventario" className="font-brand text-sm text-brand-primary/60 underline">← Volver a Inventario</a>
         <EditItemForm item={{ id: item.id, name: item.name, item_class: item.item_class, uom_id: item.uom_id, sellable: item.sellable, active: item.active, reorder_point: item.reorder_point ?? null }} uoms={uoms.map((u) => ({ id: u.id, code: u.code }))} />
       </div>
+      {showByLocation && (
+        <div className="bg-white rounded-2xl p-5 shadow-sm">
+          <h2 className="font-display text-brand-primary text-lg mb-3">Disponible por ubicación</h2>
+          <table className="w-full text-sm font-brand max-w-md">
+            <tbody>
+              {byLocation.map((b) => (
+                <tr key={String(b.location_id)} className="border-t border-gray-100 first:border-t-0">
+                  <td className="py-2 text-brand-primary/70">{b.location_id != null ? (locName.get(b.location_id) ?? `#${b.location_id}`) : 'Sin ubicación'}</td>
+                  <td className="py-2 text-right tabular-nums text-brand-primary">{fmt(b.available)}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      )}
       <AdjustForm itemId={item.id} uoms={uoms.map((u) => ({ id: u.id, code: u.code }))} />
       <div className="bg-white rounded-2xl shadow-sm overflow-hidden">
         <table className="w-full text-sm font-brand">
