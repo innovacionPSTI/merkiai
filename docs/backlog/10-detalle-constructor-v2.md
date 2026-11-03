@@ -36,6 +36,8 @@
 
 **Épica Constructor v2 — MOTOR COMPLETO** (Ola 1 ✅ · Ola 2 ✅ · Ola 3 ✅). Transversal abierto: **HU-359** (afinado de tiering).
 
+**Ola 4 — ✅ COMPLETA (nov-2026, v238-243):** HU-364…HU-375 implementadas y verificadas (outline del sitio con árbol navegable y reordenable, barra por ámbitos Sitio/Página, acciones de bloque en "···", selector de estructura de sitio en el admin por plan). Detalle por HU abajo.
+
 **Ola 4 propuesta (UX + autoría unificada v2):** HU-364…HU-375 — pulir la experiencia (matar diálogos nativos, patrón "Pagos", reorg por niveles), **dejar un solo Constructor** (retirar `/contenido`/"Páginas"), **mover al Constructor lo editorial** de *Configuración → General* y *Legal*, y la **estructura macro por plan** (header/footer editables, blueprint de sitio). Detalle abajo (sección "Ola 4") + ruta en "Orden de implementación". Es **UX e integración** sobre el motor ya construido.
 
 ---
@@ -264,7 +266,7 @@
 
 > Como comerciante, quiero ver la estructura completa (sitio → navegación → páginas → secciones) en un árbol para orientarme y reordenar.
 
-**Estimación:** M (5 puntos) · **Módulo:** panel izquierdo tipo outline sobre pages/nav_items/page_sections. · **Estado:** 🟢 (v238-39) — drawer **"Estructura"** en el Constructor: mapa del sitio con **Páginas** (badge publicada/borrador + slug), las **Secciones** de la página activa anidadas bajo ella (AC-1 · Sitio→Páginas→Secciones), **Regiones (header/footer)** (`page_type='region'`) y accesos a **Navegación**/**Ajustes de sitio**. **AC-1 ✅** (árbol navegable) · **AC-2 ✅** clic en página la enfoca (`selectPage`) y clic en sección la **abre y hace scroll** en el lienzo (`id="block-<id>"`). **Pendiente (AC-3):** **reordenar por arrastre** dentro del outline (el reorden de bloques ya existe en el lienzo; faltaría replicarlo en el árbol).
+**Estimación:** M (5 puntos) · **Módulo:** panel izquierdo tipo outline sobre pages/nav_items/page_sections. · **Estado:** 🟢 (v238-39) — drawer **"Estructura"** en el Constructor: mapa del sitio con **Páginas** (badge publicada/borrador + slug), las **Secciones** de la página activa anidadas bajo ella (AC-1 · Sitio→Páginas→Secciones), **Regiones (header/footer)** (`page_type='region'`) y accesos a **Navegación**/**Ajustes de sitio**. **AC-1 ✅** (árbol navegable) · **AC-2 ✅** clic en página la enfoca (`selectPage`) y clic en sección la **abre y hace scroll** en el lienzo (`id="block-<id>"`) · **AC-3 ✅ (v243)** las secciones del árbol son **arrastrables** (reusa `reorderTo` del lienzo; gated por estructura editable). **HU-366 completa.**
 
 | # | Escenario | Resultado esperado |
 |---|-----------|-------------------|

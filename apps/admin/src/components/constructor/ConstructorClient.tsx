@@ -107,6 +107,7 @@ export default function ConstructorClient({
   const [outlineOpen, setOutlineOpen] = useState(false) // HU-366 · drawer Estructura (árbol del sitio)
   const [siteOpen, setSiteOpen] = useState(false) // HU-371 · drawer Ajustes de sitio
   const [blockMenu, setBlockMenu] = useState<number | null>(null) // HU-365 AC-5 · menú "···" por bloque
+  const [outlineDrag, setOutlineDrag] = useState<number | null>(null) // HU-366 AC-3 · reorden en el árbol
   const [blueprintOpen, setBlueprintOpen] = useState(false) // HU-373 · drawer "Estructura de sitio"
   const [blueprintBusy, setBlueprintBusy] = useState(false)
   const [blueprintMsg, setBlueprintMsg] = useState<string | null>(null)
@@ -1033,10 +1034,17 @@ export default function ConstructorClient({
                     {/* Secciones de la página activa (AC-1 · nivel Secciones; AC-2 · clic enfoca) */}
                     {active && sections.length > 0 && (
                       <ul className="ml-4 mt-0.5 mb-1 pl-2 border-l border-slate-100 space-y-0.5">
-                        {sections.map((s) => (
-                          <li key={s.id}>
+                        {sections.map((s, idx) => (
+                          <li key={s.id}
+                            draggable={!contentMode}
+                            onDragStart={() => setOutlineDrag(idx)}
+                            onDragOver={(e) => { if (outlineDrag !== null) e.preventDefault() }}
+                            onDrop={(e) => { e.preventDefault(); if (outlineDrag !== null && outlineDrag !== idx) void reorderTo(outlineDrag, idx); setOutlineDrag(null) }}
+                            onDragEnd={() => setOutlineDrag(null)}
+                            className={outlineDrag === idx ? 'opacity-40' : ''}>
                             <button onClick={() => focusSection(s.id)}
                               className="w-full flex items-center gap-2 px-2 py-1 rounded-md text-left text-xs text-slate-500 hover:bg-slate-50 hover:text-slate-800">
+                              {!contentMode && <span className="cursor-grab text-slate-300" title="Arrastra para reordenar" aria-hidden="true"><Icon name="grid" size={11} /></span>}
                               <span className={`inline-block w-1 h-1 rounded-full ${s.enabled ? 'bg-green-500' : 'bg-slate-300'}`} />
                               <span className="truncate">{getBlockSchema(s.section_type)?.label ?? s.section_type}</span>
                             </button>
