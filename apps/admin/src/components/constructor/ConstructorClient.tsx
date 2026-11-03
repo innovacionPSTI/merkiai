@@ -99,6 +99,7 @@ export default function ConstructorClient({
   const [advOpen, setAdvOpen] = useState(false) // HU-365 · menú "···" de acciones avanzadas
   const [pageSettingsOpen, setPageSettingsOpen] = useState(false) // HU-365 AC-3 · drawer Ajustes de página
   const [navOpen, setNavOpen] = useState(false) // HU-367 · drawer Navegación
+  const [outlineOpen, setOutlineOpen] = useState(false) // HU-366 · drawer Estructura (árbol del sitio)
   const [siteOpen, setSiteOpen] = useState(false) // HU-371 · drawer Ajustes de sitio
   const askConfirm = (o: NonNullable<typeof confirmState>) => setConfirmState(o)
   const askPrompt = (o: NonNullable<typeof promptState>) => setPromptState(o)
@@ -636,6 +637,10 @@ export default function ConstructorClient({
                 <Icon name="settings" size={14} /> Ajustes de página
               </button>
             )}
+            {/* HU-366 · outline / árbol del sitio (mapa de páginas + regiones) */}
+            <button onClick={() => setOutlineOpen(true)} className="inline-flex items-center gap-1 rounded-lg border border-slate-300 px-3 py-2 text-sm text-slate-700 hover:bg-slate-50" title="Mapa del sitio: páginas, regiones y navegación">
+              <Icon name="list" size={14} /> Estructura
+            </button>
             {/* HU-367 · navegación (menú) dentro del Constructor */}
             <button onClick={() => setNavOpen(true)} className="inline-flex items-center gap-1 rounded-lg border border-slate-300 px-3 py-2 text-sm text-slate-700 hover:bg-slate-50" title="Editar el menú del sitio">
               <Icon name="content" size={14} /> Navegación
@@ -914,6 +919,57 @@ export default function ConstructorClient({
       })()}
 
       {/* HU-367 · drawer "Navegación" (gestión del menú dentro del Constructor) */}
+      {/* HU-366 · drawer "Estructura" — outline del sitio */}
+      {outlineOpen && (
+        <div className="fixed inset-0 z-50 flex justify-end bg-black/30" onClick={() => setOutlineOpen(false)}>
+          <div className="w-96 max-w-full h-full bg-white shadow-xl p-5 overflow-y-auto" onClick={(e) => e.stopPropagation()}>
+            <div className="flex items-center justify-between mb-1">
+              <h3 className="font-display text-brand-primary text-lg">Estructura del sitio</h3>
+              <button onClick={() => setOutlineOpen(false)} className="text-slate-400 hover:text-slate-700" aria-label="Cerrar"><Icon name="close" size={18} /></button>
+            </div>
+            <p className="text-xs text-slate-400 mb-4">Mapa del sitio: páginas, regiones y menú. Toca una página para editarla.</p>
+
+            {(() => {
+              const regions = pageList.filter((p) => (p.page_type ?? '') === 'region')
+              const normalPages = pageList.filter((p) => (p.page_type ?? '') !== 'region')
+              const jump = (key: string) => { selectPage(key); setOutlineOpen(false) }
+              const Row = ({ p }: { p: PageOption }) => (
+                <button onClick={() => jump(p.key)}
+                  className={`w-full flex items-center gap-2 px-3 py-2 rounded-lg text-left text-sm ${p.key === pageKey ? 'bg-indigo-50 text-indigo-700' : 'hover:bg-slate-50 text-slate-700'}`}>
+                  <span className={`inline-block w-1.5 h-1.5 rounded-full ${p.enabled === false ? 'bg-amber-400' : 'bg-green-500'}`} title={p.enabled === false ? 'Borrador' : 'Publicada'} />
+                  <span className="flex-1 min-w-0 truncate">{p.label}</span>
+                  <span className="text-[10px] text-slate-400 truncate max-w-[40%]">/{p.slug}</span>
+                </button>
+              )
+              return (
+                <div className="space-y-5">
+                  <section>
+                    <h4 className="text-[11px] font-semibold uppercase tracking-wide text-slate-400 mb-1">Páginas <span className="text-slate-300">({normalPages.length})</span></h4>
+                    <div className="space-y-0.5">{normalPages.map((p) => <Row key={p.key} p={p} />)}</div>
+                  </section>
+                  {regions.length > 0 && (
+                    <section>
+                      <h4 className="text-[11px] font-semibold uppercase tracking-wide text-slate-400 mb-1">Regiones (header / footer)</h4>
+                      <div className="space-y-0.5">{regions.map((p) => <Row key={p.key} p={p} />)}</div>
+                    </section>
+                  )}
+                  <section className="pt-1 border-t border-slate-100 space-y-1">
+                    <button onClick={() => { setOutlineOpen(false); setNavOpen(true) }} className="w-full flex items-center gap-2 px-3 py-2 rounded-lg text-left text-sm text-slate-700 hover:bg-slate-50">
+                      <Icon name="content" size={14} /> Editar navegación (menú)
+                    </button>
+                    {siteConfig && (
+                      <button onClick={() => { setOutlineOpen(false); setSiteOpen(true) }} className="w-full flex items-center gap-2 px-3 py-2 rounded-lg text-left text-sm text-slate-700 hover:bg-slate-50">
+                        <Icon name="settings" size={14} /> Ajustes de sitio
+                      </button>
+                    )}
+                  </section>
+                </div>
+              )
+            })()}
+          </div>
+        </div>
+      )}
+
       {navOpen && (
         <div className="fixed inset-0 z-50 flex justify-end bg-black/30" onClick={() => setNavOpen(false)}>
           <div className="w-96 max-w-full h-full bg-white shadow-xl p-5 overflow-y-auto" onClick={(e) => e.stopPropagation()}>
