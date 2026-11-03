@@ -3,7 +3,7 @@
  * Verifica idempotencia del descuento/reposición y el mapeo de getStockForVariants.
  */
 
-import { applyStockForOrder, restoreStockForOrder, getStockForVariants, isLedgerSaleEnabled } from '../stock'
+import { applyStockForOrder, restoreStockForOrder, getStockForVariants, isLedgerSaleEnabled, mergeLedgerAvailability, type VariantStock } from '../stock'
 import { createServerClient } from '../../client'
 
 jest.mock('../../client')
@@ -73,6 +73,23 @@ describe('isLedgerSaleEnabled (E18·HU-178 flag)', () => {
     expect(isLedgerSaleEnabled({ MERKIAI_LEDGER_SALE: '1' })).toBe(true)
     expect(isLedgerSaleEnabled({ MERKIAI_LEDGER_SALE: 'true' })).toBe(true)
     expect(isLedgerSaleEnabled({ MERKIAI_LEDGER_SALE: 'ON' })).toBe(true)
+  })
+})
+
+describe('mergeLedgerAvailability (E18·HU-178 F3b)', () => {
+  const base: VariantStock[] = [
+    { variant_id: 1, stock: 99, allow_backorder: false }, // enlazada directa → usa ledger
+    { variant_id: 2, stock: 7, allow_backorder: true },   // no enlazada → legacy
+  ]
+  it('sobrescribe stock de enlazadas directas con el disponible del ledger', () => {
+    const finished = new Map([[1, 500]])
+    const out = mergeLedgerAvailability(base, finished, { 500: 12 })
+    expect(out.find((r) => r.variant_id === 1)!.stock).toBe(12)
+    expect(out.find((r) => r.variant_id === 2)!.stock).toBe(7) // intacta
+  })
+  it('sin disponible en el ledger → 0 para la enlazada', () => {
+    const out = mergeLedgerAvailability(base, new Map([[1, 500]]), {})
+    expect(out.find((r) => r.variant_id === 1)!.stock).toBe(0)
   })
 })
 

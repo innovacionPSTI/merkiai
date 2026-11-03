@@ -8,7 +8,8 @@
  */
 
 import { createServerClient } from '../client'
-import { applyLedgerSaleForOrder, reverseLedgerSaleForOrder } from '../queries/sale-ledger'
+import { applyLedgerSaleForOrder, reverseLedgerSaleForOrder, resolveVariantConsumptions } from '../queries/sale-ledger'
+import { getAvailableMap } from '../queries/stock-movements'
 
 interface OrderItemRef {
   variant_id?: number
@@ -34,8 +35,29 @@ export interface VariantStock {
 }
 
 /**
+ * E18·HU-178 (Fase 3b) · sobrescribe el `stock` legacy con el **disponible del
+ * ledger** para las variantes enlazadas a un `stock_item` de consumo **directo**
+ * (terminado stocked / `al_producir`). Las variantes `al_vender` (hechas a pedido)
+ * y las no enlazadas conservan su `stock` legacy (no se bloquean por el ledger).
+ * Pura (testeable).
+ */
+export function mergeLedgerAvailability(
+  base: VariantStock[],
+  finishedByVariant: Map<number, number>,
+  availableMap: Record<number, number>,
+): VariantStock[] {
+  return base.map((r) => {
+    const sid = finishedByVariant.get(r.variant_id)
+    if (sid == null) return r
+    return { ...r, stock: availableMap[sid] ?? 0 }
+  })
+}
+
+/**
  * Devuelve stock y flag de backorder por variante (uniendo con products).
  * Usado por el checkout para validar disponibilidad antes de crear la orden.
+ * Con `MERKIAI_LEDGER_SALE` activo, el disponible de variantes enlazadas (directas)
+ * se lee del ledger (ver `mergeLedgerAvailability`).
  */
 export async function getStockForVariants(variantIds: number[]): Promise<VariantStock[]> {
   if (!variantIds.length) return []
@@ -45,13 +67,25 @@ export async function getStockForVariants(variantIds: number[]): Promise<Variant
     .select('id, stock, products(allow_backorder)')
     .in('id', variantIds)
   if (error || !data) return []
-  return (data as unknown as Array<{ id: number; stock: number | null; products: { allow_backorder?: boolean } | { allow_backorder?: boolean }[] | null }>).map((r) => ({
+  const base = (data as unknown as Array<{ id: number; stock: number | null; products: { allow_backorder?: boolean } | { allow_backorder?: boolean }[] | null }>).map((r) => ({
     variant_id: r.id,
     stock: r.stock ?? 0,
     allow_backorder: Array.isArray(r.products)
       ? !!r.products[0]?.allow_backorder
       : !!r.products?.allow_backorder,
   }))
+
+  if (!isLedgerSaleEnabled()) return base
+
+  // Variantes enlazadas de consumo directo → disponible del ledger.
+  const consumptions = await resolveVariantConsumptions(supabase, variantIds)
+  const finishedByVariant = new Map<number, number>()
+  for (const c of consumptions) {
+    if (c.finished_stock_item_id != null) finishedByVariant.set(c.variant_id, c.finished_stock_item_id)
+  }
+  if (finishedByVariant.size === 0) return base
+  const availableMap = await getAvailableMap(supabase, [...new Set(finishedByVariant.values())])
+  return mergeLedgerAvailability(base, finishedByVariant, availableMap)
 }
 
 /**
