@@ -264,7 +264,7 @@
 
 > Como comerciante, quiero ver la estructura completa (sitio → navegación → páginas → secciones) en un árbol para orientarme y reordenar.
 
-**Estimación:** M (5 puntos) · **Módulo:** panel izquierdo tipo outline sobre pages/nav_items/page_sections. · **Estado:** 🟡 Fase 1 (v238) — drawer **"Estructura"** en el Constructor: mapa del sitio con **Páginas** (con badge publicada/borrador + slug) y **Regiones (header/footer)** (`page_type='region'`), más accesos directos a **Navegación** y **Ajustes de sitio**. **AC-2 ✅** clic en una página la **enfoca/edita** en el lienzo (reusa `selectPage`). **Pendiente:** árbol de **secciones** por página y **reordenar** por arrastre (AC-1 completo/AC-3); el reordenamiento de bloques ya existe en el lienzo.
+**Estimación:** M (5 puntos) · **Módulo:** panel izquierdo tipo outline sobre pages/nav_items/page_sections. · **Estado:** 🟢 (v238-39) — drawer **"Estructura"** en el Constructor: mapa del sitio con **Páginas** (badge publicada/borrador + slug), las **Secciones** de la página activa anidadas bajo ella (AC-1 · Sitio→Páginas→Secciones), **Regiones (header/footer)** (`page_type='region'`) y accesos a **Navegación**/**Ajustes de sitio**. **AC-1 ✅** (árbol navegable) · **AC-2 ✅** clic en página la enfoca (`selectPage`) y clic en sección la **abre y hace scroll** en el lienzo (`id="block-<id>"`). **Pendiente (AC-3):** **reordenar por arrastre** dentro del outline (el reorden de bloques ya existe en el lienzo; faltaría replicarlo en el árbol).
 
 | # | Escenario | Resultado esperado |
 |---|-----------|-------------------|

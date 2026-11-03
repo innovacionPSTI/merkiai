@@ -704,6 +704,7 @@ export default function ConstructorClient({
                   <Fragment key={s.id}>
                     {gapAbove && <Indicator />}
                   <li
+                    id={`block-${s.id}`}
                     className={`rounded-xl border bg-white transition-all duration-150 ${isDragged ? 'border-indigo-400 opacity-40 scale-[0.99]' : 'border-slate-200'}`}
                     onDragOver={(e) => { e.preventDefault(); if (dragging && overIdx !== i) setOverIdx(i) }}
                     onDrop={(e) => { e.preventDefault(); if (dragIdx !== null) void reorderTo(dragIdx, i); setDragIdx(null); setOverIdx(null) }}
@@ -933,14 +934,37 @@ export default function ConstructorClient({
               const regions = pageList.filter((p) => (p.page_type ?? '') === 'region')
               const normalPages = pageList.filter((p) => (p.page_type ?? '') !== 'region')
               const jump = (key: string) => { selectPage(key); setOutlineOpen(false) }
-              const Row = ({ p }: { p: PageOption }) => (
-                <button onClick={() => jump(p.key)}
-                  className={`w-full flex items-center gap-2 px-3 py-2 rounded-lg text-left text-sm ${p.key === pageKey ? 'bg-indigo-50 text-indigo-700' : 'hover:bg-slate-50 text-slate-700'}`}>
-                  <span className={`inline-block w-1.5 h-1.5 rounded-full ${p.enabled === false ? 'bg-amber-400' : 'bg-green-500'}`} title={p.enabled === false ? 'Borrador' : 'Publicada'} />
-                  <span className="flex-1 min-w-0 truncate">{p.label}</span>
-                  <span className="text-[10px] text-slate-400 truncate max-w-[40%]">/{p.slug}</span>
-                </button>
-              )
+              const focusSection = (id: number) => {
+                setExpanded(id); setOutlineOpen(false)
+                setTimeout(() => document.getElementById(`block-${id}`)?.scrollIntoView({ behavior: 'smooth', block: 'center' }), 60)
+              }
+              const Row = ({ p }: { p: PageOption }) => {
+                const active = p.key === pageKey
+                return (
+                  <div>
+                    <button onClick={() => jump(p.key)}
+                      className={`w-full flex items-center gap-2 px-3 py-2 rounded-lg text-left text-sm ${active ? 'bg-indigo-50 text-indigo-700' : 'hover:bg-slate-50 text-slate-700'}`}>
+                      <span className={`inline-block w-1.5 h-1.5 rounded-full ${p.enabled === false ? 'bg-amber-400' : 'bg-green-500'}`} title={p.enabled === false ? 'Borrador' : 'Publicada'} />
+                      <span className="flex-1 min-w-0 truncate">{p.label}</span>
+                      <span className="text-[10px] text-slate-400 truncate max-w-[40%]">/{p.slug}</span>
+                    </button>
+                    {/* Secciones de la página activa (AC-1 · nivel Secciones; AC-2 · clic enfoca) */}
+                    {active && sections.length > 0 && (
+                      <ul className="ml-4 mt-0.5 mb-1 pl-2 border-l border-slate-100 space-y-0.5">
+                        {sections.map((s) => (
+                          <li key={s.id}>
+                            <button onClick={() => focusSection(s.id)}
+                              className="w-full flex items-center gap-2 px-2 py-1 rounded-md text-left text-xs text-slate-500 hover:bg-slate-50 hover:text-slate-800">
+                              <span className={`inline-block w-1 h-1 rounded-full ${s.enabled ? 'bg-green-500' : 'bg-slate-300'}`} />
+                              <span className="truncate">{getBlockSchema(s.section_type)?.label ?? s.section_type}</span>
+                            </button>
+                          </li>
+                        ))}
+                      </ul>
+                    )}
+                  </div>
+                )
+              }
               return (
                 <div className="space-y-5">
                   <section>
