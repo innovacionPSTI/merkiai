@@ -73,6 +73,14 @@ export default function QuotesManager({ quotes: initial, products }: { quotes: Q
     if (res.ok) { await reload(); router.refresh() }
   }
 
+  async function convert(id: number) {
+    if (!confirm('Convertir esta cotización en una orden (pago manual, pendiente). ¿Continuar?')) return
+    const res = await fetch(`/api/admin/quotes/${id}/convert`, { method: 'POST' })
+    const b = await res.json().catch(() => ({}))
+    if (res.ok) { alert(`Orden creada: ${b.order_number}`); await reload(); router.refresh() }
+    else alert(b?.error ?? 'No se pudo convertir')
+  }
+
   return (
     <div className="space-y-6">
       <div className="flex justify-between items-center">
@@ -158,6 +166,9 @@ export default function QuotesManager({ quotes: initial, products }: { quotes: Q
                     {(NEXT_STATES[q.status] ?? []).map((s) => (
                       <button key={s} onClick={() => changeStatus(q.id, s)} className="font-brand text-xs text-brand-primary underline">{STATUS_LABEL[s]}</button>
                     ))}
+                    {['draft', 'sent', 'accepted'].includes(q.status) && (
+                      <button onClick={() => convert(q.id)} className="font-brand text-xs text-green-700 underline font-medium">Convertir a orden</button>
+                    )}
                   </div>
                 </td>
               </tr>

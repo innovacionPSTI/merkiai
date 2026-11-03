@@ -7,6 +7,8 @@
  * stock (ledger), los abonos (pagos) y la conversión a orden son Fase 2.
  */
 import type { Db } from '../client'
+import type { OrderItem, Order } from '../types'
+import { createOrder } from './orders'
 
 export const QUOTE_STATUSES = ['draft', 'sent', 'accepted', 'converted', 'expired', 'cancelled'] as const
 export type QuoteStatus = (typeof QUOTE_STATUSES)[number]
@@ -79,6 +81,18 @@ export function canConvertQuote(
   if (quote.status === 'cancelled') return 'La cotización está cancelada'
   if (quote.status === 'expired' || isQuoteExpired(quote.valid_until, now)) return 'La cotización está vencida'
   return null
+}
+
+/** Mapea las líneas de una cotización a ítems de orden (puro). Las líneas sin
+ *  variante usan `variant_id` 0 (sentinela: no enlaza stock ni descuenta). */
+export function quoteItemsToOrderItems(items: QuoteItem[]): OrderItem[] {
+  return items.map((it) => ({
+    variant_id: it.variant_id ?? 0,
+    product_name: it.name,
+    variant_label: '',
+    qty: it.qty,
+    price: it.unit_price,
+  }))
 }
 
 /* ───────────────────────────── BD ─────────────────────────────────────────── */
@@ -161,4 +175,43 @@ export async function updateQuoteStatus(db: Db, id: number, status: QuoteStatus)
     .single()
   if (error) throw error
   return data as unknown as Quote
+}
+
+/**
+ * Convierte una cotización en una **orden** (HU-408 AC-1): reusa el modelo de
+ * orden (`createOrder`, pago `manual`, estado `pending`) con las líneas y totales
+ * de la cotización, y marca la cotización `converted` con `converted_order_id`.
+ * Lanza si la cotización no es convertible (vencida/cancelada/ya convertida).
+ */
+export async function convertQuoteToOrder(db: Db, quoteId: number): Promise<{ quote: Quote; order: Order }> {
+  const found = await getQuote(db, quoteId)
+  if (!found) throw new Error('Cotización no encontrada')
+  const reason = canConvertQuote(found.quote)
+  if (reason) throw new Error(reason)
+
+  const q = found.quote
+  const order = await createOrder({
+    tenant_id: q.tenant_id,
+    customer_name: q.customer_name || 'Cliente',
+    customer_email: q.customer_email || '',
+    customer_phone: q.customer_phone ?? undefined,
+    shipping_addr: { address: '', city: '', department: '' },
+    items: quoteItemsToOrderItems(found.items),
+    subtotal: q.subtotal,
+    shipping_cost: 0,
+    discount: q.discount,
+    total: q.total,
+    payment_method: 'manual',
+    payment_status: 'pending',
+  }, db)
+
+  const { data, error } = await db
+    .from('quotes')
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    .update({ status: 'converted', converted_order_id: order.id, updated_at: new Date().toISOString() } as any)
+    .eq('id', quoteId)
+    .select()
+    .single()
+  if (error) throw error
+  return { quote: data as unknown as Quote, order }
 }

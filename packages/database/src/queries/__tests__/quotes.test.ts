@@ -1,4 +1,4 @@
-import { quoteLineTotal, quoteTotals, isQuoteExpired, canConvertQuote, isQuoteStatus } from '../quotes'
+import { quoteLineTotal, quoteTotals, isQuoteExpired, canConvertQuote, isQuoteStatus, quoteItemsToOrderItems, type QuoteItem } from '../quotes'
 
 describe('cotizaciones (HU-408 F1, puras)', () => {
   it('quoteLineTotal y quoteTotals con descuento topado', () => {
@@ -28,5 +28,16 @@ describe('cotizaciones (HU-408 F1, puras)', () => {
   it('isQuoteStatus', () => {
     expect(isQuoteStatus('draft')).toBe(true)
     expect(isQuoteStatus('nope')).toBe(false)
+  })
+
+  it('quoteItemsToOrderItems mapea líneas (sin variante → 0)', () => {
+    const items: QuoteItem[] = [
+      { product_id: 5, variant_id: 50, name: 'Capuchino', qty: 2, unit_price: 8000, line_total: 16000 },
+      { product_id: null, variant_id: null, name: 'Servicio', qty: 1, unit_price: 20000, line_total: 20000 },
+    ]
+    expect(quoteItemsToOrderItems(items)).toEqual([
+      { variant_id: 50, product_name: 'Capuchino', variant_label: '', qty: 2, price: 8000 },
+      { variant_id: 0, product_name: 'Servicio', variant_label: '', qty: 1, price: 20000 },
+    ])
   })
 })
