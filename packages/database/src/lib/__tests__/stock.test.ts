@@ -3,7 +3,7 @@
  * Verifica idempotencia del descuento/reposición y el mapeo de getStockForVariants.
  */
 
-import { applyStockForOrder, restoreStockForOrder, getStockForVariants } from '../stock'
+import { applyStockForOrder, restoreStockForOrder, getStockForVariants, isLedgerSaleEnabled } from '../stock'
 import { createServerClient } from '../../client'
 
 jest.mock('../../client')
@@ -60,6 +60,19 @@ describe('restoreStockForOrder', () => {
     mockMaybeSingle.mockResolvedValueOnce({ data: null })
     await restoreStockForOrder('ORD-0002')
     expect(mockRpc).not.toHaveBeenCalled()
+  })
+})
+
+describe('isLedgerSaleEnabled (E18·HU-178 flag)', () => {
+  it('off por defecto / valores no verdaderos', () => {
+    expect(isLedgerSaleEnabled({})).toBe(false)
+    expect(isLedgerSaleEnabled({ MERKIAI_LEDGER_SALE: '0' })).toBe(false)
+    expect(isLedgerSaleEnabled({ MERKIAI_LEDGER_SALE: 'no' })).toBe(false)
+  })
+  it('on con 1/true/on', () => {
+    expect(isLedgerSaleEnabled({ MERKIAI_LEDGER_SALE: '1' })).toBe(true)
+    expect(isLedgerSaleEnabled({ MERKIAI_LEDGER_SALE: 'true' })).toBe(true)
+    expect(isLedgerSaleEnabled({ MERKIAI_LEDGER_SALE: 'ON' })).toBe(true)
   })
 })
 

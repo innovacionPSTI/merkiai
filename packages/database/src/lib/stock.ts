@@ -8,10 +8,23 @@
  */
 
 import { createServerClient } from '../client'
+import { applyLedgerSaleForOrder, reverseLedgerSaleForOrder } from '../queries/sale-ledger'
 
 interface OrderItemRef {
   variant_id?: number
   qty?: number
+}
+
+/**
+ * E18·HU-178 (Fase 2) · flag de corte al ledger. Cuando `MERKIAI_LEDGER_SALE`
+ * está activo, la venta **además** anexa movimientos `sale`/`return` al libro de
+ * inventario para las variantes enlazadas a un `stock_item` (el descuento legacy
+ * sobre `product_variants.stock` sigue corriendo para las no enlazadas). Default
+ * off → comportamiento idéntico al actual. Pura (testeable).
+ */
+export function isLedgerSaleEnabled(env: NodeJS.ProcessEnv = process.env): boolean {
+  const v = (env.MERKIAI_LEDGER_SALE ?? '').toLowerCase()
+  return v === '1' || v === 'true' || v === 'on'
 }
 
 export interface VariantStock {
@@ -58,12 +71,19 @@ export async function applyStockForOrder(orderNumber: string): Promise<void> {
     .select('items')
     .maybeSingle()
 
-  if (!claimed) return
+  if (claimed) {
+    const items = (claimed.items ?? []) as OrderItemRef[]
+    for (const it of items) {
+      if (!it.variant_id || !it.qty) continue
+      await supabase.rpc('decrement_variant_stock', { p_variant_id: it.variant_id, p_qty: it.qty })
+    }
+  }
 
-  const items = (claimed.items ?? []) as OrderItemRef[]
-  for (const it of items) {
-    if (!it.variant_id || !it.qty) continue
-    await supabase.rpc('decrement_variant_stock', { p_variant_id: it.variant_id, p_qty: it.qty })
+  // E18·HU-178 (Fase 2): corte al ledger para variantes enlazadas. Independiente
+  // e idempotente por op_key, así que corre aunque el reclamo legacy ya se hubiera
+  // aplicado (p. ej. al activar el flag con órdenes ya procesadas).
+  if (isLedgerSaleEnabled()) {
+    await applyLedgerSaleForOrder(supabase, orderNumber)
   }
 }
 
@@ -83,11 +103,16 @@ export async function restoreStockForOrder(orderNumber: string): Promise<void> {
     .select('items')
     .maybeSingle()
 
-  if (!claimed) return
+  if (claimed) {
+    const items = (claimed.items ?? []) as OrderItemRef[]
+    for (const it of items) {
+      if (!it.variant_id || !it.qty) continue
+      await supabase.rpc('restore_variant_stock', { p_variant_id: it.variant_id, p_qty: it.qty })
+    }
+  }
 
-  const items = (claimed.items ?? []) as OrderItemRef[]
-  for (const it of items) {
-    if (!it.variant_id || !it.qty) continue
-    await supabase.rpc('restore_variant_stock', { p_variant_id: it.variant_id, p_qty: it.qty })
+  // E18·HU-178 (Fase 2): reverso en el ledger para variantes enlazadas (idempotente).
+  if (isLedgerSaleEnabled()) {
+    await reverseLedgerSaleForOrder(supabase, orderNumber)
   }
 }
