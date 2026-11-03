@@ -60,10 +60,15 @@ export default function ConstructorClient({
   pages, initialPageKey, initialTemplate,
   features = { layoutAdvanced: true, pageStyle: true },
   siteConfig,
+  siteBlueprints = false,
+  blueprints = [],
 }: {
   pages: PageOption[]; initialPageKey: string; initialTemplate: string
   features?: ConstructorFeatures
   siteConfig?: SiteConfig
+  // HU-373 (admin) · estructuras de sitio seleccionables (solo con `site_blueprints`)
+  siteBlueprints?: boolean
+  blueprints?: Array<{ key: string; label: string; description?: string }>
 }) {
   const [pageKey, setPageKey] = useState(initialPageKey)
   // HU-350 · lista de páginas en estado local para poder crear/duplicar desde el
@@ -102,6 +107,22 @@ export default function ConstructorClient({
   const [outlineOpen, setOutlineOpen] = useState(false) // HU-366 · drawer Estructura (árbol del sitio)
   const [siteOpen, setSiteOpen] = useState(false) // HU-371 · drawer Ajustes de sitio
   const [blockMenu, setBlockMenu] = useState<number | null>(null) // HU-365 AC-5 · menú "···" por bloque
+  const [blueprintOpen, setBlueprintOpen] = useState(false) // HU-373 · drawer "Estructura de sitio"
+  const [blueprintBusy, setBlueprintBusy] = useState(false)
+  const [blueprintMsg, setBlueprintMsg] = useState<string | null>(null)
+
+  // HU-373 (admin) · aplica una estructura de sitio (crea páginas/nav/regiones que falten).
+  async function applyBlueprint(key: string) {
+    setBlueprintBusy(true); setBlueprintMsg(null)
+    try {
+      const res = await fetch('/api/admin/cms/apply-blueprint', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ preset_key: key }),
+      })
+      if (!res.ok) throw new Error((await res.json().catch(() => ({})))?.error ?? 'No se pudo aplicar')
+      setBlueprintMsg('Estructura aplicada ✓ Recargando…')
+      setTimeout(() => window.location.reload(), 700)
+    } catch (e) { setBlueprintMsg(e instanceof Error ? e.message : 'Error') } finally { setBlueprintBusy(false) }
+  }
   const askConfirm = (o: NonNullable<typeof confirmState>) => setConfirmState(o)
   const askPrompt = (o: NonNullable<typeof promptState>) => setPromptState(o)
 
@@ -540,6 +561,12 @@ export default function ConstructorClient({
               <Icon name="settings" size={14} /> Ajustes de sitio
             </button>
           )}
+          {/* HU-373 (admin) · elegir estructura de sitio (solo con `site_blueprints`) */}
+          {siteBlueprints && blueprints.length > 0 && (
+            <button onClick={() => { setBlueprintMsg(null); setBlueprintOpen(true) }} className="inline-flex items-center gap-1 rounded-lg border border-indigo-300 px-3 py-2 text-sm text-indigo-700 hover:bg-indigo-50" title="Aplicar una estructura de sitio completa (páginas + navegación + regiones)">
+              <Icon name="preset" size={14} /> Estructura de sitio
+            </button>
+          )}
           <span role="status" aria-live="polite" className="text-sm text-green-600">{tplMsg}</span>
           {/* HU-365 · acciones avanzadas (exportar/importar/backup) en menú "···" */}
           <div className="ml-auto relative">
@@ -949,6 +976,32 @@ export default function ConstructorClient({
       })()}
 
       {/* HU-367 · drawer "Navegación" (gestión del menú dentro del Constructor) */}
+      {/* HU-373 (admin) · drawer "Estructura de sitio" — aplicar un blueprint */}
+      {blueprintOpen && (
+        <div className="fixed inset-0 z-50 flex justify-end bg-black/30" onClick={() => setBlueprintOpen(false)}>
+          <div className="w-96 max-w-full h-full bg-white shadow-xl p-5 overflow-y-auto" onClick={(e) => e.stopPropagation()}>
+            <div className="flex items-center justify-between mb-1">
+              <h3 className="font-display text-brand-primary text-lg">Estructura de sitio</h3>
+              <button onClick={() => setBlueprintOpen(false)} className="text-slate-400 hover:text-slate-700" aria-label="Cerrar"><Icon name="close" size={18} /></button>
+            </div>
+            <p className="text-xs text-slate-400 mb-4">Aplica una estructura completa (varias páginas + navegación + regiones). Es aditivo: crea lo que falte en borrador, no borra tus páginas ni tu contenido.</p>
+            {blueprintMsg && <p className="mb-3 text-sm text-green-700">{blueprintMsg}</p>}
+            <div className="space-y-2">
+              {blueprints.map((b) => (
+                <div key={b.key} className="rounded-xl border border-slate-200 p-3">
+                  <p className="text-sm font-medium text-slate-800">{b.label}</p>
+                  {b.description && <p className="text-xs text-slate-400 mt-0.5">{b.description}</p>}
+                  <button onClick={() => applyBlueprint(b.key)} disabled={blueprintBusy}
+                    className="mt-2 rounded-lg bg-brand-primary text-brand-cream px-4 py-1.5 text-sm hover:bg-brand-dark disabled:opacity-50">
+                    {blueprintBusy ? 'Aplicando…' : 'Aplicar estructura'}
+                  </button>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* HU-366 · drawer "Estructura" — outline del sitio */}
       {outlineOpen && (
         <div className="fixed inset-0 z-50 flex justify-end bg-black/30" onClick={() => setOutlineOpen(false)}>

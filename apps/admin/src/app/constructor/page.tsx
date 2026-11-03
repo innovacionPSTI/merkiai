@@ -4,6 +4,7 @@ import { redirect, notFound } from 'next/navigation'
 import { requireAdminDb } from '@/lib/admin-context'
 import { FEATURES as FLAGS } from '@/lib/features'
 import { getTenantEntitlements } from '@/lib/entitlements'
+import { getOnboardingOptions } from '@/lib/onboarding'
 import { resolveFeature, FEATURES } from '@merkiai/tenancy'
 import ConstructorClient from '@/components/constructor/ConstructorClient'
 
@@ -31,7 +32,20 @@ export default async function ConstructorPage() {
     pageStyle: resolveFeature(entitlements, FEATURES.PAGE_STYLE),
   }
 
-  const { db: supabase } = await requireAdminDb()
+  const { adminUser, db: supabase } = await requireAdminDb()
+
+  // HU-373 (admin) · estructuras de sitio (blueprint) seleccionables por el
+  // comerciante solo con el entitlement `site_blueprints` (planes superiores).
+  const siteBlueprints = resolveFeature(entitlements, FEATURES.SITE_BLUEPRINTS)
+  let blueprints: Array<{ key: string; label: string; description?: string }> = []
+  if (siteBlueprints) {
+    const opts = await getOnboardingOptions(adminUser.tenantId).catch(() => null)
+    if (opts?.allowBlueprint) {
+      blueprints = opts.presets
+        .filter((p) => p.blueprint)
+        .map((p) => ({ key: p.key, label: p.name || p.key, description: p.description ?? undefined }))
+    }
+  }
   const [{ data: pages }, { data: cfgRow }] = await Promise.all([
     supabase.from('pages').select('key, label, slug, style, page_type, enabled, meta_title, meta_description, show_in_footer').order('order_index'),
     supabase.from('store_config').select('*').maybeSingle(),
@@ -83,7 +97,7 @@ export default async function ConstructorPage() {
       </div>
       <div className="flex-1 overflow-y-auto px-6 py-6 bg-slate-50">
         <div className="max-w-6xl mx-auto">
-          <ConstructorClient pages={pageOptions} initialPageKey={initialPageKey} initialTemplate={initialTemplate} features={constructorFeatures} siteConfig={siteConfig} />
+          <ConstructorClient pages={pageOptions} initialPageKey={initialPageKey} initialTemplate={initialTemplate} features={constructorFeatures} siteConfig={siteConfig} siteBlueprints={siteBlueprints} blueprints={blueprints} />
         </div>
       </div>
     </div>
