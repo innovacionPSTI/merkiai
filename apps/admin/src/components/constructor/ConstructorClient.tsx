@@ -534,8 +534,8 @@ export default function ConstructorClient({
                 <div className="absolute right-0 top-full z-20 mt-1 w-56 rounded-xl border border-slate-200 bg-white shadow-lg p-1.5" role="menu">
                   <a href={`/api/admin/cms/page-export?page_key=${encodeURIComponent(pageKey)}`} onClick={() => setAdvOpen(false)}
                     className="block rounded-lg px-3 py-2 text-sm text-slate-700 hover:bg-slate-50">Exportar página</a>
-                  <a href="/api/admin/preset-export" onClick={() => setAdvOpen(false)}
-                    className="block rounded-lg px-3 py-2 text-sm text-slate-700 hover:bg-slate-50" title="Empaqueta Tema + home como preset (JSON)">Exportar como preset</a>
+                  {/* "Exportar como preset" es funcionalidad del OPERADOR (console),
+                      no del comerciante → no se expone en el admin del tenant. */}
                   <a href="/api/admin/site-export" onClick={() => setAdvOpen(false)}
                     className="block rounded-lg px-3 py-2 text-sm text-slate-700 hover:bg-slate-50" title="Backup del sitio completo (sin secretos)">Backup del sitio</a>
                   <label className="block rounded-lg px-3 py-2 text-sm text-slate-700 hover:bg-slate-50 cursor-pointer">
@@ -703,10 +703,10 @@ export default function ConstructorClient({
                     onDragOver={(e) => { e.preventDefault(); if (dragging && overIdx !== i) setOverIdx(i) }}
                     onDrop={(e) => { e.preventDefault(); if (dragIdx !== null) void reorderTo(dragIdx, i); setDragIdx(null); setOverIdx(null) }}
                   >
-                    <div className="flex items-center gap-3 px-4 py-3">
+                    <div className="flex flex-wrap items-center gap-2 px-4 py-3">
                       {!contentMode && (
                       <div
-                        className="cursor-grab active:cursor-grabbing text-slate-300 hover:text-slate-600 select-none"
+                        className="cursor-grab active:cursor-grabbing text-slate-300 hover:text-slate-600 select-none shrink-0"
                         draggable
                         onDragStart={() => { setDragIdx(i); setOverIdx(i) }}
                         onDragEnd={() => { setDragIdx(null); setOverIdx(null) }}
@@ -720,7 +720,7 @@ export default function ConstructorClient({
                         <button onClick={() => move(i, 1)} disabled={i === sections.length - 1} className="text-slate-400 hover:text-slate-700 disabled:opacity-30 leading-none" aria-label="Bajar bloque"><Icon name="chevron-right" size={14} className="rotate-90" /></button>
                       </div>
                       )}
-                      <div className="flex-1">
+                      <div className="flex-1 min-w-[120px]">
                         <p className="text-sm font-medium text-slate-800">{schema?.label ?? s.section_type}</p>
                         {schema?.description && <p className="text-xs text-slate-400">{schema.description}</p>}
                       </div>

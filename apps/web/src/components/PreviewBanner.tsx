@@ -9,12 +9,15 @@ export default function PreviewBanner() {
     try { await fetch('/api/preview', { method: 'DELETE' }) } catch { /* noop */ }
     window.location.reload()
   }
+  // Barra fija al PIE: no tapa el encabezado ni el héroe de la página (el Navbar
+  // del storefront es fixed top-0). Patrón estándar de "modo vista previa".
   return (
     <div
       style={{
-        position: 'sticky', top: 0, zIndex: 100, background: '#1f2430', color: '#fff',
+        position: 'fixed', bottom: 0, left: 0, right: 0, zIndex: 100, background: '#1f2430', color: '#fff',
         padding: '8px 16px', display: 'flex', alignItems: 'center', justifyContent: 'center',
         gap: 12, fontSize: 13, fontFamily: 'system-ui, sans-serif',
+        boxShadow: '0 -2px 12px rgba(0,0,0,.25)',
       }}
     >
       <span>Vista previa — estás viendo el borrador, incluyendo contenido sin publicar.</span>
