@@ -1,7 +1,7 @@
 import { redirect, notFound } from 'next/navigation'
 import type { Metadata } from 'next'
 import { PageHeader } from '@merkiai/ui'
-import { inventorySummary, movementsSummarySince, inventoryAlerts } from '@merkiai/database'
+import { inventorySummary, movementsSummarySince, inventoryAlerts, inventoryAlertsByLocation, listLocations } from '@merkiai/database'
 import { requireAdminDb } from '@/lib/admin-context'
 import { userCanAccess } from '@/lib/roles'
 import { FEATURES as FLAGS } from '@/lib/features'
@@ -29,7 +29,13 @@ export default async function OperacionesPage() {
   if (!(FLAGS.inventory || resolveFeature(entitlements, FEATURES.INVENTORY))) notFound()
 
   const since = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString()
-  const [inv, mov, alerts] = await Promise.all([inventorySummary(db), movementsSummarySince(db, since), inventoryAlerts(db)])
+  const multiLocation = resolveFeature(entitlements, FEATURES.MULTI_LOCATION)
+  const [inv, mov, alerts, locAlerts, locations] = await Promise.all([
+    inventorySummary(db), movementsSummarySince(db, since), inventoryAlerts(db),
+    multiLocation ? inventoryAlertsByLocation(db) : Promise.resolve([]),
+    multiLocation ? listLocations(db) : Promise.resolve([]),
+  ])
+  const locName = new Map(locations.map((l) => [l.id, l.name]))
 
   return (
     <div className="space-y-6">
@@ -51,6 +57,26 @@ export default async function OperacionesPage() {
                 <span className="flex items-center gap-2 font-brand text-sm">
                   <span className={`inline-block w-2 h-2 rounded-full ${a.severity === 'critical' ? 'bg-red-500' : 'bg-amber-400'}`} />
                   <a href={`/inventario/${a.key}`} className="text-brand-primary underline">{a.name}</a>
+                  <span className="text-brand-primary/50">{a.kind === 'out_of_stock' ? 'agotado' : 'bajo mínimo'}</span>
+                </span>
+                <span className="font-brand text-sm tabular-nums text-brand-primary/60">{num(a.available)} / mín {num(a.reorder_point)}</span>
+              </li>
+            ))}
+          </ul>
+        </section>
+      )}
+
+      {/* Alertas por ubicación (HU-183) */}
+      {locAlerts.length > 0 && (
+        <section className="bg-white rounded-2xl p-5 shadow-sm">
+          <h2 className="font-display text-brand-primary text-lg mb-3">Alertas por ubicación <span className="font-brand text-sm text-brand-primary/40">({locAlerts.length})</span></h2>
+          <ul className="space-y-2">
+            {locAlerts.map((a, i) => (
+              <li key={`${a.stock_item_id}-${a.location_id}-${i}`} className="flex items-center justify-between gap-3 border-t border-gray-100 pt-2 first:border-t-0 first:pt-0">
+                <span className="flex items-center gap-2 font-brand text-sm">
+                  <span className={`inline-block w-2 h-2 rounded-full ${a.severity === 'critical' ? 'bg-red-500' : 'bg-amber-400'}`} />
+                  <a href={`/inventario/${a.key}`} className="text-brand-primary underline">{a.name}</a>
+                  <span className="text-brand-primary/50">· {a.location_id != null ? (locName.get(a.location_id) ?? `#${a.location_id}`) : 'Sin ubicación'}</span>
                   <span className="text-brand-primary/50">{a.kind === 'out_of_stock' ? 'agotado' : 'bajo mínimo'}</span>
                 </span>
                 <span className="font-brand text-sm tabular-nums text-brand-primary/60">{num(a.available)} / mín {num(a.reorder_point)}</span>

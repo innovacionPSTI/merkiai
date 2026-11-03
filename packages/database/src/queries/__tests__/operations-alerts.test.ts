@@ -1,4 +1,4 @@
-import { evaluateInventoryAlerts } from '../operations-alerts'
+import { evaluateInventoryAlerts, evaluateInventoryAlertsByLocation } from '../operations-alerts'
 
 const items = [
   { id: 1, key: 'cafe', name: 'Café', reorder_point: 1000 },   // bajo
@@ -32,5 +32,18 @@ describe('alertas de operaciones (HU-409 F2a, puras)', () => {
     const alerts = evaluateInventoryAlerts([{ id: 9, key: 'x', name: 'X', reorder_point: 10 }], {})
     expect(alerts).toHaveLength(1)
     expect(alerts[0]).toMatchObject({ kind: 'out_of_stock', available: 0 })
+  })
+
+  it('por ubicación: alerta cada sede bajo el mínimo del ítem (HU-183)', () => {
+    const items2 = [{ id: 1, key: 'cafe', name: 'Café', reorder_point: 100 }]
+    const byLoc = { 1: [
+      { location_id: 10, available: 50 },  // bajo
+      { location_id: 11, available: 0 },   // agotado
+      { location_id: 12, available: 300 }, // ok → sin alerta
+    ] }
+    const alerts = evaluateInventoryAlertsByLocation(items2, byLoc)
+    expect(alerts.map((a) => a.location_id)).toEqual([11, 10]) // crítico primero
+    expect(alerts[0]).toMatchObject({ kind: 'out_of_stock', location_id: 11 })
+    expect(alerts[1]).toMatchObject({ kind: 'low_stock', location_id: 10, available: 50 })
   })
 })

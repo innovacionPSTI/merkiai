@@ -129,7 +129,7 @@
 
 **Estimación:** M (5 puntos)
 **Módulo:** reportes por ubicación (extiende HU-106/116; se consolidan en E24 · HU-409)
-**Estado:** 🔲 Pendiente (roadmap)
+**Estado:** 🟡 Alertas (v233) — `evaluateInventoryAlertsByLocation` (puro) + `inventoryAlertsByLocation` (sobre `stock_item_available`) comparan el disponible de cada sede contra el punto de reorden del ítem; sección **"Alertas por ubicación"** en `/operaciones` (gated por `multi_location`). Reusa el motor de alertas de HU-409·F2a. Tests: database 591. **Pendiente:** reportes/exportables desglosados por ubicación.
 
 | # | Escenario | Resultado esperado |
 |---|-----------|-------------------|
