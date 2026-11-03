@@ -32,10 +32,10 @@ export default function InventoryManager({ initial, uoms }: { initial: Row[]; uo
   const [error, setError] = useState<string | null>(null)
   const [backfillBusy, setBackfillBusy] = useState(false)
   const [backfillMsg, setBackfillMsg] = useState<string | null>(null)
+  const [backfillConfirm, setBackfillConfirm] = useState(false)
 
   async function backfill() {
-    if (!confirm('Inicializar saldos de apertura en el libro a partir del stock actual de las variantes enlazadas. Es idempotente (no duplica). ¿Continuar?')) return
-    setBackfillBusy(true); setBackfillMsg(null)
+    setBackfillConfirm(false); setBackfillBusy(true); setBackfillMsg(null)
     try {
       const res = await fetch('/api/admin/inventory/backfill-stock', { method: 'POST' })
       const b = await res.json().catch(() => ({}))
@@ -67,9 +67,17 @@ export default function InventoryManager({ initial, uoms }: { initial: Row[]; uo
   return (
     <div className="space-y-6">
       {/* Backfill de saldo de apertura al ledger (E18·HU-178) */}
-      <div className="flex items-center justify-end gap-3">
+      <div className="flex items-center justify-end gap-3 flex-wrap">
         {backfillMsg && <span className="font-brand text-xs text-brand-primary/60">{backfillMsg}</span>}
-        <button onClick={backfill} disabled={backfillBusy} className="rounded-full border border-gray-200 text-brand-primary px-4 py-2 font-brand text-sm hover:bg-slate-50 disabled:opacity-50">{backfillBusy ? 'Inicializando…' : 'Inicializar saldos (ledger)'}</button>
+        {backfillConfirm ? (
+          <div className="flex items-center gap-2">
+            <span className="font-brand text-xs text-brand-primary/60">Inicializa saldos de apertura desde el stock actual de las variantes enlazadas (idempotente). ¿Confirmar?</span>
+            <button onClick={backfill} disabled={backfillBusy} className="rounded-full bg-brand-primary text-brand-cream px-4 py-2 font-brand text-sm hover:bg-brand-dark disabled:opacity-50">{backfillBusy ? 'Inicializando…' : 'Confirmar'}</button>
+            <button onClick={() => setBackfillConfirm(false)} className="rounded-full border border-gray-200 text-brand-primary/60 px-4 py-2 font-brand text-sm">Cancelar</button>
+          </div>
+        ) : (
+          <button onClick={() => { setBackfillMsg(null); setBackfillConfirm(true) }} className="rounded-full border border-gray-200 text-brand-primary px-4 py-2 font-brand text-sm hover:bg-slate-50">Inicializar saldos (ledger)</button>
+        )}
       </div>
 
       {/* Alta rápida */}
@@ -78,7 +86,7 @@ export default function InventoryManager({ initial, uoms }: { initial: Row[]; uo
         <div className="flex flex-wrap items-end gap-3">
           <label className="flex-1 min-w-[200px]">
             <span className="font-brand text-xs font-semibold text-brand-primary block mb-1">Nombre</span>
-            <input value={name} onChange={(e) => setName(e.target.value)} placeholder="Ej. Café verde"
+            <input value={name} onChange={(e) => setName(e.target.value)} placeholder="Ej. Materia prima, insumo o producto"
               className="w-full border border-gray-200 rounded-xl px-3 py-2 font-brand text-sm focus:outline-none focus:border-brand-primary" />
           </label>
           <label>

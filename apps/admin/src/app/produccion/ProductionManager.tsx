@@ -81,8 +81,8 @@ export default function ProductionManager({ items, uoms, boms, orders }: { items
           <label>
             <span className="font-brand text-xs font-semibold text-brand-primary block mb-1">Política</span>
             <select value={policy} onChange={(e) => setPolicy(e.target.value)} className="border border-gray-200 rounded-xl px-3 py-2 font-brand text-sm">
-              <option value="al_producir">Al producir (café/manufactura)</option>
-              <option value="al_vender">Al vender (restaurante)</option>
+              <option value="al_producir">Al producir (se descuenta al fabricar)</option>
+              <option value="al_vender">Al vender (se descuenta en la venta)</option>
             </select>
           </label>
           <label>

@@ -34,6 +34,9 @@ export default function QuotesManager({ quotes: initial, products }: { quotes: Q
   const [discount, setDiscount] = useState(0)
   const [lines, setLines] = useState<Line[]>([{ name: '', qty: 1, unit_price: 0 }])
   const [busy, setBusy] = useState(false)
+  // conversión: confirmación inline por fila + aviso (sin diálogos nativos)
+  const [confirmId, setConfirmId] = useState<number | null>(null)
+  const [notice, setNotice] = useState<{ kind: 'ok' | 'err'; text: string } | null>(null)
 
   const subtotal = lines.reduce((s, l) => s + Math.max(0, l.qty) * Math.max(0, l.unit_price), 0)
   const total = Math.max(0, subtotal - Math.min(Math.max(0, discount), subtotal))
@@ -74,17 +77,18 @@ export default function QuotesManager({ quotes: initial, products }: { quotes: Q
   }
 
   async function convert(id: number) {
-    if (!confirm('Convertir esta cotización en una orden (pago manual, pendiente). ¿Continuar?')) return
+    setConfirmId(null); setNotice(null)
     const res = await fetch(`/api/admin/quotes/${id}/convert`, { method: 'POST' })
     const b = await res.json().catch(() => ({}))
-    if (res.ok) { alert(`Orden creada: ${b.order_number}`); await reload(); router.refresh() }
-    else alert(b?.error ?? 'No se pudo convertir')
+    if (res.ok) { setNotice({ kind: 'ok', text: `Orden creada: ${b.order_number}` }); await reload(); router.refresh() }
+    else setNotice({ kind: 'err', text: b?.error ?? 'No se pudo convertir' })
   }
 
   return (
     <div className="space-y-6">
-      <div className="flex justify-between items-center">
+      <div className="flex justify-between items-center gap-3">
         <button onClick={() => setOpen((o) => !o)} className="rounded-full bg-brand-primary text-brand-cream px-5 py-2 font-brand text-sm font-medium hover:bg-brand-dark">{open ? 'Cerrar' : 'Nueva cotización'}</button>
+        {notice && <span className={`font-brand text-sm ${notice.kind === 'ok' ? 'text-green-700' : 'text-red-600'}`}>{notice.text}</span>}
       </div>
 
       {open && (
@@ -167,7 +171,14 @@ export default function QuotesManager({ quotes: initial, products }: { quotes: Q
                       <button key={s} onClick={() => changeStatus(q.id, s)} className="font-brand text-xs text-brand-primary underline">{STATUS_LABEL[s]}</button>
                     ))}
                     {['draft', 'sent', 'accepted'].includes(q.status) && (
-                      <button onClick={() => convert(q.id)} className="font-brand text-xs text-green-700 underline font-medium">Convertir a orden</button>
+                      confirmId === q.id ? (
+                        <>
+                          <button onClick={() => convert(q.id)} className="font-brand text-xs text-green-700 underline font-medium">Confirmar</button>
+                          <button onClick={() => setConfirmId(null)} className="font-brand text-xs text-brand-primary/50 underline">Cancelar</button>
+                        </>
+                      ) : (
+                        <button onClick={() => { setNotice(null); setConfirmId(q.id) }} className="font-brand text-xs text-green-700 underline font-medium">Convertir a orden</button>
+                      )
                     )}
                   </div>
                 </td>

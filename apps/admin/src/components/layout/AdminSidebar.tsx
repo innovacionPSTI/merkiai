@@ -24,6 +24,7 @@ interface NavLeaf {
 interface NavSubLeaf {
   href: string
   label: string
+  icon?: ReactNode
   fullAccessOnly?: boolean
 }
 
@@ -79,7 +80,7 @@ const NAV: NavNode[] = [
       { kind: 'leaf', href: '/productos',  icon: <Icon name="product" />,  label: 'Productos',   section: 'productos' },
       { kind: 'leaf', href: '/categorias', icon: <Icon name="category" />, label: 'Categorías',  section: 'categorias' },
       { kind: 'leaf', href: '/variantes',  icon: <Icon name="variant" />,  label: 'Variantes',   section: 'variantes' },
-      { kind: 'leaf', href: '/bundles',    icon: <Icon name="grid" />,     label: 'Bundles',     section: 'productos' },
+      { kind: 'leaf', href: '/bundles',    icon: <Icon name="preset" />,   label: 'Bundles',     section: 'productos' },
       { kind: 'leaf', href: '/resenas',    icon: <Icon name="star" />,     label: 'Reseñas',     section: 'productos' },
     ],
   },
@@ -105,13 +106,13 @@ const NAV: NavNode[] = [
     label: 'Operaciones',
     sections: ['productos'],
     children: [
-      { kind: 'leaf', href: '/operaciones', icon: <Icon name="grid" />,   label: 'Tablero',    section: 'productos' },
-      { kind: 'leaf', href: '/inventario', icon: <Icon name="grid" />,    label: 'Inventario', section: 'productos' },
-      { kind: 'leaf', href: '/compras',    icon: <Icon name="money" />,   label: 'Compras',    section: 'productos' },
-      { kind: 'leaf', href: '/produccion', icon: <Icon name="product" />, label: 'Producción', section: 'productos' },
-      { kind: 'leaf', href: '/modificadores', icon: <Icon name="product" />, label: 'Modificadores', section: 'productos' },
+      { kind: 'leaf', href: '/operaciones', icon: <Icon name="chart" />,   label: 'Tablero',    section: 'productos' },
+      { kind: 'leaf', href: '/inventario', icon: <Icon name="catalog" />,  label: 'Inventario', section: 'productos' },
+      { kind: 'leaf', href: '/compras',    icon: <Icon name="truck" />,    label: 'Compras',    section: 'productos' },
+      { kind: 'leaf', href: '/produccion', icon: <Icon name="refresh" />,  label: 'Producción', section: 'productos' },
+      { kind: 'leaf', href: '/modificadores', icon: <Icon name="plus" />,  label: 'Modificadores', section: 'productos' },
       { kind: 'leaf', href: '/listas-precio', icon: <Icon name="money" />, label: 'Listas de precio', section: 'productos' },
-      { kind: 'leaf', href: '/cotizaciones', icon: <Icon name="money" />, label: 'Cotizaciones', section: 'productos' },
+      { kind: 'leaf', href: '/cotizaciones', icon: <Icon name="edit" />,   label: 'Cotizaciones', section: 'productos' },
     ],
   },
   {
@@ -125,7 +126,7 @@ const NAV: NavNode[] = [
       // (flag legacy o entitlement page_builder); ver `navFor()` abajo.
       { kind: 'leaf', href: '/constructor', icon: <Icon name="builder" />, label: 'Constructor', section: 'contenido' },
       // HU-353 · "Colecciones" se filtra en runtime según `collections` (flag/entitlement).
-      { kind: 'leaf', href: '/colecciones', icon: <Icon name="grid" />, label: 'Colecciones', section: 'contenido' },
+      { kind: 'leaf', href: '/colecciones', icon: <Icon name="list" />, label: 'Colecciones', section: 'contenido' },
       { kind: 'leaf', href: '/blog',       icon: <Icon name="blog" />,       label: 'Blog',       section: 'blog' },
       { kind: 'leaf', href: '/newsletter', icon: <Icon name="newsletter" />, label: 'Newsletter', section: 'newsletter' },
     ],
@@ -149,14 +150,14 @@ const NAV: NavNode[] = [
     label: 'Configuración',
     section: 'configuracion',
     children: [
-      { href: '/configuracion/general', label: 'General' },
-      { href: '/configuracion/dominio', label: 'Dominio' },
-      { href: '/configuracion/envios',  label: 'Envíos',  fullAccessOnly: true },
-      { href: '/configuracion/pagos',   label: 'Pagos',   fullAccessOnly: true },
-      { href: '/configuracion/emails',  label: 'Emails',  fullAccessOnly: true },
-      { href: '/configuracion/plantillas-correo', label: 'Plantillas de correo' },
-      { href: '/redirects',             label: 'Redirecciones' },
-      { href: '/configuracion/legal',   label: 'Legal' },
+      { href: '/configuracion/general', label: 'General', icon: <Icon name="settings" /> },
+      { href: '/configuracion/dominio', label: 'Dominio', icon: <Icon name="domain" /> },
+      { href: '/configuracion/envios',  label: 'Envíos',  icon: <Icon name="truck" />, fullAccessOnly: true },
+      { href: '/configuracion/pagos',   label: 'Pagos',   icon: <Icon name="money" />, fullAccessOnly: true },
+      { href: '/configuracion/emails',  label: 'Emails',  icon: <Icon name="bell" />, fullAccessOnly: true },
+      { href: '/configuracion/plantillas-correo', label: 'Plantillas de correo', icon: <Icon name="newsletter" /> },
+      { href: '/redirects',             label: 'Redirecciones', icon: <Icon name="external" /> },
+      { href: '/configuracion/legal',   label: 'Legal', icon: <Icon name="lock" /> },
     ],
   },
   {
@@ -166,7 +167,7 @@ const NAV: NavNode[] = [
     sections: ['usuarios', 'sistema'],
     children: [
       { kind: 'leaf', href: '/usuarios',          icon: <Icon name="users" />,    label: 'Usuarios',   section: 'usuarios' },
-      { kind: 'leaf', href: '/ubicaciones',       icon: <Icon name="grid" />,     label: 'Ubicaciones', section: 'sistema' },
+      { kind: 'leaf', href: '/ubicaciones',       icon: <Icon name="tenant" />,   label: 'Ubicaciones', section: 'sistema' },
       { kind: 'leaf', href: '/auditoria',         icon: <Icon name="audit" />,    label: 'Auditoría',  section: 'sistema' },
       { kind: 'leaf', href: '/emails',            icon: <Icon name="bell" />,     label: 'Correos',    section: 'sistema' },
       { kind: 'leaf', href: '/sistema/apariencia', icon: <Icon name="settings" />, label: 'Apariencia', section: 'sistema' },
@@ -207,6 +208,16 @@ function navFor(pageBuilder: boolean, collections: boolean, inventory: boolean, 
   }).filter((node) => node.kind !== 'group' || node.children.length > 0)
 }
 
+/**
+ * ¿El pathname pertenece a un leaf-group? Se acota a sus **hijos declarados** (no a
+ * un prefijo amplio): así `/configuracion/temas` (que es de Apariencia) no marca
+ * activo a "Configuración" solo por compartir el prefijo `/configuracion`.
+ */
+function leafGroupActive(node: NavLeafWithSubs, pathname: string): boolean {
+  if (pathname === node.href) return true
+  return node.children.some((sub) => pathname === sub.href || pathname.startsWith(sub.href + '/'))
+}
+
 /** Devuelve el label del grupo/leaf-group activo si el pathname pertenece a él */
 function getActiveGroupId(nodes: NavNode[], pathname: string): string | null {
   for (const node of nodes) {
@@ -216,7 +227,7 @@ function getActiveGroupId(nodes: NavNode[], pathname: string): string | null {
       )
       if (hasActive) return node.label
     } else if (node.kind === 'leaf-group') {
-      if (pathname === node.href || pathname.startsWith(node.href + '/')) return node.label
+      if (leafGroupActive(node, pathname)) return node.label
     }
   }
   return null
@@ -340,7 +351,7 @@ export default function AdminSidebar({ role, allowedSections: allowedSectionsPro
 
           // ── Hoja expandible a nivel raíz (ej. Configuración) ───────────────
           if (node.kind === 'leaf-group') {
-            const isActive = pathname === node.href || pathname.startsWith(node.href + '/')
+            const isActive = leafGroupActive(node, pathname)
             // La expansión la controla el estado (no la ruta): así se puede
             // colapsar aunque estés dentro de una subpágina. La navegación la
             // hace el Link; el chevron es un botón de toggle independiente.
@@ -387,12 +398,13 @@ export default function AdminSidebar({ role, allowedSections: allowedSectionsPro
                           <Link
                             key={sub.href}
                             href={sub.href}
-                            className={`flex items-center px-2 py-1.5 rounded-md font-brand text-xs transition-colors ${
+                            className={`flex items-center gap-2.5 px-2 py-1.5 rounded-md font-brand text-xs transition-colors ${
                               subActive
                                 ? 'text-brand-cream font-semibold'
                                 : 'text-brand-cream/40 hover:text-brand-cream'
                             }`}
                           >
+                            {sub.icon && <span className="text-sm leading-none">{sub.icon}</span>}
                             {sub.label}
                           </Link>
                         )
@@ -444,7 +456,7 @@ export default function AdminSidebar({ role, allowedSections: allowedSectionsPro
                   {visibleChildren.map((child) => {
                     // leaf-group hijo (extensibilidad futura)
                     if (child.kind === 'leaf-group') {
-                      const isLeafActive = pathname === child.href || pathname.startsWith(child.href + '/')
+                      const isLeafActive = leafGroupActive(child, pathname)
                       return (
                         <div key={child.href}>
                           <Link
@@ -474,12 +486,13 @@ export default function AdminSidebar({ role, allowedSections: allowedSectionsPro
                                     <Link
                                       key={sub.href}
                                       href={sub.href}
-                                      className={`flex items-center px-2 py-1.5 rounded-md font-brand text-xs transition-colors ${
+                                      className={`flex items-center gap-2.5 px-2 py-1.5 rounded-md font-brand text-xs transition-colors ${
                                         subActive
                                           ? 'text-brand-cream font-semibold'
                                           : 'text-brand-cream/40 hover:text-brand-cream'
                                       }`}
                                     >
+                                      {sub.icon && <span className="text-sm leading-none">{sub.icon}</span>}
                                       {sub.label}
                                     </Link>
                                   )
