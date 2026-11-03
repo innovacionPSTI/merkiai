@@ -1,10 +1,18 @@
 /**
- * Control de inventario (Épica 9 · HU-098).
+ * Control de inventario (Épica 9 · HU-098 + E18·HU-178).
  *
  * El stock se descuenta cuando un pedido se paga (transición a `approved`) y se
  * repone si se cancela/rechaza. Ambas operaciones son **idempotentes** (flags
  * `stock_applied` / `stock_restored` en `orders`) para tolerar reintentos de
  * webhook, y el movimiento por variante es **atómico** vía RPC en Postgres.
+ *
+ * E18·HU-178: la venta **además** anexa movimientos `sale`/`return` al **libro de
+ * inventario** (ledger) para las variantes enlazadas a un `stock_item`. Es un
+ * corte **gobernado por datos** (no por flag): solo afecta a variantes enlazadas;
+ * las no enlazadas siguen el descuento legacy sobre `product_variants.stock`. Para
+ * la disponibilidad, el ledger solo gobierna un ítem **cuando ya tiene presencia
+ * en el libro** (ver `mergeLedgerAvailability`), de modo que una tienda que aún no
+ * inicializó saldos no se bloquea.
  */
 
 import { createServerClient } from '../client'
@@ -16,18 +24,6 @@ interface OrderItemRef {
   qty?: number
 }
 
-/**
- * E18·HU-178 (Fase 2) · flag de corte al ledger. Cuando `MERKIAI_LEDGER_SALE`
- * está activo, la venta **además** anexa movimientos `sale`/`return` al libro de
- * inventario para las variantes enlazadas a un `stock_item` (el descuento legacy
- * sobre `product_variants.stock` sigue corriendo para las no enlazadas). Default
- * off → comportamiento idéntico al actual. Pura (testeable).
- */
-export function isLedgerSaleEnabled(env: NodeJS.ProcessEnv = process.env): boolean {
-  const v = (env.MERKIAI_LEDGER_SALE ?? '').toLowerCase()
-  return v === '1' || v === 'true' || v === 'on'
-}
-
 export interface VariantStock {
   variant_id: number
   stock: number
@@ -35,11 +31,11 @@ export interface VariantStock {
 }
 
 /**
- * E18·HU-178 (Fase 3b) · sobrescribe el `stock` legacy con el **disponible del
- * ledger** para las variantes enlazadas a un `stock_item` de consumo **directo**
- * (terminado stocked / `al_producir`). Las variantes `al_vender` (hechas a pedido)
- * y las no enlazadas conservan su `stock` legacy (no se bloquean por el ledger).
- * Pura (testeable).
+ * E18·HU-178 · sobrescribe el `stock` legacy con el **disponible del ledger** para
+ * las variantes enlazadas a un `stock_item` de consumo **directo** (terminado
+ * stocked / `al_producir`), **solo si el ítem ya tiene presencia en el libro**
+ * (`availableMap` trae una entrada). Si el ítem aún no se inicializó en el ledger,
+ * o es `al_vender`/no enlazado, conserva el `stock` legacy → no se bloquea. Pura.
  */
 export function mergeLedgerAvailability(
   base: VariantStock[],
@@ -49,15 +45,17 @@ export function mergeLedgerAvailability(
   return base.map((r) => {
     const sid = finishedByVariant.get(r.variant_id)
     if (sid == null) return r
-    return { ...r, stock: availableMap[sid] ?? 0 }
+    const avail = availableMap[sid]
+    if (avail == null) return r // sin presencia en el libro → stock legacy (cero bloqueo)
+    return { ...r, stock: avail }
   })
 }
 
 /**
  * Devuelve stock y flag de backorder por variante (uniendo con products).
  * Usado por el checkout para validar disponibilidad antes de crear la orden.
- * Con `MERKIAI_LEDGER_SALE` activo, el disponible de variantes enlazadas (directas)
- * se lee del ledger (ver `mergeLedgerAvailability`).
+ * El disponible de variantes enlazadas (directas) con presencia en el libro se
+ * lee del ledger (ver `mergeLedgerAvailability`); el resto conserva stock legacy.
  */
 export async function getStockForVariants(variantIds: number[]): Promise<VariantStock[]> {
   if (!variantIds.length) return []
@@ -75,9 +73,8 @@ export async function getStockForVariants(variantIds: number[]): Promise<Variant
       : !!r.products?.allow_backorder,
   }))
 
-  if (!isLedgerSaleEnabled()) return base
-
-  // Variantes enlazadas de consumo directo → disponible del ledger.
+  // Variantes enlazadas de consumo directo → disponible del ledger (si tienen
+  // presencia en el libro). Gobernado por datos: sin enlaces, no cambia nada.
   const consumptions = await resolveVariantConsumptions(supabase, variantIds)
   const finishedByVariant = new Map<number, number>()
   for (const c of consumptions) {
@@ -113,12 +110,10 @@ export async function applyStockForOrder(orderNumber: string): Promise<void> {
     }
   }
 
-  // E18·HU-178 (Fase 2): corte al ledger para variantes enlazadas. Independiente
-  // e idempotente por op_key, así que corre aunque el reclamo legacy ya se hubiera
-  // aplicado (p. ej. al activar el flag con órdenes ya procesadas).
-  if (isLedgerSaleEnabled()) {
-    await applyLedgerSaleForOrder(supabase, orderNumber)
-  }
+  // E18·HU-178: corte al ledger para variantes enlazadas. Independiente del reclamo
+  // legacy e idempotente por op_key (tolera reintentos de webhook); no-op para
+  // tiendas sin variantes enlazadas a un stock_item.
+  await applyLedgerSaleForOrder(supabase, orderNumber)
 }
 
 /**
@@ -145,8 +140,7 @@ export async function restoreStockForOrder(orderNumber: string): Promise<void> {
     }
   }
 
-  // E18·HU-178 (Fase 2): reverso en el ledger para variantes enlazadas (idempotente).
-  if (isLedgerSaleEnabled()) {
-    await reverseLedgerSaleForOrder(supabase, orderNumber)
-  }
+  // E18·HU-178: reverso en el ledger para variantes enlazadas (idempotente; no-op
+  // si no hay enlaces).
+  await reverseLedgerSaleForOrder(supabase, orderNumber)
 }
