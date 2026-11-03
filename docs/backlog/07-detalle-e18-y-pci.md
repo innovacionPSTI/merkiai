@@ -81,7 +81,7 @@
 
 **Estimación:** M (5 puntos)
 **Módulo:** movimientos de inventario (transfer), auditoría
-**Estado:** 🟢 (v232) — AC-1/AC-2 básicos. `queries/stock-transfer.ts`: `planTransferMovements` (puro) + `recordTransfer` (dos piernas `transfer` out/in, idempotente por `op_key` `transfer:<id>:out|in`, valida origen≠destino, cantidad>0 y **disponible suficiente en origen**; convierte por UoM). API `POST /api/admin/inventory/items/[id]/transfer` (gated por `inventory`+`multi_location`, RLS) + `TransferForm` en el kardex (visible con `multi_location` y ≥2 ubicaciones activas). Trazabilidad por el ledger + audit (ref_type `transfer`). Tests: database 590. **Pendiente:** estados pendiente/en-tránsito/recibida (AC-3, hoy la transferencia es inmediata).
+**Estado:** 🟢 (v232+v237) — AC-1/AC-2/AC-3. Migración `e17/73`: cabecera **`stock_transfers`** (estado `in_transit/received/cancelled`, origen/destino, `shipped_at`/`received_at`), RLS admin. `queries/stock-transfer.ts`: `createTransfer` (**despacha**: valida origen≠destino/qty>0/disponible, inserta cabecera `in_transit` y anexa la **salida** del origen), `receiveTransfer` (**entrada** al destino → `received`), `cancelTransfer` (reingreso al origen → `cancelled`), `listTransfers`; cada pierna idempotente por `op_key` `transfer:<id>:out|in|cancel`. APIs `POST /api/admin/inventory/items/[id]/transfer` (despacho) y `PATCH /api/admin/inventory/transfers/[id]` (receive/cancel), gated por `inventory`+`multi_location`. UI: **"Despachar transferencia"** + bandeja **"Transferencias en tránsito"** (recibir/cancelar) en el kardex. Trazable por el ledger. Tests: database 594.
 
 | # | Escenario | Resultado esperado |
 |---|-----------|-------------------|

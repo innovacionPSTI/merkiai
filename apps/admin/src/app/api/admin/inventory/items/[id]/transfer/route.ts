@@ -4,10 +4,9 @@
  * libro). Gated por `inventory` + `multi_location`. Tenant-scoped (RLS).
  */
 import { NextRequest, NextResponse } from 'next/server'
-import { randomUUID } from 'crypto'
 import { getAdminUser } from '@/lib/auth'
 import { getAdminDb } from '@/lib/admin-db'
-import { recordTransfer, listUoms } from '@merkiai/database'
+import { createTransfer, listUoms } from '@merkiai/database'
 import { getTenantEntitlements, requireFeature, EntitlementError, FEATURES } from '@/lib/entitlements'
 
 export async function POST(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
@@ -35,18 +34,17 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
     uomFactor = uom?.to_base_factor ?? 1
   }
   try {
-    const res = await recordTransfer(db, {
+    const transfer = await createTransfer(db, {
       tenant_id: adminUser.tenantId,
-      transfer_id: randomUUID(),
       stock_item_id: stockItemId,
       from_location_id: from,
       to_location_id: to,
       qty,
       uom_id: body?.uom_id ? Number(body.uom_id) : null,
       uom_factor: uomFactor,
-      reason: body?.reason ?? null,
+      note: body?.note ?? null,
     })
-    return NextResponse.json(res)
+    return NextResponse.json(transfer, { status: 201 })
   } catch (e) {
     return NextResponse.json({ error: e instanceof Error ? e.message : 'Error' }, { status: 400 })
   }

@@ -1,7 +1,7 @@
 import { redirect, notFound } from 'next/navigation'
 import type { Metadata } from 'next'
 import { PageHeader } from '@merkiai/ui'
-import { getStockItem, listMovements, getAvailable, getItemCost, listUoms, getAvailableByLocation, listLocations } from '@merkiai/database'
+import { getStockItem, listMovements, getAvailable, getItemCost, listUoms, getAvailableByLocation, listLocations, listTransfers } from '@merkiai/database'
 import { requireAdminDb } from '@/lib/admin-context'
 import { userCanAccess } from '@/lib/roles'
 import { FEATURES as FLAGS } from '@/lib/features'
@@ -10,6 +10,7 @@ import { resolveFeature, FEATURES } from '@merkiai/tenancy'
 import AdjustForm from './AdjustForm'
 import EditItemForm from './EditItemForm'
 import TransferForm from './TransferForm'
+import TransferInbox from './TransferInbox'
 
 export const metadata: Metadata = { title: 'Kardex' }
 export const dynamic = 'force-dynamic'
@@ -46,7 +47,9 @@ export default async function KardexPage({ params }: { params: Promise<{ key: st
   const showByLocation = locations.length > 0 && byLocation.some((b) => b.location_id != null)
   // Transferir requiere multi_location y al menos 2 ubicaciones activas (E18·HU-181).
   const activeLocations = locations.filter((l) => l.active)
-  const showTransfer = resolveFeature(entitlements, FEATURES.MULTI_LOCATION) && activeLocations.length > 1
+  const multiLocation = resolveFeature(entitlements, FEATURES.MULTI_LOCATION)
+  const showTransfer = multiLocation && activeLocations.length > 1
+  const inTransit = multiLocation ? await listTransfers(db, { status: 'in_transit', stockItemId: item.id, limit: 100 }) : []
 
   return (
     <div className="space-y-6">
@@ -72,6 +75,9 @@ export default async function KardexPage({ params }: { params: Promise<{ key: st
         </div>
       )}
       <AdjustForm itemId={item.id} uoms={uoms.map((u) => ({ id: u.id, code: u.code }))} />
+      {inTransit.length > 0 && (
+        <TransferInbox transfers={inTransit.map((t) => ({ id: t.id, from: locName.get(t.from_location_id) ?? `#${t.from_location_id}`, to: locName.get(t.to_location_id) ?? `#${t.to_location_id}`, qty: t.qty, shipped_at: t.shipped_at }))} />
+      )}
       {showTransfer && (
         <TransferForm
           itemId={item.id}

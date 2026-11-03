@@ -1161,6 +1161,46 @@ export type Database = {
         }
         Relationships: []
       }
+      stock_transfers: {
+        Row: {
+          id: number
+          tenant_id: string
+          stock_item_id: number
+          from_location_id: number
+          to_location_id: number
+          qty: number
+          uom_id: number | null
+          status: 'draft' | 'in_transit' | 'received' | 'cancelled'
+          note: string | null
+          shipped_at: string | null
+          received_at: string | null
+          created_at: string
+          updated_at: string
+        }
+        Insert: {
+          id?: number
+          tenant_id?: string
+          stock_item_id: number
+          from_location_id: number
+          to_location_id: number
+          qty: number
+          uom_id?: number | null
+          status?: 'draft' | 'in_transit' | 'received' | 'cancelled'
+          note?: string | null
+          shipped_at?: string | null
+          received_at?: string | null
+          created_at?: string
+          updated_at?: string
+        }
+        Update: {
+          status?: 'draft' | 'in_transit' | 'received' | 'cancelled'
+          note?: string | null
+          shipped_at?: string | null
+          received_at?: string | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
       redirects: {
         Row: {
           id: number

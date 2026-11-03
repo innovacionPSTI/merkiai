@@ -37,7 +37,7 @@ export default function TransferForm({ itemId, uoms, locations }: {
 
   return (
     <div className="bg-white rounded-2xl p-5 shadow-sm flex flex-wrap items-end gap-3">
-      <h2 className="font-display text-brand-primary text-lg w-full">Transferir entre ubicaciones</h2>
+      <h2 className="font-display text-brand-primary text-lg w-full">Despachar transferencia</h2>
       <label>
         <span className="font-brand text-xs font-semibold text-brand-primary block mb-1">Origen</span>
         <select value={from} onChange={(e) => setFrom(e.target.value === '' ? '' : Number(e.target.value))} className="border border-gray-200 rounded-xl px-3 py-2 font-brand text-sm">
@@ -61,7 +61,7 @@ export default function TransferForm({ itemId, uoms, locations }: {
           {uoms.map((u) => <option key={u.id} value={u.id}>{u.code}</option>)}
         </select>
       </label>
-      <button onClick={submit} disabled={busy} className="rounded-full bg-brand-primary text-brand-cream px-5 py-2 font-brand text-sm font-medium hover:bg-brand-dark disabled:opacity-50">{busy ? 'Transfiriendo…' : 'Transferir'}</button>
+      <button onClick={submit} disabled={busy} className="rounded-full bg-brand-primary text-brand-cream px-5 py-2 font-brand text-sm font-medium hover:bg-brand-dark disabled:opacity-50">{busy ? 'Despachando…' : 'Despachar'}</button>
       {error && <p className="font-brand text-sm text-red-600 w-full">{error}</p>}
     </div>
   )
