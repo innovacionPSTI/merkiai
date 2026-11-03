@@ -1,3 +1,7 @@
 packages:
   - "apps/*"
   - "packages/*"
+  # E2E (Playwright) es un paquete standalone: no usa deps internas (workspace:*)
+  # y se instala aparte (cd apps/e2e && pnpm install). Se excluye del workspace
+  # para no exigir sus deps en el install congelado de CI/Vercel. Ver docs/E2E-PRUEBAS.md.
+  - "!apps/e2e"

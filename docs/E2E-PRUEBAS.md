@@ -90,12 +90,19 @@ Si tu resolver no lo hace, agrega en `/etc/hosts`:
 
 ## 4. Instalar Playwright
 
+`apps/e2e` es un paquete **standalone** (excluido del workspace pnpm en
+`pnpm-workspace.yaml` con `!apps/e2e`, para no afectar el install congelado de
+CI/Vercel). Por eso se instala **dentro de su carpeta**, no desde la raíz:
+
 ```bash
 cd apps/e2e
-pnpm install                 # instala @playwright/test (si no corrió en la raíz)
+pnpm install                 # crea su propio node_modules + lockfile
 pnpm run install:browsers    # descarga Chromium + dependencias del SO
 cp .env.example .env         # y completa los valores (ver sección 5)
 ```
+
+> El install de la raíz (`pnpm install --frozen-lockfile`) **no** toca `apps/e2e`;
+> así el build de las apps no depende de Playwright.
 
 ---
 
