@@ -6,7 +6,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { getAdminUser } from '@/lib/auth'
 import { getAdminDb } from '@/lib/admin-db'
-import { inventoryValuationRows, inventoryValuationToCsv, movementsSummarySince, movementsSummaryToCsv, listMovements, listUoms, kardexToCsv } from '@merkiai/database'
+import { inventoryValuationRows, inventoryValuationToCsv, movementsSummarySince, movementsSummaryToCsv, listMovements, listUoms, kardexToCsv, listPurchases, listSuppliers, purchasesToCsv, listProductionOrders, listStockItems, productionOrdersToCsv } from '@merkiai/database'
 import { getTenantEntitlements, requireFeature, EntitlementError, FEATURES } from '@/lib/entitlements'
 
 export async function GET(req: NextRequest) {
@@ -32,6 +32,18 @@ export async function GET(req: NextRequest) {
     for (const u of uoms) uomCode[u.id] = u.code
     csv = kardexToCsv(movs, uomCode)
     filename = `kardex-${itemId}-${date}.csv`
+  } else if (type === 'purchases') {
+    const [purchases, suppliers] = await Promise.all([listPurchases(db, { limit: 5000 }), listSuppliers(db)])
+    const supplierName: Record<number, string> = {}
+    for (const s of suppliers) supplierName[s.id] = s.name
+    csv = purchasesToCsv(purchases, supplierName)
+    filename = `compras-${date}.csv`
+  } else if (type === 'production') {
+    const [orders, items] = await Promise.all([listProductionOrders(db, { limit: 5000 }), listStockItems(db)])
+    const itemName: Record<number, string> = {}
+    for (const i of items) itemName[i.id] = i.name
+    csv = productionOrdersToCsv(orders, itemName)
+    filename = `produccion-${date}.csv`
   } else if (type === 'movements') {
     const days = Math.min(365, Math.max(1, Number(req.nextUrl.searchParams.get('days')) || 30))
     const since = new Date(Date.now() - days * 24 * 60 * 60 * 1000).toISOString()

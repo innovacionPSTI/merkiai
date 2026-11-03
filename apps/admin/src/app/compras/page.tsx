@@ -37,7 +37,10 @@ export default async function ComprasPage() {
 
   return (
     <div className="space-y-6">
-      <PageHeader title="Compras" description="Registra compras y recíbelas para que la mercancía entre al inventario con su costo." />
+      <div className="flex items-start justify-between gap-4 flex-wrap">
+        <PageHeader title="Compras" description="Registra compras y recíbelas para que la mercancía entre al inventario con su costo." />
+        <a href="/api/admin/operations/export?type=purchases" className="rounded-full border border-gray-200 text-brand-primary px-4 py-2 font-brand text-sm hover:bg-slate-50 whitespace-nowrap mt-1">Exportar (CSV)</a>
+      </div>
       <PurchasesManager
         initial={withTotals}
         suppliers={suppliers.map((s) => ({ id: s.id, name: s.name }))}

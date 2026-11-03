@@ -1,4 +1,4 @@
-import { inventoryValuationToCsv, movementsSummaryToCsv, kardexToCsv, summarizeMovements, type InventoryValuationRow, type MovementLite, type KardexRow } from '../operations-report'
+import { inventoryValuationToCsv, movementsSummaryToCsv, kardexToCsv, purchasesToCsv, productionOrdersToCsv, summarizeMovements, type InventoryValuationRow, type MovementLite, type KardexRow, type PurchaseRow, type ProductionOrderRow } from '../operations-report'
 
 describe('exportes CSV de operaciones (HU-409 AC-1, puros)', () => {
   it('inventoryValuationToCsv: encabezados + filas; costo nulo → vacío', () => {
@@ -23,6 +23,26 @@ describe('exportes CSV de operaciones (HU-409 AC-1, puros)', () => {
     expect(lines[0]).toBe('fecha,tipo,direccion,cantidad,unidad,motivo,referencia')
     expect(lines[1]).toBe('2026-11-01T10:00:00Z,purchase,in,100,g,Compra,order ORD-9')
     expect(lines[2]).toBe('2026-11-02T10:00:00Z,sale,out,5,,,')
+  })
+
+  it('purchasesToCsv: proveedor por nombre; sin proveedor → vacío', () => {
+    const rows: PurchaseRow[] = [
+      { id: 1, reference: 'FAC-1', status: 'received', supplier_id: 7, received_at: '2026-11-01' },
+      { id: 2, reference: null, status: 'draft', supplier_id: null, received_at: null },
+    ]
+    const csv = purchasesToCsv(rows, { 7: 'Proveedor X' }).split('\n')
+    expect(csv[0]).toBe('id,referencia,estado,proveedor,recibida_en')
+    expect(csv[1]).toBe('1,FAC-1,received,Proveedor X,2026-11-01')
+    expect(csv[2]).toBe('2,,draft,,')
+  })
+
+  it('productionOrdersToCsv: producto por nombre', () => {
+    const rows: ProductionOrderRow[] = [
+      { id: 10, output_stock_item_id: 5, planned_qty: 20, produced_qty: 18, status: 'completed', completed_at: '2026-11-02' },
+    ]
+    const csv = productionOrdersToCsv(rows, { 5: 'Terminado A' }).split('\n')
+    expect(csv[0]).toBe('id,producto,planificado,producido,estado,completada_en')
+    expect(csv[1]).toBe('10,Terminado A,20,18,completed,2026-11-02')
   })
 
   it('movementsSummaryToCsv: una fila por tipo', () => {

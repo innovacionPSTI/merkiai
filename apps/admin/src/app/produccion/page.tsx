@@ -27,7 +27,10 @@ export default async function ProduccionPage() {
 
   return (
     <div className="space-y-6">
-      <PageHeader title="Producción" description="Define recetas y registra órdenes de producción. Completar una orden consume los insumos y crea el producto terminado con su costo." />
+      <div className="flex items-start justify-between gap-4 flex-wrap">
+        <PageHeader title="Producción" description="Define recetas y registra órdenes de producción. Completar una orden consume los insumos y crea el producto terminado con su costo." />
+        <a href="/api/admin/operations/export?type=production" className="rounded-full border border-gray-200 text-brand-primary px-4 py-2 font-brand text-sm hover:bg-slate-50 whitespace-nowrap mt-1">Exportar (CSV)</a>
+      </div>
       <ProductionManager
         items={items.map((i) => ({ id: i.id, name: i.name, uom_id: i.uom_id }))}
         uoms={uoms.map((u) => ({ id: u.id, code: u.code }))}

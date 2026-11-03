@@ -207,3 +207,45 @@ export function kardexToCsv(rows: KardexRow[], uomCode: Record<number, string> =
     referencia: r.ref_type ? `${r.ref_type} ${r.ref_id ?? ''}`.trim() : '',
   })))
 }
+
+export interface PurchaseRow {
+  id: number
+  reference?: string | null
+  status: string
+  supplier_id?: number | null
+  received_at?: string | null
+}
+
+/** CSV del registro de compras (puro). */
+export function purchasesToCsv(rows: PurchaseRow[], supplierName: Record<number, string> = {}): string {
+  const headers = ['id', 'referencia', 'estado', 'proveedor', 'recibida_en']
+  return objectsToCsv(headers, rows.map((r) => ({
+    id: r.id,
+    referencia: r.reference ?? '',
+    estado: r.status,
+    proveedor: r.supplier_id != null ? (supplierName[r.supplier_id] ?? '') : '',
+    recibida_en: r.received_at ?? '',
+  })))
+}
+
+export interface ProductionOrderRow {
+  id: number
+  output_stock_item_id: number
+  planned_qty: number
+  produced_qty?: number | null
+  status: string
+  completed_at?: string | null
+}
+
+/** CSV de las órdenes de producción (puro). */
+export function productionOrdersToCsv(rows: ProductionOrderRow[], itemName: Record<number, string> = {}): string {
+  const headers = ['id', 'producto', 'planificado', 'producido', 'estado', 'completada_en']
+  return objectsToCsv(headers, rows.map((r) => ({
+    id: r.id,
+    producto: itemName[r.output_stock_item_id] ?? '',
+    planificado: r.planned_qty,
+    producido: r.produced_qty ?? '',
+    estado: r.status,
+    completada_en: r.completed_at ?? '',
+  })))
+}
