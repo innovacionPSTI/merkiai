@@ -6,7 +6,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { getAdminUser } from '@/lib/auth'
 import { getAdminDb } from '@/lib/admin-db'
-import { inventoryValuationRows, inventoryValuationToCsv, movementsSummarySince, movementsSummaryToCsv } from '@merkiai/database'
+import { inventoryValuationRows, inventoryValuationToCsv, movementsSummarySince, movementsSummaryToCsv, listMovements, listUoms, kardexToCsv } from '@merkiai/database'
 import { getTenantEntitlements, requireFeature, EntitlementError, FEATURES } from '@/lib/entitlements'
 
 export async function GET(req: NextRequest) {
@@ -24,7 +24,15 @@ export async function GET(req: NextRequest) {
   let csv: string
   let filename: string
 
-  if (type === 'movements') {
+  if (type === 'kardex') {
+    const itemId = Number(req.nextUrl.searchParams.get('item'))
+    if (!itemId) return NextResponse.json({ error: 'item requerido' }, { status: 400 })
+    const [movs, uoms] = await Promise.all([listMovements(db, { stockItemId: itemId, limit: 5000 }), listUoms(db)])
+    const uomCode: Record<number, string> = {}
+    for (const u of uoms) uomCode[u.id] = u.code
+    csv = kardexToCsv(movs, uomCode)
+    filename = `kardex-${itemId}-${date}.csv`
+  } else if (type === 'movements') {
     const days = Math.min(365, Math.max(1, Number(req.nextUrl.searchParams.get('days')) || 30))
     const since = new Date(Date.now() - days * 24 * 60 * 60 * 1000).toISOString()
     csv = movementsSummaryToCsv(await movementsSummarySince(db, since))

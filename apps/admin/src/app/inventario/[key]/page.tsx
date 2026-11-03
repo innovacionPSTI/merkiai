@@ -53,6 +53,7 @@ export default async function KardexPage({ params }: { params: Promise<{ key: st
       <PageHeader title={`Kardex · ${item.name}`} description={`Disponible: ${fmt(available)} · Costo unitario: ${cost == null ? '—' : fmt(cost)}`} />
       <div className="flex items-center gap-4">
         <a href="/inventario" className="font-brand text-sm text-brand-primary/60 underline">← Volver a Inventario</a>
+        <a href={`/api/admin/operations/export?type=kardex&item=${item.id}`} className="font-brand text-sm text-brand-primary underline">Exportar kardex (CSV)</a>
         <EditItemForm item={{ id: item.id, name: item.name, item_class: item.item_class, uom_id: item.uom_id, sellable: item.sellable, active: item.active, reorder_point: item.reorder_point ?? null }} uoms={uoms.map((u) => ({ id: u.id, code: u.code }))} />
       </div>
       {showByLocation && (

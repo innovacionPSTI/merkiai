@@ -182,3 +182,28 @@ export function movementsSummaryToCsv(summary: MovementsSummary): string {
     tipo: t.movement_type, movimientos: t.count, entradas: t.qtyIn, salidas: t.qtyOut, valor_entradas: t.valueIn,
   })))
 }
+
+export interface KardexRow {
+  created_at: string
+  movement_type: string
+  direction: string
+  qty: number | string
+  uom_id?: number | null
+  reason?: string | null
+  ref_type?: string | null
+  ref_id?: string | null
+}
+
+/** CSV del kardex (historial de movimientos) de un ítem (puro). */
+export function kardexToCsv(rows: KardexRow[], uomCode: Record<number, string> = {}): string {
+  const headers = ['fecha', 'tipo', 'direccion', 'cantidad', 'unidad', 'motivo', 'referencia']
+  return objectsToCsv(headers, rows.map((r) => ({
+    fecha: r.created_at,
+    tipo: r.movement_type,
+    direccion: r.direction,
+    cantidad: Number(r.qty),
+    unidad: r.uom_id != null ? (uomCode[r.uom_id] ?? '') : '',
+    motivo: r.reason ?? '',
+    referencia: r.ref_type ? `${r.ref_type} ${r.ref_id ?? ''}`.trim() : '',
+  })))
+}
