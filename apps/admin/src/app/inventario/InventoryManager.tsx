@@ -30,6 +30,20 @@ export default function InventoryManager({ initial, uoms }: { initial: Row[]; uo
   const [uomId, setUomId] = useState<number | ''>(uoms[0]?.id ?? '')
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const [backfillBusy, setBackfillBusy] = useState(false)
+  const [backfillMsg, setBackfillMsg] = useState<string | null>(null)
+
+  async function backfill() {
+    if (!confirm('Inicializar saldos de apertura en el libro a partir del stock actual de las variantes enlazadas. Es idempotente (no duplica). ¿Continuar?')) return
+    setBackfillBusy(true); setBackfillMsg(null)
+    try {
+      const res = await fetch('/api/admin/inventory/backfill-stock', { method: 'POST' })
+      const b = await res.json().catch(() => ({}))
+      if (!res.ok) throw new Error(b?.error ?? 'No se pudo ejecutar')
+      setBackfillMsg(`Listo: ${b.applied} aperturas nuevas sobre ${b.items} ítems.`)
+      router.refresh()
+    } catch (e) { setBackfillMsg(e instanceof Error ? e.message : 'Error') } finally { setBackfillBusy(false) }
+  }
 
   async function create() {
     if (!name.trim()) { setError('El nombre es obligatorio'); return }
@@ -52,6 +66,12 @@ export default function InventoryManager({ initial, uoms }: { initial: Row[]; uo
 
   return (
     <div className="space-y-6">
+      {/* Backfill de saldo de apertura al ledger (E18·HU-178) */}
+      <div className="flex items-center justify-end gap-3">
+        {backfillMsg && <span className="font-brand text-xs text-brand-primary/60">{backfillMsg}</span>}
+        <button onClick={backfill} disabled={backfillBusy} className="rounded-full border border-gray-200 text-brand-primary px-4 py-2 font-brand text-sm hover:bg-slate-50 disabled:opacity-50">{backfillBusy ? 'Inicializando…' : 'Inicializar saldos (ledger)'}</button>
+      </div>
+
       {/* Alta rápida */}
       <div className="bg-white rounded-2xl p-5 shadow-sm">
         <h2 className="font-display text-brand-primary text-lg mb-3">Nuevo ítem</h2>
