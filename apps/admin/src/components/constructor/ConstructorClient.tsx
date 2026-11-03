@@ -101,6 +101,7 @@ export default function ConstructorClient({
   const [navOpen, setNavOpen] = useState(false) // HU-367 · drawer Navegación
   const [outlineOpen, setOutlineOpen] = useState(false) // HU-366 · drawer Estructura (árbol del sitio)
   const [siteOpen, setSiteOpen] = useState(false) // HU-371 · drawer Ajustes de sitio
+  const [blockMenu, setBlockMenu] = useState<number | null>(null) // HU-365 AC-5 · menú "···" por bloque
   const askConfirm = (o: NonNullable<typeof confirmState>) => setConfirmState(o)
   const askPrompt = (o: NonNullable<typeof promptState>) => setPromptState(o)
 
@@ -780,9 +781,26 @@ export default function ConstructorClient({
                       <button onClick={() => setExpanded(open ? null : s.id)} className="rounded-lg border border-slate-300 px-3 py-1 text-xs font-medium text-slate-700 hover:bg-slate-50">
                         {open ? 'Cerrar' : 'Editar'}
                       </button>
-                      {!contentMode && <button onClick={() => duplicate(s)} className="text-slate-400 hover:text-slate-700" title="Duplicar" aria-label="Duplicar bloque"><Icon name="grid" size={15} /></button>}
-                      {!contentMode && <button onClick={() => saveBlock(s)} className="text-[11px] text-slate-500 hover:text-indigo-700 border border-slate-200 rounded-lg px-2 py-1" title="Guardar como bloque reutilizable">Guardar</button>}
-                      {!contentMode && <button onClick={() => remove(s)} className="text-slate-400 hover:text-red-600" title="Eliminar" aria-label="Eliminar bloque"><Icon name="trash" size={15} /></button>}
+                      {/* HU-365 AC-5 · acciones secundarias del bloque en un menú "···" */}
+                      {!contentMode && (
+                        <div className="relative">
+                          <button
+                            onClick={() => setBlockMenu(blockMenu === s.id ? null : s.id)}
+                            className="rounded-lg border border-slate-300 px-2 py-1 text-xs text-slate-500 hover:bg-slate-50"
+                            aria-haspopup="menu" aria-expanded={blockMenu === s.id} title="Más acciones" aria-label="Más acciones del bloque"
+                          >···</button>
+                          {blockMenu === s.id && (
+                            <>
+                              <div className="fixed inset-0 z-10" onClick={() => setBlockMenu(null)} aria-hidden="true" />
+                              <div className="absolute right-0 top-full z-20 mt-1 w-44 rounded-xl border border-slate-200 bg-white shadow-lg p-1.5" role="menu">
+                                <button onClick={() => { setBlockMenu(null); duplicate(s) }} className="w-full flex items-center gap-2 rounded-lg px-3 py-2 text-sm text-slate-700 hover:bg-slate-50 text-left"><Icon name="grid" size={14} /> Duplicar</button>
+                                <button onClick={() => { setBlockMenu(null); saveBlock(s) }} className="w-full flex items-center gap-2 rounded-lg px-3 py-2 text-sm text-slate-700 hover:bg-slate-50 text-left"><Icon name="preset" size={14} /> Guardar como bloque</button>
+                                <button onClick={() => { setBlockMenu(null); remove(s) }} className="w-full flex items-center gap-2 rounded-lg px-3 py-2 text-sm text-red-600 hover:bg-red-50 text-left"><Icon name="trash" size={14} /> Eliminar</button>
+                              </div>
+                            </>
+                          )}
+                        </div>
+                      )}
                     </div>
                     {open && (
                       <div className="border-t border-slate-100 px-4 py-4">
