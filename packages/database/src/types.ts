@@ -1119,6 +1119,48 @@ export type Database = {
         }
         Relationships: []
       }
+      locations: {
+        Row: {
+          id: number
+          tenant_id: string
+          code: string
+          name: string
+          kind: 'warehouse' | 'store' | 'pickup'
+          address: string | null
+          city: string | null
+          department: string | null
+          is_default: boolean
+          active: boolean
+          created_at: string
+          updated_at: string
+        }
+        Insert: {
+          id?: number
+          tenant_id?: string
+          code: string
+          name: string
+          kind?: 'warehouse' | 'store' | 'pickup'
+          address?: string | null
+          city?: string | null
+          department?: string | null
+          is_default?: boolean
+          active?: boolean
+          created_at?: string
+          updated_at?: string
+        }
+        Update: {
+          code?: string
+          name?: string
+          kind?: 'warehouse' | 'store' | 'pickup'
+          address?: string | null
+          city?: string | null
+          department?: string | null
+          is_default?: boolean
+          active?: boolean
+          updated_at?: string
+        }
+        Relationships: []
+      }
       redirects: {
         Row: {
           id: number
