@@ -81,7 +81,7 @@
 
 **Estimación:** M (5 puntos)
 **Módulo:** movimientos de inventario (transfer), auditoría
-**Estado:** 🔲 Pendiente (roadmap) — depende de HU-177
+**Estado:** 🟢 (v232) — AC-1/AC-2 básicos. `queries/stock-transfer.ts`: `planTransferMovements` (puro) + `recordTransfer` (dos piernas `transfer` out/in, idempotente por `op_key` `transfer:<id>:out|in`, valida origen≠destino, cantidad>0 y **disponible suficiente en origen**; convierte por UoM). API `POST /api/admin/inventory/items/[id]/transfer` (gated por `inventory`+`multi_location`, RLS) + `TransferForm` en el kardex (visible con `multi_location` y ≥2 ubicaciones activas). Trazabilidad por el ledger + audit (ref_type `transfer`). Tests: database 590. **Pendiente:** estados pendiente/en-tránsito/recibida (AC-3, hoy la transferencia es inmediata).
 
 | # | Escenario | Resultado esperado |
 |---|-----------|-------------------|

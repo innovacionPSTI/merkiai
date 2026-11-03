@@ -9,6 +9,7 @@ import { getTenantEntitlements } from '@/lib/entitlements'
 import { resolveFeature, FEATURES } from '@merkiai/tenancy'
 import AdjustForm from './AdjustForm'
 import EditItemForm from './EditItemForm'
+import TransferForm from './TransferForm'
 
 export const metadata: Metadata = { title: 'Kardex' }
 export const dynamic = 'force-dynamic'
@@ -43,6 +44,9 @@ export default async function KardexPage({ params }: { params: Promise<{ key: st
   // Mostrar desglose por ubicación solo si hay ubicaciones definidas y algún
   // movimiento quedó asignado a una (E18·HU-177).
   const showByLocation = locations.length > 0 && byLocation.some((b) => b.location_id != null)
+  // Transferir requiere multi_location y al menos 2 ubicaciones activas (E18·HU-181).
+  const activeLocations = locations.filter((l) => l.active)
+  const showTransfer = resolveFeature(entitlements, FEATURES.MULTI_LOCATION) && activeLocations.length > 1
 
   return (
     <div className="space-y-6">
@@ -67,6 +71,13 @@ export default async function KardexPage({ params }: { params: Promise<{ key: st
         </div>
       )}
       <AdjustForm itemId={item.id} uoms={uoms.map((u) => ({ id: u.id, code: u.code }))} />
+      {showTransfer && (
+        <TransferForm
+          itemId={item.id}
+          uoms={uoms.map((u) => ({ id: u.id, code: u.code }))}
+          locations={activeLocations.map((l) => ({ id: l.id, name: l.name }))}
+        />
+      )}
       <div className="bg-white rounded-2xl shadow-sm overflow-hidden">
         <table className="w-full text-sm font-brand">
           <thead className="bg-slate-50 text-brand-primary/60 text-xs uppercase">
