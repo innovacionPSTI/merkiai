@@ -30,13 +30,24 @@ jobs:
       - uses: actions/setup-node@v4
         with: { node-version: 20, cache: pnpm }
 
-      # 1) Migrar + sembrar contenido base de la DB de pruebas (idempotente).
-      - name: Aplicar schema a la DB de pruebas
+      # 1) Aprovisionar TODO el entorno de pruebas de una vez (idempotente):
+      #    plataforma (plan e2e + tenant) + tienda (schema+seeds+perfil admin) +
+      #    usuario de Stack Auth. Sin pasos manuales.
+      - name: Aprovisionar entorno de pruebas
         env:
           DATABASE_URL: ${{ secrets.TEST_DATABASE_URL }}
+          PLATFORM_DATABASE_URL: ${{ secrets.PLATFORM_DATABASE_URL }}
+          E2E_TENANT_ID: ${{ vars.E2E_TENANT_ID }}
+          E2E_TENANT_SUBDOMAIN: ${{ vars.E2E_TENANT_HOST }}
+          E2E_ADMIN_EMAIL: ${{ secrets.E2E_ADMIN_EMAIL }}
+          E2E_ADMIN_PASSWORD: ${{ secrets.E2E_ADMIN_PASSWORD }}
+          NEXT_PUBLIC_STACK_API_URL: ${{ vars.NEXT_PUBLIC_STACK_API_URL }}
+          NEXT_PUBLIC_HEXCLAVE_PROJECT_ID: ${{ vars.HEXCLAVE_PROJECT_ID }}
+          NEXT_PUBLIC_HEXCLAVE_PUBLISHABLE_CLIENT_KEY: ${{ vars.HEXCLAVE_PUBLISHABLE_CLIENT_KEY }}
+          HEXCLAVE_SECRET_SERVER_KEY: ${{ secrets.HEXCLAVE_SECRET_SERVER_KEY }}
         run: |
           sudo apt-get update && sudo apt-get install -y postgresql-client
-          bash scripts/db-apply.sh
+          bash scripts/e2e-provision.sh
 
       # 2) Instalar el paquete E2E (standalone, fuera del workspace) + navegadores.
       - name: Instalar Playwright
