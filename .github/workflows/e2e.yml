@@ -1,0 +1,70 @@
+name: E2E
+
+# Pruebas end-to-end (Playwright) contra el ENTORNO DE PRUEBAS desplegado.
+# - push a `test`     → valida el entorno de pruebas.
+# - PR hacia `develop`→ gate antes de integrar a staging.
+# Los E2E corren contra URLs ya desplegadas (Vercel) para no reconstruir el stack
+# completo (Next + Stack Auth + control-plane) dentro del runner. La DB de prueba
+# se migra/siembra con `scripts/db-apply.sh` + el seed del tenant de prueba.
+on:
+  push:
+    branches: [test]
+  pull_request:
+    branches: [develop]
+  workflow_dispatch:
+
+concurrency:
+  group: e2e-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  e2e:
+    name: Playwright (entorno de pruebas)
+    runs-on: ubuntu-latest
+    environment: test
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+        with: { version: 9 }
+      - uses: actions/setup-node@v4
+        with: { node-version: 20, cache: pnpm }
+
+      # 1) Migrar + sembrar contenido base de la DB de pruebas (idempotente).
+      - name: Aplicar schema a la DB de pruebas
+        env:
+          DATABASE_URL: ${{ secrets.TEST_DATABASE_URL }}
+        run: |
+          sudo apt-get update && sudo apt-get install -y postgresql-client
+          bash scripts/db-apply.sh
+
+      # 2) Instalar el paquete E2E (standalone, fuera del workspace) + navegadores.
+      - name: Instalar Playwright
+        working-directory: apps/e2e
+        run: |
+          pnpm install
+          pnpm run install:browsers
+
+      # 3) Correr la suite contra el entorno de pruebas. global-setup siembra el
+      #    tenant (preset + entitlements) e inicia sesión (storageState).
+      - name: Correr E2E
+        working-directory: apps/e2e
+        env:
+          E2E_WEB_URL: ${{ vars.E2E_WEB_URL }}
+          E2E_ADMIN_URL: ${{ vars.E2E_ADMIN_URL }}
+          E2E_CONSOLE_URL: ${{ vars.E2E_CONSOLE_URL }}
+          E2E_TENANT_ID: ${{ vars.E2E_TENANT_ID }}
+          E2E_TENANT_HOST: ${{ vars.E2E_TENANT_HOST }}
+          E2E_ADMIN_EMAIL: ${{ secrets.E2E_ADMIN_EMAIL }}
+          E2E_ADMIN_PASSWORD: ${{ secrets.E2E_ADMIN_PASSWORD }}
+          E2E_INTERNAL_SECRET: ${{ secrets.E2E_INTERNAL_SECRET }}
+          E2E_SEED: '1'
+        run: pnpm test
+
+      - name: Publicar reporte
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-report
+          path: apps/e2e/playwright-report
+          retention-days: 7

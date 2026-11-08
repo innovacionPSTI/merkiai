@@ -7,6 +7,9 @@
     "build": "turbo build",
     "dev": "turbo dev",
     "lint": "turbo lint",
+    "type-check": "turbo run type-check",
+    "test": "turbo run test",
+    "db:apply": "bash scripts/db-apply.sh",
     "format": "prettier --write \"**/*.{ts,tsx,md}\"",
     "db:generate": "supabase gen types typescript --local > packages/database/src/types.ts",
     "db:generate:remote": "supabase gen types typescript --project-id \"$SUPABASE_PROJECT_REF\" --schema public > packages/database/src/types.ts"
