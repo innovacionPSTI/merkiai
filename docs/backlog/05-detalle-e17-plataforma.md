@@ -559,7 +559,7 @@
 
 > Como operador, quiero gestionar desde la consola las **variables de infraestructura por tenant** (endpoint y claves de su BD dedicada, DSN de monitoreo, base URL), para no depender de env globales cuando un tenant tiene infra propia.
 
-**Estimación:** L (8 puntos) · **Módulo:** modelo de config de infra por tenant en la **BD de plataforma** (ligado a `db_ref`), UI en la consola, y resolución en el **connection factory** / arranque de la instancia · **Estado:** 🔲 Pendiente (roadmap) — extiende HU-200 (lado "gestión en consola").
+**Estimación:** L (8 puntos) · **Módulo:** modelo de config de infra por tenant en la **BD de plataforma** (ligado a `db_ref`), UI en la consola, y resolución en el **connection factory** / arranque de la instancia · Diseño: ADR-007 · **Estado:** 🔲 Pendiente (roadmap) — extiende HU-200 (lado "gestión en consola").
 
 | # | Escenario | Resultado esperado |
 |---|-----------|-------------------|
@@ -573,7 +573,7 @@
 
 > Como responsable, quiero que los secretos de infraestructura de cada tenant dedicado (connection strings, service keys, JWT secret) se guarden **cifrados en reposo** y nunca en texto plano ni en env global, para que un compromiso de la BD de plataforma no exponga las infraestructuras de los clientes.
 
-**Estimación:** L (8 puntos) · **Módulo:** cifrado en reposo (Supabase Vault / KMS / gestor externo) para los secretos por-tenant de HU-361; descifrado solo server-side con mínimo privilegio; rotación por-tenant · **Estado:** 🔲 Pendiente (roadmap) — extiende HU-206/228 al caso multi-tenant dedicado.
+**Estimación:** L (8 puntos) · **Módulo:** cifrado en reposo (Supabase Vault / KMS / gestor externo) para los secretos por-tenant de HU-361; descifrado solo server-side con mínimo privilegio; rotación por-tenant · Diseño: ADR-007 · **Estado:** 🔲 Pendiente (roadmap) — extiende HU-206/228 al caso multi-tenant dedicado.
 
 | # | Escenario | Resultado esperado |
 |---|-----------|-------------------|
@@ -586,7 +586,7 @@
 
 > Como operador, quiero aprovisionar (y promover) la infraestructura dedicada de un tenant de forma orquestada —crear su BD, migrar sus datos, sembrar y custodiar sus secretos—, para ofrecer el tier dedicado sin pasos manuales frágiles.
 
-**Estimación:** XL (13+ puntos) · **Módulo:** orquestador en el control plane que compone HU-200 (migración/promoción de datos) + HU-361 (config) + HU-362 (secretos), idempotente y con rollback · **Estado:** 🔲 Pendiente (roadmap) — puede ejecutarse como fase final de HU-200.
+**Estimación:** XL (13+ puntos) · **Módulo:** orquestador en el control plane que compone HU-200 (migración/promoción de datos) + HU-361 (config) + HU-362 (secretos), idempotente y con rollback · Diseño: ADR-007 · **Estado:** 🔲 Pendiente (roadmap) — puede ejecutarse como fase final de HU-200.
 
 | # | Escenario | Resultado esperado |
 |---|-----------|-------------------|
