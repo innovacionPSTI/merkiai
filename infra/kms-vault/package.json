@@ -1,0 +1,23 @@
+{
+  "name": "@merkiai/infra-kms-vault",
+  "version": "0.0.0",
+  "private": true,
+  "description": "AWS CDK · KEK + usuario IAM de alcance mínimo para el EnvelopeVault (HU-362/ADR-007). Standalone, fuera del workspace.",
+  "bin": { "kms-vault": "bin/app.ts" },
+  "scripts": {
+    "build": "tsc",
+    "synth": "cdk synth",
+    "diff": "cdk diff",
+    "deploy": "cdk deploy"
+  },
+  "devDependencies": {
+    "aws-cdk": "^2.160.0",
+    "@types/node": "^20.19.43",
+    "ts-node": "^10.9.2",
+    "typescript": "^5.9.3"
+  },
+  "dependencies": {
+    "aws-cdk-lib": "^2.160.0",
+    "constructs": "^10.3.0"
+  }
+}

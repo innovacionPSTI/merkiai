@@ -5,3 +5,7 @@ packages:
   # y se instala aparte (cd apps/e2e && pnpm install). Se excluye del workspace
   # para no exigir sus deps en el install congelado de CI/Vercel. Ver docs/E2E-PRUEBAS.md.
   - "!apps/e2e"
+  # Infra como código (AWS CDK) es standalone: deps propias (aws-cdk-lib), se
+  # instala y despliega aparte (cd infra/kms-vault && npm install). Se excluye del
+  # workspace para no arrastrar sus deps al install de CI/Vercel. Ver infra/kms-vault/README.
+  - "!infra/**"
