@@ -46,6 +46,9 @@ export type {
   SecretResolver,
 } from './infra-config'
 
+export { EnvelopeVault, InMemoryVault, makeSecretResolver } from './vault'
+export type { SecretsVault, KmsPort, SecretStore, SecretRecord } from './vault'
+
 export type { IdentityProvider, IdentityUser } from './identity'
 
 export {
