@@ -10,7 +10,8 @@ import { getPlans } from '@/lib/plans'
 import { provisionTenant, ensureTenantTeam } from '@/lib/provisioning'
 import { adminIdentity } from '@/lib/admin-identity'
 import { provisionOwnerProfile, seedTenantConfigViaAdmin, purgeTenantViaAdmin } from '@/lib/admin-provision'
-import { parseInfraForm, upsertTenantInfra, deleteTenantInfra } from '@/lib/tenant-infra'
+import { parseInfraForm, upsertTenantInfra, deleteTenantInfra, getInfraSecretRefs, setInfraSecretRefs } from '@/lib/tenant-infra'
+import { getSecretsVault } from '@/lib/vault'
 
 const SUBDOMAIN_RE = /^[a-z0-9-]{2,40}$/
 
@@ -367,4 +368,48 @@ export async function deleteTenantInfraConfig(formData: FormData) {
   if (!tenantId) return
   await deleteTenantInfra(tenantId)
   revalidatePath('/infraestructura')
+}
+
+/**
+ * Carga/rota los secretos de conexión de un tenant dedicado en el VAULT (HU-362).
+ * Cifra cada valor provisto por AWS KMS y guarda SOLO la referencia en
+ * `tenant_infra_config`. Campos vacíos = sin cambios. Gated por `platform:operate`.
+ */
+export async function saveTenantInfraSecrets(
+  _prev: InfraActionState,
+  formData: FormData,
+): Promise<InfraActionState> {
+  await requirePlatformOperator()
+  const tenantId = String(formData.get('tenant_id') ?? '').trim()
+  if (!tenantId) return { ok: false, error: 'Falta el tenant.' }
+
+  const values: { key: 'anon' | 'service' | 'jwt'; name: string; value: string }[] = [
+    { key: 'anon' as const, name: 'anon', value: String(formData.get('anon_key') ?? '').trim() },
+    { key: 'service' as const, name: 'service', value: String(formData.get('service_key') ?? '').trim() },
+    { key: 'jwt' as const, name: 'jwt', value: String(formData.get('jwt_secret') ?? '').trim() },
+  ].filter((v) => v.value)
+
+  if (values.length === 0) return { ok: false, error: 'Ingresa al menos un secreto para guardar.' }
+
+  try {
+    const vault = getSecretsVault()
+    const existing = await getInfraSecretRefs(tenantId)
+    const newRefs: { anon?: string; service?: string; jwt?: string } = {}
+    for (const v of values) {
+      const current = existing[v.key]
+      if (current) {
+        await vault.rotate(current, v.value) // conserva el ref
+        newRefs[v.key] = current
+      } else {
+        newRefs[v.key] = await vault.put(v.name, v.value) // nuevo ref
+      }
+    }
+    const { error } = await setInfraSecretRefs(tenantId, newRefs)
+    if (error) return { ok: false, error: `No se pudo guardar la referencia: ${error}` }
+  } catch (e) {
+    return { ok: false, error: e instanceof Error ? e.message : 'Error al cifrar los secretos.' }
+  }
+
+  revalidatePath('/infraestructura')
+  return { ok: true, message: 'Secretos de conexión guardados y cifrados.' }
 }

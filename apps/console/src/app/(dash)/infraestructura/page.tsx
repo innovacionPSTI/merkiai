@@ -4,6 +4,7 @@ import { listTenantInfra, INFRA_STATUS_LABEL } from '@/lib/tenant-infra'
 import type { InfraConfigStatus } from '@merkiai/tenancy'
 import { deleteTenantInfraConfig } from '../../actions'
 import InfraForm from './infra-form'
+import InfraSecretsForm from './infra-secrets-form'
 import { btn } from '@/lib/styles'
 
 export const dynamic = 'force-dynamic'
@@ -61,19 +62,31 @@ export default async function InfraestructuraPage() {
                     <button type="submit" style={deleteBtn}>Eliminar</button>
                   </form>
                 </div>
-                <div style={{ maxWidth: 560 }}>
-                  <InfraForm
-                    tenants={tenantList}
-                    initial={{
-                      tenant_id: c.tenant_id,
-                      db_ref: c.db_ref,
-                      db_url: c.db_url,
-                      base_url: c.base_url,
-                      sentry_dsn: c.sentry_dsn,
-                      region: c.region,
-                      status: c.status,
-                    }}
-                  />
+                <div style={{ display: 'flex', gap: 24, flexWrap: 'wrap' }}>
+                  <div style={{ flex: '1 1 320px', maxWidth: 560 }}>
+                    <InfraForm
+                      tenants={tenantList}
+                      initial={{
+                        tenant_id: c.tenant_id,
+                        db_ref: c.db_ref,
+                        db_url: c.db_url,
+                        base_url: c.base_url,
+                        sentry_dsn: c.sentry_dsn,
+                        region: c.region,
+                        status: c.status,
+                      }}
+                    />
+                  </div>
+                  <div style={{ flex: '1 1 280px', maxWidth: 420, borderLeft: '1px solid var(--ui-border)', paddingLeft: 20 }}>
+                    <h4 style={{ margin: '0 0 2px', fontSize: 13 }}>Secretos de conexión</h4>
+                    <p style={{ margin: '0 0 12px', fontSize: 11, color: '#888' }}>
+                      Se cifran con AWS KMS; solo se guarda la referencia. No se muestran una vez cargados.
+                    </p>
+                    <InfraSecretsForm
+                      tenantId={c.tenant_id}
+                      state={{ hasAnon: c.has_anon_key, hasService: c.has_service_key, hasJwt: c.has_jwt_secret }}
+                    />
+                  </div>
                 </div>
               </div>
             ))}

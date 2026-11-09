@@ -27,6 +27,10 @@ export interface TenantInfraRow {
   region: string | null
   status: InfraConfigStatus
   updated_at: string
+  // Indicadores (NO exponen el valor ni la referencia): solo si ya está cargado.
+  has_anon_key: boolean
+  has_service_key: boolean
+  has_jwt_secret: boolean
 }
 
 /** Entrada ya validada, lista para persistir. */
@@ -83,20 +87,63 @@ export function parseInfraForm(raw: {
   }
 }
 
+interface InfraCfgRaw {
+  tenant_id: string; db_ref: string; db_url: string; base_url: string | null
+  sentry_dsn: string | null; region: string | null; status: InfraConfigStatus; updated_at: string
+  secret_ref_anon_key: string | null; secret_ref_service_key: string | null; secret_ref_jwt_secret: string | null
+}
+
 /** Lista las configs de infra con el nombre del tenant (join en memoria). */
 export async function listTenantInfra(): Promise<TenantInfraRow[]> {
   const db = platformDb()
   const [{ data: cfgs }, { data: tenants }] = await Promise.all([
     db.from('tenant_infra_config')
-      .select('tenant_id, db_ref, db_url, base_url, sentry_dsn, region, status, updated_at')
+      .select('tenant_id, db_ref, db_url, base_url, sentry_dsn, region, status, updated_at, secret_ref_anon_key, secret_ref_service_key, secret_ref_jwt_secret')
       .order('updated_at', { ascending: false }),
     db.from('tenants').select('id, name'),
   ])
   const nameById = new Map((tenants ?? []).map((t: { id: string; name: string | null }) => [t.id, t.name]))
-  return ((cfgs ?? []) as Omit<TenantInfraRow, 'tenant_name'>[]).map((c) => ({
-    ...c,
+  return ((cfgs ?? []) as InfraCfgRaw[]).map((c) => ({
+    tenant_id: c.tenant_id, db_ref: c.db_ref, db_url: c.db_url, base_url: c.base_url,
+    sentry_dsn: c.sentry_dsn, region: c.region, status: c.status, updated_at: c.updated_at,
     tenant_name: nameById.get(c.tenant_id) ?? null,
+    has_anon_key: !!c.secret_ref_anon_key,
+    has_service_key: !!c.secret_ref_service_key,
+    has_jwt_secret: !!c.secret_ref_jwt_secret,
   }))
+}
+
+/** Referencias de secreto actuales de un tenant (para rotar vs crear). */
+export async function getInfraSecretRefs(tenantId: string): Promise<{
+  anon: string | null; service: string | null; jwt: string | null
+}> {
+  const { data } = await platformDb()
+    .from('tenant_infra_config')
+    .select('secret_ref_anon_key, secret_ref_service_key, secret_ref_jwt_secret')
+    .eq('tenant_id', tenantId)
+    .maybeSingle()
+  return {
+    anon: data?.secret_ref_anon_key ?? null,
+    service: data?.secret_ref_service_key ?? null,
+    jwt: data?.secret_ref_jwt_secret ?? null,
+  }
+}
+
+/** Fija las referencias de secreto (columnas secret_ref_*) de un tenant. */
+export async function setInfraSecretRefs(
+  tenantId: string,
+  refs: { anon?: string; service?: string; jwt?: string },
+): Promise<{ error?: string }> {
+  const patch: Record<string, string> = {}
+  if (refs.anon) patch.secret_ref_anon_key = refs.anon
+  if (refs.service) patch.secret_ref_service_key = refs.service
+  if (refs.jwt) patch.secret_ref_jwt_secret = refs.jwt
+  if (Object.keys(patch).length === 0) return {}
+  const { error } = await platformDb()
+    .from('tenant_infra_config')
+    .update({ ...patch, updated_at: new Date().toISOString() })
+    .eq('tenant_id', tenantId)
+  return { error: error?.message }
 }
 
 /** Crea o actualiza la config de un tenant (upsert por `tenant_id`). */
