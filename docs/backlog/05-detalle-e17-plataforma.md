@@ -559,7 +559,7 @@
 
 > Como operador, quiero gestionar desde la consola las **variables de infraestructura por tenant** (endpoint y claves de su BD dedicada, DSN de monitoreo, base URL), para no depender de env globales cuando un tenant tiene infra propia.
 
-**Estimación:** L (8 puntos) · **Módulo:** modelo de config de infra por tenant en la **BD de plataforma** (ligado a `db_ref`), UI en la consola, y resolución en el **connection factory** / arranque de la instancia · Diseño: ADR-007 · **Estado:** 🟡 En curso — **F1a** (migración `platform/10_tenant_infra_config` + capa pura `@merkiai/tenancy/infra-config` con seam de vault) y **F1b** (gestión en consola: página Infraestructura + CRUD simple) hechas; pendiente cablear la resolución del `dedicated` en runtime (requiere secretos del vault, HU-362).
+**Estimación:** L (8 puntos) · **Módulo:** modelo de config de infra por tenant en la **BD de plataforma** (ligado a `db_ref`), UI en la consola, y resolución en el **connection factory** / arranque de la instancia · Diseño: ADR-007 · **Estado:** ✅ Hecha — modelo (`platform/10_tenant_infra_config` + capa pura `@merkiai/tenancy/infra-config`), gestión en consola (página Infraestructura, CRUD simple) y **resolución en runtime** (`resolve-tenant` devuelve el destino dedicado; web lo consume vía `buildClientFor`). Secretos vía vault (HU-362).
 
 | # | Escenario | Resultado esperado |
 |---|-----------|-------------------|
@@ -573,7 +573,7 @@
 
 > Como responsable, quiero que los secretos de infraestructura de cada tenant dedicado (connection strings, service keys, JWT secret) se guarden **cifrados en reposo** y nunca en texto plano ni en env global, para que un compromiso de la BD de plataforma no exponga las infraestructuras de los clientes.
 
-**Estimación:** L (8 puntos) · **Módulo:** cifrado en reposo con **AWS KMS** (envelope; provisionado por **AWS CDK** + usuario IAM de alcance mínimo) para los secretos por-tenant de HU-361 **y para los secretos de plataforma por-entorno** (`HOSTING_API_TOKEN`, llaves IAM de AWS); descifrado solo server-side con mínimo privilegio; rotación por-tenant/por-entorno · Diseño: ADR-007 (§9) · **Estado:** 🔲 Pendiente (roadmap) — extiende HU-206/228 al caso multi-tenant dedicado.
+**Estimación:** L (8 puntos) · **Módulo:** cifrado en reposo con **AWS KMS** (envelope; provisionado por **AWS CDK** + usuario IAM de alcance mínimo) para los secretos por-tenant de HU-361 **y para los secretos de plataforma por-entorno** (`HOSTING_API_TOKEN`, llaves IAM de AWS); descifrado solo server-side con mínimo privilegio; rotación por-tenant/por-entorno · Diseño: ADR-007 (§9) · **Estado:** 🟡 Código completo — `SecretsVault`+`EnvelopeVault` (AES-256-GCM), `platform/11_platform_secrets` (`SecretStore`), adaptador AWS KMS + stack CDK (`infra/kms-vault`: KEK/IAM por entorno), vault ensamblado en el console y `resolve-tenant` descifrando. **Pendiente operativo:** desplegar CDK, `pnpm install` del SDK, env del console (AWS + `MERKIAI_VAULT_KEY_ALIAS`), aplicar migraciones y verificar con tenant dedicado real.
 
 | # | Escenario | Resultado esperado |
 |---|-----------|-------------------|
