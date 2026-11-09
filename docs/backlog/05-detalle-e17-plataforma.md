@@ -619,3 +619,23 @@
 
 ---
 
+
+## Detalle · E17 — Consolidación de variables de entorno y separación de producción (HU-364)
+
+> Deuda explícita: congelar el set de variables de entorno por proyecto y ambiente y formalizar la separación de producción **después** de que la config/secretos de infra se gestionen desde la consola + Vault (HU-361/362/363). Evita cablear los secretos dos veces. Referencia viva: `docs/ENV-VARS-MATRIZ.md` (hoy provisional). **🔲 (roadmap; depende de HU-361/362/363).**
+
+### HU-364 — Set final de variables de entorno + separación formal de producción · E17
+
+> Como responsable de plataforma, quiero fijar el conjunto definitivo de variables de entorno por proyecto (web/admin/console) y ambiente (prod/dev/test) y formalizar la separación de la cuenta/llaves de producción, una vez que la gestión de config/secretos desde la consola + Vault esté en pie, para no rehacer el cableado de secretos ni arrastrar variables muertas.
+
+**Estimación:** M (5 puntos)
+**Módulo:** auditoría de `process.env` por app → matriz final; renombre `CONTROL_PLANE_URL` → `CONSOLE_URL`; retiro de variables migradas a consola/Vault (HU-361/362); separación de cuentas/llaves de producción (Supabase/Stack/Vercel) y rotación; actualización de `.env.example` + `docs/ENV-VARS-MATRIZ.md` + `docs/CICD.md`
+**Estado:** 🔲 Pendiente (roadmap) — **depende de HU-361/362/363.** Base ya hecha: config de negocio por tenant fuera de env (ADR-004 · `integration_instances`), matriz provisional documentada, `.env.example` saneados (sin variables muertas).
+
+| # | Escenario | Resultado esperado |
+|---|-----------|-------------------|
+| AC-1 | Matriz final | Set definitivo de variables por app×ambiente, derivado de `process.env` real; `docs/ENV-VARS-MATRIZ.md` deja de ser provisional |
+| AC-2 | Variables muertas retiradas | Las migradas a consola/Vault (HU-361/362) y las legacy se eliminan de Vercel y de los `.env.example`; CI falla si reaparece una no documentada |
+| AC-3 | Renombre `CONTROL_PLANE_URL` → `CONSOLE_URL` | Alias retrocompatible durante la transición; code + docs + env actualizados; retiro del nombre viejo al final |
+| AC-4 | Separación de producción | Cuenta/llaves de prod aisladas de dev/test (Supabase/Stack/Vercel), con rotación posterior a la separación; verificado que ninguna credencial de no-prod alcanza prod |
+| AC-5 | Secretos vía Vault | Los secretos que correspondan se consumen desde Vault (HU-362), no como env plano; `.env.example` refleja qué queda en env y qué en Vault |
