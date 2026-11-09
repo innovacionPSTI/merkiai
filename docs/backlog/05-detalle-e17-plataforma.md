@@ -559,7 +559,7 @@
 
 > Como operador, quiero gestionar desde la consola las **variables de infraestructura por tenant** (endpoint y claves de su BD dedicada, DSN de monitoreo, base URL), para no depender de env globales cuando un tenant tiene infra propia.
 
-**Estimación:** L (8 puntos) · **Módulo:** modelo de config de infra por tenant en la **BD de plataforma** (ligado a `db_ref`), UI en la consola, y resolución en el **connection factory** / arranque de la instancia · Diseño: ADR-007 · **Estado:** 🔲 Pendiente (roadmap) — extiende HU-200 (lado "gestión en consola").
+**Estimación:** L (8 puntos) · **Módulo:** modelo de config de infra por tenant en la **BD de plataforma** (ligado a `db_ref`), UI en la consola, y resolución en el **connection factory** / arranque de la instancia · Diseño: ADR-007 · **Estado:** 🟡 En curso — **F1a** (migración `platform/10_tenant_infra_config` + capa pura `@merkiai/tenancy/infra-config` con seam de vault) y **F1b** (gestión en consola: página Infraestructura + CRUD simple) hechas; pendiente cablear la resolución del `dedicated` en runtime (requiere secretos del vault, HU-362).
 
 | # | Escenario | Resultado esperado |
 |---|-----------|-------------------|
