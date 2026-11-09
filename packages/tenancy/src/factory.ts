@@ -11,6 +11,13 @@ import type { TenantRecord } from './types'
 export interface DbTarget {
   url: string
   anonKey: string
+  /**
+   * Service-role del destino (omite RLS). Solo presente en destinos dedicados
+   * resueltos vía vault (ADR-007); el compartido lo toma de env server-only.
+   */
+  serviceKey?: string
+  /** JWT secret de la instancia dedicada (firma de claims). Resuelto por vault. */
+  jwtSecret?: string
 }
 
 /**

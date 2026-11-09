@@ -30,6 +30,22 @@ export type { TenantClientOptions, PlatformClientOptions } from './client'
 export { resolveDbTarget, buildTenantClientOptions } from './factory'
 export type { DbTarget, DbTargetRegistry } from './factory'
 
+export {
+  SHARED_DB_REF,
+  isActiveInfraConfig,
+  assertInfraConfig,
+  vaultPendingResolver,
+  toDbTarget,
+  buildDedicatedRegistry,
+  buildDbTargetRegistry,
+} from './infra-config'
+export type {
+  TenantInfraConfig,
+  InfraConfigStatus,
+  DedicatedSecrets,
+  SecretResolver,
+} from './infra-config'
+
 export type { IdentityProvider, IdentityUser } from './identity'
 
 export {
