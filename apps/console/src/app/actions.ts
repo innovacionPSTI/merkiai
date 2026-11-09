@@ -10,6 +10,7 @@ import { getPlans } from '@/lib/plans'
 import { provisionTenant, ensureTenantTeam } from '@/lib/provisioning'
 import { adminIdentity } from '@/lib/admin-identity'
 import { provisionOwnerProfile, seedTenantConfigViaAdmin, purgeTenantViaAdmin } from '@/lib/admin-provision'
+import { parseInfraForm, upsertTenantInfra, deleteTenantInfra } from '@/lib/tenant-infra'
 
 const SUBDOMAIN_RE = /^[a-z0-9-]{2,40}$/
 
@@ -328,4 +329,42 @@ export async function setTenantPlan(formData: FormData) {
 
   await platformDb().from('tenants').update({ plan }).eq('id', id)
   revalidatePath('/')
+}
+
+/** Estado del formulario de config de infra por-tenant (para `useActionState`). */
+export interface InfraActionState { ok: boolean; error?: string; message?: string }
+
+/**
+ * Crea o actualiza la config de infra de un tenant dedicado (HU-361 · ADR-007).
+ * Gated por `platform:operate`. Solo config NO secreta (los secretos → vault, HU-362).
+ */
+export async function saveTenantInfraConfig(
+  _prev: InfraActionState,
+  formData: FormData,
+): Promise<InfraActionState> {
+  await requirePlatformOperator()
+  const parsed = parseInfraForm({
+    tenant_id:  String(formData.get('tenant_id') ?? ''),
+    db_ref:     String(formData.get('db_ref') ?? ''),
+    db_url:     String(formData.get('db_url') ?? ''),
+    base_url:   String(formData.get('base_url') ?? ''),
+    sentry_dsn: String(formData.get('sentry_dsn') ?? ''),
+    region:     String(formData.get('region') ?? ''),
+    status:     String(formData.get('status') ?? 'draft'),
+  })
+  if (!parsed.ok) return { ok: false, error: parsed.error }
+
+  const { error } = await upsertTenantInfra(parsed.value)
+  if (error) return { ok: false, error: `No se pudo guardar: ${error}` }
+  revalidatePath('/infraestructura')
+  return { ok: true, message: 'Configuración de infraestructura guardada.' }
+}
+
+/** Elimina la config de infra de un tenant. Gated. Acción simple (form de la fila). */
+export async function deleteTenantInfraConfig(formData: FormData) {
+  await requirePlatformOperator()
+  const tenantId = String(formData.get('tenant_id') ?? '').trim()
+  if (!tenantId) return
+  await deleteTenantInfra(tenantId)
+  revalidatePath('/infraestructura')
 }
