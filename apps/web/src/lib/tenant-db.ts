@@ -13,8 +13,30 @@
  *   2) definir `SUPABASE_JWT_SECRET` (Legacy JWT secret) en el entorno.
  */
 import { createTenantClient, mintTenantJwt } from '@merkiai/tenancy'
+import type { SupabaseRole } from '@merkiai/tenancy'
 import type { Database } from '@merkiai/database/types'
-import { resolveTenant } from './tenant-context'
+import { resolveTenant, type ResolvedTenant } from './tenant-context'
+
+/**
+ * HU-362 · Construye el cliente tenant-scoped usando el **destino dedicado** si el
+ * control plane lo resolvió (BD propia del tenant + su JWT secret), o los
+ * **globals de env** del clúster compartido en caso contrario (retrocompatible:
+ * el tenant compartido se comporta idéntico). Fail-closed: exige un JWT secret.
+ */
+function buildClientFor(resolved: ResolvedTenant, role: SupabaseRole, userId: string) {
+  const target = resolved.dedicatedTarget
+  const url = target?.url ?? process.env.NEXT_PUBLIC_SUPABASE_URL!
+  const anonKey = target?.anonKey ?? process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY!
+  const secret = target?.jwtSecret ?? process.env.SUPABASE_JWT_SECRET
+  if (!secret) {
+    throw new Error('[web] JWT secret no disponible: ni dedicatedTarget.jwtSecret ni SUPABASE_JWT_SECRET.')
+  }
+  return createTenantClient<Database>({
+    url,
+    anonKey,
+    accessToken: () => mintTenantJwt({ userId, tenantId: resolved.tenantId, secret, role }),
+  })
+}
 
 /**
  * Cliente de solo-lectura del storefront, scoped por tenant vía RLS.
@@ -40,8 +62,8 @@ export function getTenantDb(tenantId: string) {
  * dinámicos). Nota: al leer el Host, la página se vuelve dinámica (rompe ISR).
  */
 export async function getRequestTenantDb() {
-  const { tenantId } = await resolveTenant()
-  return getTenantDb(tenantId)
+  const resolved = await resolveTenant()
+  return buildClientFor(resolved, 'anon', 'storefront-anon')
 }
 
 /**
@@ -51,11 +73,13 @@ export async function getRequestTenantDb() {
  * plano de tienda). La RLS es la frontera dura (ADR-001).
  */
 export async function getRequestCatalogDb() {
+  // Fail-closed del clúster compartido: exige el secret global. Para un tenant
+  // dedicado, buildClientFor usa además el jwtSecret de su destino (que lo override).
   if (!process.env.SUPABASE_JWT_SECRET) {
     throw new Error('[web] SUPABASE_JWT_SECRET requerido: la RLS de catálogo/contenido es obligatoria (sin service-role en el plano de tienda).')
   }
-  const { tenantId } = await resolveTenant()
-  return getTenantDb(tenantId)
+  const resolved = await resolveTenant()
+  return buildClientFor(resolved, 'anon', 'storefront-anon')
 }
 
 /**
@@ -79,8 +103,8 @@ export function getUserTenantDb(userId: string, tenantId: string) {
 
 /** Igual que `getUserTenantDb` pero resolviendo el tenant desde el host. */
 export async function getRequestUserTenantDb(userId: string) {
-  const { tenantId } = await resolveTenant()
-  return getUserTenantDb(userId, tenantId)
+  const resolved = await resolveTenant()
+  return buildClientFor(resolved, 'authenticated', userId)
 }
 
 /**
@@ -94,6 +118,6 @@ export async function getRequestUserDb(userId: string) {
   if (!process.env.SUPABASE_JWT_SECRET) {
     throw new Error('[web] SUPABASE_JWT_SECRET requerido: la RLS de flujos con sesión es obligatoria.')
   }
-  const { tenantId } = await resolveTenant()
-  return getUserTenantDb(userId, tenantId)
+  const resolved = await resolveTenant()
+  return buildClientFor(resolved, 'authenticated', userId)
 }

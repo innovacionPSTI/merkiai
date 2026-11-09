@@ -19,7 +19,7 @@
  * ---------------------------------------------------------------------------
  */
 import { headers } from 'next/headers'
-import { MissingTenantContextError, type PlanEntitlements } from '@merkiai/tenancy'
+import { MissingTenantContextError, type PlanEntitlements, type DbTarget } from '@merkiai/tenancy'
 
 export interface ResolvedTenant {
   tenantId: string
@@ -29,6 +29,12 @@ export interface ResolvedTenant {
   status?: string | null
   plan?: string | null
   entitlements?: PlanEntitlements | null
+  /**
+   * HU-362 · destino de datos DEDICADO ya resuelto por el control plane (con sus
+   * secretos descifrados del vault). Presente SOLO para tenants dedicados; para
+   * el compartido es null/undefined y la capa de datos usa los globals de env.
+   */
+  dedicatedTarget?: DbTarget | null
 }
 
 /** Contrato del origen de datos host→tenant (se implementará contra el control plane). */
@@ -83,6 +89,7 @@ export const controlPlaneResolver: TenantResolver = {
         status: d.status ?? null,
         plan: d.plan ?? null,
         entitlements: d.entitlements ?? null,
+        dedicatedTarget: d.dedicatedTarget ?? null,
       }
     } catch (e) {
       console.warn(`[tenant-resolve] host="${host}" → error de red: ${e instanceof Error ? e.message : String(e)} → fallback default`)
