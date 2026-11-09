@@ -573,7 +573,7 @@
 
 > Como responsable, quiero que los secretos de infraestructura de cada tenant dedicado (connection strings, service keys, JWT secret) se guarden **cifrados en reposo** y nunca en texto plano ni en env global, para que un compromiso de la BD de plataforma no exponga las infraestructuras de los clientes.
 
-**Estimación:** L (8 puntos) · **Módulo:** cifrado en reposo con **AWS KMS** (envelope; provisionado por **AWS CDK** + usuario IAM de alcance mínimo) para los secretos por-tenant de HU-361; descifrado solo server-side con mínimo privilegio; rotación por-tenant · Diseño: ADR-007 · **Estado:** 🔲 Pendiente (roadmap) — extiende HU-206/228 al caso multi-tenant dedicado.
+**Estimación:** L (8 puntos) · **Módulo:** cifrado en reposo con **AWS KMS** (envelope; provisionado por **AWS CDK** + usuario IAM de alcance mínimo) para los secretos por-tenant de HU-361 **y para los secretos de plataforma por-entorno** (`HOSTING_API_TOKEN`, llaves IAM de AWS); descifrado solo server-side con mínimo privilegio; rotación por-tenant/por-entorno · Diseño: ADR-007 (§9) · **Estado:** 🔲 Pendiente (roadmap) — extiende HU-206/228 al caso multi-tenant dedicado.
 
 | # | Escenario | Resultado esperado |
 |---|-----------|-------------------|
@@ -594,6 +594,11 @@
 | AC-2 | Idempotente + rollback | Si un paso falla, revierte los previos; re-ejecutar no duplica |
 | AC-3 | Sin downtime perceptible | La promoción se hace con corte mínimo/ventana controlada; reversible |
 | AC-4 | Verificación | Chequeo post-promoción (lectura/escritura acotada al tenant en el nuevo destino) antes de dar por activo |
+| AC-5 | Guard plan↔infra | No se activa un plan de nivel dedicado sin `db_ref` + `tenant_infra_config` resolubles; el cambio de plan a dedicado exige (o dispara) el aprovisionamiento de infra. Fail-closed: nunca dejar un tenant con plan dedicado y factory sin destino |
+| AC-6 | Recorte de dominio (app dedicada) | Si el nivel es **app dedicada** (HU-360), la promoción **re-registra los dominios propios** del tenant en el hosting de la nueva instancia (`HOSTING_*`) y actualiza A/CNAME si cambia, como paso coordinado del corte; en **BD dedicada** (misma app) los dominios no cambian (resuelven por `tenant_id`, estable) |
+| AC-7 | Invalidación de cachés | Al cambiar `db_ref` se invalidan las cachés de `resolve-tenant` (host→tenant/`db_ref`) y del connection factory para que el tráfico tome el nuevo destino (y, en app dedicada, el nuevo registro de host) |
+
+> **Nota de dominios (análisis):** la config de dominios está ligada al **tenant**, no al `db_ref`. En **BD dedicada** los dominios ya configurados siguen funcionando sin cambios (host→tenant es estable; solo cambia la base que el factory conecta). En **app dedicada** sí hay corte de dominio (re-registro + posible cambio de A/CNAME): por eso AC-6. El cambio de plan (`setTenantPlan`) hoy solo actualiza la columna `plan`; la automatización "plan dedicado → aprovisiona/migra" es esta HU-363, no está cableada aún.
 
 ---
 

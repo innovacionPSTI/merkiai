@@ -122,3 +122,9 @@ Separación de privilegios (recoge HU-228 pendiente): el secreto de aprovisionam
 - **Positivas:** config de infra por-tenant gestionable desde la consola; secretos cifrados en reposo con rotación por-tenant; factory intacto para los consumidores; proveedor de vault intercambiable; auditoría/alerta reutilizando HU-146/170.
 - **A vigilar:** el descifrado por request añade latencia → mitigar con caché por instancia + TTL corto; la rotación de un tenant no debe afectar a otros (claves por-tenant); el adaptador por defecto requiere provisionar un KMS antes de producción dedicada.
 - **Alcance de la reducción de env vars:** **solo** migran las de **infra por-tenant dedicado**; las de **infra por-ambiente** permanecen (podrán respaldarse por vault, pero siguen siendo por-entorno). La matriz `docs/ENV-VARS-MATRIZ.md` se congela en HU-364.
+
+## 9. Secretos de plataforma por-entorno en el vault
+
+Además de los secretos **por-tenant** (§3-§5), el vault (`SecretsVault`, §4) custodia los **secretos de plataforma por-entorno** que hoy viven como env: en particular **`HOSTING_API_TOKEN`** (token de Vercel que registra dominios y gestiona proyectos — es sensible) y las **llaves del usuario IAM de AWS** (`AWS_SECRET_ACCESS_KEY`). Siguen siendo **por-entorno** (una por test/dev/prod), no por-tenant, pero se guardan cifradas y se rotan por el mismo procedimiento (HU-228/362), no en texto plano en env.
+
+No son secretos y **permanecen como config plana** (env o tabla): `HOSTING_PROJECT_ID`, `HOSTING_TEAM_ID`, `HOSTING_A_RECORD`, `HOSTING_CNAME_TARGET` (identificadores y destinos DNS públicos). El retiro de `HOSTING_API_TOKEN` de env hacia el vault se ejecuta en HU-362 y se refleja en la matriz al congelarla (HU-364).

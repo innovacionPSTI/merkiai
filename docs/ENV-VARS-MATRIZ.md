@@ -78,7 +78,7 @@
 | `NEXT_PUBLIC_ADMIN_HEXCLAVE_PROJECT_ID` | Proyecto Stack **admin** (crea Team/dueño). = el de merkiai-admin | = admin prod | = admin dev | = admin test |
 | `NEXT_PUBLIC_ADMIN_HEXCLAVE_PUBLISHABLE_CLIENT_KEY` | Client key del Stack admin | = admin | = admin | = admin |
 | `ADMIN_HEXCLAVE_SECRET_SERVER_KEY` | **Server key** del Stack admin (= `HEXCLAVE_SECRET_SERVER_KEY` de merkiai-admin) | = admin prod | = admin dev | = admin test |
-| `HOSTING_API_TOKEN` | **Token** del hosting (Vercel) para dar de alta dominios de tenants | token prod | token dev | dummy/omitir |
+| `HOSTING_API_TOKEN` | **Token** del hosting (Vercel) para dar de alta dominios de tenants. **Secreto → a Vault (HU-362)**, por-entorno | token prod | token dev | dummy/omitir |
 | `HOSTING_PROJECT_ID` | Id/nombre del proyecto web en Vercel del ambiente | web prod | web dev | web test |
 | `HOSTING_TEAM_ID` | Team de Vercel dueño del proyecto web | team prod | team dev | team test/omitir |
 | `HOSTING_A_RECORD` | Destino DNS tipo A mostrado al comerciante | `76.76.21.21` | igual | igual |

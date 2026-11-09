@@ -33,7 +33,7 @@ function SubmitButton({ editing }: { editing: boolean }) {
   const { pending } = useFormStatus()
   return (
     <button type="submit" style={{ ...btn, opacity: pending ? 0.6 : 1 }} disabled={pending}>
-      {pending ? 'Guardando…' : editing ? 'Guardar cambios' : 'Agregar cliente'}
+      {pending ? 'Guardando…' : editing ? 'Guardar cambios' : 'Agregar tenant'}
     </button>
   )
 }
@@ -56,7 +56,7 @@ export default function InfraForm({
   return (
     <form action={formAction}>
       <div style={field}>
-        <label style={label} htmlFor="tenant_id">Cliente</label>
+        <label style={label} htmlFor="tenant_id">Tenant</label>
         {editing ? (
           <>
             <input type="hidden" name="tenant_id" value={initial!.tenant_id} />
@@ -66,7 +66,7 @@ export default function InfraForm({
           </>
         ) : (
           <select id="tenant_id" name="tenant_id" required style={wide} defaultValue="">
-            <option value="" disabled>Selecciona un cliente…</option>
+            <option value="" disabled>Selecciona un tenant…</option>
             {tenants.map((t) => (
               <option key={t.id} value={t.id}>{t.name ?? t.id}</option>
             ))}

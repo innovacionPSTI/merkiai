@@ -25,11 +25,11 @@ export default async function InfraestructuraPage() {
   return (
     <>
       <PageHeader
-        title="Infraestructura por cliente"
-        description="Configura la base de datos dedicada de los clientes que no usan el clúster compartido. La mayoría de clientes no necesita esto."
+        title="Infraestructura por tenant"
+        description="Configura la base de datos dedicada de los tenants que no usan el clúster compartido. La mayoría no necesita esto."
       />
 
-      <PanelCard title="Agregar cliente">
+      <PanelCard title="Agregar tenant">
         <div style={{ maxWidth: 560 }}>
           <InfraForm tenants={tenantList} />
         </div>
@@ -40,11 +40,11 @@ export default async function InfraestructuraPage() {
         </p>
       </PanelCard>
 
-      <PanelCard title={`Clientes configurados (${configs.length})`}>
+      <PanelCard title={`Tenants configurados (${configs.length})`}>
         {configs.length === 0 ? (
           <EmptyState
             icon={<Icon name="tenant" size={28} />}
-            title="Ningún cliente con infraestructura dedicada"
+            title="Ningún tenant con infraestructura dedicada"
             description="Agrega el primero con el formulario de arriba."
           />
         ) : (
