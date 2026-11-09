@@ -11,7 +11,7 @@
    - **Infra por-ambiente** (Supabase compartido, proyectos de Stack, `INTERNAL_API_SECRET`, URLs): **sigue en el gestor de secretos del entorno** (hoy env de Vercel; luego respaldable por Vault). No se mueve a la consola porque no es por-tenant.
    - **Infra por-tenant dedicado** (endpoint/claves de su BD propia, `JWT_SECRET` de esa instancia, DSN de Sentry, base URL): **se gestiona desde la consola** y se guarda en la **BD de plataforma**, con los **secretos cifrados** (nunca en claro).
 2. **Modelo en plataforma, indexado por `db_ref`.** Una tabla `tenant_infra_config` (config no secreta) + referencias a material secreto en el **vault**. El *connection factory* (ADR-001/HU-200) arma el `DbTargetRegistry.dedicated` leyendo de ahí, en vez de env.
-3. **Custodia vía una abstracción `SecretsVault`** (patrón interfaz+factory+adaptadores, igual que pagos/identidad). **No** se acopla el código a un proveedor concreto: se define el contrato y adaptadores intercambiables.
+3. **Custodia vía una abstracción `SecretsVault`** (patrón interfaz+factory+adaptadores, igual que pagos/identidad). **No** se acopla el código a un proveedor concreto: se define el contrato y adaptadores intercambiables. **Adaptador por defecto: AWS KMS (cifrado de sobre), provisionado por AWS CDK, accedido con un IAM de alcance mínimo.**
 4. **Descifrado solo server-side, por request, con mínimo privilegio.** Nunca en el cliente, nunca en logs; todo acceso/rotación auditado (HU-146) y alertable (HU-170).
 5. **Fail-closed.** Un `db_ref` dedicado sin config/secreto resoluble **lanza** (ya lo hace `resolveDbTarget`); no cae al compartido ni expone otro tenant.
 
@@ -70,11 +70,21 @@ Adaptadores (se elige por config, no por código de negocio):
 
 | Adaptador | Cuándo | Pros | Contras |
 |---|---|---|---|
-| **`KmsEnvelopeVault`** (recomendado por defecto) | Cifrado de sobre con un KMS gestionado (AWS KMS / GCP KMS); el ciphertext se guarda en la BD de plataforma | Portable, estándar, rotación de DEK/KEK, sin nuevo servicio con estado | Depende de un KMS de nube |
+| **`KmsEnvelopeVault` → AWS KMS (elegido)** | Cifrado de sobre con **AWS KMS**; el ciphertext (DEK cifrada + payload) se guarda en la BD de plataforma | Estándar, rotación de KEK gestionada, sin servicio con estado propio, IAM granular | Requiere cuenta/infra AWS (CDK) |
 | **`SupabaseVault`** (interino) | La plataforma ya es Supabase → usa su Vault (pgsodium) | Cero infra nueva, rápido de habilitar | Acopla a Supabase; menos portable |
 | **`ExternalVault`** (opcional) | HashiCorp Vault / Infisical / Doppler | Máximo control/rotación centralizada | Operación de un servicio extra |
 
-**Decisión:** definir el contrato `SecretsVault` ya; **adaptador por defecto `KmsEnvelopeVault`** (coherente con ADR-005 "proveedores no se comprometen en el código"), con **`SupabaseVault` como opción interina** mientras no haya KMS provisionado. Migrar de uno a otro es cambiar el adaptador + re-cifrar, sin tocar el factory ni la consola.
+**Decisión:** adaptador por defecto **`KmsEnvelopeVault` sobre AWS KMS**, con `SupabaseVault` solo como fallback interino de desarrollo. El contrato `SecretsVault` mantiene el código agnóstico (ADR-005); cambiar de proveedor es cambiar el adaptador + re-cifrar, sin tocar el factory ni la consola.
+
+### 4.1 Provisioning (AWS CDK) e IAM de alcance mínimo
+
+La infra de KMS se gestiona **como código con AWS CDK** (no por clic en consola), versionada y reproducible por entorno (test/dev/prod → una KEK por entorno, claves y aliases separados):
+
+- **`kms.Key`** (una KEK por entorno) con **rotación automática anual activada**, `alias/merkiai-<env>-tenant-secrets`, y **key policy** que solo permite usarla al principal de la app (no a toda la cuenta).
+- **Cifrado de sobre:** la app pide `GenerateDataKey` (DEK por secreto/tenant), cifra el valor con la DEK en memoria y guarda `{ dek_cifrada, ciphertext }`; para leer, `Decrypt` de la DEK y descifra en memoria. Rotar un tenant = re-`GenerateDataKey` + re-cifrar, sin afectar a otros.
+- **IAM de alcance justo** (principio de menor privilegio): un principal con **solo** `kms:GenerateDataKey`, `kms:Decrypt` y `kms:Encrypt` **restringidos al ARN de esa KEK** (nunca `kms:*` ni `Resource: *`), más `kms:DescribeKey` si hace falta. La key policy y la política IAM se definen ambas en el CDK.
+- **Credencial:** como las apps corren en Vercel (fuera de AWS), se usa un **usuario IAM dedicado** con esa política mínima; su `AWS_ACCESS_KEY_ID`/`AWS_SECRET_ACCESS_KEY` viven como secretos del entorno (nunca en repo) y se rotan como el resto (HU-228). *A futuro*, si la app corre en cómputo AWS, migrar a **rol IAM vía OIDC** (sin llaves estáticas) es un cambio de credencial, no de código.
+- **Separación por entorno:** KEK, alias y usuario IAM distintos por test/dev/prod → una llave de no-prod no puede descifrar secretos de prod.
 
 ---
 

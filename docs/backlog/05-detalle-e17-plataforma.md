@@ -573,7 +573,7 @@
 
 > Como responsable, quiero que los secretos de infraestructura de cada tenant dedicado (connection strings, service keys, JWT secret) se guarden **cifrados en reposo** y nunca en texto plano ni en env global, para que un compromiso de la BD de plataforma no exponga las infraestructuras de los clientes.
 
-**Estimación:** L (8 puntos) · **Módulo:** cifrado en reposo (Supabase Vault / KMS / gestor externo) para los secretos por-tenant de HU-361; descifrado solo server-side con mínimo privilegio; rotación por-tenant · Diseño: ADR-007 · **Estado:** 🔲 Pendiente (roadmap) — extiende HU-206/228 al caso multi-tenant dedicado.
+**Estimación:** L (8 puntos) · **Módulo:** cifrado en reposo con **AWS KMS** (envelope; provisionado por **AWS CDK** + usuario IAM de alcance mínimo) para los secretos por-tenant de HU-361; descifrado solo server-side con mínimo privilegio; rotación por-tenant · Diseño: ADR-007 · **Estado:** 🔲 Pendiente (roadmap) — extiende HU-206/228 al caso multi-tenant dedicado.
 
 | # | Escenario | Resultado esperado |
 |---|-----------|-------------------|
