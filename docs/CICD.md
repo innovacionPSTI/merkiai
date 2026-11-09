@@ -111,15 +111,94 @@ Nunca apuntes el entorno de pruebas a la base de producción.
 
 ## 6. Puesta en marcha (checklist)
 
-1. Crear ramas `develop` y `test` desde `main`.
-2. En Vercel: fijar `main` como Production branch y habilitar previews para `develop`/`test`;
-   cargar variables por Environment. Crear la(s) Supabase branch(es) de staging/test
-   (tienda y, si aplica, plataforma).
-3. Cargar los secretos/variables de GitHub (§5) y activar la protección de ramas (§4).
-4. Abrir un PR de prueba hacia `test` y confirmar que CI (y luego E2E) corren en verde.
+Las ramas `develop` y `test` ya existen en local. Lo que falta, en orden:
+
+1. **Publicar las ramas** (dispara el primer deploy de preview en Vercel una vez conectado):
+
+   ```bash
+   git push -u origin test develop
+   ```
+
+   > `git push origin main` publica a **producción**. Hazlo solo cuando quieras release.
+
+2. **Supabase** — crear las bases de **pruebas** y **staging** separadas de producción
+   (ver §7 si están en otra cuenta). No hace falta aplicarles el schema a mano: el
+   workflow lo hace con `scripts/e2e-provision.sh`. Solo necesitas la **cadena de
+   conexión** (`postgres://…`) de cada una.
+
+3. **Vercel** — conectar el repo, fijar `main` como Production branch, habilitar
+   previews para `develop`/`test`, y cargar las variables de runtime **por Environment**
+   (Production = prod; Preview = test/staging). Nunca apuntes Preview a la base de prod.
+
+4. **GitHub → Settings → Secrets and variables → Actions** — cargar los secretos/
+   variables de §5 **en el Environment `test`** (no a nivel de repo, ver §8).
+
+5. **Protección de ramas** (§4) + **protección del Environment `test`** (§8).
+
+6. **Disparar**: abre un PR de `feature/*` → `test` y confirma que CI y luego E2E
+   corren en verde. El provisioning crea plan/tenant/perfil/usuario de prueba solo.
 
 > **El tenant de prueba, sus entitlements y el perfil admin ya NO se crean a mano:**
 > el workflow los aprovisiona con `scripts/e2e-provision.sh`. Lo único que puede quedar
 > manual es el **usuario de Stack Auth** si decides no cargar `HEXCLAVE_SECRET_SERVER_KEY`
 > (crearlo una vez). Para montar un entorno local completo:
 > `DATABASE_URL=… PLATFORM_DATABASE_URL=… E2E_ADMIN_EMAIL=… E2E_ADMIN_PASSWORD=… pnpm e2e:provision`.
+
+---
+
+## 7. Entornos en cuentas/correos distintos (Vercel y Supabase)
+
+**Sí, es posible y además es lo recomendable.** Producción y pruebas pueden (idealmente
+deben) vivir en **proyectos, organizaciones o incluso cuentas/correos diferentes**. El
+pipeline no asume una sola cuenta: solo consume **cadenas de conexión** (Supabase) y
+**URLs desplegadas** (Vercel) vía secretos/variables. Mientras cada secreto apunte al
+entorno correcto, da igual en qué cuenta esté.
+
+Patrones válidos, de más simple a más aislado:
+
+| Patrón | Supabase | Vercel | Aislamiento |
+|--------|----------|--------|-------------|
+| A — Un proyecto, varios entornos | 1 proyecto + *branches* (prod/staging/test) | 1 proyecto, vars por Environment | Básico |
+| B — Proyectos separados | proyectos distintos (misma org) | 1–2 proyectos | Medio |
+| **C — Cuentas/orgs separadas (recomendado)** | **org/cuenta de prod ≠ org/cuenta de test** | **team de prod ≠ team de test** | **Alto** |
+
+Recomendaciones para el patrón C (cuentas/correos distintos):
+
+- **Producción en su propia cuenta/org**, con acceso restringido a quien administra
+  releases. Pruebas/staging en otra cuenta (o sub-cuenta) con credenciales propias.
+- La **separación la define el valor de cada secreto**, no el código: `TEST_DATABASE_URL`
+  y `PLATFORM_DATABASE_URL` apuntan a la(s) base(s) de **la cuenta de pruebas**; las vars
+  de runtime de producción viven en el Vercel de **la cuenta de prod**. No se cruzan.
+- Usa una **identidad de servicio/máquina** (no un correo personal) como dueña de las
+  integraciones de CI, para que el pipeline no dependa de la cuenta de una persona.
+- Si prod y plataforma comparten base hoy (single-DB), en pruebas puedes repetir el
+  mismo valor en `PLATFORM_DATABASE_URL` = `TEST_DATABASE_URL`; cuando separes la
+  plataforma a su propio proyecto/cuenta, solo cambias ese secreto, sin tocar código.
+
+> Regla de oro: **ninguna credencial de pruebas debe poder tocar producción**, y
+> viceversa. Cuentas separadas lo garantizan por construcción (no hay forma de que una
+> clave de test alcance la base de prod si están en organizaciones distintas).
+
+---
+
+## 8. Higiene de seguridad (evitar brechas)
+
+- **Nada de secretos en el repo.** Todo va en GitHub Secrets / Vercel env vars. Los
+  archivos `.env.example` y las semillas **no** llevan valores reales (verificado:
+  el provisioning solo recibe credenciales por variables de entorno).
+- **Secretos en el *Environment* `test`, no a nivel de repo.** Así solo los jobs que
+  declaran `environment: test` (como `e2e.yml`) pueden leerlos, y puedes exigir
+  **required reviewers** antes de que un workflow los use (Settings → Environments →
+  `test` → *Required reviewers* / *Deployment branches* = solo `test`).
+- **Mínimo privilegio en las claves.** Usa claves de Supabase/Stack **del entorno de
+  pruebas**, nunca las de producción. La `HEXCLAVE_SECRET_SERVER_KEY` es potente (crea
+  usuarios): que sea la del proyecto de **test**. Si no quieres cargarla, omítela y crea
+  el usuario de prueba a mano una vez (§5).
+- **PRs desde forks no reciben secretos** por defecto (comportamiento de Actions): bien,
+  no los relajes. Mantén el trigger de E2E en push a `test` y PR interno hacia `develop`.
+- **Rotación.** Si una clave se expone, rótala en Supabase/Stack/Vercel y actualiza el
+  secreto; como están por entorno, rotar test no afecta prod.
+- **`main` protegida** con PR + aprobación + checks obligatorios (§4): ninguna ruta
+  llega a producción sin pasar por review y por el pipeline.
+- **Logs.** Los scripts no imprimen credenciales (solo nombres de archivo y el email del
+  admin de prueba). No añadas `echo` de `DATABASE_URL`/claves en overrides locales.
