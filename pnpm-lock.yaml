@@ -134,6 +134,9 @@ importers:
 
   apps/console:
     dependencies:
+      '@aws-sdk/client-kms':
+        specifier: ^3.670.0
+        version: 3.1085.0
       '@merkiai/tenancy':
         specifier: workspace:*
         version: link:../../packages/tenancy
