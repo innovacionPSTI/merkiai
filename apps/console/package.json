@@ -12,6 +12,7 @@
     "test:coverage": "jest --coverage"
   },
   "dependencies": {
+    "@aws-sdk/client-kms": "^3.670.0",
     "@merkiai/tenancy": "workspace:*",
     "@merkiai/ui": "workspace:*",
     "@stackframe/stack": "^2.7.4",

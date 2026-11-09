@@ -13,6 +13,8 @@ import { NextRequest, NextResponse } from 'next/server'
 import { platformDb } from '@/lib/platform-db'
 import { hasInternalSecret } from '@/lib/auth'
 import { normalizeHost, isValidHost } from '@/lib/validation'
+import { assertInfraConfig, isActiveInfraConfig, toDbTarget, type TenantInfraConfig } from '@merkiai/tenancy'
+import { getSecretResolver } from '@/lib/vault'
 
 export const dynamic = 'force-dynamic'
 
@@ -93,6 +95,22 @@ export async function GET(req: NextRequest) {
     .eq('key', tenant.plan)
     .maybeSingle()
 
+  // HU-362 · destino dedicado resuelto (si el tenant no está en el compartido).
+  // Centraliza el acceso a AWS KMS en el control plane: web/admin reciben el
+  // DbTarget ya resuelto y no manejan llaves de AWS. Fail-closed: si el tenant
+  // es dedicado pero no se puede resolver su destino, 503 (no caer al compartido).
+  let dedicatedTarget: { url: string; anonKey: string; serviceKey?: string; jwtSecret?: string } | undefined
+  if (tenant.db_ref && tenant.db_ref !== 'shared') {
+    try {
+      dedicatedTarget = await resolveDedicatedTarget(db, tenant.id, tenant.db_ref)
+    } catch (e) {
+      return NextResponse.json(
+        { error: 'dedicated_resolve_failed', detail: e instanceof Error ? e.message : 'error' },
+        { status: 503 },
+      )
+    }
+  }
+
   return NextResponse.json({
     tenantId: tenant.id,
     subdomain: tenant.subdomain,
@@ -101,5 +119,36 @@ export async function GET(req: NextRequest) {
     plan: tenant.plan,
     status: tenant.status,
     entitlements: { features: plan?.features ?? {}, limits: plan?.limits ?? {}, roleAccess: plan?.role_access ?? {} },
+    ...(dedicatedTarget ? { dedicatedTarget } : {}),
   })
+}
+
+/**
+ * Resuelve el `DbTarget` de un tenant dedicado: lee su `tenant_infra_config` y
+ * descifra sus secretos por el vault (AWS KMS). Lanza si falta la config, no está
+ * `active` o faltan secretos (fail-closed).
+ */
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+async function resolveDedicatedTarget(db: any, tenantId: string, dbRef: string) {
+  const { data: row, error } = await db
+    .from('tenant_infra_config')
+    .select('tenant_id, db_ref, db_url, base_url, sentry_dsn, region, secret_ref_anon_key, secret_ref_service_key, secret_ref_jwt_secret, status')
+    .eq('tenant_id', tenantId)
+    .maybeSingle()
+  if (error) throw new Error(`lectura de tenant_infra_config: ${error.message}`)
+  if (!row) throw new Error(`tenant dedicado sin tenant_infra_config (db_ref ${dbRef})`)
+
+  const cfg: TenantInfraConfig = {
+    tenantId: row.tenant_id, dbRef: row.db_ref, dbUrl: row.db_url,
+    baseUrl: row.base_url, sentryDsn: row.sentry_dsn, region: row.region,
+    secretRefAnonKey: row.secret_ref_anon_key,
+    secretRefServiceKey: row.secret_ref_service_key,
+    secretRefJwtSecret: row.secret_ref_jwt_secret,
+    status: row.status,
+  }
+  if (!isActiveInfraConfig(cfg)) throw new Error(`tenant_infra_config no activa (estado ${cfg.status})`)
+  assertInfraConfig(cfg)
+
+  const secrets = await getSecretResolver()(cfg)
+  return toDbTarget(cfg, secrets)
 }
