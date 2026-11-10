@@ -653,7 +653,7 @@
 
 > Como plataforma, quiero **cobrar los planes** a cada tenant con **cobro recurrente tokenizado** vía PayZen, confirmar por **webhooks** y **activar/suspender** la cuenta según el pago, para operar el SaaS de forma automatizada.
 
-**Módulo:** adaptador `BillingProvider` PayZen (tienda PayZen propia de Merkiai + módulo tokenización); tokeniza medio de pago, crea **regla de recurrencia**, procesa **IPN** (pagado/pendiente/rechazado/recurrente), gobierna `active/past_due/suspended`; correos (activación, recibo, aviso de impago); reintentos; idempotencia (HU-162/298). · Diseño: ADR-009 · **Estado:** 🔲 (Ola 1, crítica).
+**Módulo:** adaptador `BillingProvider` PayZen (tienda PayZen propia de Merkiai + módulo tokenización); tokeniza medio de pago, crea **regla de recurrencia**, procesa **IPN** (pagado/pendiente/rechazado/recurrente), gobierna `active/past_due/suspended`; correos (activación, recibo, aviso de impago); reintentos; idempotencia (HU-162/298). · Diseño: ADR-009 · **Estado:** 🟡 backend completo contra la doc (v256): núcleo puro + adaptador PayZen en `@merkiai/tenancy` (`billing.ts`, `billing-payzen.ts`), migración `platform/12_billing.sql`, y en console `lib/billing*.ts` + IPN pública `/api/billing/payzen/ipn` + checkout interno `/api/internal/tenants/[id]/billing/checkout` + barrido de mora `/api/internal/billing/sweep`. **Pendiente:** UI de pago en el admin (formulario embebido), vista de suscripciones en la consola, cron del barrido, y **verificación con llaves de prueba** (payloads de `CreatePayment`/cobro con token/`Subscription/Cancel` y forma de la IPN recurrente provienen de la doc, sin probar en vivo).
 
 | # | Escenario | Resultado |
 |---|-----------|-----------|

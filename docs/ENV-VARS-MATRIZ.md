@@ -83,6 +83,13 @@
 | `AWS_ACCESS_KEY_ID` · `AWS_SECRET_ACCESS_KEY` | **Llaves IAM** del usuario `merkiai-<env>-vault` (abren el vault). **Root of trust** — quedan en env, NO en vault | propio | propio | propio |
 | `AWS_REGION` | Región de la KEK de KMS | región prod | dev | test |
 | `MERKIAI_VAULT_KEY_ALIAS` | Alias de la KEK (`alias/merkiai-<env>-tenant-secrets`) | prod | dev | test |
+| `PAYZEN_SHOP_ID` | Id de la tienda PayZen propia de Merkiai (billing de planes · HU-440) | tienda prod | tienda test | tienda test |
+| `PAYZEN_PASSWORD` 🔒 | Contraseña REST de PayZen; firma también las IPN (`prodpassword_…` / `testpassword_…`) | prod | test | test |
+| `PAYZEN_PUBLIC_KEY` | Llave pública para el formulario embebido de pago | prod | test | test |
+| `PAYZEN_API_URL` *(opcional)* | Base de la API; default `https://api.payzen.lat/api-payment/V4` | — | — | — |
+| `BILLING_DUNNING_MAX_ATTEMPTS` / `BILLING_DUNNING_GRACE_DAYS` *(opcional)* | Política de cobranza antes de suspender (default 3 intentos / 7 días) | — | — | — |
+| `RESEND_API_KEY` 🔒 | Envío de correos de billing (activación, recibo, impago, suspensión) | prod | dev | test |
+| `BILLING_EMAIL_FROM` | Remitente de los correos de billing | prod | dev | test |
 | `HOSTING_API_TOKEN` | Token del hosting para dar de alta dominios. **Secreto → a Vault**; con **Cloudflare for SaaS (HU-431)** lo reemplaza el token de Cloudflare (también en vault) | token prod | token dev | dummy/omitir |
 | `HOSTING_PROJECT_ID` · `HOSTING_TEAM_ID` | Proyecto/Team Vercel del ambiente. **→ config por celda / retiro con HU-431 (Cloudflare)** | web prod | web dev | web test |
 | `HOSTING_A_RECORD` · `HOSTING_CNAME_TARGET` | Destinos DNS mostrados al comerciante. **→ Cloudflare (HU-431)** | defaults | igual | igual |

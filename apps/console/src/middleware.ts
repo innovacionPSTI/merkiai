@@ -5,13 +5,15 @@ import { stackServerApp } from './stack'
  * Middleware del control plane.
  *  - `/handler/*` (Stack Auth) y `/api/internal/*` (máquina-a-máquina, gated por
  *    `x-internal-secret`) pasan sin sesión.
+ *  - `/api/billing/*` (webhooks del proveedor de cobro; autenticados por firma HMAC)
+ *    pasa sin sesión.
  *  - El resto (consola) exige sesión Stack Auth; el permiso `platform:operate`
  *    se verifica en el server component (`requirePlatformOperator`).
  */
 export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl
 
-  if (pathname === '/login' || pathname.startsWith('/handler') || pathname.startsWith('/api/internal')) {
+  if (pathname === '/login' || pathname.startsWith('/handler') || pathname.startsWith('/api/internal') || pathname.startsWith('/api/billing/')) {
     return NextResponse.next()
   }
 
