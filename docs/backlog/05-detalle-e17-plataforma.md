@@ -644,3 +644,58 @@
 | AC-3 | Renombre `CONTROL_PLANE_URL` → `CONSOLE_URL` | Alias retrocompatible durante la transición; code + docs + env actualizados; retiro del nombre viejo al final |
 | AC-4 | Separación de producción | Cuenta/llaves de prod aisladas de dev/test (Supabase/Stack/Vercel), con rotación posterior a la separación; verificado que ninguna credencial de no-prod alcanza prod |
 | AC-5 | Secretos vía Vault | Los secretos que correspondan se consumen desde Vault (HU-362), no como env plano; `.env.example` refleja qué queda en env y qué en Vault |
+
+## Detalle · E17 — Pagos con PayZen/Lyra (HU-440…443)
+
+> **Diseño:** **ADR-009**. Dos usos: **billing SaaS** (Merkiai cobra planes) y **ventas del tenant**. Se lanza con Modelos A (BYO) + B (reventa sin custodia); el agregador (C) se difiere por figura jurídica. Reutiliza `BillingProvider` (HU-192/193/194) y el registry de pagos (ADR-004 · HU-275–277). Construible contra la doc (REST V4.0 + tokenización + IPN) **sin llaves de producción**.
+
+### HU-440 — `BillingProvider` PayZen: cobro recurrente de planes + ciclo de cuenta · E17 (Ola 1)
+
+> Como plataforma, quiero **cobrar los planes** a cada tenant con **cobro recurrente tokenizado** vía PayZen, confirmar por **webhooks** y **activar/suspender** la cuenta según el pago, para operar el SaaS de forma automatizada.
+
+**Módulo:** adaptador `BillingProvider` PayZen (tienda PayZen propia de Merkiai + módulo tokenización); tokeniza medio de pago, crea **regla de recurrencia**, procesa **IPN** (pagado/pendiente/rechazado/recurrente), gobierna `active/past_due/suspended`; correos (activación, recibo, aviso de impago); reintentos; idempotencia (HU-162/298). · Diseño: ADR-009 · **Estado:** 🔲 (Ola 1, crítica).
+
+| # | Escenario | Resultado |
+|---|-----------|-----------|
+| AC-1 | Tokenización + recurrencia | Se registra el medio de pago (token, nunca la tarjeta) y se crea la regla de cobro periódico del plan |
+| AC-2 | Confirmación por IPN | El webhook idempotente confirma pago/recurrencia y actualiza el estado de la suscripción |
+| AC-3 | Ciclo de cuenta | Pago OK → `active`; fallo → `past_due` (reintentos N en M días) → `suspended`; al pagar → reactiva |
+| AC-4 | Correos | Activación, recibo de cobro y aviso de impago/suspensión (idempotentes) |
+| AC-5 | Sin llaves prod | Implementado contra entorno de pruebas/doc; enchufar llaves es config |
+
+### HU-441 — "Merkiai Pagos": reventa de PayZen como método de pago del tenant (Modelo B, sin custodia) · E17
+
+> Como operador, quiero ofrecer **"Merkiai Pagos"** (tienda PayZen bajo la cuenta multitienda de Merkiai, con la **cuenta bancaria del tenant** como destino) con un **markup** por transacción, para monetizar las ventas **sin custodiar fondos**.
+
+**Módulo:** adaptador PayZen en el registry (ADR-004) como instancia gestionada por el operador; multitienda; **markup** (% tipo mercado o fijo) sobre el costo plano de PayZen; el dinero va **directo al tenant** (gateway). · Diseño: ADR-009 · **Estado:** 🔲 (segmento volumen medio/alto por el piso mensual de PayZen).
+
+| # | Escenario | Resultado |
+|---|-----------|-----------|
+| AC-1 | Alta de tienda PayZen | El operador da de alta la tienda PayZen del tenant (cuenta destino del tenant) bajo la cuenta Merkiai |
+| AC-2 | Markup | Se cobra al tenant un % (o fijo) > costo PayZen; el margen queda para Merkiai; reportable |
+| AC-3 | Sin custodia | El dinero llega **directo a la cuenta del tenant**; Merkiai no recauda ni disversa fondos |
+| AC-4 | Checkout | El método aparece en el checkout del storefront vía el registry (como un proveedor más) |
+
+### HU-442 — PayZen BYO: el tenant usa su propia cuenta PayZen (Modelo A) · E17
+
+> Como tenant con cuenta PayZen propia, quiero conectarla a mi tienda para recibir mis ventas, sin pasar por Merkiai.
+
+**Módulo:** instancia del registry con credenciales del propio tenant (como los demás proveedores BYO). · **Estado:** 🔲 (puede salir junto con HU-441).
+
+| # | Escenario | Resultado |
+|---|-----------|-----------|
+| AC-1 | Config por tenant | El tenant ingresa sus credenciales PayZen; verificación de credenciales (HU-273) |
+| AC-2 | Checkout/webhooks/reconcile | Resueltos por la instancia activa del tenant (HU-277) |
+
+### HU-443 — (DIFERIDA) Agregador + dispersión SEN (Modelo C) · E17 · **bloqueada por figura jurídica**
+
+> Como plataforma, quiero operar como **agregador** (recaudar en cuentas de Merkiai y **dispersar a cada tenant con SEN**) para ofrecer "pagos nativos" tipo Shopify Payments y consolidar costos.
+
+**Módulo:** merchant-of-record + conciliación + **dispersión SEN** desde el Console + manejo de contracargos/retenciones. · **Estado:** 🔲 **Diferida** — **requiere validación legal/financiera** (entidad de pago/SEDPE o aliado licenciado) antes de implementar. No en la ruta del release.
+
+| # | Escenario | Resultado |
+|---|-----------|-----------|
+| AC-0 | Gate legal | Validada la figura jurídica para recaudar/dispersar fondos de terceros en Colombia |
+| AC-1 | Recaudo consolidado | Ventas de todos los tenants a cuentas de Merkiai con una sola tienda PayZen |
+| AC-2 | Dispersión SEN | Pagos a cada tenant vía SEN desde el Console, conciliados y auditados |
+| AC-3 | Cumplimiento | Contracargos, retenciones tributarias y reportes contables resueltos |

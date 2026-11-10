@@ -24,11 +24,14 @@ Objetivo: poder **cobrar y operar** los primeros clientes sobre la **celda compa
 1. **HU-364 — Congelar el set de variables de entorno** + rename `CONTROL_PLANE_URL → CONSOLE_URL`
    + retirar las muertas. (Gate antes de cerrar el pipeline: las vars del CI deben ser las finales.)
 2. **Cerrar CI/CD + E2E** de 3 ramas en verde de punta a punta (provisioning automático + specs).
-3. **Billing PayZen/Lyra (E17 · HU-192/193/194):** `BillingProvider` intercambiable + **suscripción
-   de planes** + **validación de pago** (webhooks idempotentes) + **correos** (activación, recibo,
-   aviso de impago) + **ciclo de cuenta** `active / past_due / suspended` con **suspensión por impago**
-   y reactivación al pagar.
-4. **Release a producción** + **onboarding de los primeros clientes** en la celda compartida.
+3. **Billing PayZen/Lyra (E17 · HU-440, sobre `BillingProvider` HU-192/193/194 · ADR-009):**
+   **cobro recurrente tokenizado** de los planes + **validación por IPN** (webhooks idempotentes) +
+   **correos** (activación, recibo, aviso de impago) + **ciclo de cuenta** `active / past_due / suspended`
+   con **suspensión por impago** y reactivación. (Construible contra la doc **sin llaves de producción**.)
+4. **Pagos del tenant (Uso 2 · ADR-009):** **"Merkiai Pagos"** (HU-441, reventa PayZen con markup, sin
+   custodia) + **BYO** (HU-442, Wompi/MP/PayZen propio). El **agregador/SEN** (HU-443) queda **diferido**
+   (requiere validación jurídica) — **fuera del release**.
+5. **Release a producción** + **onboarding de los primeros clientes** en la celda compartida.
 
 **Criterio de salida:** E2E verde · billing operativo · suspensión/reactivación por impago probada ·
 runbook de release.
