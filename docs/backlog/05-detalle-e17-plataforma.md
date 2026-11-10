@@ -672,7 +672,7 @@
 | # | Escenario | Resultado |
 |---|-----------|-----------|
 | AC-1 | Alta de tienda PayZen | El operador da de alta la tienda PayZen del tenant (cuenta destino del tenant) bajo la cuenta Merkiai |
-| AC-2 | Markup | Se cobra al tenant un % (o fijo) > costo PayZen; el margen queda para Merkiai; reportable |
+| AC-2 | Markup configurable | El **% (y fijo opcional) es parámetro editable por plan/tenant** desde la consola; se cobra > costo PayZen; margen reportable. Tiendas pequeñas se dirigen a Modelo A (HU-442) por el piso mensual |
 | AC-3 | Sin custodia | El dinero llega **directo a la cuenta del tenant**; Merkiai no recauda ni disversa fondos |
 | AC-4 | Checkout | El método aparece en el checkout del storefront vía el registry (como un proveedor más) |
 
@@ -696,6 +696,6 @@
 | # | Escenario | Resultado |
 |---|-----------|-----------|
 | AC-0 | Gate legal | Validada la figura jurídica para recaudar/dispersar fondos de terceros en Colombia |
-| AC-1 | Recaudo consolidado | Ventas de todos los tenants a cuentas de Merkiai con una sola tienda PayZen |
+| AC-1 | Recaudo consolidado | Ventas de todos los tenants a cuentas de Merkiai con **una sola** tienda PayZen → **elimina el piso mensual por tienda**; habilita "pagos nativos" para **tiendas pequeñas** (migran de Modelo A a C) |
 | AC-2 | Dispersión SEN | Pagos a cada tenant vía SEN desde el Console, conciliados y auditados |
 | AC-3 | Cumplimiento | Contracargos, retenciones tributarias y reportes contables resueltos |

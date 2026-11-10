@@ -14,8 +14,11 @@
    - **Modelo A — BYO (trae tu pasarela):** el tenant usa su propia cuenta (Wompi/MercadoPago/PayZen). Merkiai no toca fondos ni cobra por transacción; solo la suscripción. *Barato para tiendas pequeñas* (Wompi/MP son % sin mensualidad).
    - **Modelo B — "Merkiai Pagos" (reventa de PayZen, SIN custodia):** Merkiai es titular de la **cuenta PayZen multitienda**; cada tenant es una **tienda PayZen con su propia cuenta bancaria de destino** (el dinero va **directo** al tenant — es gateway, no agregación). PayZen factura a Merkiai ~$380–410 COP/tx; Merkiai le cobra **más** al tenant (markup) y se queda el margen. **Legalmente limpio.**
    - **Modelo C — Agregador (tipo Shopify Payments), DIFERIDO:** Merkiai *merchant of record*: todo el dinero cae en cuentas de Merkiai, cobra tarifas de mercado y **dispersa a cada cliente con el módulo SEN** desde el Console. **Requiere figura jurídica** (entidad de pago/SEDPE o aliado licenciado), custodia/float, conciliación, contracargos y retenciones. **No en la ruta crítica**: se construye tras **validación legal/financiera**.
-3. **Tarifa al tenant (Uso 2, Modelo B):** **% tipo mercado** (ej. ~2.9% + fijo) sobre el **costo fijo por transacción** de PayZen → margen alto en tickets grandes, razonable en pequeños.
-4. **Sin custodia de fondos en A y B** (evita regulación de manejo de dinero de terceros). El Modelo C es el único que la asume y por eso se separa.
+3. **Tarifa al tenant (Uso 2, Modelo B):** un **% (y fijo opcional) configurable** — no cableado —, ajustable **por plan y/o por tenant** desde la consola (ej. ~2.9% + fijo tipo mercado). Como el costo de PayZen es **fijo por transacción**, el margen crece con el ticket. El parámetro ya es una entrada editable en la calculadora (`CALCULADORA-COSTOS-MERKIAI.xlsx`, hoja Pagos).
+4. **Segmentación por tamaño de tienda:**
+   - **Tiendas pequeñas → Modelo A** (Wompi/MercadoPago, **% sin mensualidad**), porque el Modelo B carga el piso mensual de la tienda PayZen (~$120k COP). El Modelo B se reserva para **volumen medio/alto**.
+   - **Si se concreta el Modelo C** (agregador, validado jurídicamente), **las tiendas pequeñas migran a C**: ahí está su mayor valor, porque **una sola tienda PayZen consolidada elimina el piso mensual por tienda** y habilita "pagos nativos" para todos, incluidos los pequeños.
+5. **Sin custodia de fondos en A y B** (evita regulación de manejo de dinero de terceros). El Modelo C es el único que la asume y por eso se separa.
 
 ---
 
