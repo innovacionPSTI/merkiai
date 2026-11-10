@@ -4,6 +4,7 @@
  * la opera vía los endpoints internos de la consola (server-to-server).
  */
 import type { DnsRecord, ProvisionState } from './domains'
+import { consoleUrl } from './console-url'
 
 export type CustomDomainStatus = 'pending' | 'verified' | 'active'
 
@@ -27,7 +28,7 @@ export interface DomainProvision {
 }
 
 function base(): string | null {
-  const b = process.env.CONTROL_PLANE_URL
+  const b = consoleUrl()
   return b ? b.replace(/\/$/, '') : null
 }
 function headers(): Record<string, string> | null {

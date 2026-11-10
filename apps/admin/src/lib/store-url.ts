@@ -5,10 +5,11 @@
  * primary_domain/subdomain), así que la URL de webhook registrada funciona en
  * cualquiera de los dos.
  */
+import { consoleUrl } from './console-url'
 const BASE_DOMAIN = process.env.STOREFRONT_BASE_DOMAIN ?? 'merkiai.com'
 
 export async function resolveStoreBaseUrl(tenantId: string): Promise<string | null> {
-  const base = process.env.CONTROL_PLANE_URL
+  const base = consoleUrl()
   const secret = process.env.INTERNAL_API_SECRET
   if (!base || !secret) return null
   try {

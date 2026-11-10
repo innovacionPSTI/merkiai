@@ -5,7 +5,7 @@ import { resolvePreviewUrl } from '@/lib/preview'
 
 const REASONS: Record<string, string> = {
   missing_secret: 'Falta PREVIEW_SIGNING_SECRET en el admin (debe coincidir con el de la tienda).',
-  control_plane: 'Falta CONTROL_PLANE_URL/INTERNAL_API_SECRET o el control plane no responde.',
+  control_plane: 'Falta CONSOLE_URL/INTERNAL_API_SECRET o el control plane no responde.',
   no_host: 'La tienda no tiene subdominio ni dominio propio configurado (revísalo en la consola).',
 }
 

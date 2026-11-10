@@ -30,8 +30,10 @@ feature/* ──PR──▶ test ──PR──▶ develop ──PR──▶ mai
 
 ## 2. Workflows (GitHub Actions)
 
-- **`.github/workflows/ci.yml`** — en push/PR a `test`/`develop`/`main`: `type-check`,
-  `lint`, `test` (unitarias/integración, vía Turbo). Gate rápido, sin red externa.
+- **`.github/workflows/ci.yml`** — en push/PR a `test`/`develop`/`main`: **guard de variables
+  de entorno** (`scripts/check-env-docs.mjs`, HU-364: falla si el código usa una variable no
+  documentada en `.env.example`), `type-check`, `lint`, `test` (unitarias/integración, vía Turbo).
+  Gate rápido, sin red externa.
 - **`.github/workflows/e2e.yml`** — en push a `test` y PR hacia `develop` (o manual):
   **aprovisiona el entorno** (`scripts/e2e-provision.sh`), instala Playwright y
   corre la suite **contra el entorno desplegado** (no reconstruye el stack en el

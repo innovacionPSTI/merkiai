@@ -635,7 +635,7 @@
 
 **Estimación:** M (5 puntos)
 **Módulo:** auditoría de `process.env` por app → matriz final; renombre `CONTROL_PLANE_URL` → `CONSOLE_URL`; retiro de variables migradas a consola/Vault (HU-361/362); separación de cuentas/llaves de producción (Supabase/Stack/Vercel) y rotación; actualización de `.env.example` + `docs/ENV-VARS-MATRIZ.md` + `docs/CICD.md`
-**Estado:** 🔲 Pendiente (roadmap) — **depende de HU-361/362/363.** Base ya hecha: config de negocio por tenant fuera de env (ADR-004 · `integration_instances`), matriz provisional documentada, `.env.example` saneados (sin variables muertas).
+**Estado:** 🟡 En curso — **hecho:** AC-2 (guard `scripts/check-env-docs.mjs` en CI + `.env.example` al día, sin muertas) y AC-3 (rename `CONTROL_PLANE_URL → CONSOLE_URL` con alias retrocompatible vía `consoleUrl()`); **pendiente:** AC-1 matriz definitiva y retiro del alias, AC-4 separación de producción, AC-5 secretos por-celda vía vault (con E26·HU-430). Base previa: config de negocio por tenant fuera de env (ADR-004 · `integration_instances`), matriz provisional documentada, `.env.example` saneados (sin variables muertas).
 
 | # | Escenario | Resultado esperado |
 |---|-----------|-------------------|

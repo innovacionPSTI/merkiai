@@ -10,6 +10,7 @@
     "type-check": "turbo run type-check",
     "test": "turbo run test",
     "db:apply": "bash scripts/db-apply.sh",
+    "env:check": "node scripts/check-env-docs.mjs",
     "e2e:provision": "bash scripts/e2e-provision.sh",
     "format": "prettier --write \"**/*.{ts,tsx,md}\"",
     "db:generate": "supabase gen types typescript --local > packages/database/src/types.ts",

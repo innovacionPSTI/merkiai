@@ -31,6 +31,9 @@ jobs:
       - name: Instalar dependencias
         run: pnpm install --frozen-lockfile
 
+      - name: Guard de variables de entorno (HU-364)
+        run: node scripts/check-env-docs.mjs
+
       - name: Type-check
         run: pnpm turbo run type-check
 

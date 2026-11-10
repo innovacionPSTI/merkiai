@@ -1,5 +1,7 @@
 # Matriz de variables de entorno por proyecto y ambiente — Merkiai
 
+> **Guard activo (HU-364):** `pnpm env:check` (y el job de CI) falla si una app usa una variable que no está en su `.env.example`. El rename `CONTROL_PLANE_URL → CONSOLE_URL` ya está en código con alias retrocompatible.
+>
 > **Estado: PROVISIONAL.** Esta matriz refleja el modelo actual (variables de infra
 > por **ambiente** en Vercel). Está pendiente de consolidarse cuando aterricen
 > **HU-361** (config de infra por-tenant en la consola: env → config), **HU-362**
@@ -26,7 +28,7 @@
 | `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY` | Anon/publishable key de ese Supabase | propio | propio | propio |
 | `SUPABASE_JWT_SECRET` | **JWT secret** que firma el claim `tenant_id` (RLS). Crítico | propio | propio | propio |
 | `SUPABASE_SERVICE_ROLE_KEY` | **Service-role** (omite RLS); solo islas sin sesión | propio | propio | propio |
-| `CONTROL_PLANE_URL` | URL de la consola (resuelve host→tenant) | console prod | console dev | console test |
+| `CONSOLE_URL` | URL de la consola (resuelve host→tenant). Alias en retiro: `CONTROL_PLANE_URL` | console prod | console dev | console test |
 | `INTERNAL_API_SECRET` | **Secreto server-to-server**. Igual en las 3 apps del ambiente | compartido-prod | compartido-dev | compartido-test |
 | `NEXT_PUBLIC_ROOT_DOMAIN` | Dominio raíz para subdominios por host | dominio prod | dominio dev | dominio test |
 | `TENANT_RESOLUTION_STRICT` | Multi-tenant real fail-closed | `true` | `true` | `true` |
@@ -50,7 +52,7 @@
 | `SUPABASE_JWT_SECRET` | **JWT secret** (firma `is_admin`) | = web | = web | = web |
 | `SUPABASE_SERVICE_ROLE_KEY` | **Service-role** de tienda | = web | = web | = web |
 | `INTERNAL_API_SECRET` | **Server-to-server**. Igual en las 3 apps del ambiente | compartido-prod | compartido-dev | compartido-test |
-| `CONTROL_PLANE_URL` | URL de la consola del ambiente | console prod | console dev | console test |
+| `CONSOLE_URL` | URL de la consola del ambiente. Alias en retiro: `CONTROL_PLANE_URL` | console prod | console dev | console test |
 | `NEXT_PUBLIC_HEXCLAVE_PROJECT_ID` | Proyecto Stack **admin** (≠ el de web) | propio | propio | propio |
 | `NEXT_PUBLIC_HEXCLAVE_PUBLISHABLE_CLIENT_KEY` | Client key del Stack admin | propio | propio | propio |
 | `HEXCLAVE_SECRET_SERVER_KEY` | **Server key** del Stack admin. Aquí se crean los usuarios admin | propio | propio | propio |
@@ -93,7 +95,7 @@ Clasificación que **congela HU-364** (y que E26/celdas completa). Hoy solo se r
 | Clase | Variables | Dónde viven |
 |---|---|---|
 | **Bootstrap / root of trust (SIEMPRE en env)** | `AWS_ACCESS_KEY_ID`, `AWS_SECRET_ACCESS_KEY`, `AWS_REGION`, `MERKIAI_VAULT_KEY_ALIAS`, `INTERNAL_API_SECRET` (o `PROVISIONING_API_SECRET`) | env del console (no pueden ir al vault: lo abren) |
-| **Infra por-ambiente (en env; opcional respaldar en Vault)** | Supabase del control-plane (`NEXT_PUBLIC_SUPABASE_URL`+`SERVICE_ROLE_KEY`), Stack (`*HEXCLAVE*`, `NEXT_PUBLIC_STACK_API_URL`), URLs (`CONTROL_PLANE_URL`→`CONSOLE_URL`, `*_SITE_URL`, `*_ADMIN_URL`, `STOREFRONT_BASE_DOMAIN`, `NEXT_PUBLIC_ROOT_DOMAIN`), preview (`PREVIEW_SIGNING_SECRET`, `NEXT_PUBLIC_DRAFT_SECRET`), flags, `MAINTENANCE_MODE`, `TENANT_RESOLUTION_STRICT` | env por-ambiente |
+| **Infra por-ambiente (en env; opcional respaldar en Vault)** | Supabase del control-plane (`NEXT_PUBLIC_SUPABASE_URL`+`SERVICE_ROLE_KEY`), Stack (`*HEXCLAVE*`, `NEXT_PUBLIC_STACK_API_URL`), URLs (`CONSOLE_URL` — antes `CONTROL_PLANE_URL`, alias aún aceptado —, `*_SITE_URL`, `*_ADMIN_URL`, `STOREFRONT_BASE_DOMAIN`, `NEXT_PUBLIC_ROOT_DOMAIN`), preview (`PREVIEW_SIGNING_SECRET`, `NEXT_PUBLIC_DRAFT_SECRET`), flags, `MAINTENANCE_MODE`, `TENANT_RESOLUTION_STRICT` | env por-ambiente |
 | **→ A Vault (secreto, deja de ser env plano)** | `HOSTING_API_TOKEN` (o token Cloudflare); **llaves de datos/storage por celda** (anon/service/JWT de la celda, claves S3/R2) — ya hoy por-tenant en vault | kms-vault |
 | **→ A Vault por-celda con E26 (HU-430)** | De **web/admin**: `NEXT_PUBLIC_SUPABASE_URL`, `SUPABASE_SERVICE_ROLE_KEY`, anon key, `SUPABASE_JWT_SECRET` (hoy = la celda compartida por env) → se resuelven **por celda** desde `infra_cells`+vault | kms-vault / `infra_cells` |
 | **Retiro (ya no se usan)** | `DEFAULT_TENANT_ID` (opcional estricto), `DRAFT_SECRET` (web), `DOMAIN_A_RECORD`/`DOMAIN_CNAME_TARGET`; con Cloudflare: `HOSTING_PROJECT_ID`/`TEAM_ID`/`A_RECORD`/`CNAME_TARGET` | borrar |

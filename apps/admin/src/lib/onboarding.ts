@@ -18,6 +18,7 @@ import {
   type OnboardingState,
 } from '@merkiai/database'
 import { getAdminDb } from './admin-db'
+import { consoleUrl } from './console-url'
 
 export type { OnboardingState }
 
@@ -52,7 +53,7 @@ export interface OnboardingOptions {
 
 /** Pide al control plane los presets aplicables al plan del tenant. */
 export async function getOnboardingOptions(tenantId: string): Promise<OnboardingOptions | null> {
-  const base = process.env.CONTROL_PLANE_URL
+  const base = consoleUrl()
   const secret = process.env.INTERNAL_API_SECRET
   if (!base || !secret) return null
   try {

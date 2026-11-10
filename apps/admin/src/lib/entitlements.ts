@@ -15,6 +15,7 @@
 // plane, específica del admin.
 import { getActiveTenantId } from './active-tenant'
 import type { PlanEntitlements } from '@merkiai/tenancy'
+import { consoleUrl } from './console-url'
 
 export type { PlanEntitlements, EntitlementDef, EntitlementKind } from '@merkiai/tenancy'
 export {
@@ -35,7 +36,7 @@ export async function getTenantEntitlements(
 }
 
 async function fetchEntitlements(tenantId: string): Promise<{ tenantId: string; entitlements: PlanEntitlements | null; status: string | null }> {
-  const base = process.env.CONTROL_PLANE_URL
+  const base = consoleUrl()
   const secret = process.env.INTERNAL_API_SECRET
   if (!base || !secret) return { tenantId, entitlements: null, status: null }
   try {

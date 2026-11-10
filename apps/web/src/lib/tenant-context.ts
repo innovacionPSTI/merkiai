@@ -20,6 +20,7 @@
  */
 import { headers } from 'next/headers'
 import { MissingTenantContextError, type PlanEntitlements, type DbTarget } from '@merkiai/tenancy'
+import { consoleUrl } from './console-url'
 
 export interface ResolvedTenant {
   tenantId: string
@@ -58,14 +59,14 @@ export const singleTenantResolver: TenantResolver = {
 /**
  * Resolver real: consulta la **API interna del control plane** (que lee la BD de
  * plataforma), sin dar a web acceso directo al registro `tenants`.
- * Requiere `CONTROL_PLANE_URL` + `INTERNAL_API_SECRET`.
+ * Requiere `CONSOLE_URL` (alias: `CONTROL_PLANE_URL`) + `INTERNAL_API_SECRET`.
  */
 export const controlPlaneResolver: TenantResolver = {
   async resolveByHost(host: string) {
-    const base = process.env.CONTROL_PLANE_URL
+    const base = consoleUrl()
     const secret = process.env.INTERNAL_API_SECRET
     if (!base || !secret) {
-      console.warn(`[tenant-resolve] falta config: CONTROL_PLANE_URL=${!!base} INTERNAL_API_SECRET=${!!secret} → fallback default`)
+      console.warn(`[tenant-resolve] falta config: CONSOLE_URL=${!!base} INTERNAL_API_SECRET=${!!secret} → fallback default`)
       return null
     }
     try {
@@ -100,7 +101,7 @@ export const controlPlaneResolver: TenantResolver = {
 
 /** Resolver por defecto: control plane si está configurado; si no, single-tenant. */
 function defaultResolver(): TenantResolver {
-  return process.env.CONTROL_PLANE_URL && process.env.INTERNAL_API_SECRET
+  return consoleUrl() && process.env.INTERNAL_API_SECRET
     ? controlPlaneResolver
     : singleTenantResolver
 }

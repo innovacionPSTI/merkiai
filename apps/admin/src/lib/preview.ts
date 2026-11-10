@@ -5,11 +5,12 @@
  * verifica la web). El enlace abre `/api/preview` en el host de la tienda.
  */
 import { makePreviewToken } from '@merkiai/database'
+import { consoleUrl } from './console-url'
 
 const BASE_DOMAIN = process.env.STOREFRONT_BASE_DOMAIN ?? 'merkiai.com'
 
 async function fetchTenantHost(tenantId: string): Promise<string | null> {
-  const base = process.env.CONTROL_PLANE_URL
+  const base = consoleUrl()
   const secret = process.env.INTERNAL_API_SECRET
   if (!base || !secret) return null
   try {
@@ -42,7 +43,7 @@ export type PreviewResult =
 export async function resolvePreviewUrl(tenantId: string, path = '/'): Promise<PreviewResult> {
   const secret = process.env.PREVIEW_SIGNING_SECRET
   if (!secret) return { ok: false, reason: 'missing_secret' }
-  if (!process.env.CONTROL_PLANE_URL || !process.env.INTERNAL_API_SECRET) {
+  if (!consoleUrl() || !process.env.INTERNAL_API_SECRET) {
     return { ok: false, reason: 'control_plane' }
   }
   const host = await fetchTenantHost(tenantId)

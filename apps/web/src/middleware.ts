@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { stackServerApp } from './stack'
+import { consoleUrl } from './lib/console-url'
 
 /**
  * Middleware de Merkiai Web.
@@ -47,7 +48,7 @@ async function getRedirects(baseUrl: string, host: string): Promise<RedirectRule
 }
 
 // ── HU-194: gate de suspensión por tenant (best-effort) ────────────────────────
-// Solo activo si el control plane está configurado (CONTROL_PLANE_URL + secret);
+// Solo activo si el control plane está configurado (CONSOLE_URL + secret);
 // si no, no hace nada (single-tenant sin cambios).
 // `found`: true = tenant resuelto · false = 404 definitivo (host sin tenant) ·
 // null = desconocido (sin control plane o error transitorio → no redirigir).
@@ -56,7 +57,7 @@ const tenantStatusCache = new Map<string, { value: TenantResolution; expiresAt: 
 const TENANT_STATUS_TTL_MS = 30_000
 
 async function resolveTenantInfo(host: string): Promise<TenantResolution> {
-  const base = process.env.CONTROL_PLANE_URL
+  const base = consoleUrl()
   const secret = process.env.INTERNAL_API_SECRET
   if (!base || !secret) return { found: null, status: null, primaryDomain: null, subdomain: null }
   const key = host.toLowerCase()
