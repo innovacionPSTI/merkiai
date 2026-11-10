@@ -91,6 +91,7 @@
 | `BILLING_DUNNING_GRACE_DAYS` *(opcional)* | Días de gracia desde el primer fallo antes de suspender (default 7) | según negocio | omitir | omitir |
 | `RESEND_API_KEY` | **API key de Resend** para correos de billing (activación, recibo, impago, suspensión). Sin ella no se envían (solo log) | propio | propio | omitir |
 | `BILLING_EMAIL_FROM` | Remitente de esos correos (dominio verificado en Resend) | `facturacion@merkiai.com` | dominio dev | omitir |
+| `CRON_SECRET` | **Secreto de Vercel Cron**: autentica el barrido diario de mora (`GET /api/internal/billing/sweep`, `Authorization: Bearer …`). Aleatorio ≥ 16 chars | propio | propio | propio |
 | `HOSTING_API_TOKEN` | Token del hosting para dar de alta dominios. **Secreto → a Vault**; con **Cloudflare for SaaS (HU-431)** lo reemplaza el token de Cloudflare (también en vault) | token prod | token dev | dummy/omitir |
 | `HOSTING_PROJECT_ID` · `HOSTING_TEAM_ID` | Proyecto/Team Vercel del ambiente. **→ config por celda / retiro con HU-431 (Cloudflare)** | web prod | web dev | web test |
 | `HOSTING_A_RECORD` · `HOSTING_CNAME_TARGET` | Destinos DNS mostrados al comerciante. **→ Cloudflare (HU-431)** | defaults | igual | igual |
@@ -104,7 +105,7 @@ Clasificación que **congela HU-364** (y que E26/celdas completa). Hoy solo se r
 |---|---|---|
 | **Bootstrap / root of trust (SIEMPRE en env)** | `AWS_ACCESS_KEY_ID`, `AWS_SECRET_ACCESS_KEY`, `AWS_REGION`, `MERKIAI_VAULT_KEY_ALIAS`, `INTERNAL_API_SECRET` (o `PROVISIONING_API_SECRET`) | env del console (no pueden ir al vault: lo abren) |
 | **Infra por-ambiente (en env; opcional respaldar en Vault)** | Supabase del control-plane (`NEXT_PUBLIC_SUPABASE_URL`+`SERVICE_ROLE_KEY`), Stack (`*HEXCLAVE*`, `NEXT_PUBLIC_STACK_API_URL`), URLs (`CONSOLE_URL` — antes `CONTROL_PLANE_URL`, alias aún aceptado —, `*_SITE_URL`, `*_ADMIN_URL`, `STOREFRONT_BASE_DOMAIN`, `NEXT_PUBLIC_ROOT_DOMAIN`), preview (`PREVIEW_SIGNING_SECRET`, `NEXT_PUBLIC_DRAFT_SECRET`), flags, `MAINTENANCE_MODE`, `TENANT_RESOLUTION_STRICT` | env por-ambiente |
-| **Billing de plataforma (env del console)** | `PAYZEN_SHOP_ID`, `PAYZEN_PASSWORD`, `PAYZEN_PUBLIC_KEY`, `RESEND_API_KEY`, `BILLING_EMAIL_FROM` (+ opcionales `PAYZEN_API_URL`, `BILLING_DUNNING_*`) | env del console; `PAYZEN_PASSWORD` y `RESEND_API_KEY` candidatas a vault en la separación de prod |
+| **Billing de plataforma (env del console)** | `PAYZEN_SHOP_ID`, `PAYZEN_PASSWORD`, `PAYZEN_PUBLIC_KEY`, `RESEND_API_KEY`, `BILLING_EMAIL_FROM`, `CRON_SECRET` (+ opcionales `PAYZEN_API_URL`, `BILLING_DUNNING_*`) | env del console; `PAYZEN_PASSWORD` y `RESEND_API_KEY` candidatas a vault en la separación de prod |
 | **Datos de billing por tenant (nunca en env)** | Token del medio de pago del tenant (`paymentMethodToken`) | kms-vault (`subscriptions.payment_token_ref`) |
 | **→ A Vault (secreto, deja de ser env plano)** | `HOSTING_API_TOKEN` (o token Cloudflare); **llaves de datos/storage por celda** (anon/service/JWT de la celda, claves S3/R2) — ya hoy por-tenant en vault | kms-vault |
 | **→ A Vault por-celda con E26 (HU-430)** | De **web/admin**: `NEXT_PUBLIC_SUPABASE_URL`, `SUPABASE_SERVICE_ROLE_KEY`, anon key, `SUPABASE_JWT_SECRET` (hoy = la celda compartida por env) → se resuelven **por celda** desde `infra_cells`+vault | kms-vault / `infra_cells` |
@@ -134,7 +135,7 @@ Clasificación que **congela HU-364** (y que E26/celdas completa). Hoy solo se r
 - `TENANT_RESOLUTION_STRICT=true` en los tres → `DEFAULT_TENANT_ID` se omite.
 - **Llaves PayZen de producción solo en prod.** dev/test usan las de test: una IPN de test nunca puede activar un tenant real.
 - **Config fuera de env (PayZen):** en el Back Office de PayZen de cada modo, registrar la URL de notificación (IPN) `https://<console del ambiente>/api/billing/payzen/ipn`.
-- **Barrido de mora:** `POST /api/internal/billing/sweep` con header `x-internal-secret: <INTERNAL_API_SECRET>`, una vez al día (programador externo o GitHub Actions `schedule`). Vercel Cron no envía ese header; si se usa, hace falta adaptar la ruta a `CRON_SECRET` (variable nueva).
+- **Barrido de mora:** Vercel Cron (`apps/console/vercel.json`, diario 11:00 UTC = 6:00 Colombia) llama `GET /api/internal/billing/sweep` con `CRON_SECRET`. Sin `CRON_SECRET` el cron responde 401 (fail-closed). Disparo manual: `POST` con `x-internal-secret`.
 
 ---
 
@@ -146,7 +147,7 @@ Estado de las HU que mueven esta matriz:
 - **HU-362 — Vault AWS KMS** ✅ en código (bootstrap `AWS_*` + `MERKIAI_VAULT_KEY_ALIAS` en env del console). Pendiente operativo: verificar con un tenant dedicado real.
 - **HU-363 — Orquestación de aprovisionamiento dedicado** 🔲.
 - **HU-364 — Congelar env vars** 🟡: rename `CONTROL_PLANE_URL → CONSOLE_URL` y guard `env:check` hechos. Falta retirar el alias (cuando los 3 Vercel tengan `CONSOLE_URL`), mover `HOSTING_API_TOKEN` al vault y separar producción.
-- **HU-440 — Billing PayZen** 🟡: variables `PAYZEN_*`, `BILLING_*`, `RESEND_API_KEY` añadidas (console). Llaves pendientes de PayZen.
+- **HU-440 — Billing PayZen** 🟡: variables `PAYZEN_*`, `BILLING_*`, `RESEND_API_KEY`, `CRON_SECRET` añadidas (console). Llaves pendientes de PayZen.
 - **HU-431 — Cloudflare for SaaS** 🔲: retirará `HOSTING_PROJECT_ID`/`TEAM_ID`/`A_RECORD`/`CNAME_TARGET`.
 - **HU-430 — Celdas** 🔲: las `SUPABASE_*` de web/admin pasarán a resolverse por celda (vault + `infra_cells`).
 

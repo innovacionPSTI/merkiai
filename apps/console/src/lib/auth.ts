@@ -31,3 +31,15 @@ export function hasInternalSecret(req: NextRequest): boolean {
   if (!expected || !provided) return false
   return safeEqual(provided, expected)
 }
+
+/**
+ * Guard de Vercel Cron (HU-440). Vercel invoca los crons con
+ * `Authorization: Bearer <CRON_SECRET>` (GET). Sin `CRON_SECRET` configurado → rechaza
+ * (fail-closed). Comparación en tiempo constante.
+ */
+export function hasCronSecret(req: NextRequest): boolean {
+  const expected = process.env.CRON_SECRET
+  const auth = req.headers.get('authorization')
+  if (!expected || !auth) return false
+  return safeEqual(auth, `Bearer ${expected}`)
+}
