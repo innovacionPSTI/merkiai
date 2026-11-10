@@ -158,6 +158,7 @@ const NAV: NavNode[] = [
       { href: '/configuracion/plantillas-correo', label: 'Plantillas de correo', icon: <Icon name="newsletter" /> },
       { href: '/redirects',             label: 'Redirecciones', icon: <Icon name="external" /> },
       { href: '/configuracion/legal',   label: 'Legal', icon: <Icon name="lock" /> },
+      { href: '/facturacion',           label: 'Plan y facturación', icon: <Icon name="money" />, fullAccessOnly: true },
     ],
   },
   {

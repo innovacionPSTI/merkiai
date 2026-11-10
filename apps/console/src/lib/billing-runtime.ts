@@ -2,7 +2,7 @@
  * Ensamblaje de billing en el console (HU-440): repo sobre la BD de plataforma +
  * proveedor PayZen (env) + vault + mailer. Único punto con I/O real.
  */
-import { createPayzenBillingProvider, type BillingProvider, type DunningPolicy } from '@merkiai/tenancy'
+import { createPayzenBillingProvider, type BillingProvider, type DunningPolicy, type SubscriptionStatus } from '@merkiai/tenancy'
 import { platformDb } from './platform-db'
 import { getSecretsVault } from './vault'
 import { createBillingMailer } from './billing-email'
@@ -55,6 +55,12 @@ export function makeBillingRepo(db: any): BillingRepo {
       fail('listPastDue', error)
       return (data as SubscriptionRow[] | null) ?? []
     },
+    async listEvents(tenantId, limit) {
+      const { data, error } = await db.from('billing_events').select('type, amount_cents, currency, created_at')
+        .eq('tenant_id', tenantId).order('created_at', { ascending: false }).limit(limit)
+      fail('listEvents', error)
+      return data ?? []
+    },
   }
 }
 
@@ -83,4 +89,41 @@ export function getBillingDeps(): BillingDeps {
     policy: dunningFromEnv(),
     log: (m, x) => console.error(m, x),
   }
+}
+
+export interface SubscriptionOverview {
+  tenantId: string
+  tenantName: string
+  plan: string
+  interval: 'monthly' | 'yearly'
+  amountCents: number
+  currency: string
+  status: SubscriptionStatus
+  currentPeriodEnd: string | null
+  failedAttempts: number
+  autoRenew: boolean
+  hasPaymentMethod: boolean
+}
+
+/** Suscripciones de todos los tenants para la vista de la consola (sin secretos). */
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+export async function listSubscriptionsOverview(db: any = platformDb()): Promise<SubscriptionOverview[]> {
+  const { data, error } = await db.from('subscriptions')
+    .select('tenant_id, plan, billing_interval, amount_cents, currency, status, current_period_end, failed_attempts, provider_subscription_id, payment_token_ref, tenants(name)')
+    .order('status', { ascending: true })
+  if (error) throw new Error(`[billing] listado: ${error.message}`)
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  return (data ?? []).map((r: any) => ({
+    tenantId: r.tenant_id as string,
+    tenantName: (Array.isArray(r.tenants) ? r.tenants[0]?.name : r.tenants?.name) ?? r.tenant_id,
+    plan: r.plan as string,
+    interval: r.billing_interval as 'monthly' | 'yearly',
+    amountCents: r.amount_cents as number,
+    currency: r.currency as string,
+    status: r.status as SubscriptionStatus,
+    currentPeriodEnd: r.current_period_end as string | null,
+    failedAttempts: r.failed_attempts as number,
+    autoRenew: Boolean(r.provider_subscription_id),
+    hasPaymentMethod: Boolean(r.payment_token_ref),
+  }))
 }

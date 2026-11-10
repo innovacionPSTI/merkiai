@@ -16,6 +16,7 @@ import { getTenantEntitlements } from '@/lib/entitlements'
 import { isTenantBlocked } from '@/lib/tenant-status'
 import { resolveFeature, FEATURES } from '@merkiai/tenancy'
 import TenantSuspended from '@/components/TenantSuspended'
+import { canManageBilling } from '@/lib/billing'
 
 const cormorant = Cormorant_Garamond({
   subsets: ['latin'],
@@ -128,6 +129,10 @@ export default async function AdminRootLayout({ children }: { children: React.Re
   // HU-194 · gate de suspensión: si el tenant está suspendido/cancelado, el panel
   // se bloquea (espejo del storefront). Fail-open (ver isTenantBlocked).
   const tenantBlocked = Boolean(adminUser) && isProtectedRoute && isTenantBlocked(tenantInfo.status)
+  // HU-440 · con la tienda suspendida, el administrador aún puede entrar a pagar.
+  const billingAllowed = canManageBilling(adminUser?.role)
+  const billingBypass = tenantBlocked && billingAllowed && pathname.startsWith('/facturacion')
+  const showPastDue = Boolean(adminUser) && isProtectedRoute && tenantInfo.status === 'past_due' && billingAllowed
 
   return (
     <html lang="es" className={`${cormorant.variable} ${dmSans.variable}`}>
@@ -138,8 +143,10 @@ export default async function AdminRootLayout({ children }: { children: React.Re
       <body className="bg-gray-50">
         <StackProvider app={stackServerApp}>
           <StackTheme>
-            {tenantBlocked ? (
-              <TenantSuspended />
+            {billingBypass ? (
+              <main className="min-h-screen p-6 md:p-10">{children}</main>
+            ) : tenantBlocked ? (
+              <TenantSuspended canPay={billingAllowed} />
             ) : isProtectedRoute && adminUser ? (
               <div className="flex min-h-screen">
                 <AdminSidebar role={adminUser.role} allowedSections={adminUser.allowedSections} pageBuilder={pageBuilderEnabled} collections={collectionsEnabled} inventory={inventoryEnabled} priceLists={priceListsEnabled} quotes={quotesEnabled} multiLocation={multiLocationEnabled} />
@@ -180,6 +187,12 @@ export default async function AdminRootLayout({ children }: { children: React.Re
                       </div>
                     </div>
                   </header>
+                  {showPastDue && (
+                    <div role="status" className="bg-amber-50 border-b border-amber-200 px-6 py-2.5 font-brand text-sm text-amber-800 flex flex-wrap items-center justify-between gap-2">
+                      <span>No pudimos cobrar tu plan. Actualiza tu pago para evitar la suspensión de la tienda.</span>
+                      <a href="/facturacion" className="underline font-medium">Ir a Plan y facturación</a>
+                    </div>
+                  )}
                   <main className="flex-1 p-6">{children}</main>
                 </div>
               </div>

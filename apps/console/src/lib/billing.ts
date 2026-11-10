@@ -38,7 +38,10 @@ export interface BillingRepo {
   getTenantContact(tenantId: string): Promise<{ name: string; email: string | null; plan: string } | null>
   getPlan(key: string): Promise<{ key: string; name: string; price_cents: number; currency: string } | null>
   listPastDue(): Promise<SubscriptionRow[]>
+  listEvents(tenantId: string, limit: number): Promise<BillingEventRow[]>
 }
+
+export interface BillingEventRow { type: string; amount_cents: number | null; currency: string | null; created_at: string }
 
 export type BillingEmailTemplate = Extract<BillingEffect, { kind: 'email' }>['template']
 export interface BillingMailer {
@@ -198,4 +201,44 @@ export async function sweepDunning(deps: Pick<BillingDeps, 'repo' | 'mailer' | '
     suspended.push(sub.tenant_id)
   }
   return { suspended }
+}
+
+// ─── Resumen para el admin del tenant / consola ───────────────────────────────
+
+const EVENT_LABEL: Record<string, string> = {
+  payment_succeeded: 'Pago aprobado',
+  payment_failed: 'Pago rechazado',
+  recurrence_setup_failed: 'No se pudo programar el cobro automático',
+}
+
+export interface BillingSummary {
+  plan: { key: string; name: string; priceCents: number; currency: string } | null
+  subscription: {
+    status: SubscriptionStatus
+    interval: BillingInterval
+    amountCents: number
+    currency: string
+    currentPeriodEnd: string | null
+    pastDueSince: string | null
+    failedAttempts: number
+    hasPaymentMethod: boolean
+    autoRenew: boolean
+  } | null
+  events: { label: string; amountCents: number | null; currency: string | null; at: string }[]
+}
+
+/** Resumen SIN secretos (nunca expone token ni su referencia). */
+export async function getBillingSummary(repo: BillingRepo, tenantId: string): Promise<BillingSummary | null> {
+  const contact = await repo.getTenantContact(tenantId)
+  if (!contact) return null
+  const [plan, sub, events] = await Promise.all([repo.getPlan(contact.plan), repo.getSubscription(tenantId), repo.listEvents(tenantId, 10)])
+  return {
+    plan: plan ? { key: plan.key, name: plan.name, priceCents: plan.price_cents, currency: plan.currency } : null,
+    subscription: sub ? {
+      status: sub.status, interval: sub.billing_interval, amountCents: sub.amount_cents, currency: sub.currency,
+      currentPeriodEnd: sub.current_period_end, pastDueSince: sub.past_due_since, failedAttempts: sub.failed_attempts,
+      hasPaymentMethod: Boolean(sub.payment_token_ref), autoRenew: Boolean(sub.provider_subscription_id),
+    } : null,
+    events: events.map((e) => ({ label: EVENT_LABEL[e.type] ?? e.type, amountCents: e.amount_cents, currency: e.currency, at: e.created_at })),
+  }
 }

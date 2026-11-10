@@ -7,7 +7,7 @@
  * No expone acciones de gestión; solo informa y remite a soporte. El cierre de
  * sesión sigue disponible por la ruta estándar del proveedor de auth.
  */
-export default function TenantSuspended() {
+export default function TenantSuspended({ canPay = false }: { canPay?: boolean }) {
   return (
     <div className="min-h-screen flex items-center justify-center bg-gray-50 p-6">
       <div className="max-w-md w-full bg-white rounded-2xl shadow-sm border border-gray-100 p-8 text-center">
@@ -19,12 +19,21 @@ export default function TenantSuspended() {
           El acceso a este panel está temporalmente pausado. Tus datos están a salvo
           y se restablecerán al regularizar la cuenta.
         </p>
-        <p className="font-brand text-sm text-brand-primary/60 leading-relaxed mt-3">
-          Para reactivarlo, comunícate con tu proveedor de servicio.
-        </p>
+        {canPay ? (
+          <a
+            href="/facturacion"
+            className="inline-block mt-5 font-brand text-sm bg-brand-primary text-white rounded-full px-5 py-2.5 hover:bg-brand-dark"
+          >
+            Pagar y reactivar
+          </a>
+        ) : (
+          <p className="font-brand text-sm text-brand-primary/60 leading-relaxed mt-3">
+            Para reactivarlo, pide al administrador de la tienda que regularice el pago.
+          </p>
+        )}
         <a
           href="/handler/sign-out"
-          className="inline-block mt-6 font-brand text-sm text-brand-primary/50 underline hover:text-brand-primary"
+          className="block mt-6 font-brand text-sm text-brand-primary/50 underline hover:text-brand-primary"
         >
           Cerrar sesión
         </a>

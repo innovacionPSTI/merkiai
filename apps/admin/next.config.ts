@@ -7,19 +7,22 @@ import type { NextConfig } from 'next'
 // 'self' y bloquea el iframe. Se permite el dominio base del storefront.
 const STOREFRONT_BASE = (process.env.STOREFRONT_BASE_DOMAIN ?? 'merkiai.com').trim()
 
+// HU-440 · formulario incrustado de PayZen (librería, estilos, API, iframes de 3DS).
+const PAYZEN = 'https://static.payzen.lat https://api.payzen.lat https://*.payzen.lat'
+
 const CSP = [
   "default-src 'self'",
-  "script-src 'self' 'unsafe-inline' 'unsafe-eval'",
-  "style-src 'self' 'unsafe-inline'",
-  "font-src 'self'",
-  "img-src 'self' data: blob: https://*.supabase.co",
+  `script-src 'self' 'unsafe-inline' 'unsafe-eval' ${PAYZEN}`,
+  `style-src 'self' 'unsafe-inline' ${PAYZEN}`,
+  `font-src 'self' ${PAYZEN}`,
+  `img-src 'self' data: blob: https://*.supabase.co ${PAYZEN}`,
   // Stack Auth + Supabase
-  "connect-src 'self' https://*.supabase.co wss://*.supabase.co https://*.stack-auth.com",
+  `connect-src 'self' https://*.supabase.co wss://*.supabase.co https://*.stack-auth.com ${PAYZEN}`,
   // Vista previa: permitir incrustar el storefront del tenant (subdominios).
-  `frame-src 'self' https://*.${STOREFRONT_BASE}`,
+  `frame-src 'self' https://*.${STOREFRONT_BASE} ${PAYZEN}`,
   "frame-ancestors 'none'",
   "base-uri 'self'",
-  "form-action 'self'",
+  `form-action 'self' ${PAYZEN}`,
 ].join('; ')
 
 const SECURITY_HEADERS = [

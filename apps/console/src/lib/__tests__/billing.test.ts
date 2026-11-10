@@ -1,6 +1,6 @@
 import { createPayzenBillingProvider, payzenSignature, InMemoryVault } from '@merkiai/tenancy'
 import {
-  buildOrderId, tenantIdFromOrderId, effectDateOf, processBillingWebhook, startCheckout, sweepDunning,
+  buildOrderId, tenantIdFromOrderId, effectDateOf, processBillingWebhook, startCheckout, sweepDunning, getBillingSummary,
   type BillingDeps, type BillingRepo, type SubscriptionRow,
 } from '../billing'
 import { renderBillingEmail } from '../billing-email'
@@ -36,6 +36,7 @@ function setup(sub: Partial<SubscriptionRow> | null = {}, opts: { failUpsert?: b
     async getTenantContact() { return { name: 'Tienda Uno', email: 'owner@uno.co', plan: 'pro' } },
     async getPlan(key) { return { key, name: 'Pro', price_cents: 6000000, currency: 'COP' } },
     async listPastDue() { return row?.status === 'past_due' ? [{ ...row }] : [] },
+    async listEvents() { return [...events.values()].map((e) => ({ type: e.type, amount_cents: e.amountCents, currency: e.currency, created_at: '2026-11-10T15:00:00.000Z' })) },
   }
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const calls: any[] = []
@@ -161,5 +162,19 @@ describe('renderBillingEmail', () => {
     expect(html).toContain('60.000')
     expect(html).toContain('&lt;b&gt;X&lt;/b&gt;')
     expect(html).toContain('diciembre')
+  })
+})
+
+describe('getBillingSummary', () => {
+  it('resume plan, suscripción y eventos SIN exponer token ni referencia', async () => {
+    const s = setup()
+    await processBillingWebhook(s.deps, ipn())
+    const sum = await getBillingSummary(s.deps.repo, T)
+    expect(sum?.plan).toMatchObject({ key: 'pro', priceCents: 6000000 })
+    expect(sum?.subscription).toMatchObject({ status: 'active', hasPaymentMethod: true, autoRenew: true })
+    expect(sum?.events[0].label).toBe('Pago aprobado')
+    const json = JSON.stringify(sum)
+    expect(json).not.toContain('tok-1')
+    expect(json).not.toContain(s.sub()!.payment_token_ref!)
   })
 })
