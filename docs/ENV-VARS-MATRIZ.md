@@ -78,12 +78,28 @@
 | `NEXT_PUBLIC_ADMIN_HEXCLAVE_PROJECT_ID` | Proyecto Stack **admin** (crea Team/dueño). = el de merkiai-admin | = admin prod | = admin dev | = admin test |
 | `NEXT_PUBLIC_ADMIN_HEXCLAVE_PUBLISHABLE_CLIENT_KEY` | Client key del Stack admin | = admin | = admin | = admin |
 | `ADMIN_HEXCLAVE_SECRET_SERVER_KEY` | **Server key** del Stack admin (= `HEXCLAVE_SECRET_SERVER_KEY` de merkiai-admin) | = admin prod | = admin dev | = admin test |
-| `HOSTING_API_TOKEN` | **Token** del hosting (Vercel) para dar de alta dominios de tenants. **Secreto → a Vault (HU-362)**, por-entorno | token prod | token dev | dummy/omitir |
-| `HOSTING_PROJECT_ID` | Id/nombre del proyecto web en Vercel del ambiente | web prod | web dev | web test |
-| `HOSTING_TEAM_ID` | Team de Vercel dueño del proyecto web | team prod | team dev | team test/omitir |
-| `HOSTING_A_RECORD` | Destino DNS tipo A mostrado al comerciante | `76.76.21.21` | igual | igual |
-| `HOSTING_CNAME_TARGET` | Destino DNS CNAME | `cname.vercel-dns.com` | igual | igual |
+| `AWS_ACCESS_KEY_ID` · `AWS_SECRET_ACCESS_KEY` | **Llaves IAM** del usuario `merkiai-<env>-vault` (abren el vault). **Root of trust** — quedan en env, NO en vault | propio | propio | propio |
+| `AWS_REGION` | Región de la KEK de KMS | región prod | dev | test |
+| `MERKIAI_VAULT_KEY_ALIAS` | Alias de la KEK (`alias/merkiai-<env>-tenant-secrets`) | prod | dev | test |
+| `HOSTING_API_TOKEN` | Token del hosting para dar de alta dominios. **Secreto → a Vault**; con **Cloudflare for SaaS (HU-431)** lo reemplaza el token de Cloudflare (también en vault) | token prod | token dev | dummy/omitir |
+| `HOSTING_PROJECT_ID` · `HOSTING_TEAM_ID` | Proyecto/Team Vercel del ambiente. **→ config por celda / retiro con HU-431 (Cloudflare)** | web prod | web dev | web test |
+| `HOSTING_A_RECORD` · `HOSTING_CNAME_TARGET` | Destinos DNS mostrados al comerciante. **→ Cloudflare (HU-431)** | defaults | igual | igual |
 | ~~`DOMAIN_A_RECORD` / `DOMAIN_CNAME_TARGET`~~ | **Muertas** (sustituidas por `HOSTING_*`) | borrar | borrar | borrar |
+
+## Destino de cada variable (env · Vault · retiro)
+
+Clasificación que **congela HU-364** (y que E26/celdas completa). Hoy solo se retiran las ya-muertas; el resto evoluciona según se indica.
+
+| Clase | Variables | Dónde viven |
+|---|---|---|
+| **Bootstrap / root of trust (SIEMPRE en env)** | `AWS_ACCESS_KEY_ID`, `AWS_SECRET_ACCESS_KEY`, `AWS_REGION`, `MERKIAI_VAULT_KEY_ALIAS`, `INTERNAL_API_SECRET` (o `PROVISIONING_API_SECRET`) | env del console (no pueden ir al vault: lo abren) |
+| **Infra por-ambiente (en env; opcional respaldar en Vault)** | Supabase del control-plane (`NEXT_PUBLIC_SUPABASE_URL`+`SERVICE_ROLE_KEY`), Stack (`*HEXCLAVE*`, `NEXT_PUBLIC_STACK_API_URL`), URLs (`CONTROL_PLANE_URL`→`CONSOLE_URL`, `*_SITE_URL`, `*_ADMIN_URL`, `STOREFRONT_BASE_DOMAIN`, `NEXT_PUBLIC_ROOT_DOMAIN`), preview (`PREVIEW_SIGNING_SECRET`, `NEXT_PUBLIC_DRAFT_SECRET`), flags, `MAINTENANCE_MODE`, `TENANT_RESOLUTION_STRICT` | env por-ambiente |
+| **→ A Vault (secreto, deja de ser env plano)** | `HOSTING_API_TOKEN` (o token Cloudflare); **llaves de datos/storage por celda** (anon/service/JWT de la celda, claves S3/R2) — ya hoy por-tenant en vault | kms-vault |
+| **→ A Vault por-celda con E26 (HU-430)** | De **web/admin**: `NEXT_PUBLIC_SUPABASE_URL`, `SUPABASE_SERVICE_ROLE_KEY`, anon key, `SUPABASE_JWT_SECRET` (hoy = la celda compartida por env) → se resuelven **por celda** desde `infra_cells`+vault | kms-vault / `infra_cells` |
+| **Retiro (ya no se usan)** | `DEFAULT_TENANT_ID` (opcional estricto), `DRAFT_SECRET` (web), `DOMAIN_A_RECORD`/`DOMAIN_CNAME_TARGET`; con Cloudflare: `HOSTING_PROJECT_ID`/`TEAM_ID`/`A_RECORD`/`CNAME_TARGET` | borrar |
+
+> **Regla:** lo único que **nunca** va al vault es el bootstrap (las llaves que lo abren). Todo
+> lo demás que sea secreto puede respaldarse en vault; las URLs/flags siguen como env por-ambiente.
 
 ## GitHub · Environment `test` (solo para las E2E en CI)
 
