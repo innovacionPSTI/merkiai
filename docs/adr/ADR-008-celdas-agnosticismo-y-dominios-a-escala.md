@@ -75,6 +75,45 @@ tenants.db_ref  → infra_cells.id    -- muchos tenants por celda (RLS)
 
 ---
 
+## 5B. Cómputo a escala y cacheo por capas
+
+**Cómputo.** El inicio se queda en **Vercel** (dev/test y producción temprana): cero
+operaciones, DX de Next.js, la app ya corre ahí y con Cloudflare for SaaS no se topa el
+límite de dominios. A escala, cuando la **factura de uso de Vercel supere el costo de
+contenedor + operación**, el origen se mueve a **contenedores** detrás de Cloudflare:
+**AWS App Runner / ECS Fargate** (coherente con la base CDK/KMS/S3; evita egreso cruzado),
+**Cloud Run** (mínimo costo serverless-contenedor, escala a cero) o **Fly/Render** (PaaS
+simple). **Co-localizar cómputo y BD** en la misma nube/región reduce egreso y latencia.
+El **cómputo dedicado** (servicio propio) se reserva para enterprise (celda de 1). La app
+ya es portable/contenerizable (ADR-005), así que mover el origen no cambia el código.
+
+**Cacheo — tres capas, cada una con su propósito** (Redis es solo una de ellas):
+
+1. **Borde / CDN (la palanca de costo #1):** páginas renderizadas, **ISR** e imágenes se
+   cachean en **Cloudflare** + **R2** (egreso gratis). Recorta ancho de banda e invocaciones
+   y difiere el salto a los tramos caros de Vercel. **Aquí NO interviene Redis.**
+2. **Estado distribuido (Redis):** lo que el CDN no puede — **rate-limit distribuido**
+   (HU-300), **caché de `resolve-tenant`** (host→tenant/`db_ref`, hoy in-memory por instancia;
+   con varias instancias debe ser compartida e invalidable), entitlements/consultas calientes,
+   sesiones, y el **`cacheHandler` de ISR compartido** cuando se auto-hospeda en varias
+   instancias. **Upstash Redis** temprano (serverless, sin costo en reposo); **ElastiCache /
+   MemoryDB** a escala ya consolidado en AWS.
+3. **Datos:** pooler de conexiones (Supabase pooler / PgBouncer) y caché de consultas de
+   Postgres — no es Redis.
+
+**Regla multi-tenant (seguridad):** toda clave de caché incluye `tenant_id`/host — la *cache
+key* del borde por host, y las claves de Redis con prefijo `tenant_id` — para que ningún
+tenant lea datos cacheados de otro. **Invalidación:** al cambiar `db_ref` (promoción a
+dedicado) se invalidan las cachés de `resolve-tenant` y del connection factory (enlaza
+ADR-007 y HU-363 AC-7).
+
+> **Orden sugerido:** (1) Cloudflare CDN + ISR + R2 para el storefront; (2) Upstash Redis
+> para rate-limit + caché de resolución/entitlements; (3) al salir de Vercel, Redis como
+> `cacheHandler` de ISR + ElastiCache si ya todo está en AWS. No introducir Redis antes de
+> tener múltiples instancias o estado distribuido.
+
+---
+
 ## 6. Identidad — por qué Stack y no Cognito (ahora)
 
 - El modelo de tenant = **Teams**, que Stack trae de primera clase; Cognito lo exigiría reconstruir con grupos/`custom:tenant_id` (user pool por tenant **no** escala: ~1.000–10.000 pools/cuenta).
