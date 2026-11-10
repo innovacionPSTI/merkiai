@@ -142,7 +142,12 @@ ADR-007 y HU-363 AC-7).
 ## 9. Consecuencias
 
 - **Positivas:** escala horizontal por celdas con costo trasladable; proveedores intercambiables por eje; dominios a escala resueltos por Cloudflare; dedicado unificado como "celda de 1"; reutiliza lo ya construido (vault/KMS, factory por `db_ref`, `HOSTING_*`, `IdentityProvider`).
-- **A construir (nuevas HU):** (a) `infra_cells` + colocación y conteo; (b) **adaptador de datos Neon/Postgres** (driver + GUC + rol) y `DbTarget.kind`; (c) `StoragePort` + adaptador R2/S3 + medición de uso; (d) `HostingPort` + adaptador **Cloudflare for SaaS**; (e) orquestador de aprovisionamiento de celda (extiende HU-363); (f) cómputo de producción fuera de Vercel (contenedor) cuando aplique.
+- **A construir (épica E26 · HU-430…437, ver `docs/backlog/12-detalle-e26-infra-celdas.md`):**
+  HU-430 `infra_cells` + colocación/conteo · HU-431 `HostingPort` + **Cloudflare for SaaS** ·
+  HU-432 `StoragePort` + R2/S3 + medición · HU-433 **adaptador Neon/Postgres** (driver+GUC) +
+  `DbTarget.kind` · HU-434 cacheo por capas (CDN/ISR + Redis, tenant-aware) · HU-435 cómputo
+  portable (contenedor detrás de Cloudflare) · HU-436 orquestador de celda (extiende HU-363) ·
+  HU-437 observabilidad/capacidad por celda. Más HU-364 (congelar env vars + rename).
 - **A vigilar:** Supabase↔Neon no son drop-in (doble adaptador de datos); la migración entre celdas (promoción) necesita ventana + verificación; la cuota global de identidad (Stack) escala con usuarios, no con celdas — se gestiona subiendo el plan de Stack.
 
 ---
