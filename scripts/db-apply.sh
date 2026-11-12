@@ -8,7 +8,8 @@
 #   DATABASE_URL=postgres://... scripts/db-apply.sh [--no-seeds]
 #
 # Pensado para CI (Supabase branch/preview o Postgres de servicio) y para
-# levantar un entorno de pruebas local reproducible. NUNCA apuntar a producción.
+# levantar un entorno de pruebas local reproducible. En PRODUCCIÓN usar SIEMPRE
+# `--no-seeds` (los seeds base son de demo; la config por tenant la crea la consola).
 # =============================================================================
 set -euo pipefail
 

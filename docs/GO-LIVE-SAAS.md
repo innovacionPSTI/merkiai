@@ -1,109 +1,110 @@
-# Checklist de Go-Live — MVP SaaS multi-tenant
+# Runbook de release — Merkiai SaaS (Ola 1)
 
-> Runbook para validar el alta de un cliente real. Orden sugerido: **1 → 6**. Marca cada casilla al completar. Las secciones **[OPS]** requieren credenciales/paneles externos (tuyas); las **[APP]** ya están en código.
-
----
-
-## 0. Prerrequisitos de infraestructura
-
-- [ ] **Supabase · proyecto de TIENDA** (lo comparten `web` + `admin`): BD con RLS, Storage.
-- [ ] **Supabase · proyecto de PLATAFORMA** (solo `console`): tablas `tenants`/`plans`/`subscriptions`.
-- [ ] **Stack Auth (Hexclave) · 3 proyectos**: uno por app (`web`, `admin`, `console`).
-- [ ] **3 despliegues** (Vercel u hosting): `web` (`*.merkiai.com` wildcard + dominios propios), `admin` (`admin.merkiai.com`), `console` (`console.merkiai.com`).
-- [ ] **DNS wildcard** `*.merkiai.com` → despliegue de `web` (sin DNS por-tenant; los subdominios resuelven por wildcard).
-
-## 1. Migraciones SQL
-
-**Proyecto de TIENDA:**
-- [ ] `01_schema.sql` (canónico) + seeds.
-- [ ] `e17/01…11` **en orden** (tenant_id, RLS catálogo, UNIQUE por tenant, FK compuestas, RLS flujos con sesión, RLS contenido, config por tenant, RLS themes, RLS admin, RLS admin_all, `store_template`).
-- [ ] **`e17/12_config_pk_por_tenant.sql`** ⭐ **NUEVO/OBLIGATORIO** — sin esto, crear config de un tenant nuevo falla (colisión del `id=1`); el admin da error al guardar y el seed no crea las 4 config. (Encontrado en la prueba del punto 5.)
-- [ ] Verificar: `select conname from pg_constraint where conname like '%_tenant_pk';` lista `store_config_tenant_pk`, etc.
-- [ ] **`e17/13_inventory_model.sql`** ⭐ **NUEVO** (HU-237) — columna `store_config.inventory_model` (`single`|`multi_location`, default `single`). Sin esto, aplicar un preset con modelo de inventario o el onboarding multi-ubicación fallan.
-- [ ] **`e17/14_onboarding_state.sql`** ⭐ **NUEVO** (HU-236 v2) — columna `store_config.onboarding_state` (JSONB, nullable). Sin esto, el onboarding no persiste el progreso (preset aplicado / completado / omitido) y no es reanudable. No rompe lo demás si falta (fail-soft), pero el wizard siempre arranca de cero.
-- [ ] **`e17/15_theme_dark_and_product.sql`** ⭐ **NUEVO** (HU-247) — en `themes`: `color_scheme` (`light`/`auto`/`dark`, default `light`) + `dark_bg`/`dark_surface`/`dark_text` + `color_price` (todos nullable). Sin esto, guardar/leer un tema con modo oscuro o color de precio falla. Los temas existentes siguen en claro (default).
-- [ ] **`e17/16_theme_template.sql`** ⭐ **NUEVO** (HU-121) — columna `themes.template` (text, nullable). La "Plantilla" = tema + layout; el storefront resuelve `theme.template → store_config.template → 'default'`. Sin esto, guardar/leer el layout en el tema falla; `store_config.template` seguiría como único origen (sin unificar).
-- [ ] **`e17/25_product_reviews.sql`** ⭐ **NUEVO** (HU-101) — tabla `product_reviews` (rating 1–5, status pending/approved/rejected, FK compuesta a products por tenant) + RLS: lectura pública solo `approved`, alta pública forzada a `pending`, moderación solo `is_admin`. Sin esto, las reseñas no persisten.
-- [ ] **`e17/24_product_price_denorm.sql`** ⭐ **NUEVO** (HU-270) — `products.min_price`/`max_price` (int, nullable) mantenidos por **trigger** sobre `product_variants` (recalcula desde variantes activas) + **backfill** + **índice GIN** sobre `product_variants.attributes`. Habilita el catálogo server-side de `/shop` (ordenar por precio + filtrar atributos + paginar en BD). Sin esto, el storefront pagina/ordena por `min_price` NULL (orden degradado) y el filtro de atributos no tiene índice.
-- [ ] **`e17/23_variant_type_swatch_hex.sql`** ⭐ **NUEVO** (HU-264) — `variant_types.swatch_hex` (jsonb, default `{}`). Mapa valor→hex para swatches de color definidos por la tienda (reemplaza el diccionario fijo del storefront). Sin esto, guardar/leer los colores de swatch falla.
-- [ ] **`e17/22_categories_tree_seo.sql`** ⭐ **NUEVO** (HU-263) — `categories.parent_id` (self-FK, ON DELETE SET NULL) + `meta_title`/`meta_description`. Subcategorías + SEO por categoría. Sin esto, guardar categoría madre/SEO falla.
-- [ ] **`e17/21_variant_image.sql`** ⭐ **NUEVO** (HU-262) — `product_variants.image_url` (text, nullable). Imagen propia de la variante (p. ej. por color); la PDP la muestra al seleccionarla.
-- [ ] **`e17/20_variant_compare_at.sql`** ⭐ **NUEVO** (HU-261) — `product_variants.compare_at_price` (int, nullable). Precio "antes" para mostrar oferta (tachado) en PDP/grilla. Sin esto, guardar/leer el precio de oferta falla.
-- [ ] **`e17/19_drop_coffee_legacy.sql`** ⭐ **NUEVO** (HU-260) — elimina `product_variants.roast/grind/brew_method` y libera `weight` de su CHECK (250g/500g/1kg). Generaliza el catálogo (solo `attributes`). Las variantes deben declarar sus dimensiones en `variant_options`/`attributes`.
-- [ ] **`e17/18_generic_blocks.sql`** ⭐ **NUEVO** (HU-252) — amplía el CHECK de `page_sections.section_type` con los bloques genéricos (`content_section`, `columns`, `media_banner`, `spacer`). Sin esto, crear esas secciones falla por el CHECK. `section_items.item_type` no tiene CHECK (el ítem `column` no requiere migración).
-- [ ] **`e17/17_content_draft.sql`** ⭐ **NUEVO** (HU-128 v2) — columna `draft` (jsonb, nullable) en `page_sections` y `section_items`. Overlay de borrador para editar en caliente contenido publicado (visible solo en preview). Sin esto, guardar/publicar borradores falla; la edición de secciones publicadas no tendría dónde quedar sin exponerse.
-
-**Proyecto de PLATAFORMA (consola):**
-- [ ] `platform/01_platform_schema.sql` + `03_plans.sql`.
-- [ ] **`platform/06_preset_thumbnail.sql`** ⭐ **NUEVO** (HU-257) — columna `presets.thumbnail_url` (text, nullable). Sin esto, guardar/leer la miniatura del preset falla; la galería (HU-250) usa placeholder.
-- [ ] **`platform/04_owner_email.sql`** ⭐ **NUEVO** — columna `owner_email` para mostrar el dueño en el listado de la consola.
-- [ ] **`platform/05_presets.sql`** ⭐ **NUEVO** (HU-233) — tabla `presets` (bundles curados por nicho que se aplican al crear tiendas).
-- [ ] **`platform/06_custom_domains.sql`** ⭐ **NUEVO** (HU-174) — `tenants.domain_status`/`domain_verify_token`/`domain_requested` para la verificación de dominio propio.
-
-## 2. Variables de entorno por app **[OPS]**
-
-Comunes a `web` y `admin` (proyecto de tienda):
-
-| Variable | Notas |
-|---|---|
-| `NEXT_PUBLIC_SUPABASE_URL` / `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY` | Proyecto de tienda |
-| `SUPABASE_JWT_SECRET` | **Legacy JWT secret** de Supabase. **Joya de la corona** (HU-228). Solo en web + admin. |
-| `SUPABASE_SERVICE_ROLE_KEY` | Solo donde hay islas legítimas (admin: upload/internal; web: webhooks bootstrap) |
-| `INTERNAL_API_SECRET` | **≥ 24 chars**, aleatorio. Igual en console + admin (server-to-server) |
-| `CONTROL_PLANE_URL` | URL de `console` (para resolver host→tenant) — en `web` y `admin` |
-| `NEXT_PUBLIC_SITE_URL` | URL del storefront (preview del Constructor, webhooks) |
-| `DEFAULT_TENANT_ID` | `00000000-0000-0000-0000-000000000001` |
-
-Específicas:
-
-| App | Variables |
-|---|---|
-| **web** | `NEXT_PUBLIC_ROOT_DOMAIN`, `HEXCLAVE_*` (proyecto web), `TENANT_RESOLUTION_STRICT`, `DRAFT_SECRET`, `MAINTENANCE_MODE` |
-| **admin** | `NEXT_PUBLIC_ADMIN_URL`, `HEXCLAVE_*` (proyecto admin), `NEXT_PUBLIC_FEATURE_PAGE_BUILDER` |
-| **console** | `ADMIN_APP_URL` (URL del admin), `SUPABASE_*` (proyecto **plataforma**), `ADMIN_HEXCLAVE_SECRET_SERVER_KEY` + `NEXT_PUBLIC_ADMIN_HEXCLAVE_*` (proyecto **admin**, para crear Teams/invitar), `HEXCLAVE_*` (proyecto console, para su propio login) |
-
-- [ ] Todas cargadas en cada despliegue. **Redeploy** tras cambiarlas (las `NEXT_PUBLIC_*` se inyectan en build).
-
-## 3. Stack Auth en producción (HU-214) **[OPS]**
-
-Para cada uno de los **3 proyectos** (web/admin/console):
-
-- [ ] **Vista previa del Constructor (HU-128 v3).** Para que funcione en prod: (a) **admin** con `PREVIEW_SIGNING_SECRET` (mismo valor que la **web**) + `CONTROL_PLANE_URL` + `INTERNAL_API_SECRET` + `STOREFRONT_BASE_DOMAIN`; (b) el tenant debe tener `subdomain` o `primary_domain` en la tabla `tenants` (la consola lo setea al aprovisionar); (c) para el **preview embebido** en el iframe, la **web** necesita `ADMIN_PREVIEW_ORIGIN=https://admin.merkiai.com` (si no, el preview abre en pestaña nueva — también válido). El admin ahora muestra el motivo exacto si falla (`missing_secret`/`control_plane`/`no_host`).
-- [ ] **OAuth de Google con keys propias** (no las *Shared keys* de dev) — quita la marca de Stack Auth y arregla el drop de cookie en el primer retorno. *(Se puede dejar para el final; con Shared keys funciona en dev.)*
-- [ ] **Authorized redirect URIs** en Google Cloud por subdominio: `*.merkiai.com` (web), `admin.merkiai.com`, `console.merkiai.com`. *(Va con las keys propias de Google.)*
-- [x] **Trusted Domains** en Stack Auth (¡distinto de los redirect URIs de Google!): **web** = `*.merkiai.com` (wildcard, si lo soporta) + dominios propios; **admin** = solo `admin.merkiai.com`; **console** = solo `console.merkiai.com`; `localhost` en dev.
-- [x] **`cookieDomain` host-scoped** — **YA correcto por defecto**: los `StackServerApp` usan `tokenStore: 'nextjs-cookie'` **sin** `cookieDomain` → cookies sin atributo `Domain` (host-scoped), y cada app es un proyecto Stack distinto. Nada que configurar; solo confirmar que el dashboard no fuerce un "custom cookie domain" compartido.
-- [ ] **Account-linking** por email verificado — **en el dashboard de Stack Auth** (proyecto → Auth/OAuth). Evita `CONTACT_CHANNEL_ALREADY_USED…`. **Va JUNTO con el OAuth de Google** (déjalo para el final con las keys propias).
-- [x] Proyecto **admin**: creación de Teams server-side habilitada (la consola crea el Team del tenant).
-- [ ] **Secreto interno**: hoy el aprovisionamiento (console→admin) usa el **`INTERNAL_API_SECRET` compartido** — suficiente para el go-live. *(Opcional/futuro HU-228: separar un `PROVISIONING_API_SECRET` dedicado; NO implementado, no bloquea.)*
-
-## 4. Flags de activación **[OPS]**
-
-- [ ] **`TENANT_RESOLUTION_STRICT=true`** en `web` → un host sin tenant da **404** (no sirve el default). *(Actívalo solo cuando el control plane resuelva bien; con él, un fallo del control plane corta el host.)*
-- [ ] **`NEXT_PUBLIC_FEATURE_PAGE_BUILDER=true`** en `admin` (opcional) → habilita el Constructor de páginas.
-
-## 5. Verificación end-to-end (alta real de prueba) **[APP+OPS]** — ✅ VALIDADO (sep-2026)
-
-- [x] En **console**: crear un tenant reporta **éxito** (crea `tenants` + Team en Stack Auth + invita al dueño); el listado muestra el **dueño** (`owner_email`).
-- [x] **HU-207**: el tenant nace con sus **4 config** (`store/payment/shipping/admin_config`) + página `home`. *(Requirió `e17/12`: PK por tenant + drop del índice `shipping_config_singleton`.)*
-- [x] **HU-209**: el dueño entra a `admin.merkiai.com` con rol `super_admin` (no "Sin acceso"); guarda config sin error.
-- [x] **Storefront**: el subdominio sirve la tienda del tenant (config/tema propios); un subdominio inexistente → 404/redirect. *(Home sin secciones muestra fallbacks genéricos — ya sin "café"; contenido real vía Constructor / HU-234.)*
-- [x] **Aislamiento**: producto creado en el tenant NO aparece en otra tienda (RLS confirmada).
-- [ ] **Pago de prueba** — ⏸ **DIFERIDO** hasta refinar los medios de pago (PRV-07/HU-188).
-- [ ] **Email/OTP** (console) — ⏸ **DIFERIDO** junto con el refinamiento de pagos/auth. El login por contraseña funciona.
-
-> **Estado:** núcleo del alta multi-tenant **validado en vivo**. Pendientes deliberados: pago de prueba + Email/OTP (con el refinamiento de pagos) y OAuth de Google propio (punto 3).
-
-## 6. Post-activación
-
-- [ ] **Custodia de secretos** (HU-228): `SUPABASE_JWT_SECRET` e `INTERNAL_API_SECRET` guardados en el gestor, rotación agendada (90 días).
-- [ ] **Monitoreo**: revisar logs de `/api/internal/*` (401/429) y errores de resolución de tenant.
-- [ ] **Rollback**: si algo falla, `TENANT_RESOLUTION_STRICT=false` vuelve al modo interino (sirve el default) sin cortar tráfico mientras se corrige.
+> Checklist para **separar producción y salir con los primeros clientes**. Orden: **0 → 9**.
+> **[OPS]** = paneles/credenciales tuyas · **[APP]** = ya está en código.
+> Referencias: variables → `docs/ENV-VARS-MATRIZ.md` · ramas y CI → `docs/CICD.md` · cobro/pagos → ADR-009 · vault → ADR-007 · olas → `docs/PLAN-OLAS-PRODUCCION.md`.
+>
+> Versión v260 (nov-2026). Reemplaza el checklist de go-live de sep-2026 (alta multi-tenant ya validada en vivo; ver §9).
 
 ---
 
-### Pendientes de código conocidos (no bloquean el MVP)
-- `api/checkout` y `finalize-daviplata` siguen en service-role (creación de orden con `tenant_id` explícito, bajo riesgo cruzado) → migrar a `getMachineDb` con prueba en vivo (HU-227 resto).
-- `reconcile` (cron): listado cross-tenant es platform-level legítimo; procesar por-orden con `order.tenant_id`.
-- RLS de `storage.objects` por prefijo de path (hoy aislamiento por path a nivel de app).
-- Facturación automática (HU-192/193/194): al inicio se puede cobrar manual.
+## 0. Antes de empezar (gates)
+
+- [ ] **Llaves de PayZen** de la tienda de Merkiai (test y producción). Sin ellas no se valida §6.
+- [ ] **CI/CD + E2E** cerrado en verde (`test` → `develop`) — se deja para justo antes del release (decisión del dueño).
+- [ ] `pnpm env:check` en verde (ninguna variable usada sin documentar).
+- [ ] Rama `main` protegida (PR + aprobación + checks), ver `CICD.md` §4.
+
+## 1. Cuentas y proyectos de PRODUCCIÓN **[OPS]**
+
+Con el correo de **producción** (cuentas separadas de dev/test, `CICD.md` §7):
+
+- [ ] **Supabase · TIENDA** (web + admin) y **Supabase · PLATAFORMA** (console). Pueden ser el mismo proyecto al inicio; separarlos después solo cambia variables.
+- [ ] **Stack Auth (Hexclave) · 3 proyectos**: web (compradores), admin (comerciantes) y console (operador).
+- [ ] **Vercel · 3 proyectos** (web, admin, console) conectados al repo, *Production Branch* = `main`.
+- [ ] **DNS**: wildcard `*.merkiai.com` → web; `admin.merkiai.com` → admin; `console.merkiai.com` → console.
+- [ ] **AWS KMS (vault)**: `cd infra/kms-vault && AWS_PROFILE=merkiai-prod npx cdk deploy -c env=prod` → crear la access key del usuario IAM `merkiai-prod-vault` (ver `infra/kms-vault/README.md`). Esas llaves van SOLO al console.
+- [ ] **Resend**: dominio verificado para los correos de facturación (`facturacion@merkiai.com`).
+- [ ] **PayZen (tienda de Merkiai)**: llaves de **producción** a la mano; las de test quedan para dev/test.
+
+## 2. Migraciones **[OPS]** — todas idempotentes, se pueden repetir
+
+```bash
+# TIENDA (web/admin): baseline + upgrade + e17/* en orden. En prod SIEMPRE --no-seeds.
+DATABASE_URL="postgres://…tienda-prod…" bash scripts/db-apply.sh --no-seeds
+
+# PLATAFORMA (console): platform/01 … 14 en orden.
+PLATFORM_DATABASE_URL="postgres://…plataforma-prod…" bash scripts/db-apply-platform.sh
+```
+
+- [ ] Tienda: llega hasta `e17/74_payzen_payment_method.sql`.
+- [ ] Plataforma: llega hasta `14_fee_invoices.sql` (incluye `10` infra por tenant, `11` vault, `12` billing, `13` Merkiai Pagos, `14` cobro de comisiones).
+- [ ] Verificación rápida en plataforma: `select count(*) from plans;` (> 0) y que existan `subscriptions`, `merkiai_payment_accounts`, `fee_invoices`.
+
+## 3. Variables de entorno **[OPS]**
+
+Cargar la columna **prod** de `docs/ENV-VARS-MATRIZ.md` en cada proyecto de Vercel. Puntos que más se olvidan:
+
+- [ ] **`CONSOLE_URL`** en web y admin (no `CONTROL_PLANE_URL`: está obsoleta y el log avisa si se usa).
+- [ ] **`INTERNAL_API_SECRET`** idéntico en las 3 apps de prod, distinto de dev/test (≥ 24 caracteres aleatorios).
+- [ ] **`PREVIEW_SIGNING_SECRET`** idéntico en web y admin.
+- [ ] **Console**: `AWS_ACCESS_KEY_ID`/`AWS_SECRET_ACCESS_KEY`/`AWS_REGION`/`MERKIAI_VAULT_KEY_ALIAS=alias/merkiai-prod-tenant-secrets` (sin esto, en prod el vault falla cerrado).
+- [ ] **Console**: `PAYZEN_SHOP_ID`, `PAYZEN_PASSWORD` (`prodpassword_…`), `PAYZEN_PUBLIC_KEY`, `RESEND_API_KEY`, `BILLING_EMAIL_FROM`, **`CRON_SECRET`**.
+- [ ] **Web**: `TENANT_RESOLUTION_STRICT=true`; **sin** `DEFAULT_TENANT_ID` ni `DRAFT_SECRET`.
+- [ ] **Redeploy** de las 3 apps después de cargar variables (las `NEXT_PUBLIC_*` se fijan en el build).
+
+## 4. Stack Auth en producción **[OPS]**
+
+- [ ] **Trusted Domains**: web = `*.merkiai.com` + dominios propios; admin = `admin.merkiai.com`; console = `console.merkiai.com`.
+- [ ] Proyecto **admin**: creación de Teams server-side habilitada (la consola crea el Team del tenant).
+- [ ] Registro público deshabilitado en admin y console.
+- [ ] *(Puede ir después)* OAuth de Google con keys propias + redirect URIs por subdominio + account-linking por email verificado.
+- [x] Cookies host-scoped (default correcto; no forzar dominio de cookie compartido).
+
+## 5. Configuración de la consola (primer ingreso del operador) **[OPS]**
+
+- [ ] **Planes**: precios reales (`price_cents` en centavos de COP) y entitlements.
+- [ ] **Merkiai Pagos → Comisión por plan**: % + fijo por plan (parámetro de negocio; ver calculadora de costos).
+- [ ] **Presets** de nicho cargados (opcional para el primer cliente).
+
+## 6. PayZen **[OPS]** (requiere las llaves)
+
+- [ ] Back Office PayZen de Merkiai → **URL de notificación (IPN)** = `https://console.merkiai.com/api/billing/payzen/ipn` (modo test y modo producción).
+- [ ] Con llaves de **test** en dev: pagar un plan desde *Plan y facturación* con una tarjeta de prueba de PayZen → la suscripción pasa a **Al día**, llega el correo de activación y en la consola aparece en **Suscripciones** con cobro automático = Sí.
+- [ ] Rechazo de prueba → **Pago pendiente** + aviso en el panel; tras 3 rechazos o 7 días → **suspendida**; pagar → **reactivada**.
+- [ ] Tienda con **PayZen propio** (Configuración → Pagos → PayZen → *Verificar*) → compra de prueba → pedido aprobado.
+- [ ] Tienda con **Merkiai Pagos** (alta en consola + elegirlo en el admin) → compra de prueba → pedido aprobado y la comisión aparece en la consola.
+- [ ] Cambiar a llaves de **producción** solo en el console de prod.
+
+## 7. Cron diario **[APP+OPS]**
+
+- [x] `apps/console/vercel.json`: 11:00 UTC → `GET /api/internal/billing/sweep` (mora + cobro de comisiones del mes cerrado).
+- [ ] `CRON_SECRET` cargado en console (§3). Prueba manual:
+  `curl -H "Authorization: Bearer $CRON_SECRET" https://console.merkiai.com/api/internal/billing/sweep` → `{"suspended":[…],"fees":{…}}`.
+
+## 8. Smoke test de release (prod) **[APP+OPS]**
+
+- [ ] Crear un tenant real desde la consola → el dueño recibe la invitación y entra al admin como `super_admin`.
+- [ ] El subdominio sirve su tienda; un subdominio inexistente → 404.
+- [ ] Aislamiento: un producto creado en el tenant no aparece en otra tienda.
+- [ ] El dueño paga su plan (§6) → la tienda queda **activa**.
+- [ ] Logs sin 401/500 en `/api/internal/*` ni en `/api/billing/payzen/ipn`.
+
+## 9. Rollback y post-activación
+
+- **Rollback de app**: en Vercel, *Promote* del deploy anterior (las migraciones son aditivas; no hace falta revertirlas).
+- **Cobro**: si algo falla con PayZen, vaciar `PAYZEN_*` en el console desactiva el pago de planes y el cobro de comisiones (fail-closed). Ojo: las tiendas que ya estaban en mora siguen su plazo de gracia; para pausar suspensiones, sube temporalmente `BILLING_DUNNING_GRACE_DAYS`.
+- **Resolución de tenant**: `TENANT_RESOLUTION_STRICT=false` vuelve al modo interino mientras se corrige.
+- [ ] Rotación de secretos agendada (90 días): `SUPABASE_JWT_SECRET`, `INTERNAL_API_SECRET`, `CRON_SECRET`, llaves IAM del vault.
+- [ ] Monitoreo (Sentry) activo en las 3 apps.
+
+---
+
+### Historial
+- **sep-2026**: alta multi-tenant validada en vivo (aprovisionamiento, config por tenant, login del dueño, storefront por subdominio, aislamiento RLS).
+- **nov-2026 (v260)**: cobro de planes, pasarelas de venta PayZen (propia y Merkiai Pagos), comisiones, vault KMS y separación de prod incorporados a este runbook.
+
+### Pendientes de código conocidos (no bloquean el release)
+- Retirar el alias `CONTROL_PLANE_URL` cuando ningún entorno lo use (HU-364).
+- `api/checkout` y `finalize-daviplata` en service-role → `getMachineDb` (HU-227 resto).
+- RLS de `storage.objects` por prefijo de path (hoy aislamiento por path en la app).
