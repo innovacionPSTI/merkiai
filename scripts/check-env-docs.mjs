@@ -16,7 +16,7 @@ const APPS = ['web', 'admin', 'console']
 // Inyectadas por la plataforma/runtime o solo de test: no se documentan.
 const IGNORE = new Set(['NODE_ENV', 'NEXT_RUNTIME', 'VERCEL_ENV', 'VERCEL_URL', 'CI', 'JEST_WORKER_ID'])
 // Alias retrocompatible en retiro (HU-364): documentado como CONSOLE_URL.
-const ALIASES = { CONTROL_PLANE_URL: 'CONSOLE_URL' }
+const ALIASES = {}
 // Leídas por el SDK de AWS (no vía process.env en nuestro código) → solo console.
 const RE = /process\.env\.([A-Z][A-Z0-9_]*)/g
 

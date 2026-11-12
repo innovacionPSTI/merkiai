@@ -31,7 +31,7 @@ describe('Merkiai Pagos en el storefront', () => {
   it('fail-closed si no está activo o la consola falla', async () => {
     await expect(hydrateManagedPayment(managed, 't1', ok({ active: false }))).rejects.toThrow(/no está activo/)
     await expect(hydrateManagedPayment(managed, 't1', ok({ error: 'x' }, 503))).rejects.toThrow()
-    delete process.env.CONSOLE_URL; delete process.env.CONTROL_PLANE_URL
+    delete process.env.CONSOLE_URL
     await expect(hydrateManagedPayment(managed, 't1', ok({}))).rejects.toThrow(/consola/)
   })
   it('reportMerkiaiFee: true solo si la consola confirma', async () => {

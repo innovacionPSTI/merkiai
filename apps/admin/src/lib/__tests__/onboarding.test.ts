@@ -37,7 +37,7 @@ const OLD_ENV = process.env
 
 beforeEach(() => {
   jest.resetAllMocks()
-  process.env = { ...OLD_ENV, CONTROL_PLANE_URL: 'https://console.test', INTERNAL_API_SECRET: 's' }
+  process.env = { ...OLD_ENV, CONSOLE_URL: 'https://console.test', INTERNAL_API_SECRET: 's' }
   mockApply.mockResolvedValue({ tenantId: T, results: { theme: 'ok', categories: 'ok' } })
 })
 
@@ -51,7 +51,7 @@ function mockFetchOk() {
 
 describe('getOnboardingOptions', () => {
   it('devuelve null si falta el control plane', async () => {
-    delete process.env.CONTROL_PLANE_URL
+    delete process.env.CONSOLE_URL
     expect(await getOnboardingOptions(T)).toBeNull()
   })
 

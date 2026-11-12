@@ -761,7 +761,7 @@ Las credenciales de las pasarelas **no** son variables de entorno: se guardan en
 |----------|-----|-------------|
 | `SUPABASE_JWT_SECRET` | web + admin | Secreto para firmar el JWT de Supabase con el claim `tenant_id` (RLS por tenant) |
 | `NEXT_PUBLIC_ROOT_DOMAIN` | web + admin | Dominio raíz para resolver subdominios (`merkiai.com`) |
-| `CONTROL_PLANE_URL` | web + admin | API interna del control plane para resolver `host→tenant_id→db_ref` |
+| `CONSOLE_URL` | web + admin | API interna del control plane para resolver `host→tenant_id→db_ref` |
 | `BILLING_PROVIDER` / `BILLING_API_KEY` / `BILLING_WEBHOOK_SECRET` | control-plane | Facturación de suscripción a los tenants |
 
 > En multi-tenant hay **dos proyectos Supabase**: el del **plano de tienda** (web+admin, sin service-role) y el de **plataforma** (solo control-plane, con service-role). No mezclar sus keys.
@@ -816,7 +816,7 @@ NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY= <anon key del proyecto plano de tienda>
 SUPABASE_JWT_SECRET                 = <secreto JWT para firmar el claim tenant_id>   # ⟵ nuevo
 # ⚠️ NO usar SUPABASE_SERVICE_ROLE_KEY en el plano de tienda
 NEXT_PUBLIC_ROOT_DOMAIN             = merkiai.com    # para resolver subdominios
-CONTROL_PLANE_URL                   = https://app.merkiai.com   # API interna de routing
+CONSOLE_URL                         = https://console.merkiai.com   # API interna de routing
 ```
 
 **`merkiai-console`** (plataforma — su propio proyecto Supabase):

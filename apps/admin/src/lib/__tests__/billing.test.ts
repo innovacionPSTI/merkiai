@@ -46,7 +46,7 @@ describe('startBillingCheckout', () => {
   afterEach(() => { process.env = { ...OLD }; global.fetch = realFetch })
 
   it('sin consola configurada → error claro', async () => {
-    delete process.env.CONSOLE_URL; delete process.env.CONTROL_PLANE_URL
+    delete process.env.CONSOLE_URL
     expect(await startBillingCheckout('t1', 'monthly')).toEqual({ ok: false, error: expect.stringMatching(/no está configurado/) })
   })
   it('traduce errores de la consola y pasa la sesión cuando hay formToken', async () => {

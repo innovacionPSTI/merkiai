@@ -19,15 +19,15 @@ describe('controlPlaneResolver (HU-157)', () => {
   beforeEach(() => { g.fetch = jest.fn() })
   afterEach(() => { process.env = { ...OLD } })
 
-  it('devuelve null sin CONTROL_PLANE_URL / INTERNAL_API_SECRET (no llama al control plane)', async () => {
-    delete process.env.CONTROL_PLANE_URL
+  it('devuelve null sin CONSOLE_URL / INTERNAL_API_SECRET (no llama al control plane)', async () => {
+    delete process.env.CONSOLE_URL
     delete process.env.INTERNAL_API_SECRET
     expect(await controlPlaneResolver.resolveByHost('demo.merkiai.com')).toBeNull()
     expect(g.fetch).not.toHaveBeenCalled()
   })
 
   it('resuelve el tenant y envía el secreto interno (server-to-server)', async () => {
-    process.env.CONTROL_PLANE_URL = 'https://merkiai.com'
+    process.env.CONSOLE_URL = 'https://merkiai.com'
     process.env.INTERNAL_API_SECRET = 'secreto-interno'
     g.fetch.mockResolvedValue({
       ok: true,
@@ -44,21 +44,21 @@ describe('controlPlaneResolver (HU-157)', () => {
   })
 
   it('devuelve null si el control plane responde no-ok', async () => {
-    process.env.CONTROL_PLANE_URL = 'https://merkiai.com'
+    process.env.CONSOLE_URL = 'https://merkiai.com'
     process.env.INTERNAL_API_SECRET = 'secreto-interno'
     g.fetch.mockResolvedValue({ ok: false, json: async () => ({}) })
     expect(await controlPlaneResolver.resolveByHost('desconocido.merkiai.com')).toBeNull()
   })
 
   it('devuelve null si el body no trae tenantId', async () => {
-    process.env.CONTROL_PLANE_URL = 'https://merkiai.com'
+    process.env.CONSOLE_URL = 'https://merkiai.com'
     process.env.INTERNAL_API_SECRET = 'secreto-interno'
     g.fetch.mockResolvedValue({ ok: true, json: async () => ({}) })
     expect(await controlPlaneResolver.resolveByHost('x.merkiai.com')).toBeNull()
   })
 
   it('devuelve null si fetch lanza (error de red)', async () => {
-    process.env.CONTROL_PLANE_URL = 'https://merkiai.com'
+    process.env.CONSOLE_URL = 'https://merkiai.com'
     process.env.INTERNAL_API_SECRET = 'secreto-interno'
     g.fetch.mockRejectedValue(new Error('network'))
     expect(await controlPlaneResolver.resolveByHost('x.merkiai.com')).toBeNull()

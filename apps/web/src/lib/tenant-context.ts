@@ -59,7 +59,7 @@ export const singleTenantResolver: TenantResolver = {
 /**
  * Resolver real: consulta la **API interna del control plane** (que lee la BD de
  * plataforma), sin dar a web acceso directo al registro `tenants`.
- * Requiere `CONSOLE_URL` (alias: `CONTROL_PLANE_URL`) + `INTERNAL_API_SECRET`.
+ * Requiere `CONSOLE_URL` + `INTERNAL_API_SECRET`.
  */
 export const controlPlaneResolver: TenantResolver = {
   async resolveByHost(host: string) {
