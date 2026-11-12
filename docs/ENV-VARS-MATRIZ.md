@@ -2,7 +2,7 @@
 
 > **Guard activo (HU-364):** `pnpm env:check` (y el job de CI) falla si una app usa una variable que no está en su `.env.example`. El rename `CONTROL_PLANE_URL → CONSOLE_URL` ya está en código con alias retrocompatible.
 >
-> **Estado (v256): casi definitiva.** Ya están en código HU-361 (infra por-tenant desde la
+> **Estado (v259): casi definitiva.** Ya están en código HU-361 (infra por-tenant desde la
 > consola), HU-362 (vault AWS KMS), el rename `CONTROL_PLANE_URL → CONSOLE_URL` (HU-364) y las
 > variables de **billing PayZen** (HU-440). Falta para congelarla: retirar el alias
 > `CONTROL_PLANE_URL`, mover `HOSTING_API_TOKEN` al vault y separar producción (ver §Roadmap).
@@ -28,8 +28,8 @@
 | `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY` | Anon/publishable key de ese Supabase | propio | propio | propio |
 | `SUPABASE_JWT_SECRET` | **JWT secret** que firma el claim `tenant_id` (RLS). Crítico | propio | propio | propio |
 | `SUPABASE_SERVICE_ROLE_KEY` | **Service-role** (omite RLS); solo islas sin sesión | propio | propio | propio |
-| `CONSOLE_URL` | URL de la consola (resuelve host→tenant). Alias en retiro: `CONTROL_PLANE_URL` | console prod | console dev | console test |
-| `INTERNAL_API_SECRET` | **Secreto server-to-server**. Igual en las 3 apps del ambiente | compartido-prod | compartido-dev | compartido-test |
+| `CONSOLE_URL` | URL de la consola: resuelve host→tenant y, con **Merkiai Pagos** (HU-441), entrega las credenciales PayZen gestionadas y registra la comisión de cada venta. Alias en retiro: `CONTROL_PLANE_URL` | console prod | console dev | console test |
+| `INTERNAL_API_SECRET` | **Secreto server-to-server**. Igual en las 3 apps del ambiente. Sin él (o sin `CONSOLE_URL`) Merkiai Pagos no cobra (fail-closed) | compartido-prod | compartido-dev | compartido-test |
 | `NEXT_PUBLIC_ROOT_DOMAIN` | Dominio raíz para subdominios por host | dominio prod | dominio dev | dominio test |
 | `TENANT_RESOLUTION_STRICT` | Multi-tenant real fail-closed | `true` | `true` | `true` |
 | `NEXT_PUBLIC_HEXCLAVE_PROJECT_ID` | Proyecto Stack **web/compradores** | propio | propio | propio |
@@ -52,7 +52,7 @@
 | `SUPABASE_JWT_SECRET` | **JWT secret** (firma `is_admin`) | = web | = web | = web |
 | `SUPABASE_SERVICE_ROLE_KEY` | **Service-role** de tienda | = web | = web | = web |
 | `INTERNAL_API_SECRET` | **Server-to-server**. Igual en las 3 apps del ambiente | compartido-prod | compartido-dev | compartido-test |
-| `CONSOLE_URL` | URL de la consola del ambiente. Alias en retiro: `CONTROL_PLANE_URL` | console prod | console dev | console test |
+| `CONSOLE_URL` | URL de la consola del ambiente (dominios, entitlements y **Plan y facturación** del tenant, HU-440). Alias en retiro: `CONTROL_PLANE_URL` | console prod | console dev | console test |
 | `NEXT_PUBLIC_HEXCLAVE_PROJECT_ID` | Proyecto Stack **admin** (≠ el de web) | propio | propio | propio |
 | `NEXT_PUBLIC_HEXCLAVE_PUBLISHABLE_CLIENT_KEY` | Client key del Stack admin | propio | propio | propio |
 | `HEXCLAVE_SECRET_SERVER_KEY` | **Server key** del Stack admin. Aquí se crean los usuarios admin | propio | propio | propio |
@@ -107,6 +107,7 @@ Clasificación que **congela HU-364** (y que E26/celdas completa). Hoy solo se r
 | **Infra por-ambiente (en env; opcional respaldar en Vault)** | Supabase del control-plane (`NEXT_PUBLIC_SUPABASE_URL`+`SERVICE_ROLE_KEY`), Stack (`*HEXCLAVE*`, `NEXT_PUBLIC_STACK_API_URL`), URLs (`CONSOLE_URL` — antes `CONTROL_PLANE_URL`, alias aún aceptado —, `*_SITE_URL`, `*_ADMIN_URL`, `STOREFRONT_BASE_DOMAIN`, `NEXT_PUBLIC_ROOT_DOMAIN`), preview (`PREVIEW_SIGNING_SECRET`, `NEXT_PUBLIC_DRAFT_SECRET`), flags, `MAINTENANCE_MODE`, `TENANT_RESOLUTION_STRICT` | env por-ambiente |
 | **Billing de plataforma (env del console)** | `PAYZEN_SHOP_ID`, `PAYZEN_PASSWORD`, `PAYZEN_PUBLIC_KEY`, `RESEND_API_KEY`, `BILLING_EMAIL_FROM`, `CRON_SECRET` (+ opcionales `PAYZEN_API_URL`, `BILLING_DUNNING_*`) | env del console; `PAYZEN_PASSWORD` y `RESEND_API_KEY` candidatas a vault en la separación de prod |
 | **Datos de billing por tenant (nunca en env)** | Token del medio de pago del tenant (`paymentMethodToken`) | kms-vault (`subscriptions.payment_token_ref`) |
+| **Pasarelas de venta del tenant (nunca en env)** | PayZen BYO (HU-442): id + contraseña en `integration_instances` de la tienda, como las demás pasarelas. **Merkiai Pagos** (HU-441): contraseña de la tienda PayZen gestionada **en kms-vault** (`merkiai_payment_accounts.password_ref`), servida a web por la consola | BD de tienda / kms-vault |
 | **→ A Vault (secreto, deja de ser env plano)** | `HOSTING_API_TOKEN` (o token Cloudflare); **llaves de datos/storage por celda** (anon/service/JWT de la celda, claves S3/R2) — ya hoy por-tenant en vault | kms-vault |
 | **→ A Vault por-celda con E26 (HU-430)** | De **web/admin**: `NEXT_PUBLIC_SUPABASE_URL`, `SUPABASE_SERVICE_ROLE_KEY`, anon key, `SUPABASE_JWT_SECRET` (hoy = la celda compartida por env) → se resuelven **por celda** desde `infra_cells`+vault | kms-vault / `infra_cells` |
 | **Retiro (ya no se usan)** | `DEFAULT_TENANT_ID` (opcional estricto), `DRAFT_SECRET` (web), `DOMAIN_A_RECORD`/`DOMAIN_CNAME_TARGET`; con Cloudflare: `HOSTING_PROJECT_ID`/`TEAM_ID`/`A_RECORD`/`CNAME_TARGET` | borrar |
