@@ -4,7 +4,7 @@
 >
 > **Estado (v262): casi definitiva.** Ya están en código HU-361 (infra por-tenant desde la
 > consola), HU-362 (vault AWS KMS), el rename `CONTROL_PLANE_URL → CONSOLE_URL` (HU-364) y las
-> variables de **billing PayZen** (HU-440). Falta para congelarla: mover `HOSTING_API_TOKEN` al vault y
+> variables de **billing PayZen** (HU-440). Falta para congelarla: pasar dominios a Cloudflare (HU-431, ya en código) y
 > separar producción (runbook `docs/GO-LIVE-SAAS.md`, ver §Roadmap).
 
 ## Leyenda
@@ -92,9 +92,11 @@
 | `RESEND_API_KEY` | **API key de Resend** para correos de billing (activación, recibo, impago, suspensión). Sin ella no se envían (solo log) | propio | propio | omitir |
 | `BILLING_EMAIL_FROM` | Remitente de esos correos (dominio verificado en Resend) | `facturacion@merkiai.com` | dominio dev | omitir |
 | `CRON_SECRET` | **Secreto de Vercel Cron**: autentica el barrido diario de mora (`GET /api/internal/billing/sweep`, `Authorization: Bearer …`). Aleatorio ≥ 16 chars | propio | propio | propio |
-| `HOSTING_API_TOKEN` | Token del hosting para dar de alta dominios. **Secreto → a Vault**; con **Cloudflare for SaaS (HU-431)** lo reemplaza el token de Cloudflare (también en vault) | token prod | token dev | dummy/omitir |
+| `HOSTING_PROVIDER` | Proveedor de dominios propios: `vercel` (default) o `cloudflare` (Cloudflare for SaaS, HU-431) | `cloudflare` al migrar | igual | igual |
+| `HOSTING_ZONE_ID` | Id de la zona de Merkiai en Cloudflare (solo con `cloudflare`) | zona prod | zona dev | zona test |
+| `HOSTING_API_TOKEN` | Token del proveedor de dominios. Con `cloudflare` el token se carga en la consola (**Infraestructura → Dominios propios**) y queda **en kms-vault**; esta env solo es respaldo transitorio (y la usa el adaptador de Vercel) | token prod | token dev | dummy/omitir |
 | `HOSTING_PROJECT_ID` · `HOSTING_TEAM_ID` | Proyecto/Team Vercel del ambiente. **→ config por celda / retiro con HU-431 (Cloudflare)** | web prod | web dev | web test |
-| `HOSTING_A_RECORD` · `HOSTING_CNAME_TARGET` | Destinos DNS mostrados al comerciante. **→ Cloudflare (HU-431)** | defaults | igual | igual |
+| `HOSTING_A_RECORD` · `HOSTING_CNAME_TARGET` | Destinos DNS mostrados al comerciante. Con `cloudflare`, `HOSTING_CNAME_TARGET` = CNAME al que apuntan los comerciantes (p. ej. `customers.merkiai.com`); `HOSTING_A_RECORD` no aplica | defaults | igual | igual |
 | ~~`DOMAIN_A_RECORD` / `DOMAIN_CNAME_TARGET`~~ | **Muertas** (sustituidas por `HOSTING_*`) | borrar | borrar | borrar |
 
 ## Destino de cada variable (env · Vault · retiro)
@@ -108,7 +110,7 @@ Clasificación que **congela HU-364** (y que E26/celdas completa). Hoy solo se r
 | **Billing de plataforma (env del console)** | `PAYZEN_SHOP_ID`, `PAYZEN_PASSWORD`, `PAYZEN_PUBLIC_KEY`, `RESEND_API_KEY`, `BILLING_EMAIL_FROM`, `CRON_SECRET` (+ opcionales `PAYZEN_API_URL`, `BILLING_DUNNING_*`) | env del console; `PAYZEN_PASSWORD` y `RESEND_API_KEY` candidatas a vault en la separación de prod |
 | **Datos de billing por tenant (nunca en env)** | Token del medio de pago del tenant (`paymentMethodToken`) | kms-vault (`subscriptions.payment_token_ref`) |
 | **Pasarelas de venta del tenant (nunca en env)** | PayZen BYO (HU-442): id + contraseña en `integration_instances` de la tienda, como las demás pasarelas. **Merkiai Pagos** (HU-441): contraseña de la tienda PayZen gestionada **en kms-vault** (`merkiai_payment_accounts.password_ref`), servida a web por la consola | BD de tienda / kms-vault |
-| **→ A Vault (secreto, deja de ser env plano)** | `HOSTING_API_TOKEN` (o token Cloudflare); **llaves de datos/storage por celda** (anon/service/JWT de la celda, claves S3/R2) — ya hoy por-tenant en vault | kms-vault |
+| **→ A Vault (secreto, deja de ser env plano)** | Token de Cloudflare (**hecho** HU-431: ref en `platform_settings`); `HOSTING_API_TOKEN` queda como respaldo; **llaves de datos/storage por celda** (anon/service/JWT de la celda, claves S3/R2) — ya hoy por-tenant en vault | kms-vault |
 | **→ A Vault por-celda con E26 (HU-430)** | De **web/admin**: `NEXT_PUBLIC_SUPABASE_URL`, `SUPABASE_SERVICE_ROLE_KEY`, anon key, `SUPABASE_JWT_SECRET` (hoy = la celda compartida por env) → se resuelven **por celda** desde `infra_cells`+vault | kms-vault / `infra_cells` |
 | **Retiro (ya no se usan)** | `CONTROL_PLANE_URL` (web/admin, retirado v262 → borrar en Vercel), `DEFAULT_TENANT_ID` (opcional estricto), `DRAFT_SECRET` (web), `DOMAIN_A_RECORD`/`DOMAIN_CNAME_TARGET`; con Cloudflare: `HOSTING_PROJECT_ID`/`TEAM_ID`/`A_RECORD`/`CNAME_TARGET` | borrar |
 
@@ -147,9 +149,9 @@ Estado de las HU que mueven esta matriz:
 - **HU-361 — Config de infra por-tenant en la consola** ✅ (tenants dedicados se configuran en la consola, no en env).
 - **HU-362 — Vault AWS KMS** ✅ en código (bootstrap `AWS_*` + `MERKIAI_VAULT_KEY_ALIAS` en env del console). Pendiente operativo: verificar con un tenant dedicado real.
 - **HU-363 — Orquestación de aprovisionamiento dedicado** 🔲.
-- **HU-364 — Congelar env vars** 🟡: rename `CONTROL_PLANE_URL → CONSOLE_URL` **cerrado** (alias retirado en v262) y guard `env:check` activo. Falta mover `HOSTING_API_TOKEN` al vault y ejecutar la separación de producción (runbook).
+- **HU-364 — Congelar env vars** 🟡: rename `CONTROL_PLANE_URL → CONSOLE_URL` **cerrado** (alias retirado en v262) y guard `env:check` activo. Falta ejecutar la separación de producción (runbook); el token de dominios ya va al vault con HU-431.
 - **HU-440 — Billing PayZen** 🟡: variables `PAYZEN_*`, `BILLING_*`, `RESEND_API_KEY`, `CRON_SECRET` añadidas (console). Llaves pendientes de PayZen.
-- **HU-431 — Cloudflare for SaaS** 🔲: retirará `HOSTING_PROJECT_ID`/`TEAM_ID`/`A_RECORD`/`CNAME_TARGET`.
+- **HU-431 — Cloudflare for SaaS** 🟡 en código (v263): `HOSTING_PROVIDER=cloudflare` + `HOSTING_ZONE_ID` + `HOSTING_CNAME_TARGET`; token en vault. Al activarlo se retiran `HOSTING_PROJECT_ID`/`TEAM_ID`/`A_RECORD`.
 - **HU-430 — Celdas** 🔲: las `SUPABASE_*` de web/admin pasarán a resolverse por celda (vault + `infra_cells`).
 
 **Matiz importante:** incluso con HU-361/362, las variables de **infra por-ambiente**

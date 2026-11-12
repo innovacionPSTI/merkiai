@@ -35,7 +35,7 @@ tenants → una celda); `tenants.db_ref` → celda; gestor de colocación + cont
 > tiendas use su dominio.
 
 **Módulo:** `HostingPort` (alta/verificación/baja de hostname) + adaptador **Cloudflare for
-SaaS** (custom hostnames + TLS); reemplaza/extiende `HOSTING_*`; token en vault. **Estado:** 🔲
+SaaS** (custom hostnames + TLS); reemplaza/extiende `HOSTING_*`; token en vault. **Estado:** 🟡 en código (v263): `CloudflareSaasHostingProvider` (alta apex+www como custom hostnames con validación **TXT** de propiedad y certificado → certificado listo antes del cambio de DNS; estado abstracto `awaiting_dns/certificate/active/error` + registros TXT/CNAME para el comerciante; duplicado en nuestra zona = idempotente, en otra = `conflict`; baja de apex y www), selección por `HOSTING_PROVIDER=cloudflare` (Vercel sigue por defecto → sin cambios hasta activarlo), **token en kms-vault** cargado desde la consola (ref en `platform_settings`, migración `platform/15`). API verificada en la doc de Cloudflare for SaaS. **Pendiente:** activar en un ambiente (zona + fallback origin + CNAME target en Cloudflare) y probar con un dominio real; AC-2 se cumple al mover el origen (HU-435).
 
 | # | Escenario | Resultado |
 |---|-----------|-----------|

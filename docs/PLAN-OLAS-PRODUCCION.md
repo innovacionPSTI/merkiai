@@ -58,6 +58,8 @@ La mayoría de tiendas usará **dominio propio** → esta ola desbloquea ese cas
 
 **Disparo:** primer cliente con dominio propio · costo de egreso/almacenamiento empieza a pesar.
 
+
+**Estado (v263):** HU-431 🟡 en código (Cloudflare for SaaS tras `HOSTING_PROVIDER`, token en vault) — falta activarlo en un ambiente con un dominio real · HU-432 🔲.
 ---
 
 ## Ola 3 — Celdas y capacidad · *disparo: la celda compartida se acerca a su límite*

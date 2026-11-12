@@ -462,3 +462,24 @@ export async function saveMerkiaiAccount(_prev: PagosActionState, formData: Form
   revalidatePath('/merkiai-pagos')
   return { ok: true, message: 'Cuenta guardada.' }
 }
+
+// ─── Dominios propios · Cloudflare for SaaS (HU-431) ──────────────────────────
+
+/** Guarda/rota el token de la API de Cloudflare en el vault; solo la ref queda en BD. */
+export async function saveHostingToken(_prev: PagosActionState, formData: FormData): Promise<PagosActionState> {
+  await requirePlatformOperator()
+  const token = String(formData.get('token') ?? '').trim()
+  if (token.length < 20) return { ok: false, error: 'Pega el token completo de la API de Cloudflare.' }
+  const { getSetting, setSetting, HOSTING_TOKEN_REF_KEY } = await import('@/lib/platform-settings')
+  try {
+    const db = platformDb()
+    const vault = getSecretsVault()
+    const ref = await getSetting(db, HOSTING_TOKEN_REF_KEY)
+    if (ref) await vault.rotate(ref, token)
+    else await setSetting(db, HOSTING_TOKEN_REF_KEY, await vault.put('hosting/cloudflare-token', token))
+  } catch (e) {
+    return { ok: false, error: e instanceof Error ? e.message : 'No se pudo guardar el token.' }
+  }
+  revalidatePath('/infraestructura')
+  return { ok: true, message: 'Token guardado y cifrado.' }
+}

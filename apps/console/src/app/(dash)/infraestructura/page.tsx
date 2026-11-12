@@ -6,6 +6,9 @@ import { deleteTenantInfraConfig } from '../../actions'
 import InfraForm from './infra-form'
 import InfraSecretsForm from './infra-secrets-form'
 import { btn } from '@/lib/styles'
+import HostingTokenForm from './hosting-token-form'
+import { getSetting, HOSTING_TOKEN_REF_KEY } from '@/lib/platform-settings'
+import { managedProviderId } from '@/lib/hosting'
 
 export const dynamic = 'force-dynamic'
 
@@ -13,10 +16,16 @@ const statusTone = (s: InfraConfigStatus): BadgeTone =>
   s === 'active' ? 'success' : s === 'disabled' ? 'danger' : s === 'rotating' ? 'warn' : 'neutral'
 
 export default async function InfraestructuraPage() {
-  const [{ data: tenants }, configs] = await Promise.all([
+  const [{ data: tenants }, configs, tokenRef] = await Promise.all([
     platformDb().from('tenants').select('id, name').order('name', { ascending: true }),
     listTenantInfra(),
+    getSetting(platformDb(), HOSTING_TOKEN_REF_KEY).catch(() => null),
   ])
+  const hosting = {
+    provider: managedProviderId(),
+    zone: Boolean(process.env.HOSTING_ZONE_ID),
+    target: process.env.HOSTING_CNAME_TARGET ?? null,
+  }
   const tenantList = (tenants ?? []) as { id: string; name: string | null }[]
 
   const deleteBtn: React.CSSProperties = {
@@ -29,6 +38,21 @@ export default async function InfraestructuraPage() {
         title="Infraestructura por tenant"
         description="Configura la base de datos dedicada de los tenants que no usan el clúster compartido. La mayoría no necesita esto."
       />
+
+      <PanelCard title="Dominios propios de las tiendas">
+        <p style={{ margin: '0 0 12px', fontSize: 13, color: 'var(--ui-muted)' }}>
+          Proveedor activo: <strong>{hosting.provider === 'cloudflare' ? 'Cloudflare for SaaS' : 'Vercel (por proyecto)'}</strong>
+          {hosting.provider === 'cloudflare' && (
+            <> · Zona: {hosting.zone ? 'configurada' : <strong style={{ color: '#B42318' }}>falta HOSTING_ZONE_ID</strong>}
+            {' '}· Destino CNAME para los comerciantes: {hosting.target ? <code>{hosting.target}</code> : <strong style={{ color: '#B42318' }}>falta HOSTING_CNAME_TARGET</strong>}</>
+          )}
+        </p>
+        <HostingTokenForm configured={Boolean(tokenRef)} />
+        <p style={{ margin: '12px 0 0', fontSize: 12, color: '#888', display: 'flex', gap: 6 }}>
+          <Icon name="alert" size={14} />
+          Con Cloudflare for SaaS cada dominio queda certificado y enrutado sin depender del proyecto de cómputo. El token se guarda cifrado (AWS KMS) y nunca se vuelve a mostrar.
+        </p>
+      </PanelCard>
 
       <PanelCard title="Agregar tenant">
         <div style={{ maxWidth: 560 }}>
