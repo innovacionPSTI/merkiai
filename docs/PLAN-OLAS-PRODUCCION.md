@@ -36,6 +36,14 @@ Objetivo: poder **cobrar y operar** los primeros clientes sobre la **celda compa
 **Criterio de salida:** E2E verde · billing operativo · suspensión/reactivación por impago probada ·
 runbook de release.
 
+**Estado (v259):** 1 🟡 (rename + guard hechos; falta retiro de alias y separación de prod) ·
+2 ⏸️ **diferido a justo antes del release** (decisión del dueño) · 3 🟡 **código completo** (backend,
+IPN, dunning + cron, correos, pago en admin, vista de suscripciones) — falta probar con llaves de test ·
+4 🟡 **código completo** HU-442 (PayZen BYO) y HU-441 (Merkiai Pagos con comisión por plan/tienda) —
+falta cobrar al comerciante las comisiones acumuladas y probar con llaves · 5 🔲.
+
+**Bloqueante externo:** llaves de prueba de PayZen (tienda de Merkiai) para validar 3 y 4 de punta a punta.
+
 ---
 
 ## Ola 2 — Dominios propios y storage a escala · *disparo: clientes con dominio / crece la media*
