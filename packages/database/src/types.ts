@@ -227,7 +227,7 @@ export type Database = {
           discount: number
           total: number
           status: 'pending' | 'processing' | 'shipped' | 'delivered' | 'cancelled' | 'exception'
-          payment_method: 'wompi' | 'mercadopago' | 'tucompra' | 'bold' | 'manual' | null
+          payment_method: 'wompi' | 'mercadopago' | 'tucompra' | 'bold' | 'payzen' | 'manual' | null
           payment_id: string | null
           payment_status: 'pending' | 'approved' | 'rejected' | 'refunded'
           notes: string | null
@@ -268,7 +268,7 @@ export type Database = {
           discount?: number
           total: number
           status?: 'pending' | 'processing' | 'shipped' | 'delivered' | 'cancelled' | 'exception'
-          payment_method?: 'wompi' | 'mercadopago' | 'tucompra' | 'bold' | 'manual' | null
+          payment_method?: 'wompi' | 'mercadopago' | 'tucompra' | 'bold' | 'payzen' | 'manual' | null
           payment_id?: string | null
           payment_status?: 'pending' | 'approved' | 'rejected' | 'refunded'
           notes?: string | null
@@ -309,7 +309,7 @@ export type Database = {
           discount?: number
           total?: number
           status?: 'pending' | 'processing' | 'shipped' | 'delivered' | 'cancelled' | 'exception'
-          payment_method?: 'wompi' | 'mercadopago' | 'tucompra' | 'bold' | 'manual' | null
+          payment_method?: 'wompi' | 'mercadopago' | 'tucompra' | 'bold' | 'payzen' | 'manual' | null
           payment_id?: string | null
           payment_status?: 'pending' | 'approved' | 'rejected' | 'refunded'
           notes?: string | null

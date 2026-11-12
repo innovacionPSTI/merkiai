@@ -35,6 +35,19 @@ export async function POST(req: NextRequest) {
       const r = await fetch('https://api.mercadopago.com/users/me', { headers: { Authorization: `Bearer ${c.access_token}` } })
       return NextResponse.json(r.ok ? { ok: true, supported: true } : { ok: false, supported: true, detail: 'el access token no es válido' })
     }
+    if (inst.provider === 'payzen') {
+      // Charge/SDKTest: eco autenticado (Basic shopId:password) → valida usuario y contraseña.
+      if (!c.shop_id || !c.password) return NextResponse.json({ ok: false, supported: true, detail: 'faltan el identificador de tienda o la contraseña' })
+      const r = await fetch('https://api.payzen.lat/api-payment/V4/Charge/SDKTest', {
+        method: 'POST',
+        headers: { Authorization: 'Basic ' + Buffer.from(`${c.shop_id}:${c.password}`).toString('base64'), 'Content-Type': 'application/json' },
+        body: JSON.stringify({ value: 'merkiai' }),
+      })
+      const d = await r.json().catch(() => null) as { status?: string } | null
+      return NextResponse.json(r.ok && d?.status === 'SUCCESS'
+        ? { ok: true, supported: true, detail: 'credenciales válidas' }
+        : { ok: false, supported: true, detail: 'el identificador o la contraseña no son válidos' })
+    }
     return NextResponse.json({ ok: false, supported: false, detail: 'verificación automática no disponible' })
   } catch (err) {
     console.error('[payment-instances/verify]', err)

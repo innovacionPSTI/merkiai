@@ -24,6 +24,7 @@ import { WompiGateway } from './WompiGateway'
 import { MercadoPagoGateway } from './MercadoPagoGateway'
 import { TuCompraGateway } from './TuCompraGateway'
 import { BoldGateway } from './BoldGateway'
+import { PayzenGateway } from './PayzenGateway'
 import type { PaymentGateway } from './types'
 
 export type { PaymentGateway, CreatePaymentParams, PaymentStatus, WebhookPaymentData } from './types'
@@ -35,6 +36,8 @@ export { TuCompraGateway } from './TuCompraGateway'
 export type { TuCompraConfig } from './TuCompraGateway'
 export { BoldGateway } from './BoldGateway'
 export type { BoldConfig } from './BoldGateway'
+export { PayzenGateway, payzenEnvFromPassword, parsePayzenIpn } from './PayzenGateway'
+export type { PayzenConfig } from './PayzenGateway'
 
 /**
  * Returns the PaymentGateway implementation for the given method.
@@ -132,6 +135,9 @@ export function gatewayFromInstance(
     case 'bold':
       if (!creds.api_key) throw new Error('Bold: falta la API key.')
       return new BoldGateway({ apiKey: creds.api_key, secretKey: creds.secret_key ?? '', sandbox: (settings.sandbox as boolean | undefined) ?? true })
+    case 'payzen':
+      if (!creds.shop_id || !creds.password) throw new Error('PayZen: faltan credenciales (id de tienda o contraseña).')
+      return new PayzenGateway({ shopId: creds.shop_id, password: creds.password, apiUrl: (settings.api_url as string | undefined) || undefined })
     default:
       throw new Error(`Pasarela de pago desconocida: "${provider}"`)
   }

@@ -658,7 +658,7 @@ export async function POST(req: NextRequest) {
       shipping_cost: serverShipping,
       discount: effectiveDiscount,
       total: effectiveTotal,
-      payment_method: activeProvider as 'wompi' | 'mercadopago' | 'tucompra' | 'bold',
+      payment_method: activeProvider as 'wompi' | 'mercadopago' | 'tucompra' | 'bold' | 'payzen',
       skydropx_rate_id,
       carrier_name,
       ...creditOrderFields,

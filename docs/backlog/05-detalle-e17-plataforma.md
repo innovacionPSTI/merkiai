@@ -680,7 +680,7 @@
 
 > Como tenant con cuenta PayZen propia, quiero conectarla a mi tienda para recibir mis ventas, sin pasar por Merkiai.
 
-**Módulo:** instancia del registry con credenciales del propio tenant (como los demás proveedores BYO). · **Estado:** 🔲 (puede salir junto con HU-441).
+**Módulo:** instancia del registry con credenciales del propio tenant (como los demás proveedores BYO). · **Estado:** ✅ en código (v258): `PayzenGateway` (enlace de pago `Charge/CreatePaymentOrder` → `paymentURL`, IPN firmada con HMAC de la contraseña, `ipnTargetUrl` por pedido para no configurar la IPN tienda por tienda), proveedor `payzen` en el registry (id de tienda + contraseña; entorno por prefijo `testpassword_`/`prodpassword_`), verificación con `Charge/SDKTest`, webhook `/api/webhooks/payzen`, migración `e17/74` (CHECK de `payment_method`). Pendiente: prueba real con llaves de test. AC-2 sin reconcile manual (no hay botón “conciliar” para PayZen aún; la IPN se reintenta sola).
 
 | # | Escenario | Resultado |
 |---|-----------|-----------|

@@ -29,8 +29,8 @@ describe('registry · requeridos', () => {
     expect(missingRequired(w, { public_key: 'x' })).toEqual(['integrity_secret'])
     expect(missingRequired(w, { public_key: 'x', integrity_secret: 'y' })).toEqual([])
   })
-  it('hay 4 pasarelas registradas', () => {
-    expect(PAYMENT_PROVIDERS.map((p) => p.provider).sort()).toEqual(['bold', 'mercadopago', 'tucompra', 'wompi'])
+  it('hay 5 pasarelas registradas', () => {
+    expect(PAYMENT_PROVIDERS.map((p) => p.provider).sort()).toEqual(['bold', 'mercadopago', 'payzen', 'tucompra', 'wompi'])
   })
 })
 

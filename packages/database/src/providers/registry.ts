@@ -100,6 +100,19 @@ export const PAYMENT_PROVIDERS: ProviderDef[] = [
     detectEnv: (_c, s) => ((s?.sandbox ?? true) ? 'test' : 'production'),
     requiredKeys: ['api_key'],
   },
+  // HU-442 · PayZen/Lyra con la tienda PROPIA del comerciante (Modelo A · BYO).
+  {
+    kind: 'payment',
+    provider: 'payzen',
+    label: 'PayZen (Lyra)',
+    description: 'Tarjeta débito/crédito y PSE con tu propia tienda PayZen',
+    fields: [
+      { key: 'shop_id',  label: 'Identificador de tienda', type: 'text',   placeholder: '12345678', hint: 'Back Office PayZen → Configuración → Tienda → Claves de API REST (usuario).', required: true },
+      { key: 'password', label: 'Contraseña de la API REST', type: 'secret', placeholder: 'testpassword_… o prodpassword_…', hint: 'Misma pantalla. También firma las notificaciones (IPN).', required: true },
+    ],
+    detectEnv: (c) => byPrefix(c.password, ['prodpassword_'], ['testpassword_']),
+    requiredKeys: ['shop_id', 'password'],
+  },
 ]
 
 export const SHIPPING_PROVIDERS: ProviderDef[] = [

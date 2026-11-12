@@ -14,7 +14,7 @@ export interface CreateOrderInput {
   shipping_cost: number
   discount?: number
   total: number
-  payment_method?: 'wompi' | 'mercadopago' | 'tucompra' | 'bold' | 'manual'
+  payment_method?: 'wompi' | 'mercadopago' | 'tucompra' | 'bold' | 'payzen' | 'manual'
   skydropx_rate_id?: string | null
   carrier_name?: string | null
   coupon_code?: string | null
