@@ -10,7 +10,7 @@
  */
 import {
   applyBillingEvent, shouldSuspend, DEFAULT_DUNNING,
-  type BillingEffect, type BillingInterval, type BillingProvider, type DunningPolicy,
+  type BillingEffect, type BillingInterval, type BillingProvider, type DunningPolicy, type NormalizedBillingWebhook,
   type SecretsVault, type SubscriptionState, type SubscriptionStatus,
 } from '@merkiai/tenancy'
 
@@ -107,10 +107,14 @@ async function runEffects(
 export type WebhookResult =
   | { status: 'processed'; tenantId: string; subscription: SubscriptionStatus }
   | { status: 'duplicate' | 'pending' | 'unknown_tenant' | 'no_subscription' }
+  /** Pago de una cuenta de comisiones (orderId `fee-…`): NO renueva el plan. */
+  | { status: 'fee_payment'; hook: NormalizedBillingWebhook }
 
 /** Lanza si la firma es inválida (→ 401) o si falla la persistencia (→ 500, el proveedor reintenta). */
 export async function processBillingWebhook(deps: BillingDeps, fields: Record<string, string>): Promise<WebhookResult> {
   const hook = deps.provider.parseWebhook(fields)
+  // HU-441 · los cobros de comisiones usan el mismo token pero no son pagos del plan.
+  if (hook.orderId?.startsWith('fee-')) return { status: 'fee_payment', hook }
   if (hook.outcome === 'pending') return { status: 'pending' }
 
   const tenantId = hook.tenantId ?? tenantIdFromOrderId(hook.orderId)

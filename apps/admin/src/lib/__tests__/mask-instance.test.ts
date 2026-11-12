@@ -35,7 +35,7 @@ describe('maskInstance', () => {
 describe('publicProviders', () => {
   it('serializa el registry sin funciones (detectEnv no viaja al cliente)', () => {
     const pub = publicProviders(PAYMENT_PROVIDERS)
-    expect(pub.map((p) => p.provider).sort()).toEqual(['bold', 'mercadopago', 'tucompra', 'wompi'])
+    expect(pub.map((p) => p.provider).sort()).toEqual(['bold', 'mercadopago', 'merkiai_pagos', 'payzen', 'tucompra', 'wompi'])
     expect((pub[0] as Record<string, unknown>).detectEnv).toBeUndefined()
     expect(Array.isArray(pub[0].fields)).toBe(true)
   })

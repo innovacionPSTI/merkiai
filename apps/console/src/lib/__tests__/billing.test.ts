@@ -178,3 +178,14 @@ describe('getBillingSummary', () => {
     expect(json).not.toContain(s.sub()!.payment_token_ref!)
   })
 })
+
+describe('IPN de cobro de comisiones', () => {
+  it('orderId fee-… no renueva el plan ni registra evento de suscripción', async () => {
+    const s = setup({ status: 'active', provider_subscription_id: 'x', current_period_end: '2026-12-10T15:00:00.000Z' })
+    const r = await processBillingWebhook(s.deps, ipn({ orderId: `fee-${T}-202611`, token: null }))
+    expect(r.status).toBe('fee_payment')
+    expect(s.sub()!.current_period_end).toBe('2026-12-10T15:00:00.000Z')
+    expect(s.events.size).toBe(0)
+    expect(s.mails).toEqual([])
+  })
+})

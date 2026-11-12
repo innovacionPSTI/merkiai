@@ -22,6 +22,12 @@ export interface BillingSummary {
     autoRenew: boolean
   } | null
   events: { label: string; amountCents: number | null; currency: string | null; at: string }[]
+  /** HU-441 · comisiones mensuales de Merkiai Pagos (vacío si no aplica). */
+  feeInvoices?: { period: string; amountCents: number; currency: string; status: 'pending' | 'processing' | 'paid' | 'failed' | 'waived' }[]
+}
+
+export const FEE_STATUS_LABEL: Record<string, string> = {
+  pending: 'Por cobrar', processing: 'En proceso', paid: 'Cobrada', failed: 'Cobro rechazado', waived: 'Sin valor',
 }
 
 export interface CheckoutSession { formToken: string; publicKey: string | null; amountCents: number; currency: string }

@@ -1,6 +1,7 @@
 import { PageHeader, PanelCard, EmptyState, StatusBadge, Icon, type BadgeTone } from '@merkiai/ui'
 import { platformDb } from '@/lib/platform-db'
 import { listAccountsOverview, listPlanFeeTerms } from '@/lib/merkiai-pagos'
+import { listRecentFeeInvoices, type FeeInvoiceStatus } from '@/lib/fee-collection'
 import { formatMoney } from '@/lib/billing-email'
 import { PlanFeeForm, AccountForm } from './forms'
 
@@ -11,15 +12,23 @@ const STATUS: Record<'pending' | 'active' | 'disabled', { label: string; tone: B
   active: { label: 'Activa', tone: 'success' },
   disabled: { label: 'Desactivada', tone: 'danger' },
 }
+const INVOICE: Record<FeeInvoiceStatus, { label: string; tone: BadgeTone }> = {
+  pending: { label: 'Por cobrar', tone: 'neutral' },
+  processing: { label: 'En proceso', tone: 'warn' },
+  paid: { label: 'Cobrada', tone: 'success' },
+  failed: { label: 'Rechazada', tone: 'danger' },
+  waived: { label: 'Sin valor', tone: 'neutral' },
+}
 const pct = (n: number) => `${n.toLocaleString('es-CO', { maximumFractionDigits: 3 })} %`
 
 export default async function MerkiaiPagosPage() {
   const db = platformDb()
-  const [{ data: plans }, { data: tenants }, terms, accounts] = await Promise.all([
+  const [{ data: plans }, { data: tenants }, terms, accounts, invoices] = await Promise.all([
     db.from('plans').select('key, name').eq('active', true).order('price_cents', { ascending: true }),
     db.from('tenants').select('id, name').order('name', { ascending: true }),
     listPlanFeeTerms(db),
     listAccountsOverview(db),
+    listRecentFeeInvoices(db).catch(() => []),
   ])
   const tenantList = ((tenants ?? []) as { id: string; name: string | null }[]).map((t) => ({ id: t.id, name: t.name ?? t.id }))
   const withAccount = new Set(accounts.map((a) => a.tenantId))
@@ -80,6 +89,31 @@ export default async function MerkiaiPagosPage() {
               </div>
             ))}
           </div>
+        )}
+      </PanelCard>
+
+      <PanelCard title="Cobros mensuales de comisiones">
+        <p style={{ margin: '0 0 12px', fontSize: 13, color: 'var(--ui-muted)' }}>
+          El día 1 de cada mes se agrupan las comisiones del mes anterior en una cuenta por tienda y se cobran con la tarjeta registrada para su plan (hasta 3 intentos, uno por día). Si la tienda no tiene tarjeta, la cuenta queda por cobrar.
+        </p>
+        {invoices.length === 0 ? (
+          <p style={{ fontSize: 13, color: 'var(--ui-muted)' }}>Aún no hay cobros.</p>
+        ) : (
+          <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 14 }}>
+            <thead><tr>{['Tienda', 'Mes', 'Valor', 'Estado', 'Intentos', 'Detalle'].map((h) => <th key={h} style={{ textAlign: 'left', padding: 8, fontSize: 12, color: '#666', borderBottom: '1px solid var(--ui-border)' }}>{h}</th>)}</tr></thead>
+            <tbody>
+              {invoices.map((i) => (
+                <tr key={i.id}>
+                  <td style={{ padding: 8 }}><strong>{i.tenantName}</strong></td>
+                  <td style={{ padding: 8 }}>{i.period}</td>
+                  <td style={{ padding: 8 }}>{formatMoney(i.amount_cents, i.currency)}</td>
+                  <td style={{ padding: 8 }}><StatusBadge tone={INVOICE[i.status].tone}>{INVOICE[i.status].label}</StatusBadge></td>
+                  <td style={{ padding: 8 }}>{i.attempts}</td>
+                  <td style={{ padding: 8, color: 'var(--ui-muted)', fontSize: 13 }}>{i.lastError ?? '—'}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
         )}
       </PanelCard>
     </>

@@ -16,7 +16,14 @@ export async function GET(req: NextRequest, ctx: { params: Promise<{ id: string 
   try {
     const summary = await getBillingSummary(makeBillingRepo(platformDb()), id)
     if (!summary) return NextResponse.json({ error: 'tenant_not_found' }, { status: 404 })
-    return NextResponse.json({ ...summary, billingEnabled: Boolean(process.env.PAYZEN_SHOP_ID && process.env.PAYZEN_PASSWORD) })
+    // HU-441 · cuentas de cobro de comisiones de Merkiai Pagos (si aplica).
+    const { data: feeInvoices } = await platformDb().from('fee_invoices')
+      .select('period, amount_cents, currency, status').eq('tenant_id', id).order('period', { ascending: false }).limit(6)
+    return NextResponse.json({
+      ...summary,
+      feeInvoices: (feeInvoices ?? []).map((f: { period: string; amount_cents: number; currency: string; status: string }) => ({ period: f.period, amountCents: f.amount_cents, currency: f.currency, status: f.status })),
+      billingEnabled: Boolean(process.env.PAYZEN_SHOP_ID && process.env.PAYZEN_PASSWORD),
+    })
   } catch (err) {
     return NextResponse.json({ error: 'summary_failed', detail: String((err as Error)?.message ?? err) }, { status: 502 })
   }

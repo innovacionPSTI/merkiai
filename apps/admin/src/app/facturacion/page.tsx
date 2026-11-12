@@ -2,7 +2,7 @@ import { redirect } from 'next/navigation'
 import type { Metadata } from 'next'
 import { PageHeader } from '@merkiai/ui'
 import { getAdminUser } from '@/lib/auth'
-import { billingView, canManageBilling, getBillingSummary, type BillingTone } from '@/lib/billing'
+import { billingView, canManageBilling, getBillingSummary, FEE_STATUS_LABEL, type BillingTone } from '@/lib/billing'
 import PayzenCheckout from './PayzenCheckout'
 
 export const metadata: Metadata = { title: 'Plan y facturación' }
@@ -63,6 +63,21 @@ export default async function FacturacionPage({ searchParams }: { searchParams: 
                 ) : (
                   <p className="font-brand text-sm text-brand-primary/60">El pago en línea aún no está habilitado. Escríbenos para regularizar tu plan.</p>
                 )}
+              </section>
+            )}
+
+            {(summary.feeInvoices?.length ?? 0) > 0 && (
+              <section className="rounded-2xl border border-gray-200 bg-white p-6">
+                <h3 className="font-display text-lg text-brand-primary mb-1">Comisiones de Merkiai Pagos</h3>
+                <p className="font-brand text-xs text-brand-primary/50 mb-3">Se cobran el mes siguiente con la tarjeta de tu plan.</p>
+                <ul className="divide-y divide-gray-100">
+                  {summary.feeInvoices!.map((f) => (
+                    <li key={f.period} className="flex justify-between py-2 font-brand text-sm text-brand-primary">
+                      <span>{f.period}</span>
+                      <span className="text-brand-primary/60">{money(f.amountCents, f.currency)} · {FEE_STATUS_LABEL[f.status] ?? f.status}</span>
+                    </li>
+                  ))}
+                </ul>
               </section>
             )}
 

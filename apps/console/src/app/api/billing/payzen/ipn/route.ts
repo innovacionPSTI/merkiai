@@ -6,6 +6,8 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { getBillingDeps } from '@/lib/billing-runtime'
 import { processBillingWebhook } from '@/lib/billing'
+import { platformDb } from '@/lib/platform-db'
+import { makeFeeRepo, settleFeeInvoiceFromWebhook } from '@/lib/fee-collection'
 
 export const dynamic = 'force-dynamic'
 export const runtime = 'nodejs'
@@ -20,6 +22,10 @@ export async function POST(req: NextRequest) {
   }
   try {
     const result = await processBillingWebhook(getBillingDeps(), fields)
+    if (result.status === 'fee_payment') {
+      // HU-441 · IPN del cobro de comisiones de Merkiai Pagos.
+      return NextResponse.json({ status: 'fee_payment', invoice: await settleFeeInvoiceFromWebhook(makeFeeRepo(platformDb()), result.hook) })
+    }
     return NextResponse.json(result)
   } catch (err) {
     const msg = String((err as Error)?.message ?? err)
