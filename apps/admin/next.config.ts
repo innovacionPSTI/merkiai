@@ -10,12 +10,17 @@ const STOREFRONT_BASE = (process.env.STOREFRONT_BASE_DOMAIN ?? 'merkiai.com').tr
 // HU-440 · formulario incrustado de PayZen (librería, estilos, API, iframes de 3DS).
 const PAYZEN = 'https://static.payzen.lat https://api.payzen.lat https://*.payzen.lat'
 
+// HU-432 · origen público de los archivos cuando el storage es R2/S3 (CDN/dominio del bucket).
+const MEDIA_ORIGIN = (() => {
+  try { return process.env.STORAGE_PUBLIC_BASE_URL ? new URL(process.env.STORAGE_PUBLIC_BASE_URL).origin : '' } catch { return '' }
+})()
+
 const CSP = [
   "default-src 'self'",
   `script-src 'self' 'unsafe-inline' 'unsafe-eval' ${PAYZEN}`,
   `style-src 'self' 'unsafe-inline' ${PAYZEN}`,
   `font-src 'self' ${PAYZEN}`,
-  `img-src 'self' data: blob: https://*.supabase.co ${PAYZEN}`,
+  `img-src 'self' data: blob: https://*.supabase.co ${PAYZEN} ${MEDIA_ORIGIN}`.trim(),
   // Stack Auth + Supabase
   `connect-src 'self' https://*.supabase.co wss://*.supabase.co https://*.stack-auth.com ${PAYZEN}`,
   // Vista previa: permitir incrustar el storefront del tenant (subdominios).

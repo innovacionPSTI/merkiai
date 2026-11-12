@@ -22,7 +22,8 @@
         "CONSOLE_URL",
         "INTERNAL_API_SECRET",
         "STOREFRONT_BASE_DOMAIN",
-        "ADMIN_PREVIEW_ORIGIN"
+        "ADMIN_PREVIEW_ORIGIN",
+        "STORAGE_PUBLIC_BASE_URL"
       ]
     },
     "dev": {

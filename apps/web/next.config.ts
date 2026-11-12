@@ -9,13 +9,18 @@ import type { NextConfig } from 'next'
 const ADMIN_ORIGIN = process.env.ADMIN_PREVIEW_ORIGIN?.trim()
 const FRAME_ANCESTORS = ADMIN_ORIGIN ? `'self' ${ADMIN_ORIGIN}` : "'none'"
 
+// HU-432 · origen público de los archivos cuando el storage es R2/S3 (CDN/dominio del bucket).
+const MEDIA_ORIGIN = (() => {
+  try { return process.env.STORAGE_PUBLIC_BASE_URL ? new URL(process.env.STORAGE_PUBLIC_BASE_URL).origin : '' } catch { return '' }
+})()
+
 const CSP = [
   "default-src 'self'",
   // Next.js requires unsafe-inline for hydration scripts; nonce-based CSP requires custom server
   "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://vercel.live",
   "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
   "font-src 'self' https://fonts.gstatic.com",
-  "img-src 'self' data: blob: https://*.supabase.co https://res.cloudinary.com",
+  `img-src 'self' data: blob: https://*.supabase.co https://res.cloudinary.com ${MEDIA_ORIGIN}`.trim(),
   // Stack Auth + Supabase + Vercel Analytics
   "connect-src 'self' https://*.supabase.co wss://*.supabase.co https://*.stack-auth.com https://*.vercel-insights.com https://vitals.vercel-insights.com",
   "media-src 'self' https://*.supabase.co",
@@ -62,6 +67,8 @@ const nextConfig: NextConfig = {
         hostname: '*.supabase.co',
         pathname: '/storage/v1/object/public/**',
       },
+      // HU-432 · archivos servidos desde R2/S3 (dominio público del bucket).
+      ...(MEDIA_ORIGIN ? [{ protocol: 'https' as const, hostname: new URL(MEDIA_ORIGIN).hostname, pathname: '/**' }] : []),
     ],
   },
 

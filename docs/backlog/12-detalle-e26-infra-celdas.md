@@ -50,7 +50,7 @@ SaaS** (custom hostnames + TLS); reemplaza/extiende `HOSTING_*`; token en vault.
 > S3) por celda, y **medir el uso por tenant**, para desacoplar storage de la BD y tarifar por plan.
 
 **Módulo:** `StoragePort` (put/get/url/usage) + adaptador **R2/S3** (egreso gratis en R2);
-medición de uso por celda/tenant; tope por plan. **Estado:** 🔲
+medición de uso por celda/tenant; tope por plan. **Estado:** 🟡 en código (v265): `S3StorageProvider` (R2/S3 con firma **SigV4** propia —sin SDK—, validada contra el vector oficial de AWS; claves `<carpeta>/<tenant>/<archivo>` iguales a Supabase → migrar de proveedor no cambia el aislamiento), selección por `STORAGE_PROVIDER` (Supabase por defecto), **medición de uso** (`e17/75_storage_objects.sql`: inventario por tenant + vista `storage_usage`, con backfill desde `media_assets`), **tope del plan** `max_medios_mb` aplicado al subir (413 con mensaje claro; fail-open si no se puede medir) y barra de uso en Medios; carpetas de destino en lista blanca (antes el cliente podía crear buckets arbitrarios). **Pendiente:** activar R2 en un ambiente (bucket + dominio público + llaves) y migrar los archivos existentes; llaves por celda en vault con HU-430.
 
 | # | Escenario | Resultado |
 |---|-----------|-----------|
