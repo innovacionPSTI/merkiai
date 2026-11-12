@@ -272,6 +272,11 @@ export default function IntegrationInstancesForm({ kind, apiBase, addLabel, empt
         </div>
 
         {/* Campos del registry */}
+        {def.fields.length === 0 && (
+          <p className="font-brand text-sm text-brand-primary/70 bg-brand-cream/40 rounded-xl px-4 py-3">
+            No necesitas ingresar credenciales: Merkiai gestiona esta pasarela. Si aún no está habilitada para tu tienda, el checkout no la ofrecerá; pide la activación a tu asesor.
+          </p>
+        )}
         {def.fields.map((f) => f.type === 'secret' ? (
           <SecretField key={f.key} label={f.label} hint={f.hint} hasExisting={d.secretSet[f.key] ?? false}
             value={d.creds[f.key] ?? ''} onChange={(v) => setCred(f.key, v)} generatable={f.key === 'webhook_secret'} />

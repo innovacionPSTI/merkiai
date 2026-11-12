@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
+import { hydrateManagedPayment, gatewayMethod } from '@/lib/merkiai-pagos'
 import { createOrder, createServerClient, resolveActivePayment, gatewayFromInstance, getStockForVariants, TuCompraGateway, ensureCustomer, listActivePromotions, computePromotions, getGiftCardByCode, getStoreCreditBalance, computeRedemption, redeemStoreValue, refundStoreValue, applyStockForOrder, getBundlesByIds, expandBundleLines, getCouponByCode, validateCoupon, getShippingConfig, reportError } from '@merkiai/database'
 import { stackServerApp } from '@/stack'
 import { baseUrlFromRequest } from '@/lib/base-url'
@@ -393,7 +394,15 @@ export async function POST(req: NextRequest) {
     // ── SEGURIDAD: la pasarela se deriva SIEMPRE del servidor (instancia activa),
     // nunca del `payment_method` que envía el cliente. ADR-004: resuelve la
     // instancia activa (integration_instances) con fallback al legacy payment_config.
-    const active = await resolveActivePayment(createServerClient(), tenantId)
+    let active
+    try {
+      // HU-441: "Merkiai Pagos" trae sus credenciales de la consola (fail-closed).
+      active = await hydrateManagedPayment(await resolveActivePayment(createServerClient(), tenantId), tenantId)
+    } catch (err) {
+      const reason = err instanceof Error ? err.message : 'Pasarela de pago no disponible'
+      console.error(`[checkout] 503: ${reason}`)
+      return NextResponse.json({ error: reason }, { status: 503 })
+    }
     const activeProvider = active?.provider ?? 'none'
 
     // E17/HU-157: la base URL (webhook + return de pagos) sale del host del
@@ -658,7 +667,7 @@ export async function POST(req: NextRequest) {
       shipping_cost: serverShipping,
       discount: effectiveDiscount,
       total: effectiveTotal,
-      payment_method: activeProvider as 'wompi' | 'mercadopago' | 'tucompra' | 'bold' | 'payzen',
+      payment_method: gatewayMethod(activeProvider) as 'wompi' | 'mercadopago' | 'tucompra' | 'bold' | 'payzen',
       skydropx_rate_id,
       carrier_name,
       ...creditOrderFields,
@@ -683,7 +692,7 @@ export async function POST(req: NextRequest) {
         unit_price: i.price ?? 0,
       })),
       redirectUrl: confirmUrl,
-      webhookUrl: `${siteUrl}/api/webhooks/${activeProvider}`,
+      webhookUrl: `${siteUrl}/api/webhooks/${gatewayMethod(activeProvider)}`,
     })
 
     return NextResponse.json({

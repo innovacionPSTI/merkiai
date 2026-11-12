@@ -113,6 +113,18 @@ export const PAYMENT_PROVIDERS: ProviderDef[] = [
     detectEnv: (c) => byPrefix(c.password, ['prodpassword_'], ['testpassword_']),
     requiredKeys: ['shop_id', 'password'],
   },
+  // HU-441 · "Merkiai Pagos" (Modelo B): tienda PayZen GESTIONADA por Merkiai. El
+  // comerciante no ingresa credenciales: el operador la da de alta en la consola y
+  // el storefront las obtiene del control plane en cada cobro (nunca en esta BD).
+  {
+    kind: 'payment',
+    provider: 'merkiai_pagos',
+    label: 'Merkiai Pagos',
+    description: 'Tarjeta y PSE sin trámites con la pasarela gestionada por Merkiai. El dinero llega directo a tu cuenta; se cobra una comisión por venta. Pide la activación a tu asesor.',
+    fields: [],
+    detectEnv: () => 'production',
+    requiredKeys: [],
+  },
 ]
 
 export const SHIPPING_PROVIDERS: ProviderDef[] = [

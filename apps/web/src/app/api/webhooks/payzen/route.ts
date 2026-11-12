@@ -3,6 +3,7 @@ import { resolveActivePayment, resolveEmailConfig, PayzenGateway, applyStockForO
 import { resolveTenant } from '@/lib/tenant-context'
 import { getMachineDb } from '@/lib/machine-db'
 import { amountCoversOrder } from '@/lib/payment-guards'
+import { hydrateManagedPayment, reportMerkiaiFee, MERKIAI_PAGOS } from '@/lib/merkiai-pagos'
 import { sendOrderConfirmation, buildEmailConfig, deliverStorefrontEmail } from '@/lib/email'
 import { createShipmentForOrder } from '@/lib/shipping/shipments'
 import type { Order, Database } from '@merkiai/database'
@@ -18,6 +19,10 @@ type OrderUpdate = Database['public']['Tables']['orders']['Update']
  * la IPN (cada 15 min, hasta 4 veces) si no recibe 2xx.
  * Correlación del pedido: `orderDetails.orderId` = order_number.
  * Estados: PAID → aprobado · UNPAID → rechazado · RUNNING/ABANDONED → pendiente.
+ *
+ * HU-441 · también atiende "Merkiai Pagos" (tienda PayZen gestionada): las
+ * credenciales vienen de la consola y, si el pago se aprueba, se causa la
+ * comisión de Merkiai ANTES de tocar el pedido (si falla → 5xx y PayZen reintenta).
  */
 export async function POST(req: NextRequest) {
   let rawBody: string
@@ -33,8 +38,15 @@ export async function POST(req: NextRequest) {
   const { tenantId } = await resolveTenant()
   const supabase = getMachineDb(tenantId) // HU-227: RLS por tenant (antes service-role)
   // ADR-004: credenciales desde la instancia activa (fallback legacy interno).
-  const active = await resolveActivePayment(supabase, tenantId).catch(() => null)
-  if (!active || active.provider !== 'payzen' || !active.credentials.shop_id || !active.credentials.password) {
+  let active
+  try {
+    active = await hydrateManagedPayment(await resolveActivePayment(supabase, tenantId).catch(() => null), tenantId)
+  } catch (err) {
+    console.error('[webhook/payzen] Merkiai Pagos no disponible:', err instanceof Error ? err.message : err)
+    return NextResponse.json({ error: 'Gateway unavailable' }, { status: 503 })
+  }
+  const managed = active?.provider === MERKIAI_PAGOS
+  if (!active || (active.provider !== 'payzen' && !managed) || !active.credentials.shop_id || !active.credentials.password) {
     console.warn('[webhook/payzen] PayZen no es la pasarela activa o no está configurado')
     return NextResponse.json({ error: 'Gateway not configured' }, { status: 503 })
   }
@@ -54,6 +66,15 @@ export async function POST(req: NextRequest) {
 
   const { orderReference, rawStatus, paymentId, amountCop } = webhookData
   let paymentStatus = gateway.mapStatus(rawStatus)
+
+  // HU-441 · comisión de Merkiai Pagos (idempotente en la consola por paymentId).
+  if (managed && paymentStatus === 'approved' && paymentId && amountCop != null) {
+    const ok = await reportMerkiaiFee(tenantId, { paymentId, orderNumber: orderReference, amountCents: Math.round(amountCop * 100) })
+    if (!ok) {
+      console.error(`[webhook/payzen] no se pudo causar la comisión de ${orderReference}; se pide reintento`)
+      return NextResponse.json({ error: 'fee_not_recorded' }, { status: 500 })
+    }
+  }
 
   // Idempotencia por id de evento (no reprocesar reintentos del mismo evento).
   const { duplicate } = await markWebhookEventProcessed('payzen', `${orderReference}:${rawStatus}:${paymentId ?? ''}`)

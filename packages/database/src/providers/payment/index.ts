@@ -136,6 +136,7 @@ export function gatewayFromInstance(
       if (!creds.api_key) throw new Error('Bold: falta la API key.')
       return new BoldGateway({ apiKey: creds.api_key, secretKey: creds.secret_key ?? '', sandbox: (settings.sandbox as boolean | undefined) ?? true })
     case 'payzen':
+    case 'merkiai_pagos': // HU-441: mismas credenciales PayZen, hidratadas desde la consola
       if (!creds.shop_id || !creds.password) throw new Error('PayZen: faltan credenciales (id de tienda o contraseña).')
       return new PayzenGateway({ shopId: creds.shop_id, password: creds.password, apiUrl: (settings.api_url as string | undefined) || undefined })
     default:

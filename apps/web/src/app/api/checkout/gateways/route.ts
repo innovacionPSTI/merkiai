@@ -8,6 +8,8 @@ const GATEWAY_META: Record<string, { label: string; desc: string }> = {
   mercadopago: { label: 'MercadoPago', desc: 'Tarjeta, efectivo, Nequi, Daviplata' },
   tucompra:    { label: 'Tu Compra',   desc: 'Tarjeta, efectivo, Nequi, PSE' },
   bold:        { label: 'Bold',        desc: 'Tarjeta, PSE, Nequi, Botón Bancolombia' },
+  payzen:      { label: 'Tarjeta o PSE', desc: 'Pago seguro procesado por PayZen' },
+  merkiai_pagos: { label: 'Tarjeta o PSE', desc: 'Pago seguro procesado por PayZen' },
 }
 
 /**

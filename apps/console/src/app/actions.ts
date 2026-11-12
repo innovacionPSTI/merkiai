@@ -413,3 +413,52 @@ export async function saveTenantInfraSecrets(
   revalidatePath('/infraestructura')
   return { ok: true, message: 'Secretos de conexión guardados y cifrados.' }
 }
+
+// ─── Merkiai Pagos (HU-441) ───────────────────────────────────────────────────
+
+export interface PagosActionState { ok: boolean; error?: string; message?: string }
+
+/** Tarifa por plan (% + fijo) de Merkiai Pagos. */
+export async function savePlanFeeTerms(_prev: PagosActionState, formData: FormData): Promise<PagosActionState> {
+  await requirePlatformOperator()
+  const { parsePlanFeeForm, upsertPlanFeeTerms } = await import('@/lib/merkiai-pagos')
+  const parsed = parsePlanFeeForm(formData)
+  if (!parsed.ok) return { ok: false, error: parsed.error }
+  try {
+    await upsertPlanFeeTerms(platformDb(), parsed.value)
+  } catch (e) {
+    return { ok: false, error: e instanceof Error ? e.message : 'No se pudo guardar la tarifa.' }
+  }
+  revalidatePath('/merkiai-pagos')
+  return { ok: true, message: 'Tarifa guardada.' }
+}
+
+/** Alta/edición de la cuenta Merkiai Pagos de un tenant. La contraseña va al vault. */
+export async function saveMerkiaiAccount(_prev: PagosActionState, formData: FormData): Promise<PagosActionState> {
+  await requirePlatformOperator()
+  const { parseAccountForm, getAccount, upsertAccount, environmentFromPassword } = await import('@/lib/merkiai-pagos')
+  const db = platformDb()
+  const tenantId = String(formData.get('tenant_id') ?? '').trim()
+  const existing = tenantId ? await getAccount(db, tenantId).catch(() => null) : null
+  const parsed = parseAccountForm(formData, { hasPassword: Boolean(existing?.password_ref) })
+  if (!parsed.ok) return { ok: false, error: parsed.error }
+  const v = parsed.value
+  try {
+    let password_ref = existing?.password_ref ?? null
+    let environment = existing?.environment ?? 'test'
+    if (v.password) {
+      const vault = getSecretsVault()
+      if (password_ref) await vault.rotate(password_ref, v.password)
+      else password_ref = await vault.put(`payments/${v.tenant_id}/payzen-password`, v.password)
+      environment = environmentFromPassword(v.password)
+    }
+    await upsertAccount(db, {
+      tenant_id: v.tenant_id, provider: 'payzen', status: v.status, shop_id: v.shop_id, password_ref, environment,
+      fee_pct_override: v.fee_pct_override, fee_fixed_cents_override: v.fee_fixed_cents_override,
+    })
+  } catch (e) {
+    return { ok: false, error: e instanceof Error ? e.message : 'No se pudo guardar la cuenta.' }
+  }
+  revalidatePath('/merkiai-pagos')
+  return { ok: true, message: 'Cuenta guardada.' }
+}

@@ -667,7 +667,7 @@
 
 > Como operador, quiero ofrecer **"Merkiai Pagos"** (tienda PayZen bajo la cuenta multitienda de Merkiai, con la **cuenta bancaria del tenant** como destino) con un **markup** por transacción, para monetizar las ventas **sin custodiar fondos**.
 
-**Módulo:** adaptador PayZen en el registry (ADR-004) como instancia gestionada por el operador; multitienda; **markup** (% tipo mercado o fijo) sobre el costo plano de PayZen; el dinero va **directo al tenant** (gateway). · Diseño: ADR-009 · **Estado:** 🔲 (segmento volumen medio/alto por el piso mensual de PayZen).
+**Módulo:** adaptador PayZen en el registry (ADR-004) como instancia gestionada por el operador; multitienda; **markup** (% tipo mercado o fijo) sobre el costo plano de PayZen; el dinero va **directo al tenant** (gateway). · Diseño: ADR-009 · **Estado:** 🟡 en código (v259): consola **Merkiai Pagos** (comisión % + fijo **por plan** y **override por tienda**, alta de la tienda PayZen gestionada con contraseña al vault, resumen de comisiones del mes), migración `platform/13_merkiai_pagos.sql` (`payment_fee_terms`, `merkiai_payment_accounts`, `payment_fees` idempotente), APIs internas de credenciales (descifradas solo en el control plane) y de causación de comisión; storefront: proveedor `merkiai_pagos` sin credenciales en la BD de la tienda (se hidratan de la consola, fail-closed), cobro por `PayzenGateway` y la IPN causa la comisión antes de tocar el pedido. **Pendiente:** cobrar las comisiones causadas al tenant (hoy se acumulan y se reportan; cobro mensual con el token del plan = siguiente paso) y prueba real con llaves.
 
 | # | Escenario | Resultado |
 |---|-----------|-----------|
