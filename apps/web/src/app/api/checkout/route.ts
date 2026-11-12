@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { hydrateManagedPayment, gatewayMethod } from '@/lib/merkiai-pagos'
-import { createOrder, createServerClient, resolveActivePayment, gatewayFromInstance, getStockForVariants, TuCompraGateway, ensureCustomer, listActivePromotions, computePromotions, getGiftCardByCode, getStoreCreditBalance, computeRedemption, redeemStoreValue, refundStoreValue, applyStockForOrder, getBundlesByIds, expandBundleLines, getCouponByCode, validateCoupon, getShippingConfig, reportError } from '@merkiai/database'
+import { createOrder, resolveActivePayment, gatewayFromInstance, getStockForVariants, TuCompraGateway, ensureCustomer, listActivePromotions, computePromotions, getGiftCardByCode, getStoreCreditBalance, computeRedemption, redeemStoreValue, refundStoreValue, applyStockForOrder, getBundlesByIds, expandBundleLines, getCouponByCode, validateCoupon, getShippingConfig, reportError } from '@merkiai/database'
 import { stackServerApp } from '@/stack'
 import { baseUrlFromRequest } from '@/lib/base-url'
 import { resolveTenant } from '@/lib/tenant-context';
@@ -37,16 +37,19 @@ async function saveAddressForUser(
   stackUserId: string,
   userEmail: string,
   shipping: { name: string; phone: string | null; address: string; city: string; department: string | null; postal_code: string | null },
-  tenantId?: string,
+  tenantId: string,
 ) {
   try {
-    const supabase = createServerClient()
+    // HU-227: cliente de máquina acotado por RLS al tenant (antes service-role):
+    // el lookup del cliente por stack_id/email ya no puede cruzar tiendas.
+    const supabase = getMachineDb(tenantId)
 
     // Buscar el customer
     let { data: customer } = await supabase
       .from('customers')
       .select('id')
       .eq('stack_id', stackUserId)
+      .eq('tenant_id', tenantId)
       .maybeSingle()
 
     if (!customer) {
@@ -54,6 +57,7 @@ async function saveAddressForUser(
         .from('customers')
         .select('id')
         .eq('email', userEmail)
+        .eq('tenant_id', tenantId)
         .maybeSingle()
       customer = byEmail
     }
@@ -90,7 +94,7 @@ async function saveAddressForUser(
       department: shipping.department,
       postal_code: shipping.postal_code,
       is_default: isDefault,
-      ...(tenantId ? { tenant_id: tenantId } : {}),
+      tenant_id: tenantId,
     })
   } catch {
     // Non-critical — never block the checkout
@@ -397,7 +401,7 @@ export async function POST(req: NextRequest) {
     let active
     try {
       // HU-441: "Merkiai Pagos" trae sus credenciales de la consola (fail-closed).
-      active = await hydrateManagedPayment(await resolveActivePayment(createServerClient(), tenantId), tenantId)
+      active = await hydrateManagedPayment(await resolveActivePayment(getMachineDb(tenantId), tenantId), tenantId)
     } catch (err) {
       const reason = err instanceof Error ? err.message : 'Pasarela de pago no disponible'
       console.error(`[checkout] 503: ${reason}`)
@@ -572,7 +576,7 @@ export async function POST(req: NextRequest) {
         // Persistir el CodigoSeguimiento (obligatorio para consultar estado y para
         // finalizar Daviplata) y el número de transacción en la orden.
         if (result.codigoSeguimiento || result.numeroTransaccion) {
-          await createServerClient()
+          await getMachineDb(tenantId)
             .from('orders')
             .update({
               tucompra_codigo_seguimiento: result.codigoSeguimiento ?? null,
@@ -585,7 +589,7 @@ export async function POST(req: NextRequest) {
         // Se distingue el RECHAZO del cliente (código 1) del ERROR/CONFIGURACIÓN
         // (código 99). En ambos casos se marca el pedido rechazado (no huérfano).
         if (result.codigoRespuesta === '1' || result.codigoRespuesta === '99') {
-          await createServerClient()
+          await getMachineDb(tenantId)
             .from('orders')
             .update({ payment_status: 'rejected', updated_at: new Date().toISOString() })
             .eq('id', order.id)

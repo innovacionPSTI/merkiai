@@ -32,7 +32,10 @@ jest.mock('@merkiai/database', () => ({
     return raw ? (MAP[raw.toLowerCase()] ?? null) : null
   },
 }))
-jest.mock('@/lib/machine-db', () => ({ getMachineDb: jest.fn(() => ({})) }))
+// HU-227: tras el bootstrap el webhook usa el cliente de máquina; en el test es el mismo mock.
+jest.mock('@/lib/machine-db', () => ({
+  getMachineDb: jest.fn(() => (jest.requireMock('@merkiai/database') as { createServerClient: () => unknown }).createServerClient()),
+}))
 
 import { createServerClient, resolveShippingCreds, markWebhookEventProcessed } from '@merkiai/database'
 import { POST } from '../webhooks/skydropx/route'
@@ -241,5 +244,15 @@ describe('POST /api/webhooks/skydropx — idempotencia y errores', () => {
       method: 'POST', headers: { 'Content-Type': 'application/json' }, body: 'nope {{{',
     })
     expect((await POST(req)).status).toBe(400)
+  })
+})
+
+describe('webhook skydropx · ids seguros (HU-227)', () => {
+  it('ignora ids con caracteres de filtro (no consulta la BD)', async () => {
+    const { mockSupabase } = buildSupabaseMock()
+    mockCreateServerClient.mockReturnValue(mockSupabase as never)
+    const res = await POST(makeRequest(packagePayload({ shipmentId: 'x),id.gt.0,(y', status: 'delivered' })))
+    expect(res.status).toBe(200)
+    expect(mockSupabase.from).not.toHaveBeenCalled()
   })
 })

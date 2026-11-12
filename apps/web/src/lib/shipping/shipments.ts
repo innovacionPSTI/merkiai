@@ -9,7 +9,8 @@
  * so the webhook can still respond 200 and avoid retries.
  */
 
-import { createServerClient, getShippingConfig, resolveShippingCreds } from '@merkiai/database'
+import { getShippingConfig, resolveShippingCreds } from '@merkiai/database'
+import { getMachineDb } from '@/lib/machine-db'
 import { SkydropxProvider } from './providers/skydropx'
 import { calculateParcel } from './types'
 import type { ShippingAddress } from './types'
@@ -24,16 +25,19 @@ interface ShipmentOutcome {
 }
 
 export async function createShipmentForOrder(
-  orderNumber: string
+  orderNumber: string,
+  tenantId: string,
 ): Promise<ShipmentOutcome | null> {
   try {
-    const supabase = createServerClient()
+    // HU-227: cliente de máquina acotado por RLS al tenant (antes service-role).
+  const supabase = getMachineDb(tenantId)
 
     // 1. Load the order
     const { data: order, error: orderErr } = await supabase
       .from('orders')
       .select('*')
       .eq('order_number', orderNumber)
+    .eq('tenant_id', tenantId)
       .single()
 
     if (orderErr || !order) {
@@ -144,6 +148,7 @@ export async function createShipmentForOrder(
         updated_at:           new Date().toISOString(),
       })
       .eq('order_number', orderNumber)
+    .eq('tenant_id', tenantId)
 
     if (updateErr) {
       console.error('[shipments] Error guardando shipment en orden:', updateErr)

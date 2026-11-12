@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { createServerClient, resolveActivePayment, TuCompraGateway } from '@merkiai/database'
+import { resolveActivePayment, TuCompraGateway } from '@merkiai/database'
 import { reconcileTuCompraOrder } from '@/lib/tucompra-reconcile'
 import { resolveTenant } from '@/lib/tenant-context'
 import { getMachineDb } from '@/lib/machine-db'
@@ -52,12 +52,16 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'Ingresa el código OTP de Daviplata.' }, { status: 400 })
     }
 
-    const supabase = createServerClient()
+    // HU-227: el pedido se busca SOLO dentro del tenant del host (RLS por tenant,
+    // antes service-role): un número de pedido de otra tienda no se puede finalizar aquí.
+    const { tenantId } = await resolveTenant()
+    const supabase = getMachineDb(tenantId)
     const { data: ord } = await supabase
       .from('orders')
       .select('payment_method, payment_status, tucompra_codigo_seguimiento')
       .eq('order_number', order)
-      .single()
+      .eq('tenant_id', tenantId)
+      .maybeSingle()
 
     if (!ord) return NextResponse.json({ error: 'Pedido no encontrado' }, { status: 404 })
     if (ord.payment_method !== 'tucompra') {
@@ -70,8 +74,7 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'No hay código de seguimiento para este pedido.' }, { status: 400 })
     }
 
-    const { tenantId } = await resolveTenant()
-    const active = await resolveActivePayment(getMachineDb(tenantId), tenantId).catch(() => null)
+    const active = await resolveActivePayment(supabase, tenantId).catch(() => null)
     if (!active || active.provider !== 'tucompra' || !active.credentials.user || !active.credentials.password || !active.credentials.terminal) {
       return NextResponse.json({ error: 'Tu Compra no está configurado.' }, { status: 503 })
     }
@@ -92,7 +95,7 @@ export async function POST(req: NextRequest) {
     }
 
     // Sincroniza contra la API (aplica stock + emails si quedó aprobado).
-    const rec = await reconcileTuCompraOrder(order)
+    const rec = await reconcileTuCompraOrder(order, tenantId)
     return NextResponse.json({ status: rec.status ?? 'pending' })
   } catch (err) {
     console.error('[checkout/tucompra/finalize-daviplata]', err)

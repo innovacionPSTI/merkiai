@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
+import { resolveTenant } from '@/lib/tenant-context'
 import { reconcileBoldOrder } from '@/lib/bold-reconcile'
 
 /**
@@ -46,7 +47,7 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'Falta el número de pedido' }, { status: 400 })
     }
 
-    const result = await reconcileBoldOrder(order)
+    const result = await reconcileBoldOrder(order, (await resolveTenant()).tenantId) // HU-227: solo pedidos del tenant del host
     // Nunca exponemos detalles internos; solo el estado resultante.
     return NextResponse.json({ status: result.status ?? 'pending' })
   } catch (err) {

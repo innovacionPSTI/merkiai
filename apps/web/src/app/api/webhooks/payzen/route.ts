@@ -135,7 +135,7 @@ export async function POST(req: NextRequest) {
       await deliverStorefrontEmail(supabase, { tenantId, type: 'order.confirmed', to: updatedOrder.customer_email, entity: orderReference, provider: ec?.provider }, () => sendOrderConfirmation(updatedOrder as unknown as Order, emailConfig))
     }
 
-    const shipment = await createShipmentForOrder(orderReference)
+    const shipment = await createShipmentForOrder(orderReference, tenantId)
     if (shipment && emailConfig) {
       const { data: shippedOrder } = await supabase
         .from('orders')

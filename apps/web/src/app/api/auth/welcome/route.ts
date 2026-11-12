@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { stackServerApp } from '@/stack'
-import { createServerClient, resolveEmailConfig, ensureCustomer } from '@merkiai/database'
+import { resolveEmailConfig, ensureCustomer } from '@merkiai/database'
 import { sendWelcomeEmail, buildEmailConfig } from '@/lib/email'
 import { resolveTenant } from '@/lib/tenant-context';
 import { getMachineDb } from '@/lib/machine-db'
@@ -70,7 +70,7 @@ export async function POST(request: NextRequest) {
         .catch((e) => { console.error('[welcome] ensureCustomer:', e); return null })
     } else {
       // Sin stackId (race post-registro): upsert tenant-scoped por email.
-      const supabase = createServerClient()
+      const supabase = getMachineDb(tenantId) // HU-227: RLS por tenant
       const { data } = await supabase
         .from('customers')
         .upsert({ email, name: displayName, tenant_id: tenantId }, { onConflict: 'tenant_id,email' })
@@ -82,7 +82,7 @@ export async function POST(request: NextRequest) {
     // ── 3. Email de bienvenida ────────────────────────────────────────────────
     // Solo se envía si hay sesión válida (para no enviar a emails del body no verificados)
     if (sessionUser) {
-      const ec = await resolveEmailConfig(createServerClient(), tenantId).catch(() => null)
+      const ec = await resolveEmailConfig(getMachineDb(tenantId), tenantId).catch(() => null)
       if (ec) {
         await sendWelcomeEmail(
           email,

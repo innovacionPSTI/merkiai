@@ -105,5 +105,4 @@ Cargar la columna **prod** de `docs/ENV-VARS-MATRIZ.md` en cada proyecto de Verc
 - **nov-2026 (v260)**: cobro de planes, pasarelas de venta PayZen (propia y Merkiai Pagos), comisiones, vault KMS y separación de prod incorporados a este runbook.
 
 ### Pendientes de código conocidos (no bloquean el release)
-- `api/checkout` y `finalize-daviplata` en service-role → `getMachineDb` (HU-227 resto).
 - RLS de `storage.objects` por prefijo de path (hoy aislamiento por path en la app).

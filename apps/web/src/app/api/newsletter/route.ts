@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { createServerClient, resolveEmailConfig } from '@merkiai/database'
+import { resolveEmailConfig } from '@merkiai/database'
+import { getMachineDb } from '@/lib/machine-db'
 import { sendNewsletterConfirmation, buildEmailConfig } from '@/lib/email'
 import { resolveTenant } from '@/lib/tenant-context'
 
@@ -12,7 +13,7 @@ export async function POST(req: NextRequest) {
 
     // HU-207: el suscriptor pertenece al TENANT resuelto por host.
     const { tenantId } = await resolveTenant()
-    const supabase = createServerClient()
+    const supabase = getMachineDb(tenantId) // HU-227: RLS por tenant (antes service-role)
 
     // Check if already subscribed to avoid duplicate confirmation emails (por tenant)
     const { data: existing } = await supabase
@@ -33,7 +34,7 @@ export async function POST(req: NextRequest) {
     // Send confirmation email only on first subscription
     if (!wasAlreadyActive) {
       try {
-        const ec = await resolveEmailConfig(createServerClient(), tenantId).catch(() => null)
+        const ec = await resolveEmailConfig(supabase, tenantId).catch(() => null)
         if (ec) {
           await sendNewsletterConfirmation(
             email,

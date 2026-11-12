@@ -124,7 +124,7 @@ export async function POST(req: NextRequest) {
     }
 
     // Generar guía Skydropx (no bloquea — falla silenciosa)
-    const shipment = await createShipmentForOrder(reference)
+    const shipment = await createShipmentForOrder(reference, tenantId)
     if (shipment && emailConfig) {
       // Reload order para tener tracking_number actualizado
       const { data: shippedOrder } = await supabase

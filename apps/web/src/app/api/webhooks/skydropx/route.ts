@@ -85,11 +85,20 @@ export async function POST(req: NextRequest) {
       ? q.or(`shipment_external_id.eq.${shipmentId},skydropx_shipment_id.eq.${shipmentId}`)
       : q.eq('tracking_number', trackingNumber)
 
-  // Bootstrap: identificar el pedido (y su tenant).
-  const supabase = createServerClient()
-  const { data: order0 } = await matchOrder(supabase.from('orders').select('tenant_id')).maybeSingle()
+  // Los ids viajan dentro de un filtro de PostgREST: solo se aceptan caracteres
+  // seguros (evita inyectar condiciones en el `.or(...)` antes de autenticar).
+  const SAFE_ID = /^[A-Za-z0-9_-]{1,100}$/
+  if ((shipmentId && !SAFE_ID.test(String(shipmentId))) || (!shipmentId && trackingNumber && !SAFE_ID.test(String(trackingNumber)))) {
+    return NextResponse.json({ ok: true, skipped: true })
+  }
+
+  // Bootstrap: identificar el pedido (y su tenant). Única lectura cross-tenant
+  // legítima (la URL del webhook es global); solo lee `tenant_id`.
+  const { data: order0 } = await matchOrder(createServerClient().from('orders').select('tenant_id')).maybeSingle()
   if (!order0?.tenant_id) return NextResponse.json({ ok: true, warning: 'order_not_found' })
   const tenantId = order0.tenant_id as string
+  // HU-227: a partir de aquí todo va acotado por RLS al tenant del pedido.
+  const supabase = getMachineDb(tenantId)
 
   // Autenticación: si la instancia del tenant tiene secreto/token, se exige.
   const creds = await resolveShippingCreds(getMachineDb(tenantId), tenantId).catch(() => null)

@@ -8,7 +8,8 @@
  * solo actúa sobre pedidos `tucompra` en estado `pending`.
  */
 
-import { createServerClient, resolveActivePayment, resolveEmailConfig, TuCompraGateway, applyStockForOrder } from '@merkiai/database'
+import { resolveActivePayment, resolveEmailConfig, TuCompraGateway, applyStockForOrder } from '@merkiai/database'
+import { getMachineDb } from '@/lib/machine-db'
 import type { Order, Database } from '@merkiai/database'
 import { sendOrderConfirmation, buildEmailConfig, deliverStorefrontEmail } from '@/lib/email'
 import { createShipmentForOrder } from '@/lib/shipping/shipments'
@@ -24,13 +25,15 @@ export interface ReconcileResult {
   reason?: 'not_found' | 'not_tucompra' | 'not_configured' | 'no_data'
 }
 
-export async function reconcileTuCompraOrder(orderNumber: string): Promise<ReconcileResult> {
-  const supabase = createServerClient()
+export async function reconcileTuCompraOrder(orderNumber: string, tenantId: string): Promise<ReconcileResult> {
+  // HU-227: cliente de máquina acotado por RLS al tenant (antes service-role).
+  const supabase = getMachineDb(tenantId)
 
   const { data: order } = await supabase
     .from('orders')
     .select('payment_method, payment_status, tucompra_codigo_seguimiento, total, tenant_id')
     .eq('order_number', orderNumber)
+    .eq('tenant_id', tenantId)
     .single()
 
   if (!order) return { ok: false, reason: 'not_found' }
@@ -76,6 +79,7 @@ export async function reconcileTuCompraOrder(orderNumber: string): Promise<Recon
     .from('orders')
     .update(updatePayload)
     .eq('order_number', orderNumber)
+    .eq('tenant_id', tenantId)
     .select()
     .single()
 
@@ -91,12 +95,13 @@ export async function reconcileTuCompraOrder(orderNumber: string): Promise<Recon
       await deliverStorefrontEmail(supabase, { tenantId: order.tenant_id, type: 'order.confirmed', to: updatedOrder.customer_email, entity: orderNumber, provider: ec?.provider }, () => sendOrderConfirmation(updatedOrder as unknown as Order, emailConfig))
     }
 
-    const shipment = await createShipmentForOrder(orderNumber)
+    const shipment = await createShipmentForOrder(orderNumber, tenantId)
     if (shipment && emailConfig) {
       const { data: shippedOrder } = await supabase
         .from('orders')
         .select('*')
         .eq('order_number', orderNumber)
+    .eq('tenant_id', tenantId)
         .single()
       if (shippedOrder?.tracking_number) {
         const { sendShippingNotification } = await import('@/lib/email')

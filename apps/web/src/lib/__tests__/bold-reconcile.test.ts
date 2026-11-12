@@ -9,14 +9,22 @@
  */
 
 const mockSingle = jest.fn()
+// Encadenable: .eq(order_number).eq(tenant_id) — HU-227 filtra también por tenant.
+const eqChain = (tail: Record<string, unknown>): Record<string, unknown> => {
+  const c: Record<string, unknown> = { ...tail }
+  c.eq = jest.fn(() => c)
+  return c
+}
+const mockEqCalls: unknown[][] = []
 const mockFrom = jest.fn(() => ({
-  select: jest.fn(() => ({ eq: jest.fn(() => ({ single: mockSingle })) })),
-  update: jest.fn(() => ({ eq: jest.fn(() => ({ select: jest.fn(() => ({ single: mockSingle })) })) })),
+  select: jest.fn(() => { const c = eqChain({ single: mockSingle }); const eq = c.eq as jest.Mock; c.eq = jest.fn((...a: unknown[]) => { mockEqCalls.push(a); return eq(...a) }); return c }),
+  update: jest.fn(() => eqChain({ select: jest.fn(() => ({ single: mockSingle })) })),
 }))
 const mockQuery = jest.fn()
 
+jest.mock('@/lib/machine-db', () => ({ getMachineDb: jest.fn(() => ({ from: mockFrom })) }))
+
 jest.mock('@merkiai/database', () => ({
-  createServerClient: jest.fn(() => ({ from: mockFrom })),
   getPaymentConfig: jest.fn(),
   resolveActivePayment: jest.fn(),
   resolveEmailConfig: jest.fn(),
@@ -60,14 +68,14 @@ beforeEach(() => {
 describe('reconcileBoldOrder', () => {
   it('no aplica si el pedido no es Bold', async () => {
     mockSingle.mockResolvedValueOnce({ data: { payment_method: 'wompi', payment_status: 'pending' } })
-    const r = await reconcileBoldOrder('ORD-0001')
+    const r = await reconcileBoldOrder('ORD-0001', 't1')
     expect(r).toEqual({ ok: false, reason: 'not_bold' })
     expect(mockQuery).not.toHaveBeenCalled()
   })
 
   it('es idempotente si el pedido ya está aprobado (no consulta a Bold)', async () => {
     mockSingle.mockResolvedValueOnce({ data: { payment_method: 'bold', payment_status: 'approved' } })
-    const r = await reconcileBoldOrder('ORD-0002')
+    const r = await reconcileBoldOrder('ORD-0002', 't1')
     expect(r).toEqual({ ok: true, status: 'approved' })
     expect(mockQuery).not.toHaveBeenCalled()
   })
@@ -78,7 +86,7 @@ describe('reconcileBoldOrder', () => {
       .mockResolvedValueOnce({ data: { order_number: 'ORD-0003' }, error: null })             // update
     mockQuery.mockResolvedValueOnce({ status: 'approved', rawStatus: 'SALE_APPROVED', paymentId: 'P1' })
 
-    const r = await reconcileBoldOrder('ORD-0003')
+    const r = await reconcileBoldOrder('ORD-0003', 't1')
     expect(r).toEqual({ ok: true, status: 'approved' })
     expect(mockQuery).toHaveBeenCalledWith('ORD-0003')
   })
@@ -87,7 +95,7 @@ describe('reconcileBoldOrder', () => {
     mockSingle.mockResolvedValueOnce({ data: { payment_method: 'bold', payment_status: 'pending' } })
     mockQuery.mockResolvedValueOnce(null)
 
-    const r = await reconcileBoldOrder('ORD-0004')
+    const r = await reconcileBoldOrder('ORD-0004', 't1')
     expect(r).toEqual({ ok: true, status: 'pending', reason: 'no_data' })
     // Solo el read; no hubo update
     expect(mockSingle).toHaveBeenCalledTimes(1)
@@ -97,8 +105,17 @@ describe('reconcileBoldOrder', () => {
     mockSingle.mockResolvedValueOnce({ data: { payment_method: 'bold', payment_status: 'pending' } })
     mockGetPaymentConfig.mockResolvedValueOnce({} as never)
 
-    const r = await reconcileBoldOrder('ORD-0005')
+    const r = await reconcileBoldOrder('ORD-0005', 't1')
     expect(r).toEqual({ ok: false, reason: 'not_configured' })
     expect(mockQuery).not.toHaveBeenCalled()
+  })
+})
+
+describe('reconcileBoldOrder · aislamiento por tenant (HU-227)', () => {
+  it('busca el pedido filtrando también por el tenant del host', async () => {
+    mockEqCalls.length = 0
+    mockSingle.mockResolvedValueOnce({ data: null })
+    expect(await reconcileBoldOrder('ORD-9999', 'tenant-a')).toEqual({ ok: false, reason: 'not_found' })
+    expect(mockEqCalls).toContainEqual(['tenant_id', 'tenant-a'])
   })
 })

@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
+import { resolveTenant } from '@/lib/tenant-context'
 import { reconcileTuCompraOrder } from '@/lib/tucompra-reconcile'
 
 /**
@@ -44,7 +45,7 @@ export async function POST(req: NextRequest) {
     if (!order || typeof order !== 'string') {
       return NextResponse.json({ error: 'Falta el número de pedido' }, { status: 400 })
     }
-    const result = await reconcileTuCompraOrder(order)
+    const result = await reconcileTuCompraOrder(order, (await resolveTenant()).tenantId) // HU-227: solo pedidos del tenant del host
     return NextResponse.json({ status: result.status ?? 'pending' })
   } catch (err) {
     console.error('[checkout/tucompra/reconcile]', err)

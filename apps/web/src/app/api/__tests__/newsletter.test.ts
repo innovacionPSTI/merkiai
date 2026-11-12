@@ -18,8 +18,9 @@ const mockFrom        = jest.fn(() => ({
   upsert: mockUpsert,
 }))
 
+jest.mock('@/lib/machine-db', () => ({ getMachineDb: jest.fn(() => ({ from: mockFrom })) }))
+
 jest.mock('@merkiai/database', () => ({
-  createServerClient: jest.fn(() => ({ from: mockFrom })),
   getStoreConfig: jest.fn(),
   resolveEmailConfig: jest.fn(),
 }))
