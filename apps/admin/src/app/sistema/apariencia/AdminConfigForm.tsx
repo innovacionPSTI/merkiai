@@ -3,6 +3,7 @@
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import type { AdminConfig } from '@merkiai/database'
+import { T } from '@merkiai/ui'
 
 interface Props {
   initialConfig: AdminConfig
@@ -60,9 +61,9 @@ export default function AdminConfigForm({ initialConfig }: Props) {
 
       {/* Color de acento */}
       <section>
-        <p className="font-brand text-xs font-semibold text-brand-primary mb-1">Color de acento</p>
+        <p className="font-brand text-xs font-semibold text-brand-primary mb-1"><T>Color de acento</T></p>
         <p className="font-brand text-xs text-brand-primary/40 mb-4">
-          Usado en botones, enlaces activos y elementos destacados.
+          <T>Usado en botones, enlaces activos y elementos destacados.</T>
         </p>
         <div className="flex flex-wrap gap-2 mb-3">
           {ACCENT_PRESETS.map((p) => (
@@ -91,15 +92,15 @@ export default function AdminConfigForm({ initialConfig }: Props) {
             className="font-brand text-sm border border-gray-200 rounded-lg px-3 py-2 w-32 focus:outline-none focus:border-brand-primary"
             placeholder="#4F46E5"
           />
-          <span className="font-brand text-xs text-brand-primary/40">Hex</span>
+          <span className="font-brand text-xs text-brand-primary/40"><T>Hex</T></span>
         </div>
       </section>
 
       {/* Color del sidebar */}
       <section className="border-t border-gray-100 pt-6">
-        <p className="font-brand text-xs font-semibold text-brand-primary mb-1">Color del sidebar</p>
+        <p className="font-brand text-xs font-semibold text-brand-primary mb-1"><T>Color del sidebar</T></p>
         <p className="font-brand text-xs text-brand-primary/40 mb-4">
-          Fondo del menú lateral de navegación.
+          <T>Fondo del menú lateral de navegación.</T>
         </p>
         <div className="flex flex-wrap gap-2 mb-3">
           {SIDEBAR_PRESETS.map((p) => (
@@ -128,13 +129,13 @@ export default function AdminConfigForm({ initialConfig }: Props) {
             className="font-brand text-sm border border-gray-200 rounded-lg px-3 py-2 w-32 focus:outline-none focus:border-brand-primary"
             placeholder="#0F172A"
           />
-          <span className="font-brand text-xs text-brand-primary/40">Hex</span>
+          <span className="font-brand text-xs text-brand-primary/40"><T>Hex</T></span>
         </div>
       </section>
 
       {/* Vista previa */}
       <section className="border-t border-gray-100 pt-6">
-        <p className="font-brand text-xs font-semibold text-brand-primary mb-3">Vista previa</p>
+        <p className="font-brand text-xs font-semibold text-brand-primary mb-3"><T>Vista previa</T></p>
         <div
           className="rounded-xl p-4 flex items-center gap-3"
           style={{ backgroundColor: sidebarColor }}
@@ -145,12 +146,12 @@ export default function AdminConfigForm({ initialConfig }: Props) {
           >
             ▲
           </div>
-          <span className="text-white/80 text-sm font-medium">Admin Panel</span>
+          <span className="text-white/80 text-sm font-medium"><T>Admin Panel</T></span>
           <div
             className="ml-auto px-3 py-1.5 rounded-lg text-white text-xs font-semibold"
             style={{ backgroundColor: accentColor }}
           >
-            Botón
+            <T>Botón</T>
           </div>
         </div>
       </section>
@@ -166,7 +167,7 @@ export default function AdminConfigForm({ initialConfig }: Props) {
         </button>
         {saved && (
           <p className="font-brand text-sm text-emerald-600">
-            ✓ Guardado. Recarga la página para ver los nuevos colores.
+            <T>✓ Guardado. Recarga la página para ver los nuevos colores.</T>
           </p>
         )}
         {error && <p className="font-brand text-sm text-red-500">{error}</p>}

@@ -7,6 +7,8 @@
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { formatNumber } from '@merkiai/i18n'
+import { T } from '@merkiai/ui'
+import { useTx } from '@merkiai/ui'
 
 interface ItemOpt { id: number; name: string; uom_id: number | null }
 interface UomOpt { id: number; code: string }
@@ -19,6 +21,7 @@ const STATUS_LABEL: Record<string, string> = { draft: 'Borrador', completed: 'Co
 function fmt(n: number): string { return formatNumber(n, { maximumFractionDigits: 3 }) }
 
 export default function ProductionManager({ items, uoms, boms, orders }: { items: ItemOpt[]; uoms: UomOpt[]; boms: BomRow[]; orders: OrderRow[] }) {
+  const tx = useTx()
   const router = useRouter()
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState<string | null>(null)
@@ -46,7 +49,7 @@ export default function ProductionManager({ items, uoms, boms, orders }: { items
 
   async function createBom() {
     const valid = comps.filter((c) => c.component_stock_item_id !== '' && Number(c.qty) > 0)
-    if (output === '' || !valid.length) { setError('Elige el ítem de salida y al menos un componente'); return }
+    if (output === '' || !valid.length) { setError(tx("Elige el ítem de salida y al menos un componente")); return }
     try {
       await post('/api/admin/inventory/boms', {
         output_stock_item_id: output, consumption_policy: policy, yield_qty: Number(yieldQty || 1),
@@ -57,7 +60,7 @@ export default function ProductionManager({ items, uoms, boms, orders }: { items
   }
 
   async function createOrder() {
-    if (orderOutput === '' || !(Number(plannedQty) > 0)) { setError('Elige el producto y la cantidad a producir'); return }
+    if (orderOutput === '' || !(Number(plannedQty) > 0)) { setError(tx("Elige el producto y la cantidad a producir")); return }
     try { await post('/api/admin/inventory/production', { output_stock_item_id: orderOutput, planned_qty: Number(plannedQty) }); setPlannedQty('') }
     catch { /* error ya mostrado */ }
   }
@@ -70,24 +73,24 @@ export default function ProductionManager({ items, uoms, boms, orders }: { items
     <div className="space-y-6">
       {/* Receta */}
       <div className="bg-white rounded-2xl p-5 shadow-sm space-y-3">
-        <h2 className="font-display text-brand-primary text-lg">Nueva receta</h2>
+        <h2 className="font-display text-brand-primary text-lg"><T>Nueva receta</T></h2>
         <div className="flex flex-wrap gap-3">
           <label>
-            <span className="font-brand text-xs font-semibold text-brand-primary block mb-1">Producto de salida</span>
+            <span className="font-brand text-xs font-semibold text-brand-primary block mb-1"><T>Producto de salida</T></span>
             <select value={output} onChange={(e) => setOutput(e.target.value === '' ? '' : Number(e.target.value))} className="border border-gray-200 rounded-xl px-3 py-2 font-brand text-sm">
               <option value="">—</option>
               {items.map((it) => <option key={it.id} value={it.id}>{it.name}</option>)}
             </select>
           </label>
           <label>
-            <span className="font-brand text-xs font-semibold text-brand-primary block mb-1">Política</span>
+            <span className="font-brand text-xs font-semibold text-brand-primary block mb-1"><T>Política</T></span>
             <select value={policy} onChange={(e) => setPolicy(e.target.value)} className="border border-gray-200 rounded-xl px-3 py-2 font-brand text-sm">
               <option value="al_producir">Al producir (se descuenta al fabricar)</option>
               <option value="al_vender">Al vender (se descuenta en la venta)</option>
             </select>
           </label>
           <label>
-            <span className="font-brand text-xs font-semibold text-brand-primary block mb-1">Rinde</span>
+            <span className="font-brand text-xs font-semibold text-brand-primary block mb-1"><T>Rinde</T></span>
             <input value={yieldQty} onChange={(e) => setYieldQty(e.target.value)} type="number" min={0} step="any" className="w-24 border border-gray-200 rounded-xl px-3 py-2 font-brand text-sm" />
           </label>
         </div>
@@ -106,15 +109,15 @@ export default function ProductionManager({ items, uoms, boms, orders }: { items
               {comps.length > 1 && <button onClick={() => setComps((cs) => cs.filter((_, j) => j !== i))} className="text-red-500 px-2">×</button>}
             </div>
           ))}
-          <button onClick={() => setComps((cs) => [...cs, { component_stock_item_id: '', qty: '', uom_id: '' }])} className="font-brand text-sm text-brand-primary underline">+ Componente</button>
+          <button onClick={() => setComps((cs) => [...cs, { component_stock_item_id: '', qty: '', uom_id: '' }])} className="font-brand text-sm text-brand-primary underline"><T>+ Componente</T></button>
         </div>
-        <button onClick={createBom} disabled={busy} className="rounded-full bg-brand-primary text-brand-cream px-5 py-2 font-brand text-sm font-medium hover:bg-brand-dark disabled:opacity-50">Guardar receta</button>
+        <button onClick={createBom} disabled={busy} className="rounded-full bg-brand-primary text-brand-cream px-5 py-2 font-brand text-sm font-medium hover:bg-brand-dark disabled:opacity-50"><T>Guardar receta</T></button>
       </div>
 
       {/* Recetas existentes */}
       {boms.length > 0 && (
         <div className="bg-white rounded-2xl p-5 shadow-sm">
-          <h3 className="font-display text-brand-primary mb-2">Recetas</h3>
+          <h3 className="font-display text-brand-primary mb-2"><T>Recetas</T></h3>
           <ul className="space-y-1 font-brand text-sm">
             {boms.map((b) => <li key={b.id} className="text-brand-primary/70">{b.output} · {POLICY_LABEL[b.policy] ?? b.policy} · rinde {fmt(b.yield_qty)}</li>)}
           </ul>
@@ -124,17 +127,17 @@ export default function ProductionManager({ items, uoms, boms, orders }: { items
       {/* Nueva orden */}
       <div className="bg-white rounded-2xl p-5 shadow-sm flex flex-wrap items-end gap-3">
         <label>
-          <span className="font-brand text-xs font-semibold text-brand-primary block mb-1">Producir</span>
+          <span className="font-brand text-xs font-semibold text-brand-primary block mb-1"><T>Producir</T></span>
           <select value={orderOutput} onChange={(e) => setOrderOutput(e.target.value === '' ? '' : Number(e.target.value))} className="border border-gray-200 rounded-xl px-3 py-2 font-brand text-sm">
             <option value="">—</option>
             {items.map((it) => <option key={it.id} value={it.id}>{it.name}</option>)}
           </select>
         </label>
         <label>
-          <span className="font-brand text-xs font-semibold text-brand-primary block mb-1">Cantidad</span>
+          <span className="font-brand text-xs font-semibold text-brand-primary block mb-1"><T>Cantidad</T></span>
           <input value={plannedQty} onChange={(e) => setPlannedQty(e.target.value)} type="number" min={0} step="any" className="w-28 border border-gray-200 rounded-xl px-3 py-2 font-brand text-sm" />
         </label>
-        <button onClick={createOrder} disabled={busy} className="rounded-full border border-brand-primary text-brand-primary px-4 py-2 font-brand text-sm hover:bg-brand-primary hover:text-brand-cream disabled:opacity-50">Crear orden</button>
+        <button onClick={createOrder} disabled={busy} className="rounded-full border border-brand-primary text-brand-primary px-4 py-2 font-brand text-sm hover:bg-brand-primary hover:text-brand-cream disabled:opacity-50"><T>Crear orden</T></button>
         {error && <p className="font-brand text-sm text-red-600 w-full">{error}</p>}
       </div>
 
@@ -143,15 +146,15 @@ export default function ProductionManager({ items, uoms, boms, orders }: { items
         <table className="w-full text-sm font-brand">
           <thead className="bg-slate-50 text-brand-primary/60 text-xs uppercase">
             <tr>
-              <th className="text-left px-4 py-3">Producto</th>
-              <th className="text-right px-4 py-3">Planificado</th>
-              <th className="text-right px-4 py-3">Producido</th>
-              <th className="text-left px-4 py-3">Estado</th>
-              <th className="text-right px-4 py-3">Acción</th>
+              <th className="text-left px-4 py-3"><T>Producto</T></th>
+              <th className="text-right px-4 py-3"><T>Planificado</T></th>
+              <th className="text-right px-4 py-3"><T>Producido</T></th>
+              <th className="text-left px-4 py-3"><T>Estado</T></th>
+              <th className="text-right px-4 py-3"><T>Acción</T></th>
             </tr>
           </thead>
           <tbody>
-            {orders.length === 0 && <tr><td colSpan={5} className="px-4 py-8 text-center text-brand-primary/40">Sin órdenes.</td></tr>}
+            {orders.length === 0 && <tr><td colSpan={5} className="px-4 py-8 text-center text-brand-primary/40"><T>Sin órdenes.</T></td></tr>}
             {orders.map((o) => (
               <tr key={o.id} className="border-t border-gray-100">
                 <td className="px-4 py-3">{o.output}</td>
@@ -160,7 +163,7 @@ export default function ProductionManager({ items, uoms, boms, orders }: { items
                 <td className="px-4 py-3">{STATUS_LABEL[o.status] ?? o.status}</td>
                 <td className="px-4 py-3 text-right">
                   {o.status === 'draft'
-                    ? <button onClick={() => complete(o.id)} disabled={busy} className="rounded-full bg-green-600 text-white px-3 py-1.5 text-xs font-brand hover:bg-green-700 disabled:opacity-50">Completar</button>
+                    ? <button onClick={() => complete(o.id)} disabled={busy} className="rounded-full bg-green-600 text-white px-3 py-1.5 text-xs font-brand hover:bg-green-700 disabled:opacity-50"><T>Completar</T></button>
                     : <span className="text-brand-primary/30 text-xs">—</span>}
                 </td>
               </tr>

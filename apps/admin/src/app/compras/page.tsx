@@ -8,12 +8,14 @@ import { FEATURES as FLAGS } from '@/lib/features'
 import { getTenantEntitlements } from '@/lib/entitlements'
 import { resolveFeature, FEATURES } from '@merkiai/tenancy'
 import PurchasesManager from './PurchasesManager'
+import { getAdminTx } from '@/lib/ui-locale'
 
 export const metadata: Metadata = { title: 'Compras' }
 export const dynamic = 'force-dynamic'
 
 /** E24 · Compras / proveedores (HU-402). Recibir una compra ingresa stock con costo. */
 export default async function ComprasPage() {
+  const tx = await getAdminTx()
   const { adminUser, db } = await requireAdminDb()
   if (!userCanAccess(adminUser, 'productos')) redirect('/no-autorizado')
   const { entitlements } = await getTenantEntitlements().catch(() => ({ entitlements: null }))
@@ -38,7 +40,7 @@ export default async function ComprasPage() {
   return (
     <div className="space-y-6">
       <div className="flex items-start justify-between gap-4 flex-wrap">
-        <PageHeader title="Compras" description="Registra compras y recíbelas para que la mercancía entre al inventario con su costo." />
+        <PageHeader title={tx("Compras")} description="Registra compras y recíbelas para que la mercancía entre al inventario con su costo." />
         <a href="/api/admin/operations/export?type=purchases" className="rounded-full border border-gray-200 text-brand-primary px-4 py-2 font-brand text-sm hover:bg-slate-50 whitespace-nowrap mt-1">Exportar (CSV)</a>
       </div>
       <PurchasesManager

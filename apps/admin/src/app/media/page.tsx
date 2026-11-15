@@ -5,11 +5,14 @@ import MediaClient from './MediaClient'
 import { getStorageUsage } from '@merkiai/database'
 import { getTenantEntitlements, resolveLimit, LIMITS } from '@/lib/entitlements'
 import { formatNumber } from '@merkiai/i18n'
+import { T } from '@merkiai/ui'
+import { getAdminTx } from '@/lib/ui-locale'
 
 export const metadata: Metadata = { title: 'Media' }
 export const dynamic = 'force-dynamic'
 
 export default async function MediaPage() {
+  const tx = await getAdminTx()
   const { db: supabase, adminUser } = await requireAdminDb()
   const tenantId = adminUser.tenantId
   const [{ data }, usage, ent] = await Promise.all([
@@ -26,17 +29,17 @@ export default async function MediaPage() {
   return (
     <div className="space-y-2">
       <div className="mb-6">
-        <PageHeader title="Archivos" description="Imágenes y archivos subidos al almacenamiento." />
+        <PageHeader title={tx("Archivos")} description="Imágenes y archivos subidos al almacenamiento." />
       </div>
 
       {usedMb != null && (
         <div className="mb-4 rounded-xl border border-gray-200 bg-white p-4 font-brand text-sm text-brand-primary">
           <div className="flex justify-between">
-            <span>Almacenamiento usado</span>
+            <span><T>Almacenamiento usado</T></span>
             <span className="text-brand-primary/70">{fmt(usedMb)} MB{limitMb != null ? ` de ${fmt(limitMb)} MB` : ' (sin límite en tu plan)'}</span>
           </div>
           {pct != null && (
-            <div className="mt-2 h-2 rounded-full bg-gray-100" role="progressbar" aria-valuenow={pct} aria-valuemin={0} aria-valuemax={100} aria-label="Uso de almacenamiento">
+            <div className="mt-2 h-2 rounded-full bg-gray-100" role="progressbar" aria-valuenow={pct} aria-valuemin={0} aria-valuemax={100} aria-label={tx("Uso de almacenamiento")}>
               <div className={`h-2 rounded-full ${pct >= 90 ? 'bg-red-500' : pct >= 75 ? 'bg-amber-500' : 'bg-brand-primary'}`} style={{ width: `${pct}%` }} />
             </div>
           )}

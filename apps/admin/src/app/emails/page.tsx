@@ -5,6 +5,8 @@ import { listEmailLog } from '@merkiai/database'
 import { requireAdminDb } from '@/lib/admin-context'
 import { userCanManageData } from '@/lib/roles'
 import { formatDateTime } from '@merkiai/i18n'
+import { T } from '@merkiai/ui'
+import { getAdminTx } from '@/lib/ui-locale'
 
 export const metadata: Metadata = { title: 'Correos' }
 export const dynamic = 'force-dynamic'
@@ -27,6 +29,7 @@ const fmt = (s: string) => formatDateTime(s, { day: 'numeric', month: 'short', y
  * de datos (admin/super_admin). RLS por tenant.
  */
 export default async function EmailsPage({ searchParams }: { searchParams: Promise<Record<string, string | undefined>> }) {
+  const tx = await getAdminTx()
   const { adminUser, db } = await requireAdminDb()
   if (!userCanManageData(adminUser)) redirect('/no-autorizado')
 
@@ -39,23 +42,23 @@ export default async function EmailsPage({ searchParams }: { searchParams: Promi
 
   return (
     <div className="space-y-6">
-      <PageHeader title="Correos" description="Registro de correos transaccionales enviados y sus fallos (trazabilidad y soporte)." />
+      <PageHeader title={tx("Correos")} description="Registro de correos transaccionales enviados y sus fallos (trazabilidad y soporte)." />
 
       <div className="bg-white rounded-2xl shadow-sm overflow-hidden overflow-x-auto">
         <table className="w-full min-w-[720px] text-sm">
           <thead>
             <tr className="bg-gray-50 text-left font-brand text-xs text-brand-primary/50">
-              <th className="px-4 py-3">Fecha</th>
-              <th className="px-4 py-3">Tipo</th>
-              <th className="px-4 py-3">Destinatario</th>
-              <th className="px-4 py-3">Referencia</th>
-              <th className="px-4 py-3">Estado</th>
-              <th className="px-4 py-3">Detalle</th>
+              <th className="px-4 py-3"><T>Fecha</T></th>
+              <th className="px-4 py-3"><T>Tipo</T></th>
+              <th className="px-4 py-3"><T>Destinatario</T></th>
+              <th className="px-4 py-3"><T>Referencia</T></th>
+              <th className="px-4 py-3"><T>Estado</T></th>
+              <th className="px-4 py-3"><T>Detalle</T></th>
             </tr>
           </thead>
           <tbody>
             {entries.length === 0 ? (
-              <tr><td colSpan={6} className="px-4 py-10 text-center font-brand text-brand-primary/40">Sin correos registrados.</td></tr>
+              <tr><td colSpan={6} className="px-4 py-10 text-center font-brand text-brand-primary/40"><T>Sin correos registrados.</T></td></tr>
             ) : entries.map((e) => (
               <tr key={e.id} className="border-t border-gray-100">
                 <td className="px-4 py-3 font-brand text-brand-primary/60 whitespace-nowrap">{fmt(e.created_at)}</td>
@@ -72,9 +75,9 @@ export default async function EmailsPage({ searchParams }: { searchParams: Promi
 
       {pages > 1 && (
         <div className="flex items-center justify-center gap-4 font-brand text-sm">
-          {page > 1 && <a href={`/emails?page=${page - 1}${type ? `&type=${type}` : ''}`} className="text-brand-primary hover:underline">← Anterior</a>}
+          {page > 1 && <a href={`/emails?page=${page - 1}${type ? `&type=${type}` : ''}`} className="text-brand-primary hover:underline"><T>← Anterior</T></a>}
           <span className="text-brand-primary/50">Página {page} de {pages}</span>
-          {page < pages && <a href={`/emails?page=${page + 1}${type ? `&type=${type}` : ''}`} className="text-brand-primary hover:underline">Siguiente →</a>}
+          {page < pages && <a href={`/emails?page=${page + 1}${type ? `&type=${type}` : ''}`} className="text-brand-primary hover:underline"><T>Siguiente →</T></a>}
         </div>
       )}
     </div>

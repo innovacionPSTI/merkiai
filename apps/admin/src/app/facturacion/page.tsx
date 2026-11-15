@@ -5,6 +5,8 @@ import { getAdminUser } from '@/lib/auth'
 import { billingView, canManageBilling, getBillingSummary, FEE_STATUS_LABEL, type BillingTone } from '@/lib/billing'
 import PayzenCheckout from './PayzenCheckout'
 import { formatMoney, formatDate } from '@merkiai/i18n'
+import { T } from '@merkiai/ui'
+import { getAdminTx } from '@/lib/ui-locale'
 
 export const metadata: Metadata = { title: 'Plan y facturación' }
 export const dynamic = 'force-dynamic'
@@ -22,6 +24,7 @@ const date = (iso: string) =>
   formatDate(iso, { dateStyle: 'medium', timeZone: 'America/Bogota' })
 
 export default async function FacturacionPage({ searchParams }: { searchParams: Promise<{ pago?: string }> }) {
+  const tx = await getAdminTx()
   const adminUser = await getAdminUser()
   if (!adminUser || !canManageBilling(adminUser.role)) redirect('/no-autorizado')
   const { pago } = await searchParams
@@ -31,11 +34,11 @@ export default async function FacturacionPage({ searchParams }: { searchParams: 
   return (
     <div className="max-w-3xl">
       <div className="mb-8">
-        <PageHeader title="Plan y facturación" description="Tu plan de Merkiai, el estado del cobro y tu medio de pago." />
+        <PageHeader title={tx("Plan y facturación")} description="Tu plan de Merkiai, el estado del cobro y tu medio de pago." />
       </div>
 
       {!summary ? (
-        <p className="font-brand text-sm text-brand-primary/60">No pudimos consultar tu facturación en este momento. Intenta de nuevo en unos minutos.</p>
+        <p className="font-brand text-sm text-brand-primary/60"><T>No pudimos consultar tu facturación en este momento. Intenta de nuevo en unos minutos.</T></p>
       ) : (() => {
         const view = billingView(summary)
         const sub = summary.subscription
@@ -43,7 +46,7 @@ export default async function FacturacionPage({ searchParams }: { searchParams: 
           <div className="space-y-6">
             {pago === 'procesando' && (
               <div role="status" className="rounded-xl border border-sky-200 bg-sky-50 p-4 font-brand text-sm text-sky-800">
-                Recibimos tu pago y lo estamos confirmando. En unos segundos verás el estado actualizado (recarga la página) y te llegará un correo.
+                <T>Recibimos tu pago y lo estamos confirmando. En unos segundos verás el estado actualizado (recarga la página) y te llegará un correo.</T>
               </div>
             )}
 
@@ -54,7 +57,7 @@ export default async function FacturacionPage({ searchParams }: { searchParams: 
               </p>
               <h2 className="font-display text-2xl mt-1">{view.title}</h2>
               <p className="font-brand text-sm mt-2 leading-relaxed">{view.message}</p>
-              {sub?.hasPaymentMethod && <p className="font-brand text-xs mt-3 opacity-70">Tarjeta registrada ✓</p>}
+              {sub?.hasPaymentMethod && <p className="font-brand text-xs mt-3 opacity-70"><T>Tarjeta registrada ✓</T></p>}
             </section>
 
             {view.cta && (
@@ -62,15 +65,15 @@ export default async function FacturacionPage({ searchParams }: { searchParams: 
                 {summary.billingEnabled ? (
                   <PayzenCheckout cta={view.cta} defaultInterval={sub?.interval ?? 'monthly'} />
                 ) : (
-                  <p className="font-brand text-sm text-brand-primary/60">El pago en línea aún no está habilitado. Escríbenos para regularizar tu plan.</p>
+                  <p className="font-brand text-sm text-brand-primary/60"><T>El pago en línea aún no está habilitado. Escríbenos para regularizar tu plan.</T></p>
                 )}
               </section>
             )}
 
             {(summary.feeInvoices?.length ?? 0) > 0 && (
               <section className="rounded-2xl border border-gray-200 bg-white p-6">
-                <h3 className="font-display text-lg text-brand-primary mb-1">Comisiones de Merkiai Pagos</h3>
-                <p className="font-brand text-xs text-brand-primary/50 mb-3">Se cobran el mes siguiente con la tarjeta de tu plan.</p>
+                <h3 className="font-display text-lg text-brand-primary mb-1"><T>Comisiones de Merkiai Pagos</T></h3>
+                <p className="font-brand text-xs text-brand-primary/50 mb-3"><T>Se cobran el mes siguiente con la tarjeta de tu plan.</T></p>
                 <ul className="divide-y divide-gray-100">
                   {summary.feeInvoices!.map((f) => (
                     <li key={f.period} className="flex justify-between py-2 font-brand text-sm text-brand-primary">
@@ -84,7 +87,7 @@ export default async function FacturacionPage({ searchParams }: { searchParams: 
 
             {summary.events.length > 0 && (
               <section className="rounded-2xl border border-gray-200 bg-white p-6">
-                <h3 className="font-display text-lg text-brand-primary mb-3">Historial de cobros</h3>
+                <h3 className="font-display text-lg text-brand-primary mb-3"><T>Historial de cobros</T></h3>
                 <ul className="divide-y divide-gray-100">
                   {summary.events.map((e, i) => (
                     <li key={i} className="flex justify-between py-2 font-brand text-sm text-brand-primary">

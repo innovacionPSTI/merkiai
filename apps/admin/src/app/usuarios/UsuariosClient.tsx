@@ -5,6 +5,8 @@ import { PageHeader, Icon } from '@merkiai/ui'
 import { ASSIGNABLE_ROLES, ROLE_LABELS } from '@/lib/roles'
 import type { AssignableRole } from '@/lib/roles'
 import { formatDate } from '@merkiai/i18n'
+import { T } from '@merkiai/ui'
+import { useTx } from '@merkiai/ui'
 
 interface UserProfile {
   id: string
@@ -20,6 +22,7 @@ interface Props {
 }
 
 export default function UsuariosClient({ users: initialUsers, currentUserEmail }: Props) {
+  const tx = useTx()
   const [users, setUsers] = useState(initialUsers)
   const [showInvite, setShowInvite] = useState(false)
   const [invite, setInvite] = useState({ email: '', full_name: '' })
@@ -106,14 +109,14 @@ export default function UsuariosClient({ users: initialUsers, currentUserEmail }
     <div className="space-y-6">
       {/* Header */}
       <PageHeader
-        title="Usuarios del sistema"
+        title={tx("Usuarios del sistema")}
         description="Gestiona quién tiene acceso al panel y qué puede hacer."
         action={
           <button
             onClick={() => { setShowInvite(true); setInviteMsg(null) }}
             className="font-brand text-sm bg-brand-primary text-brand-cream px-4 py-2.5 rounded-xl hover:bg-brand-dark transition-colors flex items-center gap-2"
           >
-            <Icon name="plus" size={16} /> Agregar usuario
+            <Icon name="plus" size={16} /> <T>Agregar usuario</T>
           </button>
         }
       />
@@ -149,12 +152,12 @@ export default function UsuariosClient({ users: initialUsers, currentUserEmail }
         <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50 p-4">
           <div className="bg-white rounded-2xl p-6 w-full max-w-md shadow-xl">
             <h2 className="font-brand font-semibold text-brand-primary text-lg mb-5">
-              Agregar usuario al admin
+              <T>Agregar usuario al admin</T>
             </h2>
             <div className="space-y-4">
               <div>
                 <label className="font-brand text-xs text-brand-primary/50 uppercase tracking-wide block mb-1.5">
-                  Email *
+                  <T>Email *</T>
                 </label>
                 <input
                   type="email"
@@ -166,13 +169,13 @@ export default function UsuariosClient({ users: initialUsers, currentUserEmail }
               </div>
               <div>
                 <label className="font-brand text-xs text-brand-primary/50 uppercase tracking-wide block mb-1.5">
-                  Nombre completo
+                  <T>Nombre completo</T>
                 </label>
                 <input
                   type="text"
                   value={invite.full_name}
                   onChange={(e) => setInvite({ ...invite, full_name: e.target.value })}
-                  placeholder="Juan García"
+                  placeholder={tx("Nombre y apellido")}
                   className="w-full border border-gray-200 rounded-xl px-4 py-2.5 font-brand text-sm focus:outline-none focus:border-brand-primary"
                 />
               </div>
@@ -180,10 +183,10 @@ export default function UsuariosClient({ users: initialUsers, currentUserEmail }
               {/* Explicación del flujo */}
               <div className="bg-amber-50 rounded-xl p-3 space-y-1.5">
                 <p className="font-brand text-xs font-semibold text-amber-800">
-                  El usuario se crea con rol <span className="font-bold">Miembro</span> (sin acceso).
+                  <T>El usuario se crea con rol</T> <span className="font-bold"><T>Miembro</T></span> (sin acceso).
                 </p>
                 <p className="font-brand text-xs text-amber-700">
-                  Recibirá un correo para establecer su contraseña. Después asígnale un rol desde la tabla.
+                  <T>Recibirá un correo para establecer su contraseña. Después asígnale un rol desde la tabla.</T>
                 </p>
               </div>
 
@@ -199,7 +202,7 @@ export default function UsuariosClient({ users: initialUsers, currentUserEmail }
                   onClick={() => { setShowInvite(false); setInviteMsg(null) }}
                   className="flex-1 border border-gray-200 text-brand-primary rounded-full py-2.5 font-brand text-sm hover:bg-gray-50 transition-colors"
                 >
-                  Cancelar
+                  <T>Cancelar</T>
                 </button>
               </div>
             </div>
@@ -213,13 +216,13 @@ export default function UsuariosClient({ users: initialUsers, currentUserEmail }
           <thead>
             <tr className="border-b border-gray-100">
               <th className="font-brand text-xs text-brand-primary/40 text-left px-6 py-4 uppercase tracking-wide">
-                Usuario
+                <T>Usuario</T>
               </th>
               <th className="font-brand text-xs text-brand-primary/40 text-left px-6 py-4 uppercase tracking-wide">
-                Rol
+                <T>Rol</T>
               </th>
               <th className="font-brand text-xs text-brand-primary/40 text-left px-6 py-4 uppercase tracking-wide">
-                Desde
+                <T>Desde</T>
               </th>
               <th className="px-6 py-4" />
             </tr>
@@ -247,7 +250,7 @@ export default function UsuariosClient({ users: initialUsers, currentUserEmail }
                         </div>
                         {isPending && (
                           <span className="font-brand text-xs text-amber-600 bg-amber-50 px-2 py-0.5 rounded-full ml-1">
-                            pendiente
+                            <T>pendiente</T>
                           </span>
                         )}
                       </div>
@@ -307,7 +310,7 @@ export default function UsuariosClient({ users: initialUsers, currentUserEmail }
                   colSpan={4}
                   className="px-6 py-16 text-center font-brand text-sm text-brand-primary/30"
                 >
-                  No hay usuarios registrados. Agrega el primero con el botón de arriba.
+                  <T>No hay usuarios registrados. Agrega el primero con el botón de arriba.</T>
                 </td>
               </tr>
             )}
@@ -317,7 +320,7 @@ export default function UsuariosClient({ users: initialUsers, currentUserEmail }
 
       {/* Info de permisos por rol */}
       <div className="bg-white rounded-2xl shadow-sm p-6">
-        <h3 className="font-brand font-semibold text-brand-primary mb-4">Permisos por rol</h3>
+        <h3 className="font-brand font-semibold text-brand-primary mb-4"><T>Permisos por rol</T></h3>
         <div className="grid grid-cols-1 sm:grid-cols-4 gap-4">
           {(
             [

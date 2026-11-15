@@ -8,6 +8,7 @@ import { FEATURES as FLAGS } from '@/lib/features'
 import { getTenantEntitlements } from '@/lib/entitlements'
 import { resolveFeature, FEATURES } from '@merkiai/tenancy'
 import InventoryManager from './InventoryManager'
+import { getAdminTx } from '@/lib/ui-locale'
 
 export const metadata: Metadata = { title: 'Inventario' }
 export const dynamic = 'force-dynamic'
@@ -19,6 +20,7 @@ export const dynamic = 'force-dynamic'
  * sección "productos".
  */
 export default async function InventarioPage() {
+  const tx = await getAdminTx()
   const { adminUser, db } = await requireAdminDb()
   if (!userCanAccess(adminUser, 'productos')) redirect('/no-autorizado')
 
@@ -48,7 +50,7 @@ export default async function InventarioPage() {
   return (
     <div className="space-y-6">
       <PageHeader
-        title="Inventario"
+        title={tx("Inventario")}
         description="Ítems de inventario con su disponible, costo y unidad de medida. El disponible proviene del libro de movimientos."
       />
       <InventoryManager initial={rows} uoms={uomOptions} />

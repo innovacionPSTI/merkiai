@@ -5,6 +5,8 @@ import { listAudit } from '@merkiai/database'
 import { requireAdminDb } from '@/lib/admin-context'
 import { userCanManageData } from '@/lib/roles'
 import { formatDateTime } from '@merkiai/i18n'
+import { T } from '@merkiai/ui'
+import { getAdminTx } from '@/lib/ui-locale'
 
 export const metadata: Metadata = { title: 'Auditoría' }
 export const dynamic = 'force-dynamic'
@@ -35,6 +37,7 @@ export default async function AuditoriaPage({
 }: {
   searchParams: Promise<Record<string, string | undefined>>
 }) {
+  const tx = await getAdminTx()
   const { adminUser, db } = await requireAdminDb()
   if (!userCanManageData(adminUser)) redirect('/no-autorizado')
 
@@ -47,22 +50,22 @@ export default async function AuditoriaPage({
 
   return (
     <div className="space-y-6">
-      <PageHeader title="Auditoría" description="Registro de operaciones sensibles del panel (quién hizo qué y cuándo)." />
+      <PageHeader title={tx("Auditoría")} description="Registro de operaciones sensibles del panel (quién hizo qué y cuándo)." />
 
       <div className="bg-white rounded-2xl shadow-sm overflow-hidden overflow-x-auto">
         <table className="w-full min-w-[720px] text-sm">
           <thead>
             <tr className="bg-gray-50 text-left font-brand text-xs text-brand-primary/50">
-              <th className="px-4 py-3">Fecha</th>
-              <th className="px-4 py-3">Acción</th>
-              <th className="px-4 py-3">Entidad</th>
-              <th className="px-4 py-3">Detalle</th>
-              <th className="px-4 py-3">Usuario</th>
+              <th className="px-4 py-3"><T>Fecha</T></th>
+              <th className="px-4 py-3"><T>Acción</T></th>
+              <th className="px-4 py-3"><T>Entidad</T></th>
+              <th className="px-4 py-3"><T>Detalle</T></th>
+              <th className="px-4 py-3"><T>Usuario</T></th>
             </tr>
           </thead>
           <tbody>
             {entries.length === 0 ? (
-              <tr><td colSpan={5} className="px-4 py-10 text-center font-brand text-brand-primary/40">Sin eventos registrados.</td></tr>
+              <tr><td colSpan={5} className="px-4 py-10 text-center font-brand text-brand-primary/40"><T>Sin eventos registrados.</T></td></tr>
             ) : entries.map((e) => (
               <tr key={e.id} className="border-t border-gray-100">
                 <td className="px-4 py-3 font-brand text-brand-primary/60 whitespace-nowrap">{fmt(e.created_at)}</td>
@@ -78,9 +81,9 @@ export default async function AuditoriaPage({
 
       {pages > 1 && (
         <div className="flex items-center justify-center gap-4 font-brand text-sm">
-          {page > 1 && <a href={`/auditoria?page=${page - 1}${action ? `&action=${action}` : ''}`} className="text-brand-primary hover:underline">← Anterior</a>}
+          {page > 1 && <a href={`/auditoria?page=${page - 1}${action ? `&action=${action}` : ''}`} className="text-brand-primary hover:underline"><T>← Anterior</T></a>}
           <span className="text-brand-primary/50">Página {page} de {pages}</span>
-          {page < pages && <a href={`/auditoria?page=${page + 1}${action ? `&action=${action}` : ''}`} className="text-brand-primary hover:underline">Siguiente →</a>}
+          {page < pages && <a href={`/auditoria?page=${page + 1}${action ? `&action=${action}` : ''}`} className="text-brand-primary hover:underline"><T>Siguiente →</T></a>}
         </div>
       )}
     </div>

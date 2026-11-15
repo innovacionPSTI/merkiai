@@ -2,6 +2,7 @@
 
 import { useState, useTransition } from 'react'
 import { sendStatementAction } from '../../actions'
+import { T } from '@merkiai/ui'
 
 /** Imprimir / PDF (diálogo del navegador) y enviar el estado de cuenta por correo. */
 export default function PrintButton({ partyId, hasEmail }: { partyId?: string; hasEmail?: boolean }) {
@@ -10,7 +11,7 @@ export default function PrintButton({ partyId, hasEmail }: { partyId?: string; h
   return (
     <div className="mt-2 flex flex-col items-end gap-1 print:hidden">
       <div className="flex gap-2">
-        <button type="button" onClick={() => window.print()} className="rounded-full border border-gray-200 px-4 py-1.5 font-brand text-xs text-brand-primary hover:border-brand-primary">Imprimir / PDF</button>
+        <button type="button" onClick={() => window.print()} className="rounded-full border border-gray-200 px-4 py-1.5 font-brand text-xs text-brand-primary hover:border-brand-primary"><T>Imprimir / PDF</T></button>
         {partyId && hasEmail && (
           <button type="button" disabled={pending} onClick={() => start(async () => { const r = await sendStatementAction(partyId); setMsg(r.ok ? { ok: true, text: r.message ?? 'Enviado.' } : { ok: false, text: r.error }) })}
             className="rounded-full border border-gray-200 px-4 py-1.5 font-brand text-xs text-brand-primary hover:border-brand-primary disabled:opacity-50">{pending ? 'Enviando…' : 'Enviar por correo'}</button>

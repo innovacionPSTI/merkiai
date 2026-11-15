@@ -5,6 +5,7 @@ import { getReceivableDetail, listLocations, getReceivablesSettings, MODALITY_LA
 import { requireCartera, money, PAYMENT_STATUS_LABEL, PAYMENT_STATUS_STYLE, DELIVERY_STATUS_LABEL, METHOD_LABEL, MOVEMENT_LABEL } from '@/lib/cartera'
 import PaymentForm from '../PaymentForm'
 import DocumentActions from './DocumentActions'
+import { T } from '@merkiai/ui'
 
 export const metadata: Metadata = { title: 'Documento · Cartera' }
 export const dynamic = 'force-dynamic'
@@ -24,7 +25,7 @@ export default async function DocumentoPage({ params }: { params: Promise<{ id: 
     <div className="space-y-5 max-w-5xl">
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div>
-          <Link href="/cartera" className="font-brand text-xs text-brand-primary/60 hover:underline">← Cartera</Link>
+          <Link href="/cartera" className="font-brand text-xs text-brand-primary/60 hover:underline"><T>← Cartera</T></Link>
           <h1 className="font-display text-2xl text-brand-primary">{doc.number} · {MODALITY_LABEL[doc.modality]}</h1>
           <p className="font-brand text-sm text-brand-primary/70">
             {party ? <Link href={`/cartera/contrapartes/${party.id}`} className="underline">{party.name ?? party.email}</Link> : '—'} · creado {doc.created_at.slice(0, 10)}
@@ -39,17 +40,17 @@ export default async function DocumentoPage({ params }: { params: Promise<{ id: 
       </div>
 
       <div className="grid grid-cols-3 gap-3">
-        <div className="rounded-2xl border border-gray-200 bg-white p-4"><p className="font-brand text-xs text-brand-primary/60">Total cargado</p><p className="font-display text-xl text-brand-primary">{money(balance.charged)}</p></div>
-        <div className="rounded-2xl border border-gray-200 bg-white p-4"><p className="font-brand text-xs text-brand-primary/60">Abonado y descontado</p><p className="font-display text-xl text-brand-primary">{money(balance.credited)}</p></div>
-        <div className="rounded-2xl border border-gray-200 bg-white p-4"><p className="font-brand text-xs text-brand-primary/60">Saldo</p><p className={`font-display text-xl ${balance.balance > 0 ? 'text-red-600' : 'text-green-700'}`}>{money(balance.balance)}</p></div>
+        <div className="rounded-2xl border border-gray-200 bg-white p-4"><p className="font-brand text-xs text-brand-primary/60"><T>Total cargado</T></p><p className="font-display text-xl text-brand-primary">{money(balance.charged)}</p></div>
+        <div className="rounded-2xl border border-gray-200 bg-white p-4"><p className="font-brand text-xs text-brand-primary/60"><T>Abonado y descontado</T></p><p className="font-display text-xl text-brand-primary">{money(balance.credited)}</p></div>
+        <div className="rounded-2xl border border-gray-200 bg-white p-4"><p className="font-brand text-xs text-brand-primary/60"><T>Saldo</T></p><p className={`font-display text-xl ${balance.balance > 0 ? 'text-red-600' : 'text-green-700'}`}>{money(balance.balance)}</p></div>
       </div>
 
       <section className="rounded-2xl border border-gray-200 bg-white p-5">
-        <h2 className="font-brand text-sm font-semibold text-brand-primary mb-3">Detalle</h2>
+        <h2 className="font-brand text-sm font-semibold text-brand-primary mb-3"><T>Detalle</T></h2>
         <table className="w-full font-brand text-sm">
           <thead className="text-left text-xs text-brand-primary/50"><tr>
-            <th className="py-1">Descripción</th><th className="py-1 text-right">Cant.</th><th className="py-1 text-right">Precio</th><th className="py-1 text-right">Total</th>
-            {consign ? <><th className="py-1 text-right">Vendido</th><th className="py-1 text-right">Devuelto</th><th className="py-1 text-right">En poder del aliado</th></> : <th className="py-1 text-right">Entregado</th>}
+            <th className="py-1"><T>Descripción</T></th><th className="py-1 text-right"><T>Cant.</T></th><th className="py-1 text-right"><T>Precio</T></th><th className="py-1 text-right"><T>Total</T></th>
+            {consign ? <><th className="py-1 text-right"><T>Vendido</T></th><th className="py-1 text-right"><T>Devuelto</T></th><th className="py-1 text-right"><T>En poder del aliado</T></th></> : <th className="py-1 text-right"><T>Entregado</T></th>}
           </tr></thead>
           <tbody>
             {lines.map((l, i) => (
@@ -78,15 +79,15 @@ export default async function DocumentoPage({ params }: { params: Promise<{ id: 
 
       {installments.length > 0 && (
         <section className="rounded-2xl border border-gray-200 bg-white p-5">
-          <h2 className="font-brand text-sm font-semibold text-brand-primary mb-3">Cuotas</h2>
+          <h2 className="font-brand text-sm font-semibold text-brand-primary mb-3"><T>Cuotas</T></h2>
           <table className="w-full font-brand text-sm">
-            <thead className="text-left text-xs text-brand-primary/50"><tr><th className="py-1">#</th><th className="py-1">Vence</th><th className="py-1 text-right">Valor</th><th className="py-1 text-right">Pagado</th><th className="py-1 text-right">Pendiente</th><th className="py-1">Estado</th></tr></thead>
+            <thead className="text-left text-xs text-brand-primary/50"><tr><th className="py-1">#</th><th className="py-1"><T>Vence</T></th><th className="py-1 text-right"><T>Valor</T></th><th className="py-1 text-right"><T>Pagado</T></th><th className="py-1 text-right"><T>Pendiente</T></th><th className="py-1"><T>Estado</T></th></tr></thead>
             <tbody>
               {installments.map((i) => (
                 <tr key={i.seq} className="border-t border-gray-50">
                   <td className="py-1.5">{i.seq}</td><td className="py-1.5">{i.due_date}</td>
                   <td className="py-1.5 text-right">{money(i.amount)}</td><td className="py-1.5 text-right">{money(i.paid)}</td><td className="py-1.5 text-right">{money(i.pending)}</td>
-                  <td className="py-1.5">{i.pending === 0 ? <span className="text-green-700">Pagada</span> : i.overdue ? <span className="text-red-600">Vencida</span> : 'Pendiente'}</td>
+                  <td className="py-1.5">{i.pending === 0 ? <span className="text-green-700"><T>Pagada</T></span> : i.overdue ? <span className="text-red-600"><T>Vencida</T></span> : 'Pendiente'}</td>
                 </tr>
               ))}
             </tbody>
@@ -96,16 +97,16 @@ export default async function DocumentoPage({ params }: { params: Promise<{ id: 
 
       {!closed && party && balance.balance > 0 && (
         <section className="rounded-2xl border border-gray-200 bg-white p-5">
-          <h2 className="font-brand text-sm font-semibold text-brand-primary mb-3">Registrar abono</h2>
+          <h2 className="font-brand text-sm font-semibold text-brand-primary mb-3"><T>Registrar abono</T></h2>
           <PaymentForm partyId={party.id} documentId={doc.id} lines={lines.map((l) => ({ id: l.id, description: l.description }))} suggested={installments.find((i) => i.pending > 0)?.pending} />
         </section>
       )}
 
       <section className="rounded-2xl border border-gray-200 bg-white p-5">
-        <h2 className="font-brand text-sm font-semibold text-brand-primary mb-3">Movimientos</h2>
-        {movements.length === 0 ? <p className="font-brand text-sm text-brand-primary/60">Sin movimientos.</p> : (
+        <h2 className="font-brand text-sm font-semibold text-brand-primary mb-3"><T>Movimientos</T></h2>
+        {movements.length === 0 ? <p className="font-brand text-sm text-brand-primary/60"><T>Sin movimientos.</T></p> : (
           <table className="w-full font-brand text-sm">
-            <thead className="text-left text-xs text-brand-primary/50"><tr><th className="py-1">Fecha</th><th className="py-1">Tipo</th><th className="py-1">Medio / detalle</th><th className="py-1 text-right">Valor</th></tr></thead>
+            <thead className="text-left text-xs text-brand-primary/50"><tr><th className="py-1"><T>Fecha</T></th><th className="py-1"><T>Tipo</T></th><th className="py-1"><T>Medio / detalle</T></th><th className="py-1 text-right"><T>Valor</T></th></tr></thead>
             <tbody>
               {movements.map((m) => (
                 <tr key={m.id} className="border-t border-gray-50">

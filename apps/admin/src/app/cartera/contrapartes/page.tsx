@@ -4,11 +4,13 @@ import { listParties, listLocations, listMarkets, marketCountries } from '@merki
 import { documentTypesFor } from '@merkiai/i18n'
 import { requireCartera } from '@/lib/cartera'
 import PartiesManager from './PartiesManager'
+import { getAdminTx } from '@/lib/ui-locale'
 
 export const metadata: Metadata = { title: 'Clientes y aliados · Cartera' }
 export const dynamic = 'force-dynamic'
 
 export default async function ContrapartesPage() {
+  const tx = await getAdminTx()
   const { db, tenantId, consignmentEnabled } = await requireCartera()
   const [parties, locations] = await Promise.all([
     listParties(db, { withBalance: true }).catch(() => []),
@@ -24,7 +26,7 @@ export default async function ContrapartesPage() {
   }
   return (
     <div className="space-y-6 max-w-5xl">
-      <PageHeader title="Clientes y aliados" description="A quién le vendes a crédito y a quién le dejas mercancía en consignación: cupo, plazo y saldo." />
+      <PageHeader title={tx("Clientes y aliados")} description="A quién le vendes a crédito y a quién le dejas mercancía en consignación: cupo, plazo y saldo." />
       <PartiesManager
         consignmentEnabled={consignmentEnabled}
         documentTypes={documentTypes}

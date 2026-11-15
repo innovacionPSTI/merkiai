@@ -6,11 +6,14 @@
  */
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
+import { T } from '@merkiai/ui'
+import { useTx } from '@merkiai/ui'
 
 interface Row { id: number; code: string; name: string; kind: string; city: string | null; is_default: boolean; active: boolean }
 const KIND_LABEL: Record<string, string> = { warehouse: 'Bodega', store: 'Tienda', pickup: 'Punto de retiro', consignment: 'Aliado (consignación)' }
 
 export default function LocationsManager({ locations: initial }: { locations: Row[] }) {
+  const tx = useTx()
   const router = useRouter()
   const [rows, setRows] = useState(initial)
   const [name, setName] = useState('')
@@ -27,7 +30,7 @@ export default function LocationsManager({ locations: initial }: { locations: Ro
   }
 
   async function create() {
-    if (!name.trim() || !code.trim()) { setError('Código y nombre son requeridos'); return }
+    if (!name.trim() || !code.trim()) { setError(tx("Código y nombre son requeridos")); return }
     setBusy(true); setError(null)
     try {
       const res = await fetch('/api/admin/locations', {
@@ -50,28 +53,28 @@ export default function LocationsManager({ locations: initial }: { locations: Ro
   return (
     <div className="space-y-6">
       <div className="bg-white rounded-2xl p-5 shadow-sm space-y-3">
-        <h2 className="font-display text-brand-primary text-lg">Nueva ubicación</h2>
+        <h2 className="font-display text-brand-primary text-lg"><T>Nueva ubicación</T></h2>
         <div className="flex flex-wrap items-end gap-3">
           <label className="flex-1 min-w-[160px]">
-            <span className="font-brand text-xs font-semibold text-brand-primary block mb-1">Nombre</span>
+            <span className="font-brand text-xs font-semibold text-brand-primary block mb-1"><T>Nombre</T></span>
             <input value={name} onChange={(e) => setName(e.target.value)} className="w-full border border-gray-200 rounded-xl px-3 py-2 font-brand text-sm" />
           </label>
           <label>
-            <span className="font-brand text-xs font-semibold text-brand-primary block mb-1">Código</span>
+            <span className="font-brand text-xs font-semibold text-brand-primary block mb-1"><T>Código</T></span>
             <input value={code} onChange={(e) => setCode(e.target.value)} placeholder="bod-01" className="w-32 border border-gray-200 rounded-xl px-3 py-2 font-brand text-sm" />
           </label>
           <label>
-            <span className="font-brand text-xs font-semibold text-brand-primary block mb-1">Tipo</span>
+            <span className="font-brand text-xs font-semibold text-brand-primary block mb-1"><T>Tipo</T></span>
             <select value={kind} onChange={(e) => setKind(e.target.value)} className="border border-gray-200 rounded-xl px-3 py-2 font-brand text-sm">
               {Object.entries(KIND_LABEL).filter(([v]) => v !== 'consignment').map(([v, l]) => <option key={v} value={v}>{l}</option>)}
             </select>
           </label>
           <label>
-            <span className="font-brand text-xs font-semibold text-brand-primary block mb-1">Ciudad</span>
+            <span className="font-brand text-xs font-semibold text-brand-primary block mb-1"><T>Ciudad</T></span>
             <input value={city} onChange={(e) => setCity(e.target.value)} className="w-36 border border-gray-200 rounded-xl px-3 py-2 font-brand text-sm" />
           </label>
           <label className="flex items-center gap-2 font-brand text-sm text-brand-primary">
-            <input type="checkbox" checked={isDefault} onChange={(e) => setIsDefault(e.target.checked)} /> Predeterminada
+            <input type="checkbox" checked={isDefault} onChange={(e) => setIsDefault(e.target.checked)} /> <T>Predeterminada</T>
           </label>
           <button onClick={create} disabled={busy} className="rounded-full bg-brand-primary text-brand-cream px-5 py-2 font-brand text-sm font-medium hover:bg-brand-dark disabled:opacity-50">{busy ? 'Creando…' : 'Agregar'}</button>
         </div>
@@ -82,24 +85,24 @@ export default function LocationsManager({ locations: initial }: { locations: Ro
         <table className="w-full text-sm font-brand">
           <thead className="bg-slate-50 text-brand-primary/60 text-xs uppercase">
             <tr>
-              <th className="text-left px-4 py-3">Nombre</th>
-              <th className="text-left px-4 py-3">Código</th>
-              <th className="text-left px-4 py-3">Tipo</th>
-              <th className="text-left px-4 py-3">Ciudad</th>
-              <th className="text-right px-4 py-3">Acciones</th>
+              <th className="text-left px-4 py-3"><T>Nombre</T></th>
+              <th className="text-left px-4 py-3"><T>Código</T></th>
+              <th className="text-left px-4 py-3"><T>Tipo</T></th>
+              <th className="text-left px-4 py-3"><T>Ciudad</T></th>
+              <th className="text-right px-4 py-3"><T>Acciones</T></th>
             </tr>
           </thead>
           <tbody>
-            {rows.length === 0 && <tr><td colSpan={5} className="px-4 py-8 text-center text-brand-primary/40">Aún no hay ubicaciones.</td></tr>}
+            {rows.length === 0 && <tr><td colSpan={5} className="px-4 py-8 text-center text-brand-primary/40"><T>Aún no hay ubicaciones.</T></td></tr>}
             {rows.map((r) => (
               <tr key={r.id} className="border-t border-gray-100">
-                <td className="px-4 py-3 text-brand-primary font-medium">{r.name} {r.is_default && <span className="text-xs text-green-700">· predeterminada</span>} {!r.active && <span className="text-xs text-red-500">· inactiva</span>}</td>
+                <td className="px-4 py-3 text-brand-primary font-medium">{r.name} {r.is_default && <span className="text-xs text-green-700"><T>· predeterminada</T></span>} {!r.active && <span className="text-xs text-red-500"><T>· inactiva</T></span>}</td>
                 <td className="px-4 py-3 text-brand-primary/60"><code>{r.code}</code></td>
                 <td className="px-4 py-3 text-brand-primary/70">{KIND_LABEL[r.kind] ?? r.kind}</td>
                 <td className="px-4 py-3 text-brand-primary/60">{r.city ?? '—'}</td>
                 <td className="px-4 py-3 text-right">
                   <div className="flex gap-2 justify-end">
-                    {!r.is_default && <button onClick={() => patch(r.id, { is_default: true })} className="font-brand text-xs text-brand-primary underline">Hacer predeterminada</button>}
+                    {!r.is_default && <button onClick={() => patch(r.id, { is_default: true })} className="font-brand text-xs text-brand-primary underline"><T>Hacer predeterminada</T></button>}
                     <button onClick={() => patch(r.id, { active: !r.active })} className="font-brand text-xs text-brand-primary/60 underline">{r.active ? 'Desactivar' : 'Activar'}</button>
                   </div>
                 </td>

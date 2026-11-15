@@ -5,11 +5,13 @@ import { getAdminUser } from '@/lib/auth'
 import { requireAdminDb } from '@/lib/admin-context'
 import type { NewsletterSubscriber } from '@merkiai/database'
 import NewsletterClient from './NewsletterClient'
+import { getAdminTx } from '@/lib/ui-locale'
 
 export const metadata: Metadata = { title: 'Newsletter' }
 export const dynamic = 'force-dynamic'
 
 export default async function NewsletterPage() {
+  const tx = await getAdminTx()
   const adminUser = await getAdminUser()
   if (
     !adminUser ||
@@ -32,7 +34,7 @@ export default async function NewsletterPage() {
     <div>
       <div className="mb-8">
         <PageHeader
-          title="Newsletter"
+          title={tx("Newsletter")}
           description="Gestiona suscriptores y envía campañas de correo a tu audiencia."
         />
       </div>

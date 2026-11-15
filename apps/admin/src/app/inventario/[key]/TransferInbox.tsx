@@ -7,6 +7,7 @@
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { formatDateTime } from '@merkiai/i18n'
+import { T } from '@merkiai/ui'
 
 interface Row { id: number; from: string; to: string; qty: number; shipped_at: string | null }
 
@@ -29,10 +30,10 @@ export default function TransferInbox({ transfers }: { transfers: Row[] }) {
   if (!transfers.length) return null
   return (
     <div className="bg-white rounded-2xl p-5 shadow-sm">
-      <h2 className="font-display text-brand-primary text-lg mb-3">Transferencias en tránsito</h2>
+      <h2 className="font-display text-brand-primary text-lg mb-3"><T>Transferencias en tránsito</T></h2>
       <table className="w-full text-sm font-brand">
         <thead className="text-brand-primary/50 text-xs uppercase">
-          <tr><th className="text-left py-1">Origen → Destino</th><th className="text-right py-1">Cantidad</th><th className="text-left py-1">Despachada</th><th className="text-right py-1">Acciones</th></tr>
+          <tr><th className="text-left py-1"><T>Origen → Destino</T></th><th className="text-right py-1"><T>Cantidad</T></th><th className="text-left py-1"><T>Despachada</T></th><th className="text-right py-1"><T>Acciones</T></th></tr>
         </thead>
         <tbody>
           {transfers.map((t) => (
@@ -42,8 +43,8 @@ export default function TransferInbox({ transfers }: { transfers: Row[] }) {
               <td className="py-2 text-brand-primary/60">{t.shipped_at ? formatDateTime(t.shipped_at) : '—'}</td>
               <td className="py-2 text-right">
                 <div className="flex gap-2 justify-end">
-                  <button onClick={() => act(t.id, 'receive')} disabled={busy === t.id} className="font-brand text-xs text-green-700 underline disabled:opacity-50">Recibir</button>
-                  <button onClick={() => act(t.id, 'cancel')} disabled={busy === t.id} className="font-brand text-xs text-red-500 underline disabled:opacity-50">Cancelar</button>
+                  <button onClick={() => act(t.id, 'receive')} disabled={busy === t.id} className="font-brand text-xs text-green-700 underline disabled:opacity-50"><T>Recibir</T></button>
+                  <button onClick={() => act(t.id, 'cancel')} disabled={busy === t.id} className="font-brand text-xs text-red-500 underline disabled:opacity-50"><T>Cancelar</T></button>
                 </div>
               </td>
             </tr>

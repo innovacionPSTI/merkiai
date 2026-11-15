@@ -8,6 +8,7 @@ import { FEATURES as FLAGS } from '@/lib/features'
 import { getTenantEntitlements } from '@/lib/entitlements'
 import { resolveFeature, FEATURES } from '@merkiai/tenancy'
 import ModifiersManager from './ModifiersManager'
+import { getAdminTx } from '@/lib/ui-locale'
 
 export const metadata: Metadata = { title: 'Modificadores' }
 export const dynamic = 'force-dynamic'
@@ -15,6 +16,7 @@ export const dynamic = 'force-dynamic'
 /** E24 · Modificadores por producto (adiciones/opciones, HU-406). Cada opción
  *  puede ajustar el precio y, opcionalmente, consumir inventario al venderse. */
 export default async function ModificadoresPage() {
+  const tx = await getAdminTx()
   const { adminUser, db } = await requireAdminDb()
   if (!userCanAccess(adminUser, 'productos')) redirect('/no-autorizado')
   const { entitlements } = await getTenantEntitlements().catch(() => ({ entitlements: null }))
@@ -26,7 +28,7 @@ export default async function ModificadoresPage() {
 
   return (
     <div className="space-y-6">
-      <PageHeader title="Modificadores" description="Define grupos de adiciones y opciones por producto (p. ej. tamaño, extras). Cada opción puede ajustar el precio y descontar inventario al venderse." />
+      <PageHeader title={tx("Modificadores")} description="Define grupos de adiciones y opciones por producto (p. ej. tamaño, extras). Cada opción puede ajustar el precio y descontar inventario al venderse." />
       <ModifiersManager
         products={products.map((p) => ({ id: p.id, name: p.name }))}
         items={items.map((i) => ({ id: i.id, name: i.name, uom_id: i.uom_id }))}

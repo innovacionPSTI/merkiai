@@ -3,6 +3,7 @@ import type { Metadata } from 'next'
 import Link from 'next/link'
 import { requireAdminDb } from '@/lib/admin-context'
 import BlogPostForm from '../BlogPostForm'
+import { T } from '@merkiai/ui'
 
 export const metadata: Metadata = { title: 'Editar artículo — Blog' }
 export const dynamic = 'force-dynamic'
@@ -30,7 +31,7 @@ export default async function BlogEditPage({
           href="/blog"
           className="font-brand text-sm text-brand-primary/50 hover:text-brand-primary transition-colors"
         >
-          ← Blog
+          <T>← Blog</T>
         </Link>
         <span className="text-brand-primary/20">/</span>
         <h1 className="font-display text-brand-primary text-2xl truncate max-w-md">

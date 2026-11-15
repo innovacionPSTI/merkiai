@@ -5,6 +5,8 @@ import { useActionState } from 'react'
 import { Icon } from '@merkiai/ui'
 import { applyPresetAction, type OnboardingActionState } from '../onboarding/actions'
 import type { OnboardingOptions, OnboardingPreset } from '@/lib/onboarding'
+import { T } from '@merkiai/ui'
+import { useTx } from '@merkiai/ui'
 
 const initial: OnboardingActionState = { ok: false }
 
@@ -33,6 +35,7 @@ function Thumb({ p }: { p: OnboardingPreset }) {
  * (HU-235) respetando el plan; luego el comerciante previsualiza su tienda real.
  */
 export default function PlantillasGallery({ options }: { options: OnboardingOptions }) {
+  const tx = useTx()
   const [state, action, pending] = useActionState(applyPresetAction, initial)
   const [q, setQ] = useState('')
   const [niche, setNiche] = useState('all')
@@ -69,12 +72,12 @@ export default function PlantillasGallery({ options }: { options: OnboardingOpti
           <span className="absolute left-3 top-1/2 -translate-y-1/2 text-brand-primary/40"><Icon name="search" size={16} /></span>
           <input
             value={q} onChange={(e) => setQ(e.target.value)}
-            placeholder="Buscar por nombre, nicho o descripción…"
+            placeholder={tx("Buscar por nombre, nicho o descripción…")}
             className="w-full border border-black/10 rounded-xl pl-9 pr-3 py-2 font-brand text-sm focus:outline-none focus:ring-2 focus:ring-brand-primary/30"
           />
         </div>
         <label className="font-brand text-sm text-brand-primary/70 inline-flex items-center gap-2">
-          Industria
+          <T>Industria</T>
           <select value={niche} onChange={(e) => setNiche(e.target.value)} className="border border-black/10 rounded-xl px-3 py-2 text-sm">
             <option value="all">Todas</option>
             {niches.map((n) => <option key={n} value={n}>{n}</option>)}
@@ -119,7 +122,7 @@ export default function PlantillasGallery({ options }: { options: OnboardingOpti
       </div>
 
       <p className="font-brand text-xs text-brand-primary/40">
-        La miniatura es una referencia del estilo. Tras aplicar, usa «Vista previa» en el Constructor para ver tu tienda real.
+        <T>La miniatura es una referencia del estilo. Tras aplicar, usa «Vista previa» en el Constructor para ver tu tienda real.</T>
       </p>
     </div>
   )

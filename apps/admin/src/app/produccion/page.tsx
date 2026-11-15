@@ -8,6 +8,7 @@ import { FEATURES as FLAGS } from '@/lib/features'
 import { getTenantEntitlements } from '@/lib/entitlements'
 import { resolveFeature, FEATURES } from '@merkiai/tenancy'
 import ProductionManager from './ProductionManager'
+import { getAdminTx } from '@/lib/ui-locale'
 
 export const metadata: Metadata = { title: 'Producción' }
 export const dynamic = 'force-dynamic'
@@ -15,6 +16,7 @@ export const dynamic = 'force-dynamic'
 /** E24 · Recetas (BOM) + órdenes de producción (HU-404/405). Completar una orden
  *  consume insumos y crea el terminado con su costo. */
 export default async function ProduccionPage() {
+  const tx = await getAdminTx()
   const { adminUser, db } = await requireAdminDb()
   if (!userCanAccess(adminUser, 'productos')) redirect('/no-autorizado')
   const { entitlements } = await getTenantEntitlements().catch(() => ({ entitlements: null }))
@@ -28,7 +30,7 @@ export default async function ProduccionPage() {
   return (
     <div className="space-y-6">
       <div className="flex items-start justify-between gap-4 flex-wrap">
-        <PageHeader title="Producción" description="Define recetas y registra órdenes de producción. Completar una orden consume los insumos y crea el producto terminado con su costo." />
+        <PageHeader title={tx("Producción")} description="Define recetas y registra órdenes de producción. Completar una orden consume los insumos y crea el producto terminado con su costo." />
         <a href="/api/admin/operations/export?type=production" className="rounded-full border border-gray-200 text-brand-primary px-4 py-2 font-brand text-sm hover:bg-slate-50 whitespace-nowrap mt-1">Exportar (CSV)</a>
       </div>
       <ProductionManager

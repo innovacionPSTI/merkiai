@@ -5,6 +5,7 @@ import { listRedirects } from '@merkiai/database'
 import { requireAdminDb } from '@/lib/admin-context'
 import { userCanAccess } from '@/lib/roles'
 import RedirectsManager from './RedirectsManager'
+import { getAdminTx } from '@/lib/ui-locale'
 
 export const metadata: Metadata = { title: 'Redirecciones' }
 export const dynamic = 'force-dynamic'
@@ -14,6 +15,7 @@ export const dynamic = 'force-dynamic'
  * resuelve en el middleware. Gated por la sección "configuracion".
  */
 export default async function RedirectsPage() {
+  const tx = await getAdminTx()
   const { adminUser, db } = await requireAdminDb()
   if (!userCanAccess(adminUser, 'configuracion')) redirect('/no-autorizado')
 
@@ -22,7 +24,7 @@ export default async function RedirectsPage() {
   return (
     <div className="space-y-6">
       <PageHeader
-        title="Redirecciones 301"
+        title={tx("Redirecciones 301")}
         description="Redirige URLs viejas a nuevas para no perder tráfico ni SEO al renombrar rutas o slugs."
       />
       <RedirectsManager initial={redirects} />

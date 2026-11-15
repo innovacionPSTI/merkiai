@@ -6,6 +6,8 @@ import { getAdminUser } from '@/lib/auth'
 import { requireAdminDb } from '@/lib/admin-context'
 import type { AdminRole } from '@/lib/roles'
 import { formatMoney, formatNumber, formatDate } from '@merkiai/i18n'
+import { T } from '@merkiai/ui'
+import { getAdminTx } from '@/lib/ui-locale'
 
 export const metadata: Metadata = { title: 'Dashboard' }
 export const dynamic = 'force-dynamic'
@@ -204,7 +206,7 @@ function StatCard({
       </div>
       <p className="font-brand font-bold text-brand-primary text-2xl leading-tight">{value}</p>
       {sub && <p className="font-brand text-xs text-brand-primary/40 mt-1">{sub}</p>}
-      {href && <p className="font-brand text-xs text-brand-primary underline mt-2">Ver →</p>}
+      {href && <p className="font-brand text-xs text-brand-primary underline mt-2"><T>Ver →</T></p>}
     </div>
   )
   return href ? <Link href={href} className="block">{inner}</Link> : inner
@@ -224,13 +226,13 @@ function Card({ children, className = '' }: { children: React.ReactNode; classNa
 
 async function AdminDashboard() {
   const d = await getAdminData().catch(() => null)
-  if (!d) return <p className="font-brand text-brand-primary/40">Error cargando datos.</p>
+  if (!d) return <p className="font-brand text-brand-primary/40"><T>Error cargando datos.</T></p>
 
   return (
     <div className="space-y-8">
       {/* Stats financieras */}
       <div>
-        <SectionTitle>Resumen de ventas</SectionTitle>
+        <SectionTitle><T>Resumen de ventas</T></SectionTitle>
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
           <StatCard label="Ventas hoy"     value={fmt(d.salesDay)}   sub={`${d.ordersDay} pedidos`}      icon="money" />
           <StatCard label="Ventas semana"  value={fmt(d.salesWeek)}  icon="chart" />
@@ -243,12 +245,12 @@ async function AdminDashboard() {
         {/* Pedidos recientes */}
         <div>
           <div className="flex items-center justify-between mb-4">
-            <SectionTitle>Pedidos recientes</SectionTitle>
-            <Link href="/pedidos" className="font-brand text-xs text-brand-primary underline">Ver todos</Link>
+            <SectionTitle><T>Pedidos recientes</T></SectionTitle>
+            <Link href="/pedidos" className="font-brand text-xs text-brand-primary underline"><T>Ver todos</T></Link>
           </div>
           <Card>
             {d.recentOrders.length === 0 ? (
-              <p className="font-brand text-brand-primary/40 text-center py-10 text-sm">Sin pedidos aún</p>
+              <p className="font-brand text-brand-primary/40 text-center py-10 text-sm"><T>Sin pedidos aún</T></p>
             ) : (
               <table className="w-full">
                 <thead>
@@ -294,10 +296,10 @@ async function AdminDashboard() {
 
           {/* Top productos */}
           <div>
-            <SectionTitle>Más vendidos</SectionTitle>
+            <SectionTitle><T>Más vendidos</T></SectionTitle>
             <Card>
               {d.topProducts.length === 0 ? (
-                <p className="font-brand text-brand-primary/40 text-center py-8 text-sm">Sin datos de ventas aún</p>
+                <p className="font-brand text-brand-primary/40 text-center py-8 text-sm"><T>Sin datos de ventas aún</T></p>
               ) : (
                 <ul className="divide-y divide-gray-50">
                   {d.topProducts.map((p, i) => (
@@ -317,7 +319,7 @@ async function AdminDashboard() {
           {/* Bajo stock */}
           {d.lowStock.length > 0 && (
             <div>
-              <SectionTitle>Bajo stock</SectionTitle>
+              <SectionTitle><T>Bajo stock</T></SectionTitle>
               <Card>
                 <ul className="divide-y divide-gray-50">
                   {(d.lowStock as any[]).map((v, i) => (
@@ -343,13 +345,13 @@ async function AdminDashboard() {
 
 async function VendedorDashboard() {
   const d = await getVendedorData().catch(() => null)
-  if (!d) return <p className="font-brand text-brand-primary/40">Error cargando datos.</p>
+  if (!d) return <p className="font-brand text-brand-primary/40"><T>Error cargando datos.</T></p>
 
   return (
     <div className="space-y-8">
       {/* Stats operacionales */}
       <div>
-        <SectionTitle>Estado de pedidos</SectionTitle>
+        <SectionTitle><T>Estado de pedidos</T></SectionTitle>
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
           <StatCard
             label="Pendientes"
@@ -369,12 +371,12 @@ async function VendedorDashboard() {
         {/* Pedidos urgentes */}
         <div>
           <div className="flex items-center justify-between mb-4">
-            <SectionTitle>Pedidos por atender</SectionTitle>
-            <Link href="/pedidos" className="font-brand text-xs text-brand-primary underline">Ver todos</Link>
+            <SectionTitle><T>Pedidos por atender</T></SectionTitle>
+            <Link href="/pedidos" className="font-brand text-xs text-brand-primary underline"><T>Ver todos</T></Link>
           </div>
           <Card>
             {d.urgentOrders.length === 0 ? (
-              <p className="font-brand text-brand-primary/40 text-center py-10 text-sm">¡Todo al día! Sin pedidos pendientes.</p>
+              <p className="font-brand text-brand-primary/40 text-center py-10 text-sm"><T>¡Todo al día! Sin pedidos pendientes.</T></p>
             ) : (
               <table className="w-full">
                 <thead>
@@ -419,7 +421,7 @@ async function VendedorDashboard() {
           <SectionTitle>{d.lowStock.length > 0 ? 'Bajo stock' : 'Stock'}</SectionTitle>
           <Card>
             {d.lowStock.length === 0 ? (
-              <p className="font-brand text-brand-primary/40 text-center py-10 text-sm">Todos los productos tienen stock suficiente.</p>
+              <p className="font-brand text-brand-primary/40 text-center py-10 text-sm"><T>Todos los productos tienen stock suficiente.</T></p>
             ) : (
               <ul className="divide-y divide-gray-50">
                 {(d.lowStock as any[]).map((v, i) => (
@@ -444,7 +446,7 @@ async function VendedorDashboard() {
 
 async function GestorDashboard() {
   const d = await getGestorData().catch(() => null)
-  if (!d) return <p className="font-brand text-brand-primary/40">Error cargando datos.</p>
+  if (!d) return <p className="font-brand text-brand-primary/40"><T>Error cargando datos.</T></p>
 
   type SectionRow = { id: number; section_type: string; title: string | null; enabled: boolean }
   const sections = d.sections as SectionRow[]
@@ -455,7 +457,7 @@ async function GestorDashboard() {
     <div className="space-y-8">
       {/* Estado del sitio */}
       <div>
-        <SectionTitle>Estado del sitio</SectionTitle>
+        <SectionTitle><T>Estado del sitio</T></SectionTitle>
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
           <StatCard label="Secciones activas"   value={fmtNum(enabledCount)}  icon="check" tone="success" href="/contenido" />
           <StatCard label="Secciones inactivas" value={fmtNum(disabledCount)} icon="ban" tone={disabledCount > 0 ? 'danger' : 'primary'} href="/contenido" />
@@ -469,8 +471,8 @@ async function GestorDashboard() {
         <div className="space-y-4">
           <div>
             <div className="flex items-center justify-between mb-4">
-              <SectionTitle>Blog</SectionTitle>
-              <Link href="/blog" className="font-brand text-xs text-brand-primary underline">Gestionar</Link>
+              <SectionTitle><T>Blog</T></SectionTitle>
+              <Link href="/blog" className="font-brand text-xs text-brand-primary underline"><T>Gestionar</T></Link>
             </div>
             <div className="grid grid-cols-2 gap-3">
               <StatCard label="Publicados" value={fmtNum(d.blogPublished)} icon="blog" tone="success" href="/blog" />
@@ -480,7 +482,7 @@ async function GestorDashboard() {
 
           {/* Secciones del sitio */}
           <div>
-            <SectionTitle>Secciones del home</SectionTitle>
+            <SectionTitle><T>Secciones del home</T></SectionTitle>
             <Card>
               <ul className="divide-y divide-gray-50">
                 {sections.map((s) => (
@@ -503,8 +505,8 @@ async function GestorDashboard() {
           {d.expiringCoupons.length > 0 && (
             <div>
               <div className="flex items-center justify-between mb-4">
-                <SectionTitle>Cupones por vencer</SectionTitle>
-                <Link href="/cupones" className="font-brand text-xs text-brand-primary underline">Ver todos</Link>
+                <SectionTitle><T>Cupones por vencer</T></SectionTitle>
+                <Link href="/cupones" className="font-brand text-xs text-brand-primary underline"><T>Ver todos</T></Link>
               </div>
               <Card>
                 <ul className="divide-y divide-gray-50">
@@ -538,6 +540,7 @@ async function GestorDashboard() {
 // ── Página principal ──────────────────────────────────────────────────────────
 
 export default async function DashboardPage() {
+  const tx = await getAdminTx()
   const adminUser = await getAdminUser()
   const role: AdminRole = adminUser?.role ?? 'vendedor'
 
@@ -555,7 +558,7 @@ export default async function DashboardPage() {
   return (
     <div className="space-y-8">
       <PageHeader
-        title="Dashboard"
+        title={tx("Dashboard")}
         description={greeting}
         action={<span className="font-brand text-sm text-brand-primary/40 capitalize hidden sm:block">{today}</span>}
       />

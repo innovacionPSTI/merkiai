@@ -7,6 +7,7 @@ import { userCanAccess } from '@/lib/roles'
 import { getTenantEntitlements } from '@/lib/entitlements'
 import { resolveFeature, FEATURES } from '@merkiai/tenancy'
 import QuotesManager from './QuotesManager'
+import { getAdminTx } from '@/lib/ui-locale'
 
 export const metadata: Metadata = { title: 'Cotizaciones' }
 export const dynamic = 'force-dynamic'
@@ -14,6 +15,7 @@ export const dynamic = 'force-dynamic'
 /** E24 · Cotizaciones (HU-408 F2a): pedido en borrador con ciclo de vida y
  *  caducidad. La conversión a orden y el apartado con abonos son Fase 2. */
 export default async function CotizacionesPage() {
+  const tx = await getAdminTx()
   const { adminUser, db } = await requireAdminDb()
   if (!userCanAccess(adminUser, 'productos')) redirect('/no-autorizado')
   const { entitlements } = await getTenantEntitlements().catch(() => ({ entitlements: null }))
@@ -25,7 +27,7 @@ export default async function CotizacionesPage() {
 
   return (
     <div className="space-y-6">
-      <PageHeader title="Cotizaciones" description="Crea cotizaciones (pedido en borrador) con su vigencia y haz seguimiento de su estado. La conversión a orden y el apartado con abonos llegan en una fase siguiente." />
+      <PageHeader title={tx("Cotizaciones")} description="Crea cotizaciones (pedido en borrador) con su vigencia y haz seguimiento de su estado. La conversión a orden y el apartado con abonos llegan en una fase siguiente." />
       <QuotesManager
         quotes={quotes.map((q) => ({ id: q.id, quote_number: q.quote_number, customer_name: q.customer_name, status: q.status, total: q.total, valid_until: q.valid_until, created_at: q.created_at ?? null }))}
         products={products.map((p) => ({ id: p.id, name: p.name, price: p.min_price ?? null }))}

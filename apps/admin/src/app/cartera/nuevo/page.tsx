@@ -3,11 +3,13 @@ import { PageHeader } from '@merkiai/ui'
 import { listParties, listStockItems, listLocations, getReceivablesSettings, isModality, listPriceLists } from '@merkiai/database'
 import { requireCartera } from '@/lib/cartera'
 import NewDocumentForm from './NewDocumentForm'
+import { getAdminTx } from '@/lib/ui-locale'
 
 export const metadata: Metadata = { title: 'Nuevo documento · Cartera' }
 export const dynamic = 'force-dynamic'
 
 export default async function NuevoDocumentoPage({ searchParams }: { searchParams: Promise<{ modalidad?: string; contraparte?: string }> }) {
+  const tx = await getAdminTx()
   const { db, tenantId, consignmentEnabled } = await requireCartera()
   const sp = await searchParams
   const [parties, items, locations, settings, priceLists] = await Promise.all([
@@ -19,7 +21,7 @@ export default async function NuevoDocumentoPage({ searchParams }: { searchParam
   ])
   return (
     <div className="space-y-6 max-w-4xl">
-      <PageHeader title="Nuevo documento" description="Registra una venta a crédito, un encargo, un apartado o una entrega en consignación. Puedes mezclar productos del inventario, servicios y conceptos libres." />
+      <PageHeader title={tx("Nuevo documento")} description="Registra una venta a crédito, un encargo, un apartado o una entrega en consignación. Puedes mezclar productos del inventario, servicios y conceptos libres." />
       <NewDocumentForm
         parties={parties.map((p) => ({ id: p.id, name: p.name ?? p.email ?? 'Sin nombre', role: p.party_role, balance: p.balance ?? 0, credit_limit: p.credit_limit }))}
         items={items.filter((i) => i.sellable || i.item_class === 'servicio').map((i) => ({ id: i.id, name: i.name, isService: i.item_class === 'servicio' }))}

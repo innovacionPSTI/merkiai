@@ -3,6 +3,8 @@
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import ImageUpload from '@/components/ImageUpload'
+import { T } from '@merkiai/ui'
+import { useTx } from '@merkiai/ui'
 
 const CATEGORIES = [
   { value: 'novedades',   label: 'Novedades' },
@@ -39,6 +41,7 @@ interface Props {
 }
 
 export default function BlogPostForm({ post }: Props) {
+  const tx = useTx()
   const router = useRouter()
   const isEdit = !!post?.id
 
@@ -129,13 +132,13 @@ export default function BlogPostForm({ post }: Props) {
       {/* Título + Slug */}
       <div className="bg-white rounded-2xl p-6 shadow-sm space-y-4">
         <div>
-          <label className="font-brand text-xs text-brand-primary/50 block mb-1">Título *</label>
+          <label className="font-brand text-xs text-brand-primary/50 block mb-1"><T>Título *</T></label>
           <input
             type="text"
             value={form.title}
             onChange={(e) => setTitle(e.target.value)}
             required
-            placeholder="Título del artículo"
+            placeholder={tx("Título del artículo")}
             className={fieldClass}
           />
         </div>
@@ -144,7 +147,7 @@ export default function BlogPostForm({ post }: Props) {
             Slug (URL)
             {form.slug && (
               <span className="ml-2 text-brand-primary/30">
-                /blog/<strong>{form.slug}</strong>
+                <T>/blog/</T><strong>{form.slug}</strong>
               </span>
             )}
           </label>
@@ -168,7 +171,7 @@ export default function BlogPostForm({ post }: Props) {
           value={form.cover_image}
           onChange={(url) => setForm((f) => ({ ...f, cover_image: url }))}
           bucket="blog"
-          label="Imagen de portada"
+          label={tx("Imagen de portada")}
           sizeClass="aspect-video"
         />
       </div>
@@ -176,7 +179,7 @@ export default function BlogPostForm({ post }: Props) {
       {/* Categoría + Estado */}
       <div className="bg-white rounded-2xl p-6 shadow-sm grid grid-cols-1 sm:grid-cols-2 gap-4">
         <div>
-          <label className="font-brand text-xs text-brand-primary/50 block mb-1">Categoría</label>
+          <label className="font-brand text-xs text-brand-primary/50 block mb-1"><T>Categoría</T></label>
           <select
             value={form.category}
             onChange={(e) => setForm((f) => ({ ...f, category: e.target.value }))}
@@ -195,7 +198,7 @@ export default function BlogPostForm({ post }: Props) {
               onChange={(e) => setForm((f) => ({ ...f, published: e.target.checked }))}
               className="w-4 h-4 accent-brand-primary"
             />
-            <span className="font-brand text-sm font-semibold text-brand-primary">Publicado</span>
+            <span className="font-brand text-sm font-semibold text-brand-primary"><T>Publicado</T></span>
           </label>
           <p className="font-brand text-xs text-brand-primary/30 mt-1 ml-7">
             {form.published ? 'Visible en el sitio público' : 'Borrador — no visible en el sitio'}
@@ -206,13 +209,13 @@ export default function BlogPostForm({ post }: Props) {
       {/* Extracto */}
       <div className="bg-white rounded-2xl p-6 shadow-sm">
         <label className="font-brand text-xs text-brand-primary/50 block mb-1">
-          Extracto <span className="text-brand-primary/30">— resumen corto que aparece en la lista del blog</span>
+          <T>Extracto</T> <span className="text-brand-primary/30"><T>— resumen corto que aparece en la lista del blog</T></span>
         </label>
         <textarea
           value={form.excerpt}
           onChange={(e) => setForm((f) => ({ ...f, excerpt: e.target.value }))}
           rows={3}
-          placeholder="Un párrafo breve que resume el artículo..."
+          placeholder={tx("Un párrafo breve que resume el artículo...")}
           className={`${fieldClass} resize-y`}
         />
       </div>
@@ -220,7 +223,7 @@ export default function BlogPostForm({ post }: Props) {
       {/* Contenido */}
       <div className="bg-white rounded-2xl p-6 shadow-sm">
         <label className="font-brand text-xs text-brand-primary/50 block mb-1">
-          Contenido <span className="text-brand-primary/30">— Markdown</span>
+          <T>Contenido</T> <span className="text-brand-primary/30"><T>— Markdown</T></span>
         </label>
         <textarea
           value={form.content}
@@ -238,7 +241,7 @@ export default function BlogPostForm({ post }: Props) {
       <div className="bg-white rounded-2xl p-6 shadow-sm space-y-4">
         <h3 className="font-brand font-semibold text-brand-primary text-sm">SEO (opcional)</h3>
         <div>
-          <label className="font-brand text-xs text-brand-primary/50 block mb-1">Meta título</label>
+          <label className="font-brand text-xs text-brand-primary/50 block mb-1"><T>Meta título</T></label>
           <input
             type="text"
             value={form.seo_title}
@@ -254,12 +257,12 @@ export default function BlogPostForm({ post }: Props) {
           )}
         </div>
         <div>
-          <label className="font-brand text-xs text-brand-primary/50 block mb-1">Meta descripción</label>
+          <label className="font-brand text-xs text-brand-primary/50 block mb-1"><T>Meta descripción</T></label>
           <textarea
             value={form.seo_desc}
             onChange={(e) => setForm((f) => ({ ...f, seo_desc: e.target.value }))}
             rows={2}
-            placeholder="Descripción breve para motores de búsqueda (140–160 caracteres recomendados)"
+            placeholder={tx("Descripción breve para motores de búsqueda (140–160 caracteres recomendados)")}
             className={`${fieldClass} resize-none`}
             maxLength={160}
           />
@@ -284,7 +287,7 @@ export default function BlogPostForm({ post }: Props) {
             disabled={saving}
             className="font-brand text-sm text-red-500 hover:bg-red-50 px-4 py-2.5 rounded-xl transition-colors disabled:opacity-50"
           >
-            Eliminar artículo
+            <T>Eliminar artículo</T>
           </button>
         )}
         <div className="flex-1" />

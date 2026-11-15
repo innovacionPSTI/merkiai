@@ -3,6 +3,7 @@
 import { useState, useTransition } from 'react'
 import { useRouter } from 'next/navigation'
 import { saveSettingsAction } from '../actions'
+import { T } from '@merkiai/ui'
 
 type Modality = 'credit_sale' | 'special_order' | 'layaway' | 'consignment'
 type Ev = 'on_document' | 'on_payment' | 'on_delivery' | 'on_settlement' | 'none'
@@ -28,20 +29,20 @@ export default function SettingsForm({ settings, consignmentEnabled }: { setting
   return (
     <div className="space-y-5">
       <section className="rounded-2xl border border-gray-200 bg-white p-5 space-y-3">
-        <h2 className="font-brand text-sm font-semibold text-brand-primary">Encargos y apartados</h2>
+        <h2 className="font-brand text-sm font-semibold text-brand-primary"><T>Encargos y apartados</T></h2>
         <label className="block font-brand text-sm text-brand-primary">Entrega de encargos (se puede cambiar en cada encargo)<br />
           <select className={`${input} mt-1`} value={s.delivery_policy} onChange={(e) => setS({ ...s, delivery_policy: e.target.value as Settings['delivery_policy'] })}>
             <option value="require_full_payment">Entregar solo con el pago completo</option>
             <option value="allow_balance_on_delivery">Se puede entregar con saldo (queda a crédito)</option>
           </select>
         </label>
-        <label className="block font-brand text-sm text-brand-primary">Días que dura un apartado antes de liberarse<br />
+        <label className="block font-brand text-sm text-brand-primary"><T>Días que dura un apartado antes de liberarse</T><br />
           <input type="number" min={1} className={`${input} mt-1 w-28`} value={s.layaway_days} onChange={(e) => setS({ ...s, layaway_days: Math.max(1, Number(e.target.value)) })} />
         </label>
       </section>
 
       <section className="rounded-2xl border border-gray-200 bg-white p-5 space-y-3">
-        <h2 className="font-brand text-sm font-semibold text-brand-primary">Facturación</h2>
+        <h2 className="font-brand text-sm font-semibold text-brand-primary"><T>Facturación</T></h2>
         <p className="font-brand text-xs text-brand-primary/60">¿En qué momento se avisa a tu sistema de facturación? Valídalo con tu contador: la plataforma no asume criterio fiscal.</p>
         {mods.map((m) => (
           <label key={m} className="flex flex-wrap items-center gap-3 font-brand text-sm text-brand-primary">
@@ -56,13 +57,13 @@ export default function SettingsForm({ settings, consignmentEnabled }: { setting
       <section className="rounded-2xl border border-gray-200 bg-white p-5 space-y-3">
         <h2 className="font-brand text-sm font-semibold text-brand-primary">Recordatorios de pago por correo</h2>
         <label className="flex items-center gap-2 font-brand text-sm text-brand-primary">
-          <input type="checkbox" checked={s.reminders_enabled} onChange={(e) => setS({ ...s, reminders_enabled: e.target.checked })} /> Enviar recordatorios a clientes y aliados con correo
+          <input type="checkbox" checked={s.reminders_enabled} onChange={(e) => setS({ ...s, reminders_enabled: e.target.checked })} /> <T>Enviar recordatorios a clientes y aliados con correo</T>
         </label>
         <div className="flex flex-wrap gap-4 font-brand text-sm text-brand-primary">
-          <label>Días antes del vencimiento <input type="number" min={0} className={`${input} ml-2 w-20`} value={s.reminder_days_before} onChange={(e) => setS({ ...s, reminder_days_before: Math.max(0, Number(e.target.value)) })} /></label>
-          <label>Días después del vencimiento <input type="number" min={0} className={`${input} ml-2 w-20`} value={s.reminder_days_after} onChange={(e) => setS({ ...s, reminder_days_after: Math.max(0, Number(e.target.value)) })} /></label>
+          <label><T>Días antes del vencimiento</T> <input type="number" min={0} className={`${input} ml-2 w-20`} value={s.reminder_days_before} onChange={(e) => setS({ ...s, reminder_days_before: Math.max(0, Number(e.target.value)) })} /></label>
+          <label><T>Días después del vencimiento</T> <input type="number" min={0} className={`${input} ml-2 w-20`} value={s.reminder_days_after} onChange={(e) => setS({ ...s, reminder_days_after: Math.max(0, Number(e.target.value)) })} /></label>
         </div>
-        <p className="font-brand text-xs text-brand-primary/60">Se envían con el proveedor de correo configurado en tu tienda.</p>
+        <p className="font-brand text-xs text-brand-primary/60"><T>Se envían con el proveedor de correo configurado en tu tienda.</T></p>
       </section>
 
       {msg && <p role="status" className={`font-brand text-sm ${msg.ok ? 'text-green-700' : 'text-red-600'}`}>{msg.text}</p>}

@@ -6,12 +6,15 @@
  */
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
+import { T } from '@merkiai/ui'
+import { useTx } from '@merkiai/ui'
 
 export default function TransferForm({ itemId, uoms, locations }: {
   itemId: number
   uoms: Array<{ id: number; code: string }>
   locations: Array<{ id: number; name: string }>
 }) {
+  const tx = useTx()
   const router = useRouter()
   const [from, setFrom] = useState<number | ''>(locations[0]?.id ?? '')
   const [to, setTo] = useState<number | ''>(locations[1]?.id ?? '')
@@ -21,9 +24,9 @@ export default function TransferForm({ itemId, uoms, locations }: {
   const [error, setError] = useState<string | null>(null)
 
   async function submit() {
-    if (from === '' || to === '') { setError('Origen y destino requeridos'); return }
-    if (from === to) { setError('El origen y el destino deben ser distintos'); return }
-    if (!(Number(qty) > 0)) { setError('Cantidad (> 0) requerida'); return }
+    if (from === '' || to === '') { setError(tx("Origen y destino requeridos")); return }
+    if (from === to) { setError(tx("El origen y el destino deben ser distintos")); return }
+    if (!(Number(qty) > 0)) { setError(tx("Cantidad (> 0) requerida")); return }
     setBusy(true); setError(null)
     try {
       const res = await fetch(`/api/admin/inventory/items/${itemId}/transfer`, {
@@ -37,25 +40,25 @@ export default function TransferForm({ itemId, uoms, locations }: {
 
   return (
     <div className="bg-white rounded-2xl p-5 shadow-sm flex flex-wrap items-end gap-3">
-      <h2 className="font-display text-brand-primary text-lg w-full">Despachar transferencia</h2>
+      <h2 className="font-display text-brand-primary text-lg w-full"><T>Despachar transferencia</T></h2>
       <label>
-        <span className="font-brand text-xs font-semibold text-brand-primary block mb-1">Origen</span>
+        <span className="font-brand text-xs font-semibold text-brand-primary block mb-1"><T>Origen</T></span>
         <select value={from} onChange={(e) => setFrom(e.target.value === '' ? '' : Number(e.target.value))} className="border border-gray-200 rounded-xl px-3 py-2 font-brand text-sm">
           {locations.map((l) => <option key={l.id} value={l.id}>{l.name}</option>)}
         </select>
       </label>
       <label>
-        <span className="font-brand text-xs font-semibold text-brand-primary block mb-1">Destino</span>
+        <span className="font-brand text-xs font-semibold text-brand-primary block mb-1"><T>Destino</T></span>
         <select value={to} onChange={(e) => setTo(e.target.value === '' ? '' : Number(e.target.value))} className="border border-gray-200 rounded-xl px-3 py-2 font-brand text-sm">
           {locations.map((l) => <option key={l.id} value={l.id}>{l.name}</option>)}
         </select>
       </label>
       <label>
-        <span className="font-brand text-xs font-semibold text-brand-primary block mb-1">Cantidad</span>
+        <span className="font-brand text-xs font-semibold text-brand-primary block mb-1"><T>Cantidad</T></span>
         <input value={qty} onChange={(e) => setQty(e.target.value)} type="number" min={0} step="any" className="w-28 border border-gray-200 rounded-xl px-3 py-2 font-brand text-sm" />
       </label>
       <label>
-        <span className="font-brand text-xs font-semibold text-brand-primary block mb-1">Unidad</span>
+        <span className="font-brand text-xs font-semibold text-brand-primary block mb-1"><T>Unidad</T></span>
         <select value={uomId} onChange={(e) => setUomId(e.target.value === '' ? '' : Number(e.target.value))} className="border border-gray-200 rounded-xl px-3 py-2 font-brand text-sm">
           <option value="">—</option>
           {uoms.map((u) => <option key={u.id} value={u.id}>{u.code}</option>)}

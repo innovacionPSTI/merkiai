@@ -8,6 +8,8 @@
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { formatNumber } from '@merkiai/i18n'
+import { T } from '@merkiai/ui'
+import { useTx } from '@merkiai/ui'
 
 interface Row {
   id: number; key: string; name: string; item_class: string
@@ -25,6 +27,7 @@ function fmt(n: number): string {
 }
 
 export default function InventoryManager({ initial, uoms }: { initial: Row[]; uoms: UomOpt[] }) {
+  const tx = useTx()
   const router = useRouter()
   const [name, setName] = useState('')
   const [itemClass, setItemClass] = useState('materia_prima')
@@ -47,7 +50,7 @@ export default function InventoryManager({ initial, uoms }: { initial: Row[]; uo
   }
 
   async function create() {
-    if (!name.trim()) { setError('El nombre es obligatorio'); return }
+    if (!name.trim()) { setError(tx("El nombre es obligatorio")); return }
     setSaving(true); setError(null)
     try {
       const res = await fetch('/api/admin/inventory/items', {
@@ -72,9 +75,9 @@ export default function InventoryManager({ initial, uoms }: { initial: Row[]; uo
         {backfillMsg && <span className="font-brand text-xs text-brand-primary/60">{backfillMsg}</span>}
         {backfillConfirm ? (
           <div className="flex items-center gap-2">
-            <span className="font-brand text-xs text-brand-primary/60">Inicializa saldos de apertura desde el stock actual de las variantes enlazadas (idempotente). ¿Confirmar?</span>
+            <span className="font-brand text-xs text-brand-primary/60"><T>Inicializa saldos de apertura desde el stock actual de las variantes enlazadas (idempotente). ¿Confirmar?</T></span>
             <button onClick={backfill} disabled={backfillBusy} className="rounded-full bg-brand-primary text-brand-cream px-4 py-2 font-brand text-sm hover:bg-brand-dark disabled:opacity-50">{backfillBusy ? 'Inicializando…' : 'Confirmar'}</button>
-            <button onClick={() => setBackfillConfirm(false)} className="rounded-full border border-gray-200 text-brand-primary/60 px-4 py-2 font-brand text-sm">Cancelar</button>
+            <button onClick={() => setBackfillConfirm(false)} className="rounded-full border border-gray-200 text-brand-primary/60 px-4 py-2 font-brand text-sm"><T>Cancelar</T></button>
           </div>
         ) : (
           <button onClick={() => { setBackfillMsg(null); setBackfillConfirm(true) }} className="rounded-full border border-gray-200 text-brand-primary px-4 py-2 font-brand text-sm hover:bg-slate-50">Inicializar saldos (ledger)</button>
@@ -83,22 +86,22 @@ export default function InventoryManager({ initial, uoms }: { initial: Row[]; uo
 
       {/* Alta rápida */}
       <div className="bg-white rounded-2xl p-5 shadow-sm">
-        <h2 className="font-display text-brand-primary text-lg mb-3">Nuevo ítem</h2>
+        <h2 className="font-display text-brand-primary text-lg mb-3"><T>Nuevo ítem</T></h2>
         <div className="flex flex-wrap items-end gap-3">
           <label className="flex-1 min-w-[200px]">
-            <span className="font-brand text-xs font-semibold text-brand-primary block mb-1">Nombre</span>
-            <input value={name} onChange={(e) => setName(e.target.value)} placeholder="Ej. Materia prima, insumo o producto"
+            <span className="font-brand text-xs font-semibold text-brand-primary block mb-1"><T>Nombre</T></span>
+            <input value={name} onChange={(e) => setName(e.target.value)} placeholder={tx("Ej. Materia prima, insumo o producto")}
               className="w-full border border-gray-200 rounded-xl px-3 py-2 font-brand text-sm focus:outline-none focus:border-brand-primary" />
           </label>
           <label>
-            <span className="font-brand text-xs font-semibold text-brand-primary block mb-1">Clase</span>
+            <span className="font-brand text-xs font-semibold text-brand-primary block mb-1"><T>Clase</T></span>
             <select value={itemClass} onChange={(e) => setItemClass(e.target.value)}
               className="border border-gray-200 rounded-xl px-3 py-2 font-brand text-sm">
               {Object.entries(CLASS_LABEL).map(([v, l]) => <option key={v} value={v}>{l}</option>)}
             </select>
           </label>
           <label>
-            <span className="font-brand text-xs font-semibold text-brand-primary block mb-1">Unidad</span>
+            <span className="font-brand text-xs font-semibold text-brand-primary block mb-1"><T>Unidad</T></span>
             <select value={uomId} onChange={(e) => setUomId(e.target.value === '' ? '' : Number(e.target.value))}
               className="border border-gray-200 rounded-xl px-3 py-2 font-brand text-sm">
               <option value="">—</option>
@@ -118,17 +121,17 @@ export default function InventoryManager({ initial, uoms }: { initial: Row[]; uo
         <table className="w-full text-sm font-brand">
           <thead className="bg-slate-50 text-brand-primary/60 text-xs uppercase">
             <tr>
-              <th className="text-left px-4 py-3">Ítem</th>
-              <th className="text-left px-4 py-3">Clase</th>
-              <th className="text-right px-4 py-3">Disponible</th>
-              <th className="text-left px-4 py-3">Unidad</th>
-              <th className="text-right px-4 py-3">Costo unit.</th>
-              <th className="text-center px-4 py-3">Vendible</th>
+              <th className="text-left px-4 py-3"><T>Ítem</T></th>
+              <th className="text-left px-4 py-3"><T>Clase</T></th>
+              <th className="text-right px-4 py-3"><T>Disponible</T></th>
+              <th className="text-left px-4 py-3"><T>Unidad</T></th>
+              <th className="text-right px-4 py-3"><T>Costo unit.</T></th>
+              <th className="text-center px-4 py-3"><T>Vendible</T></th>
             </tr>
           </thead>
           <tbody>
             {initial.length === 0 && (
-              <tr><td colSpan={6} className="px-4 py-8 text-center text-brand-primary/40">Aún no hay ítems de inventario. Crea el primero arriba.</td></tr>
+              <tr><td colSpan={6} className="px-4 py-8 text-center text-brand-primary/40"><T>Aún no hay ítems de inventario. Crea el primero arriba.</T></td></tr>
             )}
             {initial.map((r) => (
               <tr key={r.id} className="border-t border-gray-100">

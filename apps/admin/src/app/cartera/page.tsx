@@ -3,6 +3,8 @@ import type { Metadata } from 'next'
 import { PageHeader } from '@merkiai/ui'
 import { getAgingReport, getCollectionsReport, listReceivableDocuments, MODALITY_LABEL, AGING_BUCKETS, AGING_LABEL, isModality, type Modality } from '@merkiai/database'
 import { requireCartera, money, PAYMENT_STATUS_LABEL, PAYMENT_STATUS_STYLE, DELIVERY_STATUS_LABEL } from '@/lib/cartera'
+import { T } from '@merkiai/ui'
+import { getAdminTx } from '@/lib/ui-locale'
 
 export const metadata: Metadata = { title: 'Cartera' }
 export const dynamic = 'force-dynamic'
@@ -13,6 +15,7 @@ const FILTERS: Array<{ key: string; label: string }> = [
 
 /** E27 · Cartera: saldos, edades, recaudo y documentos (crédito, encargos, apartados, consignación). */
 export default async function CarteraPage({ searchParams }: { searchParams: Promise<{ estado?: string; modalidad?: string }> }) {
+  const tx = await getAdminTx()
   const { db, consignmentEnabled } = await requireCartera()
   const sp = await searchParams
   const estado = sp.estado ?? 'open_all'
@@ -37,12 +40,12 @@ export default async function CarteraPage({ searchParams }: { searchParams: Prom
   return (
     <div className="space-y-6">
       <div className="flex flex-wrap items-start justify-between gap-3">
-        <PageHeader title="Cartera" description="Lo que te deben y lo que te abonan: ventas a crédito, encargos con anticipo, apartados y consignación." />
+        <PageHeader title={tx("Cartera")} description="Lo que te deben y lo que te abonan: ventas a crédito, encargos con anticipo, apartados y consignación." />
         <div className="flex flex-wrap gap-2 font-brand text-sm">
-          <Link href="/cartera/contrapartes" className="rounded-full border border-gray-200 px-4 py-2 hover:border-brand-primary">Clientes y aliados</Link>
-          <Link href="/cartera/ajustes" className="rounded-full border border-gray-200 px-4 py-2 hover:border-brand-primary">Ajustes</Link>
+          <Link href="/cartera/contrapartes" className="rounded-full border border-gray-200 px-4 py-2 hover:border-brand-primary"><T>Clientes y aliados</T></Link>
+          <Link href="/cartera/ajustes" className="rounded-full border border-gray-200 px-4 py-2 hover:border-brand-primary"><T>Ajustes</T></Link>
           <a href="/api/admin/receivables/export" className="rounded-full border border-gray-200 px-4 py-2 hover:border-brand-primary">Exportar (CSV)</a>
-          <Link href="/cartera/nuevo" className="rounded-full bg-brand-primary px-4 py-2 text-white hover:bg-brand-dark">Nuevo documento</Link>
+          <Link href="/cartera/nuevo" className="rounded-full bg-brand-primary px-4 py-2 text-white hover:bg-brand-dark"><T>Nuevo documento</T></Link>
         </div>
       </div>
 
@@ -62,7 +65,7 @@ export default async function CarteraPage({ searchParams }: { searchParams: Prom
 
       {aging && aging.total > 0 && (
         <section className="rounded-2xl border border-gray-200 bg-white p-4">
-          <h2 className="font-brand text-sm font-semibold text-brand-primary mb-3">Cartera por edades</h2>
+          <h2 className="font-brand text-sm font-semibold text-brand-primary mb-3"><T>Cartera por edades</T></h2>
           <div className="grid grid-cols-2 gap-2 md:grid-cols-5">
             {AGING_BUCKETS.map((b) => (
               <div key={b} className={`rounded-xl p-3 ${b === 'current' ? 'bg-slate-50' : b === 'd90_plus' ? 'bg-red-50' : 'bg-amber-50'}`}>
@@ -80,18 +83,18 @@ export default async function CarteraPage({ searchParams }: { searchParams: Prom
             <Link key={f.key} href={q({ estado: f.key })} className={`rounded-full px-3 py-1 ${estado === f.key ? 'bg-brand-primary text-white' : 'text-brand-primary/70 hover:bg-gray-50'}`}>{f.label}</Link>
           ))}
           <span className="mx-2 h-4 w-px bg-gray-200" />
-          <Link href={q({ modalidad: undefined })} className={`rounded-full px-3 py-1 ${!modality ? 'bg-brand-cream text-brand-primary' : 'text-brand-primary/70 hover:bg-gray-50'}`}>Todas</Link>
+          <Link href={q({ modalidad: undefined })} className={`rounded-full px-3 py-1 ${!modality ? 'bg-brand-cream text-brand-primary' : 'text-brand-primary/70 hover:bg-gray-50'}`}><T>Todas</T></Link>
           {(Object.keys(MODALITY_LABEL) as Modality[]).filter((m) => m !== 'consignment' || consignmentEnabled).map((m) => (
             <Link key={m} href={q({ modalidad: m })} className={`rounded-full px-3 py-1 ${modality === m ? 'bg-brand-cream text-brand-primary' : 'text-brand-primary/70 hover:bg-gray-50'}`}>{MODALITY_LABEL[m]}</Link>
           ))}
         </div>
         {docs.length === 0 ? (
-          <p className="p-6 font-brand text-sm text-brand-primary/60">No hay documentos con este filtro. Crea uno con “Nuevo documento”.</p>
+          <p className="p-6 font-brand text-sm text-brand-primary/60"><T>No hay documentos con este filtro. Crea uno con “Nuevo documento”.</T></p>
         ) : (
           <div className="overflow-x-auto">
             <table className="w-full font-brand text-sm">
               <thead className="text-left text-xs text-brand-primary/50">
-                <tr><th className="px-4 py-2">Número</th><th className="px-4 py-2">Cliente / aliado</th><th className="px-4 py-2">Tipo</th><th className="px-4 py-2">Pago</th><th className="px-4 py-2">Entrega</th><th className="px-4 py-2 text-right">Total</th><th className="px-4 py-2 text-right">Saldo</th><th className="px-4 py-2">Vence</th></tr>
+                <tr><th className="px-4 py-2"><T>Número</T></th><th className="px-4 py-2"><T>Cliente / aliado</T></th><th className="px-4 py-2"><T>Tipo</T></th><th className="px-4 py-2"><T>Pago</T></th><th className="px-4 py-2"><T>Entrega</T></th><th className="px-4 py-2 text-right"><T>Total</T></th><th className="px-4 py-2 text-right"><T>Saldo</T></th><th className="px-4 py-2"><T>Vence</T></th></tr>
               </thead>
               <tbody>
                 {docs.map((d) => (

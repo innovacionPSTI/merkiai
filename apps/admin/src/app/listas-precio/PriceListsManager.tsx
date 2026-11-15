@@ -8,6 +8,8 @@
  */
 import { useState } from 'react'
 import { formatMoney } from '@merkiai/i18n'
+import { T } from '@merkiai/ui'
+import { useTx } from '@merkiai/ui'
 
 interface PriceList { id: number; key: string; name: string; scope_type: string; scope_value: string | null; priority: number; active: boolean }
 interface ProductRef { id: number; name: string; base_price: number | null }
@@ -19,6 +21,7 @@ function money(n: number): string {
 }
 
 export default function PriceListsManager({ lists: initialLists, products }: { lists: PriceList[]; products: ProductRef[] }) {
+  const tx = useTx()
   const [lists, setLists] = useState<PriceList[]>(initialLists)
   const [error, setError] = useState<string | null>(null)
 
@@ -36,7 +39,7 @@ export default function PriceListsManager({ lists: initialLists, products }: { l
   }
 
   async function addList() {
-    if (!name.trim() || !key.trim()) { setError('Clave y nombre son requeridos'); return }
+    if (!name.trim() || !key.trim()) { setError(tx("Clave y nombre son requeridos")); return }
     setBusy(true); setError(null)
     try {
       const res = await fetch('/api/admin/price-lists', {
@@ -60,30 +63,30 @@ export default function PriceListsManager({ lists: initialLists, products }: { l
   return (
     <div className="space-y-6">
       <div className="bg-white rounded-2xl p-5 shadow-sm space-y-3">
-        <h2 className="font-display text-brand-primary text-lg">Nueva lista</h2>
+        <h2 className="font-display text-brand-primary text-lg"><T>Nueva lista</T></h2>
         <div className="flex flex-wrap items-end gap-3">
           <label className="flex-1 min-w-[160px]">
-            <span className="font-brand text-xs font-semibold text-brand-primary block mb-1">Nombre</span>
+            <span className="font-brand text-xs font-semibold text-brand-primary block mb-1"><T>Nombre</T></span>
             <input value={name} onChange={(e) => setName(e.target.value)} className="w-full border border-gray-200 rounded-xl px-3 py-2 font-brand text-sm" />
           </label>
           <label>
-            <span className="font-brand text-xs font-semibold text-brand-primary block mb-1">Clave</span>
-            <input value={key} onChange={(e) => setKey(e.target.value)} placeholder="pos, mayorista…" className="w-36 border border-gray-200 rounded-xl px-3 py-2 font-brand text-sm" />
+            <span className="font-brand text-xs font-semibold text-brand-primary block mb-1"><T>Clave</T></span>
+            <input value={key} onChange={(e) => setKey(e.target.value)} placeholder={tx("pos, mayorista…")} className="w-36 border border-gray-200 rounded-xl px-3 py-2 font-brand text-sm" />
           </label>
           <label>
-            <span className="font-brand text-xs font-semibold text-brand-primary block mb-1">Ámbito</span>
+            <span className="font-brand text-xs font-semibold text-brand-primary block mb-1"><T>Ámbito</T></span>
             <select value={scopeType} onChange={(e) => setScopeType(e.target.value)} className="border border-gray-200 rounded-xl px-3 py-2 font-brand text-sm">
               {Object.entries(SCOPE_LABEL).map(([v, l]) => <option key={v} value={v}>{l}</option>)}
             </select>
           </label>
           {scopeType !== 'generic' && (
             <label>
-              <span className="font-brand text-xs font-semibold text-brand-primary block mb-1">Valor del ámbito</span>
+              <span className="font-brand text-xs font-semibold text-brand-primary block mb-1"><T>Valor del ámbito</T></span>
               <input value={scopeValue} onChange={(e) => setScopeValue(e.target.value)} placeholder={scopeType === 'channel' ? 'pos / online' : scopeType === 'location' ? 'id sede' : 'segmento'} className="w-36 border border-gray-200 rounded-xl px-3 py-2 font-brand text-sm" />
             </label>
           )}
           <label>
-            <span className="font-brand text-xs font-semibold text-brand-primary block mb-1">Prioridad</span>
+            <span className="font-brand text-xs font-semibold text-brand-primary block mb-1"><T>Prioridad</T></span>
             <input type="number" value={priority} onChange={(e) => setPriority(Number(e.target.value))} className="w-24 border border-gray-200 rounded-xl px-3 py-2 font-brand text-sm" />
           </label>
           <button onClick={addList} disabled={busy} className="rounded-full bg-brand-primary text-brand-cream px-5 py-2 font-brand text-sm font-medium hover:bg-brand-dark disabled:opacity-50">{busy ? 'Creando…' : 'Crear lista'}</button>
@@ -91,7 +94,7 @@ export default function PriceListsManager({ lists: initialLists, products }: { l
         {error && <p className="font-brand text-sm text-red-600">{error}</p>}
       </div>
 
-      {lists.length === 0 && <p className="font-brand text-sm text-brand-primary/40">Aún no hay listas de precio. Sin listas, rige el precio actual de cada producto.</p>}
+      {lists.length === 0 && <p className="font-brand text-sm text-brand-primary/40"><T>Aún no hay listas de precio. Sin listas, rige el precio actual de cada producto.</T></p>}
 
       {lists.map((l) => (
         <ListCard key={l.id} list={l} products={products} onToggle={() => toggleActive(l)} />
@@ -153,16 +156,16 @@ function ListCard({ list, products, onToggle }: { list: PriceList; products: Pro
         <div className="space-y-3 border-t border-gray-100 pt-3">
           <table className="w-full text-sm font-brand">
             <thead className="text-brand-primary/50 text-xs uppercase">
-              <tr><th className="text-left py-1">Producto</th><th className="text-right py-1">Precio</th><th /></tr>
+              <tr><th className="text-left py-1"><T>Producto</T></th><th className="text-right py-1"><T>Precio</T></th><th /></tr>
             </thead>
             <tbody>
-              {items == null && <tr><td colSpan={3} className="py-3 text-brand-primary/40">Cargando…</td></tr>}
-              {items != null && items.length === 0 && <tr><td colSpan={3} className="py-3 text-brand-primary/40">Sin precios definidos.</td></tr>}
+              {items == null && <tr><td colSpan={3} className="py-3 text-brand-primary/40"><T>Cargando…</T></td></tr>}
+              {items != null && items.length === 0 && <tr><td colSpan={3} className="py-3 text-brand-primary/40"><T>Sin precios definidos.</T></td></tr>}
               {items?.map((it) => (
                 <tr key={it.id} className="border-t border-gray-100">
                   <td className="py-2 text-brand-primary">{it.product_id != null ? (productName.get(it.product_id) ?? `#${it.product_id}`) : `Variante #${it.variant_id}`}</td>
                   <td className="py-2 text-right tabular-nums text-brand-primary/70">{money(it.price)}</td>
-                  <td className="py-2 text-right"><button onClick={() => removeItem(it.id)} className="font-brand text-xs text-red-500 underline">Quitar</button></td>
+                  <td className="py-2 text-right"><button onClick={() => removeItem(it.id)} className="font-brand text-xs text-red-500 underline"><T>Quitar</T></button></td>
                 </tr>
               ))}
             </tbody>
@@ -170,14 +173,14 @@ function ListCard({ list, products, onToggle }: { list: PriceList; products: Pro
 
           <div className="flex flex-wrap items-end gap-2">
             <label className="flex-1 min-w-[180px]">
-              <span className="font-brand text-xs font-semibold text-brand-primary block mb-1">Producto</span>
+              <span className="font-brand text-xs font-semibold text-brand-primary block mb-1"><T>Producto</T></span>
               <select value={productId} onChange={(e) => setProductId(e.target.value === '' ? '' : Number(e.target.value))} className="w-full border border-gray-200 rounded-xl px-3 py-2 font-brand text-sm">
                 <option value="">Selecciona…</option>
                 {products.map((p) => <option key={p.id} value={p.id}>{p.name}{p.base_price != null ? ` · base ${money(p.base_price)}` : ''}</option>)}
               </select>
             </label>
             <label>
-              <span className="font-brand text-xs font-semibold text-brand-primary block mb-1">Precio</span>
+              <span className="font-brand text-xs font-semibold text-brand-primary block mb-1"><T>Precio</T></span>
               <input type="number" value={price} onChange={(e) => setPrice(e.target.value === '' ? '' : Number(e.target.value))} className="w-32 border border-gray-200 rounded-xl px-3 py-2 font-brand text-sm" />
             </label>
             <button onClick={setItem} disabled={busy} className="rounded-full border border-brand-primary text-brand-primary px-4 py-2 font-brand text-sm hover:bg-brand-primary hover:text-brand-cream disabled:opacity-50">{busy ? '…' : 'Guardar precio'}</button>

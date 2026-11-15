@@ -8,6 +8,8 @@ import { FEATURES as FLAGS } from '@/lib/features'
 import { getTenantEntitlements } from '@/lib/entitlements'
 import { resolveFeature, FEATURES } from '@merkiai/tenancy'
 import { formatMoney, formatNumber } from '@merkiai/i18n'
+import { T } from '@merkiai/ui'
+import { getAdminTx } from '@/lib/ui-locale'
 
 export const metadata: Metadata = { title: 'Operaciones' }
 export const dynamic = 'force-dynamic'
@@ -24,6 +26,7 @@ function num(n: number): string { return formatNumber(n, { maximumFractionDigits
  *  existencias por clase y resumen de movimientos de los últimos 30 días, sobre
  *  las proyecciones del ledger. Las alertas (bajo mínimo, merma) llegan después. */
 export default async function OperacionesPage() {
+  const tx = await getAdminTx()
   const { adminUser, db } = await requireAdminDb()
   if (!userCanAccess(adminUser, 'productos')) redirect('/no-autorizado')
   const { entitlements } = await getTenantEntitlements().catch(() => ({ entitlements: null }))
@@ -41,9 +44,9 @@ export default async function OperacionesPage() {
   return (
     <div className="space-y-6">
       <div className="flex items-start justify-between gap-4 flex-wrap">
-        <PageHeader title="Operaciones" description="Tablero sobre el libro de inventario: valor a costo, existencias por clase y movimientos de los últimos 30 días." />
+        <PageHeader title={tx("Operaciones")} description="Tablero sobre el libro de inventario: valor a costo, existencias por clase y movimientos de los últimos 30 días." />
         <div className="flex gap-2 pt-1">
-          <a href="/api/admin/operations/export?type=valuation" className="rounded-full border border-gray-200 text-brand-primary px-4 py-2 font-brand text-sm hover:bg-slate-50">Exportar valorización</a>
+          <a href="/api/admin/operations/export?type=valuation" className="rounded-full border border-gray-200 text-brand-primary px-4 py-2 font-brand text-sm hover:bg-slate-50"><T>Exportar valorización</T></a>
           <a href="/api/admin/operations/export?type=movements&days=30" className="rounded-full border border-gray-200 text-brand-primary px-4 py-2 font-brand text-sm hover:bg-slate-50">Exportar movimientos (30d)</a>
         </div>
       </div>
@@ -51,7 +54,7 @@ export default async function OperacionesPage() {
       {/* Alertas (HU-409 F2a) */}
       {alerts.length > 0 && (
         <section className="bg-white rounded-2xl p-5 shadow-sm">
-          <h2 className="font-display text-brand-primary text-lg mb-3">Alertas de inventario <span className="font-brand text-sm text-brand-primary/40">({alerts.length})</span></h2>
+          <h2 className="font-display text-brand-primary text-lg mb-3"><T>Alertas de inventario</T> <span className="font-brand text-sm text-brand-primary/40">({alerts.length})</span></h2>
           <ul className="space-y-2">
             {alerts.map((a) => (
               <li key={a.stock_item_id} className="flex items-center justify-between gap-3 border-t border-gray-100 pt-2 first:border-t-0 first:pt-0">
@@ -70,7 +73,7 @@ export default async function OperacionesPage() {
       {/* Alertas por ubicación (HU-183) */}
       {locAlerts.length > 0 && (
         <section className="bg-white rounded-2xl p-5 shadow-sm">
-          <h2 className="font-display text-brand-primary text-lg mb-3">Alertas por ubicación <span className="font-brand text-sm text-brand-primary/40">({locAlerts.length})</span></h2>
+          <h2 className="font-display text-brand-primary text-lg mb-3"><T>Alertas por ubicación</T> <span className="font-brand text-sm text-brand-primary/40">({locAlerts.length})</span></h2>
           <ul className="space-y-2">
             {locAlerts.map((a, i) => (
               <li key={`${a.stock_item_id}-${a.location_id}-${i}`} className="flex items-center justify-between gap-3 border-t border-gray-100 pt-2 first:border-t-0 first:pt-0">
@@ -89,21 +92,21 @@ export default async function OperacionesPage() {
 
       {/* KPIs */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-        <Kpi label="Valor del inventario (a costo)" value={money(inv.totalValue)} />
-        <Kpi label="Ítems activos" value={String(inv.totalItems)} hint={`${inv.sellableItems} vendibles`} />
-        <Kpi label="Movimientos (30 días)" value={String(mov.total)} />
-        <Kpi label="Ítems sin costo" value={String(inv.withoutCost)} hint="con disponible, sin costo" />
+        <Kpi label={tx("Valor del inventario (a costo)")} value={money(inv.totalValue)} />
+        <Kpi label={tx("Ítems activos")} value={String(inv.totalItems)} hint={`${inv.sellableItems} vendibles`} />
+        <Kpi label={tx("Movimientos (30 días)")} value={String(mov.total)} />
+        <Kpi label={tx("Ítems sin costo")} value={String(inv.withoutCost)} hint="con disponible, sin costo" />
       </div>
 
       {/* Existencias por clase */}
       <section className="bg-white rounded-2xl p-5 shadow-sm">
-        <h2 className="font-display text-brand-primary text-lg mb-3">Existencias por clase</h2>
+        <h2 className="font-display text-brand-primary text-lg mb-3"><T>Existencias por clase</T></h2>
         <table className="w-full text-sm font-brand">
           <thead className="text-brand-primary/50 text-xs uppercase">
-            <tr><th className="text-left py-1">Clase</th><th className="text-right py-1">Ítems</th><th className="text-right py-1">Valor a costo</th></tr>
+            <tr><th className="text-left py-1"><T>Clase</T></th><th className="text-right py-1"><T>Ítems</T></th><th className="text-right py-1"><T>Valor a costo</T></th></tr>
           </thead>
           <tbody>
-            {inv.byClass.length === 0 && <tr><td colSpan={3} className="py-3 text-brand-primary/40">Sin ítems de inventario.</td></tr>}
+            {inv.byClass.length === 0 && <tr><td colSpan={3} className="py-3 text-brand-primary/40"><T>Sin ítems de inventario.</T></td></tr>}
             {inv.byClass.map((c) => (
               <tr key={c.item_class} className="border-t border-gray-100">
                 <td className="py-2 text-brand-primary">{CLASS_LABEL[c.item_class] ?? c.item_class}</td>
@@ -117,19 +120,19 @@ export default async function OperacionesPage() {
 
       {/* Movimientos últimos 30 días */}
       <section className="bg-white rounded-2xl p-5 shadow-sm">
-        <h2 className="font-display text-brand-primary text-lg mb-3">Movimientos · últimos 30 días</h2>
+        <h2 className="font-display text-brand-primary text-lg mb-3"><T>Movimientos · últimos 30 días</T></h2>
         <table className="w-full text-sm font-brand">
           <thead className="text-brand-primary/50 text-xs uppercase">
             <tr>
-              <th className="text-left py-1">Tipo</th>
+              <th className="text-left py-1"><T>Tipo</T></th>
               <th className="text-right py-1">N.º</th>
-              <th className="text-right py-1">Entradas</th>
-              <th className="text-right py-1">Salidas</th>
-              <th className="text-right py-1">Valor entradas</th>
+              <th className="text-right py-1"><T>Entradas</T></th>
+              <th className="text-right py-1"><T>Salidas</T></th>
+              <th className="text-right py-1"><T>Valor entradas</T></th>
             </tr>
           </thead>
           <tbody>
-            {mov.byType.length === 0 && <tr><td colSpan={5} className="py-3 text-brand-primary/40">Sin movimientos en el período.</td></tr>}
+            {mov.byType.length === 0 && <tr><td colSpan={5} className="py-3 text-brand-primary/40"><T>Sin movimientos en el período.</T></td></tr>}
             {mov.byType.map((t) => (
               <tr key={t.movement_type} className="border-t border-gray-100">
                 <td className="py-2 text-brand-primary">{TYPE_LABEL[t.movement_type] ?? t.movement_type}</td>

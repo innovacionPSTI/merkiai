@@ -3,6 +3,8 @@
 import { useState } from 'react'
 import type { NewsletterSubscriber } from '@merkiai/database'
 import { formatDate } from '@merkiai/i18n'
+import { T } from '@merkiai/ui'
+import { useTx } from '@merkiai/ui'
 
 interface Props {
   initialSubscribers: NewsletterSubscriber[]
@@ -11,6 +13,7 @@ interface Props {
 type Tab = 'suscriptores' | 'enviar'
 
 export default function NewsletterClient({ initialSubscribers }: Props) {
+  const tx = useTx()
   const [tab, setTab] = useState<Tab>('suscriptores')
   const [subscribers] = useState<NewsletterSubscriber[]>(initialSubscribers)
 
@@ -79,15 +82,15 @@ export default function NewsletterClient({ initialSubscribers }: Props) {
       {/* Stats bar */}
       <div className="grid grid-cols-3 gap-4">
         <div className="bg-white rounded-2xl p-4 shadow-sm border border-brand-primary/5">
-          <p className="font-brand text-xs text-brand-primary/40 uppercase tracking-wide mb-1">Total</p>
+          <p className="font-brand text-xs text-brand-primary/40 uppercase tracking-wide mb-1"><T>Total</T></p>
           <p className="font-display text-brand-primary text-3xl">{subscribers.length}</p>
         </div>
         <div className="bg-white rounded-2xl p-4 shadow-sm border border-brand-primary/5">
-          <p className="font-brand text-xs text-brand-primary/40 uppercase tracking-wide mb-1">Activos</p>
+          <p className="font-brand text-xs text-brand-primary/40 uppercase tracking-wide mb-1"><T>Activos</T></p>
           <p className="font-display text-green-700 text-3xl">{activeCount}</p>
         </div>
         <div className="bg-white rounded-2xl p-4 shadow-sm border border-brand-primary/5">
-          <p className="font-brand text-xs text-brand-primary/40 uppercase tracking-wide mb-1">Inactivos</p>
+          <p className="font-brand text-xs text-brand-primary/40 uppercase tracking-wide mb-1"><T>Inactivos</T></p>
           <p className="font-display text-brand-primary/40 text-3xl">{subscribers.length - activeCount}</p>
         </div>
       </div>
@@ -123,22 +126,22 @@ export default function NewsletterClient({ initialSubscribers }: Props) {
               <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
               </svg>
-              Exportar CSV
+              <T>Exportar CSV</T>
             </button>
           </div>
 
           {subscribers.length === 0 ? (
             <div className="py-20 text-center">
-              <p className="font-brand text-brand-primary/30 text-sm">No hay suscriptores aún</p>
+              <p className="font-brand text-brand-primary/30 text-sm"><T>No hay suscriptores aún</T></p>
             </div>
           ) : (
             <div className="overflow-x-auto">
               <table className="w-full">
                 <thead>
                   <tr className="border-b border-brand-primary/5">
-                    <th className="text-left px-6 py-3 font-brand text-xs text-brand-primary/40 uppercase tracking-wide">Email</th>
-                    <th className="text-left px-6 py-3 font-brand text-xs text-brand-primary/40 uppercase tracking-wide">Fecha</th>
-                    <th className="text-left px-6 py-3 font-brand text-xs text-brand-primary/40 uppercase tracking-wide">Estado</th>
+                    <th className="text-left px-6 py-3 font-brand text-xs text-brand-primary/40 uppercase tracking-wide"><T>Email</T></th>
+                    <th className="text-left px-6 py-3 font-brand text-xs text-brand-primary/40 uppercase tracking-wide"><T>Fecha</T></th>
+                    <th className="text-left px-6 py-3 font-brand text-xs text-brand-primary/40 uppercase tracking-wide"><T>Estado</T></th>
                   </tr>
                 </thead>
                 <tbody>
@@ -172,10 +175,10 @@ export default function NewsletterClient({ initialSubscribers }: Props) {
       {tab === 'enviar' && (
         <div className="bg-white rounded-2xl shadow-sm border border-brand-primary/5 p-6">
           <div className="mb-6">
-            <h2 className="font-brand font-semibold text-brand-primary mb-1">Nueva campaña</h2>
+            <h2 className="font-brand font-semibold text-brand-primary mb-1"><T>Nueva campaña</T></h2>
             <p className="font-brand text-sm text-brand-primary/50">
-              Se enviará a <strong>{activeCount}</strong> suscriptor{activeCount !== 1 ? 'es' : ''} activo{activeCount !== 1 ? 's' : ''}.
-              Puedes usar <strong>**negrita**</strong> y <em>*cursiva*</em>.
+              <T>Se enviará a</T> <strong>{activeCount}</strong> suscriptor{activeCount !== 1 ? 'es' : ''} activo{activeCount !== 1 ? 's' : ''}.
+              Puedes usar <strong><T>**negrita**</T></strong> y <em><T>*cursiva*</T></em>.
             </p>
           </div>
 
@@ -192,13 +195,13 @@ export default function NewsletterClient({ initialSubscribers }: Props) {
           <form onSubmit={handleSend} className="space-y-4">
             <div>
               <label className="block font-brand text-sm text-brand-primary/70 mb-1.5">
-                Asunto
+                <T>Asunto</T>
               </label>
               <input
                 type="text"
                 value={subject}
                 onChange={(e) => setSubject(e.target.value)}
-                placeholder="Ej: Novedades de esta semana"
+                placeholder={tx("Ej: Novedades de esta semana")}
                 required
                 className="w-full px-4 py-2.5 rounded-xl border border-brand-primary/15 font-brand text-sm text-brand-primary bg-brand-cream/30 focus:outline-none focus:ring-2 focus:ring-brand-primary/20 focus:border-brand-primary/30"
               />
@@ -206,7 +209,7 @@ export default function NewsletterClient({ initialSubscribers }: Props) {
 
             <div>
               <label className="block font-brand text-sm text-brand-primary/70 mb-1.5">
-                Contenido
+                <T>Contenido</T>
               </label>
               <textarea
                 value={body}
@@ -217,7 +220,7 @@ export default function NewsletterClient({ initialSubscribers }: Props) {
                 className="w-full px-4 py-3 rounded-xl border border-brand-primary/15 font-brand text-sm text-brand-primary bg-brand-cream/30 focus:outline-none focus:ring-2 focus:ring-brand-primary/20 focus:border-brand-primary/30 resize-y font-mono"
               />
               <p className="mt-1.5 font-brand text-xs text-brand-primary/40">
-                Acepta formato Markdown básico: ## Títulos, **negrita**, *cursiva*, - listas
+                <T>Acepta formato Markdown básico: ## Títulos, **negrita**, *cursiva*, - listas</T>
               </p>
             </div>
 
@@ -238,14 +241,14 @@ export default function NewsletterClient({ initialSubscribers }: Props) {
                       <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
                       <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
                     </svg>
-                    Enviando…
+                    <T>Enviando…</T>
                   </>
                 ) : (
                   <>
                     <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
                     </svg>
-                    Enviar campaña
+                    <T>Enviar campaña</T>
                   </>
                 )}
               </button>

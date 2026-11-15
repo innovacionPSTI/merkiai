@@ -3,6 +3,7 @@
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { Icon } from '@merkiai/ui'
+import { T } from '@merkiai/ui'
 
 interface Redirect {
   id: number
@@ -59,7 +60,7 @@ export default function RedirectsManager({ initial }: { initial: Redirect[] }) {
     <div className="space-y-6">
       {/* Alta */}
       <form onSubmit={create} className="bg-white rounded-2xl p-6 shadow-sm space-y-4">
-        <h2 className="font-display text-brand-primary text-lg">Nueva regla</h2>
+        <h2 className="font-display text-brand-primary text-lg"><T>Nueva regla</T></h2>
         <div className="grid gap-3 sm:grid-cols-[1fr_1fr_auto_auto] sm:items-end">
           <label className="block">
             <span className="font-brand text-xs text-brand-primary/50">Origen (ruta vieja)</span>
@@ -76,7 +77,7 @@ export default function RedirectsManager({ initial }: { initial: Redirect[] }) {
             />
           </label>
           <label className="block">
-            <span className="font-brand text-xs text-brand-primary/50">Tipo</span>
+            <span className="font-brand text-xs text-brand-primary/50"><T>Tipo</T></span>
             <select
               value={code} onChange={(e) => setCode(Number(e.target.value))}
               className="mt-1 w-full rounded-lg border border-brand-primary/15 px-3 py-2 font-brand text-sm text-brand-primary focus:border-brand-primary focus:outline-none"
@@ -89,7 +90,7 @@ export default function RedirectsManager({ initial }: { initial: Redirect[] }) {
             type="submit" disabled={busy}
             className="bg-brand-primary text-brand-cream rounded-full px-5 py-2 font-brand text-sm hover:bg-brand-dark transition-colors disabled:opacity-50 inline-flex items-center gap-2"
           >
-            <Icon name="plus" size={16} /> Agregar
+            <Icon name="plus" size={16} /> <T>Agregar</T>
           </button>
         </div>
         {error && <p className="font-brand text-sm text-red-600">{error}</p>}
@@ -100,16 +101,16 @@ export default function RedirectsManager({ initial }: { initial: Redirect[] }) {
         <table className="w-full min-w-[640px] text-sm">
           <thead>
             <tr className="bg-gray-50 text-left font-brand text-xs text-brand-primary/50">
-              <th className="px-4 py-3">Origen</th>
-              <th className="px-4 py-3">Destino</th>
-              <th className="px-4 py-3">Tipo</th>
-              <th className="px-4 py-3">Estado</th>
-              <th className="px-4 py-3 text-right">Acciones</th>
+              <th className="px-4 py-3"><T>Origen</T></th>
+              <th className="px-4 py-3"><T>Destino</T></th>
+              <th className="px-4 py-3"><T>Tipo</T></th>
+              <th className="px-4 py-3"><T>Estado</T></th>
+              <th className="px-4 py-3 text-right"><T>Acciones</T></th>
             </tr>
           </thead>
           <tbody>
             {rows.length === 0 ? (
-              <tr><td colSpan={5} className="px-4 py-10 text-center font-brand text-brand-primary/40">Sin reglas de redirección.</td></tr>
+              <tr><td colSpan={5} className="px-4 py-10 text-center font-brand text-brand-primary/40"><T>Sin reglas de redirección.</T></td></tr>
             ) : rows.map((r) => (
               <tr key={r.id} className="border-t border-gray-100">
                 <td className="px-4 py-3 font-brand text-brand-primary">{r.from_path}</td>
@@ -125,7 +126,7 @@ export default function RedirectsManager({ initial }: { initial: Redirect[] }) {
                 </td>
                 <td className="px-4 py-3 text-right">
                   <button onClick={() => remove(r)} className="font-brand text-xs text-red-600 border border-red-200 rounded-full px-3 py-1 hover:bg-red-50 inline-flex items-center gap-1">
-                    <Icon name="trash" size={13} /> Eliminar
+                    <Icon name="trash" size={13} /> <T>Eliminar</T>
                   </button>
                 </td>
               </tr>

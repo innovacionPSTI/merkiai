@@ -4,6 +4,7 @@ import { useActionState, useState } from 'react'
 import { Icon } from '@merkiai/ui'
 import { applyPresetAction, setOnboardingDoneAction, type OnboardingActionState } from './actions'
 import type { OnboardingOptions, OnboardingProgress } from '@/lib/onboarding'
+import { T } from '@merkiai/ui'
 
 const initial: OnboardingActionState = { ok: false }
 
@@ -44,7 +45,7 @@ export default function OnboardingWizard({ options, progress }: { options: Onboa
       {/* HU-236 v2 · Progreso reanudable */}
       <section className="bg-white rounded-2xl p-6 shadow-sm">
         <div className="flex items-center justify-between mb-3">
-          <h2 className="font-display text-brand-primary text-xl">Tu progreso</h2>
+          <h2 className="font-display text-brand-primary text-xl"><T>Tu progreso</T></h2>
           <span className="font-brand text-sm text-brand-primary/60">{progress.percent}% ({progress.completedCount}/{progress.totalCount})</span>
         </div>
         <div className="h-2 bg-brand-primary/10 rounded-full overflow-hidden mb-4">
@@ -70,18 +71,18 @@ export default function OnboardingWizard({ options, progress }: { options: Onboa
             </span>
             <form action={setOnboardingDoneAction}>
               <input type="hidden" name="intent" value="reopen" />
-              <button type="submit" className="font-brand text-sm text-green-800 underline whitespace-nowrap">Reabrir</button>
+              <button type="submit" className="font-brand text-sm text-green-800 underline whitespace-nowrap"><T>Reabrir</T></button>
             </form>
           </div>
         ) : (
           <div className="mt-4 flex gap-3">
             <form action={setOnboardingDoneAction}>
               <input type="hidden" name="intent" value="complete" />
-              <button type="submit" className="rounded-xl bg-brand-primary text-white px-4 py-2 font-brand text-sm">Marcar como completado</button>
+              <button type="submit" className="rounded-xl bg-brand-primary text-white px-4 py-2 font-brand text-sm"><T>Marcar como completado</T></button>
             </form>
             <form action={setOnboardingDoneAction}>
               <input type="hidden" name="intent" value="dismiss" />
-              <button type="submit" className="rounded-xl border border-black/10 px-4 py-2 font-brand text-sm text-brand-primary/70">Omitir por ahora</button>
+              <button type="submit" className="rounded-xl border border-black/10 px-4 py-2 font-brand text-sm text-brand-primary/70"><T>Omitir por ahora</T></button>
             </form>
           </div>
         )}
@@ -90,10 +91,9 @@ export default function OnboardingWizard({ options, progress }: { options: Onboa
     <form action={action} className="space-y-8">
       {/* Paso 1 · Nicho / preset */}
       <section className="bg-white rounded-2xl p-6 shadow-sm">
-        <h2 className="font-display text-brand-primary text-xl mb-1">1 · Elige un punto de partida</h2>
+        <h2 className="font-display text-brand-primary text-xl mb-1"><T>1 · Elige un punto de partida</T></h2>
         <p className="font-brand text-sm text-brand-primary/50 mb-4">
-          Un preset configura la apariencia y el contenido inicial de tu tienda según tu nicho. Podrás
-          ajustarlo todo después.
+          <T>Un preset configura la apariencia y el contenido inicial de tu tienda según tu nicho. Podrás ajustarlo todo después.</T>
         </p>
         <div className="grid gap-3 sm:grid-cols-2">
           {options.presets.map((p) => (
@@ -121,11 +121,11 @@ export default function OnboardingWizard({ options, progress }: { options: Onboa
 
       {/* Paso 2 · Inventario (solo si el plan lo permite) */}
       <section className="bg-white rounded-2xl p-6 shadow-sm">
-        <h2 className="font-display text-brand-primary text-xl mb-1">2 · Modelo de inventario</h2>
+        <h2 className="font-display text-brand-primary text-xl mb-1"><T>2 · Modelo de inventario</T></h2>
         {options.allowMultiLocation ? (
           <>
             <p className="font-brand text-sm text-brand-primary/50 mb-4">
-              Tu plan permite gestionar stock por sucursal. Elige cómo llevar el inventario.
+              <T>Tu plan permite gestionar stock por sucursal. Elige cómo llevar el inventario.</T>
             </p>
             <div className="flex gap-3">
               {(['single', 'multi_location'] as const).map((m) => (
@@ -144,7 +144,7 @@ export default function OnboardingWizard({ options, progress }: { options: Onboa
           </>
         ) : (
           <p className="font-brand text-sm text-brand-primary/50">
-            Tu plan usa stock único por producto. La gestión por sucursales está disponible en planes superiores.
+            <T>Tu plan usa stock único por producto. La gestión por sucursales está disponible en planes superiores.</T>
             <input type="hidden" name="inventory_model" value="single" />
           </p>
         )}
@@ -152,7 +152,7 @@ export default function OnboardingWizard({ options, progress }: { options: Onboa
 
       {/* Paso 3 · Resumen + aplicar */}
       <section className="bg-white rounded-2xl p-6 shadow-sm">
-        <h2 className="font-display text-brand-primary text-xl mb-1">3 · Aplicar</h2>
+        <h2 className="font-display text-brand-primary text-xl mb-1"><T>3 · Aplicar</T></h2>
         <p className="font-brand text-sm text-brand-primary/50 mb-4">
           Se aplicará la apariencia del preset y se crearán {catCount} categoría(s) y {prodCount} producto(s) de
           ejemplo{catCap != null || prodCap != null ? ' (ajustado a los topes de tu plan)' : ''}. No se duplica lo
@@ -177,8 +177,8 @@ export default function OnboardingWizard({ options, progress }: { options: Onboa
 
       {/* Otros pasos (desde su propia sección; no cuentan en el progreso) */}
       <section className="bg-white rounded-2xl p-6 shadow-sm">
-        <h2 className="font-display text-brand-primary text-xl mb-1">Otros ajustes</h2>
-        <p className="font-brand text-sm text-brand-primary/50 mb-4">Se configuran desde su propia sección:</p>
+        <h2 className="font-display text-brand-primary text-xl mb-1"><T>Otros ajustes</T></h2>
+        <p className="font-brand text-sm text-brand-primary/50 mb-4"><T>Se configuran desde su propia sección:</T></p>
         <ul className="font-brand text-sm text-brand-primary space-y-2">
           {[
             { href: '/constructor', label: 'Diseñar las páginas (Constructor)' },

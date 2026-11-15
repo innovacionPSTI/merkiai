@@ -1,6 +1,7 @@
 import { redirect } from 'next/navigation'
 import { listWorkspaces } from '@/lib/workspaces'
 import { setActiveTenantId } from '@/lib/active-tenant'
+import { T } from '@merkiai/ui'
 
 export const dynamic = 'force-dynamic'
 export const metadata = { title: 'Elige un espacio de trabajo' }
@@ -25,7 +26,7 @@ export default async function SelectWorkspacePage() {
   return (
     <main className="min-h-screen bg-gradient-to-b from-slate-50 to-white flex flex-col">
       <header className="flex justify-end p-6">
-        <a href="/handler/sign-out" className="text-sm text-slate-500 hover:text-slate-800">Cerrar sesión</a>
+        <a href="/handler/sign-out" className="text-sm text-slate-500 hover:text-slate-800"><T>Cerrar sesión</T></a>
       </header>
 
       <div className="flex-1 flex flex-col items-center justify-center px-4 -mt-16">
@@ -34,12 +35,12 @@ export default async function SelectWorkspacePage() {
             <path d="M3 21h18M6 21V7l6-4 6 4v14M9 9h.01M9 13h.01M15 9h.01M15 13h.01" strokeLinecap="round" strokeLinejoin="round" />
           </svg>
         </div>
-        <h1 className="text-2xl font-semibold text-slate-800">Elige un espacio de trabajo</h1>
-        <p className="text-slate-500 mt-1 mb-8">Tienes acceso a varios. Elige el que quieras abrir.</p>
+        <h1 className="text-2xl font-semibold text-slate-800"><T>Elige un espacio de trabajo</T></h1>
+        <p className="text-slate-500 mt-1 mb-8"><T>Tienes acceso a varios. Elige el que quieras abrir.</T></p>
 
         {workspaces.length === 0 ? (
           <div className="w-full max-w-md rounded-2xl border border-slate-200 bg-white p-6 text-center text-slate-500">
-            No perteneces a ninguna tienda todavía. Pide a un administrador que te invite.
+            <T>No perteneces a ninguna tienda todavía. Pide a un administrador que te invite.</T>
           </div>
         ) : (
           <div className="w-full max-w-md space-y-3">
@@ -55,7 +56,7 @@ export default async function SelectWorkspacePage() {
                   </span>
                   <span className="flex-1">
                     <span className="block font-semibold text-slate-800">{w.name}</span>
-                    <span className="block text-sm text-slate-500">Espacio de trabajo</span>
+                    <span className="block text-sm text-slate-500"><T>Espacio de trabajo</T></span>
                   </span>
                   <span className="text-slate-400">→</span>
                 </button>

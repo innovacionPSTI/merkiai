@@ -13,6 +13,8 @@ import { useEffect, useRef, useState, useTransition } from 'react'
 import { useRouter } from 'next/navigation'
 import { startCheckoutAction } from './actions'
 import type { CheckoutSession } from '@/lib/billing'
+import { T } from '@merkiai/ui'
+import { useTx } from '@merkiai/ui'
 
 const KR_BASE = 'https://static.payzen.lat/static/js/krypton-client/V4.0'
 
@@ -36,6 +38,7 @@ function loadScript(src: string, attrs: Record<string, string> = {}): Promise<vo
 }
 
 function PayzenForm({ session }: { session: CheckoutSession }) {
+  const tx = useTx()
   const router = useRouter()
   const mounted = useRef(false)
   const [error, setError] = useState<string | null>(null)
@@ -43,7 +46,7 @@ function PayzenForm({ session }: { session: CheckoutSession }) {
   useEffect(() => {
     if (mounted.current) return
     mounted.current = true
-    if (!session.publicKey) { setError('Falta la llave pública de PayZen en la consola.'); return }
+    if (!session.publicKey) { setError(tx("Falta la llave pública de PayZen en la consola.")); return }
     const css = document.createElement('link')
     css.rel = 'stylesheet'
     css.href = `${KR_BASE}/ext/neon-reset.min.css`
@@ -66,7 +69,7 @@ function PayzenForm({ session }: { session: CheckoutSession }) {
     <div className="max-w-md">
       <div className="kr-smart-form" {...{ 'kr-card-form-expanded': '', 'kr-form-token': session.formToken }} />
       <p className="font-brand text-xs text-brand-primary/50 mt-3">
-        Pago seguro procesado por PayZen. Merkiai no almacena los datos de tu tarjeta.
+        <T>Pago seguro procesado por PayZen. Merkiai no almacena los datos de tu tarjeta.</T>
       </p>
     </div>
   )
@@ -83,12 +86,12 @@ export default function PayzenCheckout({ cta, defaultInterval }: { cta: string; 
   return (
     <div className="space-y-4">
       <fieldset className="flex gap-4 font-brand text-sm text-brand-primary">
-        <legend className="sr-only">Periodicidad del cobro</legend>
+        <legend className="sr-only"><T>Periodicidad del cobro</T></legend>
         <label className="flex items-center gap-2">
-          <input type="radio" name="interval" checked={interval === 'monthly'} onChange={() => setInterval('monthly')} /> Mensual
+          <input type="radio" name="interval" checked={interval === 'monthly'} onChange={() => setInterval('monthly')} /> <T>Mensual</T>
         </label>
         <label className="flex items-center gap-2">
-          <input type="radio" name="interval" checked={interval === 'yearly'} onChange={() => setInterval('yearly')} /> Anual
+          <input type="radio" name="interval" checked={interval === 'yearly'} onChange={() => setInterval('yearly')} /> <T>Anual</T>
         </label>
       </fieldset>
       <button

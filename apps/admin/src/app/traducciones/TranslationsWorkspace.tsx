@@ -3,6 +3,8 @@
 import { useMemo, useRef, useState, useTransition } from 'react'
 import { useRouter } from 'next/navigation'
 import { saveTranslationAction, importTranslationsAction } from './actions'
+import { T } from '@merkiai/ui'
+import { useTx } from '@merkiai/ui'
 
 interface Item {
   type: 'product' | 'category' | 'blog_post' | 'page' | 'section' | 'item'
@@ -35,6 +37,7 @@ const STATUS: Record<Item['status'], { label: string; cls: string }> = {
 }
 
 export default function TranslationsWorkspace({ locale, locales, tab, coverage, items, fieldLabels, longFields }: Props) {
+  const tx = useTx()
   const router = useRouter()
   const [pending, start] = useTransition()
   const [filter, setFilter] = useState<'all' | 'pending'>('pending')
@@ -86,14 +89,14 @@ export default function TranslationsWorkspace({ locale, locales, tab, coverage, 
     <div className="space-y-5">
       {/* Idioma + CSV */}
       <section className="rounded-2xl border border-gray-200 bg-white p-4 flex flex-wrap items-center gap-3">
-        <label className="font-brand text-sm text-brand-primary">Idioma
+        <label className="font-brand text-sm text-brand-primary"><T>Idioma</T>
           <select className={`${input} ml-2 w-auto inline-block`} value={locale} onChange={(e) => go({ idioma: e.target.value })}>
             {locales.map((l) => <option key={l.code} value={l.code}>{l.label}</option>)}
           </select>
         </label>
         <div className="flex-1" />
-        <a href={`/api/admin/translations/export?locale=${encodeURIComponent(locale)}&type=${tab === 'blocks' ? 'blocks' : tab}`} className="rounded-full border border-brand-primary/30 px-4 py-2 font-brand text-sm text-brand-primary">Exportar CSV</a>
-        <a href={`/api/admin/translations/export?locale=${encodeURIComponent(locale)}&type=all`} className="rounded-full border border-brand-primary/30 px-4 py-2 font-brand text-sm text-brand-primary">Exportar todo</a>
+        <a href={`/api/admin/translations/export?locale=${encodeURIComponent(locale)}&type=${tab === 'blocks' ? 'blocks' : tab}`} className="rounded-full border border-brand-primary/30 px-4 py-2 font-brand text-sm text-brand-primary"><T>Exportar CSV</T></a>
+        <a href={`/api/admin/translations/export?locale=${encodeURIComponent(locale)}&type=all`} className="rounded-full border border-brand-primary/30 px-4 py-2 font-brand text-sm text-brand-primary"><T>Exportar todo</T></a>
         <label className="rounded-full bg-brand-primary px-4 py-2 font-brand text-sm text-white cursor-pointer">
           {pending ? 'Procesando…' : 'Importar CSV'}
           <input ref={fileRef} type="file" accept=".csv,text/csv" className="sr-only" disabled={pending} onChange={(e) => { const f = e.target.files?.[0]; if (f) importCsv(f) }} />
@@ -119,7 +122,7 @@ export default function TranslationsWorkspace({ locale, locales, tab, coverage, 
         {/* Lista */}
         <section className="lg:col-span-2 rounded-2xl border border-gray-200 bg-white">
           <div className="flex flex-wrap items-center gap-2 border-b border-gray-100 p-3">
-            <input className={`${input} flex-1 min-w-[140px]`} placeholder="Buscar" value={query} onChange={(e) => setQuery(e.target.value)} />
+            <input className={`${input} flex-1 min-w-[140px]`} placeholder={tx("Buscar")} value={query} onChange={(e) => setQuery(e.target.value)} />
             <select className={`${input} w-auto`} value={filter} onChange={(e) => setFilter(e.target.value as 'all' | 'pending')}>
               <option value="pending">Pendientes</option>
               <option value="all">Todos</option>
@@ -170,10 +173,10 @@ export default function TranslationsWorkspace({ locale, locales, tab, coverage, 
                   </label>
                 </div>
               ))}
-              <p className="font-brand text-xs text-brand-primary/50">Deja un campo vacío para mostrar el texto original en ese idioma.</p>
+              <p className="font-brand text-xs text-brand-primary/50"><T>Deja un campo vacío para mostrar el texto original en ese idioma.</T></p>
               <div className="flex gap-3">
                 <button type="button" disabled={pending} onClick={save} className="rounded-full bg-brand-primary px-6 py-2.5 font-brand text-sm text-white disabled:opacity-60">{pending ? 'Guardando…' : 'Guardar traducción'}</button>
-                <button type="button" disabled={pending} onClick={() => setEditing(null)} className="rounded-full border border-brand-primary/30 px-6 py-2.5 font-brand text-sm text-brand-primary">Cancelar</button>
+                <button type="button" disabled={pending} onClick={() => setEditing(null)} className="rounded-full border border-brand-primary/30 px-6 py-2.5 font-brand text-sm text-brand-primary"><T>Cancelar</T></button>
               </div>
             </div>
           )}

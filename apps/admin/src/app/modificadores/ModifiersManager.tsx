@@ -8,6 +8,8 @@
  */
 import { useState } from 'react'
 import { formatMoney } from '@merkiai/i18n'
+import { T } from '@merkiai/ui'
+import { useTx } from '@merkiai/ui'
 
 interface Option { id: number; name: string; price_delta: number; consume_stock_item_id: number | null; consume_qty: number | null; consume_uom_id: number | null }
 interface Group { id: number; name: string; min_select: number; max_select: number; required: boolean; options: Option[] }
@@ -23,6 +25,7 @@ export default function ModifiersManager({ products, items, uoms }: {
   items: ItemRef[]
   uoms: UomRef[]
 }) {
+  const tx = useTx()
   const [productId, setProductId] = useState<number | ''>('')
   const [groups, setGroups] = useState<Group[]>([])
   const [loading, setLoading] = useState(false)
@@ -55,7 +58,7 @@ export default function ModifiersManager({ products, items, uoms }: {
   }
 
   async function addGroup() {
-    if (productId === '' || !gName.trim()) { setError('Selecciona producto y nombre del grupo'); return }
+    if (productId === '' || !gName.trim()) { setError(tx("Selecciona producto y nombre del grupo")); return }
     setGBusy(true); setError(null)
     try {
       const res = await fetch('/api/admin/inventory/modifiers', {
@@ -72,7 +75,7 @@ export default function ModifiersManager({ products, items, uoms }: {
     <div className="space-y-6">
       <div className="bg-white rounded-2xl p-5 shadow-sm">
         <label className="block max-w-md">
-          <span className="font-brand text-xs font-semibold text-brand-primary block mb-1">Producto</span>
+          <span className="font-brand text-xs font-semibold text-brand-primary block mb-1"><T>Producto</T></span>
           <select value={productId} onChange={(e) => onSelectProduct(e.target.value)} className="w-full border border-gray-200 rounded-xl px-3 py-2 font-brand text-sm">
             <option value="">Selecciona un producto…</option>
             {products.map((p) => <option key={p.id} value={p.id}>{p.name}</option>)}
@@ -85,14 +88,14 @@ export default function ModifiersManager({ products, items, uoms }: {
       {productId !== '' && (
         <>
           <div className="bg-white rounded-2xl p-5 shadow-sm space-y-3">
-            <h2 className="font-display text-brand-primary text-lg">Nuevo grupo</h2>
+            <h2 className="font-display text-brand-primary text-lg"><T>Nuevo grupo</T></h2>
             <div className="flex flex-wrap items-end gap-3">
               <label className="flex-1 min-w-[180px]">
                 <span className="font-brand text-xs font-semibold text-brand-primary block mb-1">Nombre (p. ej. Tamaño, Extras)</span>
                 <input value={gName} onChange={(e) => setGName(e.target.value)} className="w-full border border-gray-200 rounded-xl px-3 py-2 font-brand text-sm" />
               </label>
               <label>
-                <span className="font-brand text-xs font-semibold text-brand-primary block mb-1">Mín.</span>
+                <span className="font-brand text-xs font-semibold text-brand-primary block mb-1"><T>Mín.</T></span>
                 <input type="number" min={0} value={gMin} onChange={(e) => setGMin(Number(e.target.value))} className="w-20 border border-gray-200 rounded-xl px-3 py-2 font-brand text-sm" />
               </label>
               <label>
@@ -100,14 +103,14 @@ export default function ModifiersManager({ products, items, uoms }: {
                 <input type="number" min={0} value={gMax} onChange={(e) => setGMax(Number(e.target.value))} className="w-28 border border-gray-200 rounded-xl px-3 py-2 font-brand text-sm" />
               </label>
               <label className="flex items-center gap-2 font-brand text-sm text-brand-primary">
-                <input type="checkbox" checked={gReq} onChange={(e) => setGReq(e.target.checked)} /> Obligatorio
+                <input type="checkbox" checked={gReq} onChange={(e) => setGReq(e.target.checked)} /> <T>Obligatorio</T>
               </label>
               <button onClick={addGroup} disabled={gBusy} className="rounded-full bg-brand-primary text-brand-cream px-5 py-2 font-brand text-sm font-medium hover:bg-brand-dark disabled:opacity-50">{gBusy ? 'Agregando…' : 'Agregar grupo'}</button>
             </div>
           </div>
 
-          {loading && <p className="font-brand text-sm text-brand-primary/50">Cargando…</p>}
-          {!loading && groups.length === 0 && <p className="font-brand text-sm text-brand-primary/40">Este producto aún no tiene grupos de modificadores.</p>}
+          {loading && <p className="font-brand text-sm text-brand-primary/50"><T>Cargando…</T></p>}
+          {!loading && groups.length === 0 && <p className="font-brand text-sm text-brand-primary/40"><T>Este producto aún no tiene grupos de modificadores.</T></p>}
 
           {groups.map((g) => (
             <GroupCard key={g.id} group={g} items={items} uoms={uoms} itemName={itemName} uomCode={uomCode} onChanged={() => loadGroups(productId)} />
@@ -162,13 +165,13 @@ function GroupCard({ group, items, uoms, itemName, uomCode, onChanged }: {
       <table className="w-full text-sm font-brand">
         <thead className="text-brand-primary/50 text-xs uppercase">
           <tr>
-            <th className="text-left py-1">Opción</th>
-            <th className="text-right py-1">Ajuste</th>
-            <th className="text-left py-1">Consume</th>
+            <th className="text-left py-1"><T>Opción</T></th>
+            <th className="text-right py-1"><T>Ajuste</T></th>
+            <th className="text-left py-1"><T>Consume</T></th>
           </tr>
         </thead>
         <tbody>
-          {group.options.length === 0 && <tr><td colSpan={3} className="py-3 text-brand-primary/40">Sin opciones.</td></tr>}
+          {group.options.length === 0 && <tr><td colSpan={3} className="py-3 text-brand-primary/40"><T>Sin opciones.</T></td></tr>}
           {group.options.map((o) => (
             <tr key={o.id} className="border-t border-gray-100">
               <td className="py-2 text-brand-primary">{o.name}</td>
@@ -185,26 +188,26 @@ function GroupCard({ group, items, uoms, itemName, uomCode, onChanged }: {
 
       <div className="flex flex-wrap items-end gap-2 border-t border-gray-100 pt-3">
         <label className="flex-1 min-w-[140px]">
-          <span className="font-brand text-xs font-semibold text-brand-primary block mb-1">Opción</span>
+          <span className="font-brand text-xs font-semibold text-brand-primary block mb-1"><T>Opción</T></span>
           <input value={name} onChange={(e) => setName(e.target.value)} className="w-full border border-gray-200 rounded-xl px-3 py-2 font-brand text-sm" />
         </label>
         <label>
-          <span className="font-brand text-xs font-semibold text-brand-primary block mb-1">Ajuste precio</span>
+          <span className="font-brand text-xs font-semibold text-brand-primary block mb-1"><T>Ajuste precio</T></span>
           <input type="number" value={price} onChange={(e) => setPrice(Number(e.target.value))} className="w-28 border border-gray-200 rounded-xl px-3 py-2 font-brand text-sm" />
         </label>
         <label>
-          <span className="font-brand text-xs font-semibold text-brand-primary block mb-1">Consume ítem</span>
+          <span className="font-brand text-xs font-semibold text-brand-primary block mb-1"><T>Consume ítem</T></span>
           <select value={consume} onChange={(e) => setConsume(e.target.value === '' ? '' : Number(e.target.value))} className="border border-gray-200 rounded-xl px-3 py-2 font-brand text-sm">
             <option value="">—</option>
             {items.map((i) => <option key={i.id} value={i.id}>{i.name}</option>)}
           </select>
         </label>
         <label>
-          <span className="font-brand text-xs font-semibold text-brand-primary block mb-1">Cant.</span>
+          <span className="font-brand text-xs font-semibold text-brand-primary block mb-1"><T>Cant.</T></span>
           <input type="number" value={qty} onChange={(e) => setQty(e.target.value === '' ? '' : Number(e.target.value))} className="w-20 border border-gray-200 rounded-xl px-3 py-2 font-brand text-sm" />
         </label>
         <label>
-          <span className="font-brand text-xs font-semibold text-brand-primary block mb-1">Unidad</span>
+          <span className="font-brand text-xs font-semibold text-brand-primary block mb-1"><T>Unidad</T></span>
           <select value={uomId} onChange={(e) => setUomId(e.target.value === '' ? '' : Number(e.target.value))} className="border border-gray-200 rounded-xl px-3 py-2 font-brand text-sm">
             <option value="">—</option>
             {uoms.map((u) => <option key={u.id} value={u.id}>{u.code}</option>)}

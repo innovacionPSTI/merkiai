@@ -4,11 +4,14 @@ import type { Metadata } from 'next'
 import { PageHeader, Icon } from '@merkiai/ui'
 import CsvImportModal from '@/components/CsvImportModal'
 import { formatDate } from '@merkiai/i18n'
+import { T } from '@merkiai/ui'
+import { getAdminTx } from '@/lib/ui-locale'
 
 export const metadata: Metadata = { title: 'Blog' }
 export const dynamic = 'force-dynamic'
 
 export default async function BlogAdminPage() {
+  const tx = await getAdminTx()
   const { db: supabase } = await requireAdminDb()
   const { data: posts } = await supabase
     .from('blog_posts')
@@ -19,19 +22,19 @@ export default async function BlogAdminPage() {
     <div>
       <div className="mb-8">
         <PageHeader
-          title="Blog"
+          title={tx("Blog")}
           description="Publica y administra los artículos de tu tienda."
           action={
             <div className="flex items-center gap-3">
               <a href="/api/admin/blog/export" className="border border-brand-primary/20 text-brand-primary rounded-xl px-4 py-2 font-brand text-sm hover:bg-brand-cream transition-colors inline-flex items-center gap-2">
-                <Icon name="external" size={16} /> Exportar CSV
+                <Icon name="external" size={16} /> <T>Exportar CSV</T>
               </a>
               <CsvImportModal endpoint="/api/admin/blog/import" entityLabel="artículos" />
               <Link
                 href="/blog/nuevo"
                 className="bg-brand-primary text-brand-cream rounded-full px-5 py-2 font-brand text-sm hover:bg-brand-dark transition-colors inline-flex items-center gap-2"
               >
-                <Icon name="plus" size={16} /> Nuevo artículo
+                <Icon name="plus" size={16} /> <T>Nuevo artículo</T>
               </Link>
             </div>
           }
@@ -53,7 +56,7 @@ export default async function BlogAdminPage() {
             {!posts?.length ? (
               <tr>
                 <td colSpan={5} className="font-brand text-brand-primary/40 text-center py-12">
-                  No hay artículos. <Link href="/blog/nuevo" className="underline">Crear el primero →</Link>
+                  <T>No hay artículos.</T> <Link href="/blog/nuevo" className="underline"><T>Crear el primero →</T></Link>
                 </td>
               </tr>
             ) : (
@@ -75,7 +78,7 @@ export default async function BlogAdminPage() {
                   <td className="px-6 py-3">
                     <div className="flex gap-2">
                       <Link href={`/blog/${post.id}`} className="font-brand text-xs border border-brand-primary/20 text-brand-primary rounded-full px-3 py-1 hover:bg-brand-primary hover:text-brand-cream transition-colors">
-                        Editar
+                        <T>Editar</T>
                       </Link>
                       <a
                         href={`${process.env.NEXT_PUBLIC_SITE_URL}/blog/${post.slug}`}
@@ -83,7 +86,7 @@ export default async function BlogAdminPage() {
                         rel="noopener noreferrer"
                         className="font-brand text-xs text-brand-primary/50 border border-gray-200 rounded-full px-3 py-1 hover:border-brand-primary transition-colors"
                       >
-                        Vista previa
+                        <T>Vista previa</T>
                       </a>
                     </div>
                   </td>

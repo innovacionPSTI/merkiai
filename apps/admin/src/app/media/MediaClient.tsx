@@ -3,6 +3,8 @@
 import { useState, useRef, useCallback } from 'react'
 import type { MediaAsset } from '@merkiai/database'
 import { formatDate } from '@merkiai/i18n'
+import { T } from '@merkiai/ui'
+import { useTx } from '@merkiai/ui'
 
 // ── Tipos ────────────────────────────────────────────────────────────────────
 
@@ -32,6 +34,7 @@ function isImage(mimeType: string | null): boolean {
 // ── Componente ────────────────────────────────────────────────────────────────
 
 export default function MediaClient({ initialAssets, pickerMode = false, onSelect, onClose }: Props) {
+  const tx = useTx()
   const [assets, setAssets] = useState<MediaAsset[]>(initialAssets)
   const [filter, setFilter] = useState<Filter>('all')
   const [selected, setSelected] = useState<MediaAsset | null>(null)
@@ -185,7 +188,7 @@ export default function MediaClient({ initialAssets, pickerMode = false, onSelec
               onClick={onClose}
               className="px-3 py-2 rounded-xl border border-gray-200 text-sm font-brand text-gray-500 hover:bg-gray-50 transition-colors"
             >
-              Cancelar
+              <T>Cancelar</T>
             </button>
           )}
         </div>
@@ -207,7 +210,7 @@ export default function MediaClient({ initialAssets, pickerMode = false, onSelec
               onClick={() => fileRef.current?.click()}
             >
               <span className="text-4xl">🖼️</span>
-              <p className="text-sm text-gray-400 font-brand">No hay archivos. Haz clic para subir.</p>
+              <p className="text-sm text-gray-400 font-brand"><T>No hay archivos. Haz clic para subir.</T></p>
             </div>
           ) : (
             <div className="grid grid-cols-3 sm:grid-cols-4 lg:grid-cols-5 gap-3">
@@ -299,20 +302,20 @@ export default function MediaClient({ initialAssets, pickerMode = false, onSelec
             {/* Alt text */}
             <div>
               <label className="font-brand text-xs font-semibold text-brand-primary block mb-1">
-                Alt text
+                <T>Alt text</T>
               </label>
               <input
                 type="text"
                 value={editingAlt}
                 onChange={(e) => setEditingAlt(e.target.value)}
-                placeholder="Descripción de la imagen"
+                placeholder={tx("Descripción de la imagen")}
                 className="w-full border border-gray-200 rounded-lg px-3 py-1.5 text-xs font-brand focus:outline-none focus:border-brand-primary"
               />
               <button
                 onClick={saveAlt}
                 className="mt-2 w-full text-xs font-brand font-semibold bg-brand-primary text-brand-cream rounded-lg py-1.5 hover:bg-brand-dark transition-colors"
               >
-                Guardar alt
+                <T>Guardar alt</T>
               </button>
             </div>
 
@@ -328,7 +331,7 @@ export default function MediaClient({ initialAssets, pickerMode = false, onSelec
                 onClick={() => handleDelete(selected)}
                 className="w-full text-xs font-brand text-red-500 rounded-lg py-2 hover:bg-red-50 transition-colors"
               >
-                Eliminar
+                <T>Eliminar</T>
               </button>
             </div>
           </div>
@@ -344,7 +347,7 @@ export default function MediaClient({ initialAssets, pickerMode = false, onSelec
             onClick={() => onSelect(selected.url)}
             className="px-4 py-2 rounded-xl bg-brand-primary text-brand-cream text-sm font-brand font-semibold hover:bg-brand-dark transition-colors"
           >
-            Usar imagen
+            <T>Usar imagen</T>
           </button>
         </div>
       )}

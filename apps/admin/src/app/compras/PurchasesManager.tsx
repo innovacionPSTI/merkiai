@@ -7,6 +7,8 @@
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { formatMoney } from '@merkiai/i18n'
+import { T } from '@merkiai/ui'
+import { useTx } from '@merkiai/ui'
 
 interface PurchaseRow { id: number; reference: string | null; status: string; supplier: string; lines: number; total: number }
 interface Opt { id: number; name: string }
@@ -18,6 +20,7 @@ const STATUS_LABEL: Record<string, string> = { draft: 'Borrador', received: 'Rec
 function money(n: number): string { return formatMoney(n) }
 
 export default function PurchasesManager({ initial, suppliers, items, uoms }: { initial: PurchaseRow[]; suppliers: Opt[]; items: ItemOpt[]; uoms: UomOpt[] }) {
+  const tx = useTx()
   const router = useRouter()
   const [supplierId, setSupplierId] = useState<number | ''>('')
   const [reference, setReference] = useState('')
@@ -40,7 +43,7 @@ export default function PurchasesManager({ initial, suppliers, items, uoms }: { 
 
   async function createPurchase() {
     const valid = lines.filter((l) => l.stock_item_id !== '' && Number(l.qty) > 0)
-    if (!valid.length) { setError('Agrega al menos una línea con ítem y cantidad'); return }
+    if (!valid.length) { setError(tx("Agrega al menos una línea con ítem y cantidad")); return }
     setBusy(true); setError(null)
     try {
       const res = await fetch('/api/admin/inventory/purchases', {
@@ -69,27 +72,27 @@ export default function PurchasesManager({ initial, suppliers, items, uoms }: { 
       {/* Proveedor rápido */}
       <div className="bg-white rounded-2xl p-5 shadow-sm flex flex-wrap items-end gap-3">
         <label className="flex-1 min-w-[200px]">
-          <span className="font-brand text-xs font-semibold text-brand-primary block mb-1">Nuevo proveedor</span>
-          <input value={newSupplier} onChange={(e) => setNewSupplier(e.target.value)} placeholder="Nombre del proveedor"
+          <span className="font-brand text-xs font-semibold text-brand-primary block mb-1"><T>Nuevo proveedor</T></span>
+          <input value={newSupplier} onChange={(e) => setNewSupplier(e.target.value)} placeholder={tx("Nombre del proveedor")}
             className="w-full border border-gray-200 rounded-xl px-3 py-2 font-brand text-sm focus:outline-none focus:border-brand-primary" />
         </label>
-        <button onClick={addSupplier} disabled={busy} className="rounded-full border border-brand-primary text-brand-primary px-4 py-2 font-brand text-sm hover:bg-brand-primary hover:text-brand-cream disabled:opacity-50">+ Proveedor</button>
+        <button onClick={addSupplier} disabled={busy} className="rounded-full border border-brand-primary text-brand-primary px-4 py-2 font-brand text-sm hover:bg-brand-primary hover:text-brand-cream disabled:opacity-50"><T>+ Proveedor</T></button>
       </div>
 
       {/* Nueva compra */}
       <div className="bg-white rounded-2xl p-5 shadow-sm space-y-3">
-        <h2 className="font-display text-brand-primary text-lg">Nueva compra</h2>
+        <h2 className="font-display text-brand-primary text-lg"><T>Nueva compra</T></h2>
         <div className="flex flex-wrap gap-3">
           <label>
-            <span className="font-brand text-xs font-semibold text-brand-primary block mb-1">Proveedor</span>
+            <span className="font-brand text-xs font-semibold text-brand-primary block mb-1"><T>Proveedor</T></span>
             <select value={supplierId} onChange={(e) => setSupplierId(e.target.value === '' ? '' : Number(e.target.value))} className="border border-gray-200 rounded-xl px-3 py-2 font-brand text-sm">
               <option value="">—</option>
               {suppliers.map((s) => <option key={s.id} value={s.id}>{s.name}</option>)}
             </select>
           </label>
           <label className="flex-1 min-w-[160px]">
-            <span className="font-brand text-xs font-semibold text-brand-primary block mb-1">Referencia</span>
-            <input value={reference} onChange={(e) => setReference(e.target.value)} placeholder="Nº factura/remisión" className="w-full border border-gray-200 rounded-xl px-3 py-2 font-brand text-sm" />
+            <span className="font-brand text-xs font-semibold text-brand-primary block mb-1"><T>Referencia</T></span>
+            <input value={reference} onChange={(e) => setReference(e.target.value)} placeholder={tx("Nº factura/remisión")} className="w-full border border-gray-200 rounded-xl px-3 py-2 font-brand text-sm" />
           </label>
         </div>
         <div className="space-y-2">
@@ -104,11 +107,11 @@ export default function PurchasesManager({ initial, suppliers, items, uoms }: { 
                 <option value="">Unidad</option>
                 {uoms.map((u) => <option key={u.id} value={u.id}>{u.code}</option>)}
               </select>
-              <input value={l.unit_cost} onChange={(e) => setLine(i, { unit_cost: e.target.value })} type="number" min={0} step="any" placeholder="Costo unit." className="w-32 border border-gray-200 rounded-xl px-3 py-2 font-brand text-sm" />
+              <input value={l.unit_cost} onChange={(e) => setLine(i, { unit_cost: e.target.value })} type="number" min={0} step="any" placeholder={tx("Costo unit.")} className="w-32 border border-gray-200 rounded-xl px-3 py-2 font-brand text-sm" />
               {lines.length > 1 && <button onClick={() => setLines((ls) => ls.filter((_, j) => j !== i))} className="text-red-500 px-2">×</button>}
             </div>
           ))}
-          <button onClick={() => setLines((ls) => [...ls, { stock_item_id: '', qty: '', uom_id: '', unit_cost: '' }])} className="font-brand text-sm text-brand-primary underline">+ Línea</button>
+          <button onClick={() => setLines((ls) => [...ls, { stock_item_id: '', qty: '', uom_id: '', unit_cost: '' }])} className="font-brand text-sm text-brand-primary underline"><T>+ Línea</T></button>
         </div>
         <button onClick={createPurchase} disabled={busy} className="rounded-full bg-brand-primary text-brand-cream px-5 py-2 font-brand text-sm font-medium hover:bg-brand-dark disabled:opacity-50">{busy ? 'Guardando…' : 'Crear compra'}</button>
         {error && <p className="font-brand text-sm text-red-600">{error}</p>}
@@ -119,16 +122,16 @@ export default function PurchasesManager({ initial, suppliers, items, uoms }: { 
         <table className="w-full text-sm font-brand">
           <thead className="bg-slate-50 text-brand-primary/60 text-xs uppercase">
             <tr>
-              <th className="text-left px-4 py-3">Proveedor</th>
-              <th className="text-left px-4 py-3">Referencia</th>
-              <th className="text-center px-4 py-3">Líneas</th>
-              <th className="text-right px-4 py-3">Total</th>
-              <th className="text-left px-4 py-3">Estado</th>
-              <th className="text-right px-4 py-3">Acción</th>
+              <th className="text-left px-4 py-3"><T>Proveedor</T></th>
+              <th className="text-left px-4 py-3"><T>Referencia</T></th>
+              <th className="text-center px-4 py-3"><T>Líneas</T></th>
+              <th className="text-right px-4 py-3"><T>Total</T></th>
+              <th className="text-left px-4 py-3"><T>Estado</T></th>
+              <th className="text-right px-4 py-3"><T>Acción</T></th>
             </tr>
           </thead>
           <tbody>
-            {initial.length === 0 && <tr><td colSpan={6} className="px-4 py-8 text-center text-brand-primary/40">Sin compras.</td></tr>}
+            {initial.length === 0 && <tr><td colSpan={6} className="px-4 py-8 text-center text-brand-primary/40"><T>Sin compras.</T></td></tr>}
             {initial.map((p) => (
               <tr key={p.id} className="border-t border-gray-100">
                 <td className="px-4 py-3">{p.supplier || '—'}</td>
@@ -138,7 +141,7 @@ export default function PurchasesManager({ initial, suppliers, items, uoms }: { 
                 <td className="px-4 py-3">{STATUS_LABEL[p.status] ?? p.status}</td>
                 <td className="px-4 py-3 text-right">
                   {p.status === 'draft'
-                    ? <button onClick={() => receive(p.id)} disabled={busy} className="rounded-full bg-green-600 text-white px-3 py-1.5 text-xs font-brand hover:bg-green-700 disabled:opacity-50">Recibir</button>
+                    ? <button onClick={() => receive(p.id)} disabled={busy} className="rounded-full bg-green-600 text-white px-3 py-1.5 text-xs font-brand hover:bg-green-700 disabled:opacity-50"><T>Recibir</T></button>
                     : <span className="text-brand-primary/30 text-xs">—</span>}
                 </td>
               </tr>

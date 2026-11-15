@@ -9,6 +9,8 @@ import { useMemo, useState, useTransition } from 'react'
 import { useRouter } from 'next/navigation'
 import { createDocumentAction, createPartyAction, suggestPricesAction } from '../actions'
 import { formatMoney } from '@merkiai/i18n'
+import { T } from '@merkiai/ui'
+import { useTx } from '@merkiai/ui'
 
 type Modality = 'credit_sale' | 'special_order' | 'layaway' | 'consignment'
 interface PartyRef { id: string; name: string; role: 'customer' | 'consignee'; balance: number; credit_limit: number | null }
@@ -31,6 +33,7 @@ export default function NewDocumentForm(props: {
   defaultDeliveryPolicy: 'require_full_payment' | 'allow_balance_on_delivery'; initialModality: Modality; initialParty: string
   priceLists?: Array<{ id: number; name: string }>
 }) {
+  const tx = useTx()
   const router = useRouter()
   const [pending, start] = useTransition()
   const [error, setError] = useState<string | null>(null)
@@ -79,7 +82,7 @@ export default function NewDocumentForm(props: {
   }
 
   function addParty() {
-    if (!newParty?.name.trim()) { setError('Escribe el nombre.'); return }
+    if (!newParty?.name.trim()) { setError(tx("Escribe el nombre.")); return }
     start(async () => {
       const r = await createPartyAction({ name: newParty.name, email: newParty.email || undefined, phone: newParty.phone || undefined, party_role: modality === 'consignment' ? 'consignee' : 'customer' })
       if (!r.ok) { setError(r.error); return }
@@ -90,9 +93,9 @@ export default function NewDocumentForm(props: {
 
   function submit() {
     setError(null)
-    if (!partyId) { setError('Elige el cliente o aliado.'); return }
+    if (!partyId) { setError(tx("Elige el cliente o aliado.")); return }
     const valid = lines.filter((l) => l.description.trim() && l.qty > 0)
-    if (!valid.length) { setError('Agrega al menos una línea con descripción y cantidad.'); return }
+    if (!valid.length) { setError(tx("Agrega al menos una línea con descripción y cantidad.")); return }
     start(async () => {
       const r = await createDocumentAction({
         party_id: partyId,
@@ -116,7 +119,7 @@ export default function NewDocumentForm(props: {
   return (
     <div className="space-y-5">
       <section className="rounded-2xl border border-gray-200 bg-white p-5">
-        <h2 className="font-brand text-sm font-semibold text-brand-primary mb-3">1. Tipo de documento</h2>
+        <h2 className="font-brand text-sm font-semibold text-brand-primary mb-3"><T>1. Tipo de documento</T></h2>
         <div className="grid gap-2 md:grid-cols-4">
           {MODALITIES.filter((m) => m.key !== 'consignment' || props.consignmentEnabled).map((m) => (
             <button key={m.key} type="button" onClick={() => setModality(m.key)}
@@ -132,12 +135,12 @@ export default function NewDocumentForm(props: {
         <h2 className="font-brand text-sm font-semibold text-brand-primary mb-3">2. {modality === 'consignment' ? 'Aliado' : 'Cliente'}</h2>
         {newParty ? (
           <div className="grid gap-3 md:grid-cols-4">
-            <input className={input} placeholder="Nombre *" value={newParty.name} onChange={(e) => setNewParty({ ...newParty, name: e.target.value })} />
-            <input className={input} placeholder="Correo (opcional)" value={newParty.email} onChange={(e) => setNewParty({ ...newParty, email: e.target.value })} />
-            <input className={input} placeholder="Teléfono (opcional)" value={newParty.phone} onChange={(e) => setNewParty({ ...newParty, phone: e.target.value })} />
+            <input className={input} placeholder={tx("Nombre *")} value={newParty.name} onChange={(e) => setNewParty({ ...newParty, name: e.target.value })} />
+            <input className={input} placeholder={tx("Correo (opcional)")} value={newParty.email} onChange={(e) => setNewParty({ ...newParty, email: e.target.value })} />
+            <input className={input} placeholder={tx("Teléfono (opcional)")} value={newParty.phone} onChange={(e) => setNewParty({ ...newParty, phone: e.target.value })} />
             <div className="flex gap-2">
-              <button type="button" onClick={addParty} disabled={pending} className="rounded-full bg-brand-primary px-4 py-2 font-brand text-sm text-white">Guardar</button>
-              <button type="button" onClick={() => setNewParty(null)} className="font-brand text-sm text-brand-primary/60">Cancelar</button>
+              <button type="button" onClick={addParty} disabled={pending} className="rounded-full bg-brand-primary px-4 py-2 font-brand text-sm text-white"><T>Guardar</T></button>
+              <button type="button" onClick={() => setNewParty(null)} className="font-brand text-sm text-brand-primary/60"><T>Cancelar</T></button>
             </div>
           </div>
         ) : (
@@ -146,7 +149,7 @@ export default function NewDocumentForm(props: {
               <option value="">Elige…</option>
               {partyOptions.map((p) => <option key={p.id} value={p.id}>{p.name}{p.balance ? ` · debe ${money(p.balance)}` : ''}</option>)}
             </select>
-            <button type="button" onClick={() => setNewParty({ name: '', email: '', phone: '' })} className="font-brand text-sm text-brand-primary underline">+ Nuevo</button>
+            <button type="button" onClick={() => setNewParty({ name: '', email: '', phone: '' })} className="font-brand text-sm text-brand-primary underline"><T>+ Nuevo</T></button>
             {party?.credit_limit != null && <span className="font-brand text-xs text-brand-primary/60">Cupo {money(party.credit_limit)} · disponible {money(party.credit_limit - party.balance)}</span>}
           </div>
         )}
@@ -158,14 +161,14 @@ export default function NewDocumentForm(props: {
                 <option value="">Elige…</option>
                 {consigneeLocs.map((l) => <option key={l.id} value={l.id}>{l.name}</option>)}
               </select>
-              {consigneeLocs.length === 0 && <p className="mt-1 font-brand text-xs text-amber-700">Este aliado aún no tiene ubicación. Créala en “Clientes y aliados”.</p>}
+              {consigneeLocs.length === 0 && <p className="mt-1 font-brand text-xs text-amber-700"><T>Este aliado aún no tiene ubicación. Créala en “Clientes y aliados”.</T></p>}
             </div>
           </div>
         )}
       </section>
 
       <section className="rounded-2xl border border-gray-200 bg-white p-5">
-        <h2 className="font-brand text-sm font-semibold text-brand-primary mb-3">3. Qué incluye</h2>
+        <h2 className="font-brand text-sm font-semibold text-brand-primary mb-3"><T>3. Qué incluye</T></h2>
         <div className="space-y-2">
           {lines.map((l, i) => (
             <div key={i} className="grid gap-2 md:grid-cols-12 items-center">
@@ -173,11 +176,11 @@ export default function NewDocumentForm(props: {
                 <option value="">{modality === 'consignment' ? 'Elige producto…' : 'Concepto libre'}</option>
                 {props.items.filter((it) => modality !== 'consignment' || !it.isService).map((it) => <option key={it.id} value={it.id}>{it.name}{it.isService ? ' (servicio)' : ''}</option>)}
               </select>
-              <input className={`${input} md:col-span-4`} placeholder="Descripción" value={l.description} onChange={(e) => setLine(i, { description: e.target.value })} />
-              <input className={`${input} md:col-span-1`} type="number" min={0} step="any" value={l.qty} onChange={(e) => setLine(i, { qty: Number(e.target.value) })} aria-label="Cantidad" />
-              <input className={`${input} md:col-span-2`} type="number" min={0} value={l.unit_price} onChange={(e) => setLine(i, { unit_price: Number(e.target.value) })} aria-label="Precio unitario" />
+              <input className={`${input} md:col-span-4`} placeholder={tx("Descripción")} value={l.description} onChange={(e) => setLine(i, { description: e.target.value })} />
+              <input className={`${input} md:col-span-1`} type="number" min={0} step="any" value={l.qty} onChange={(e) => setLine(i, { qty: Number(e.target.value) })} aria-label={tx("Cantidad")} />
+              <input className={`${input} md:col-span-2`} type="number" min={0} value={l.unit_price} onChange={(e) => setLine(i, { unit_price: Number(e.target.value) })} aria-label={tx("Precio unitario")} />
               <span className="font-brand text-sm text-brand-primary md:col-span-1 text-right">{money(l.qty * l.unit_price)}</span>
-              <button type="button" className="font-brand text-xs text-red-600 md:col-span-1" onClick={() => setLines((ls) => (ls.length > 1 ? ls.filter((_, k) => k !== i) : ls))}>Quitar</button>
+              <button type="button" className="font-brand text-xs text-red-600 md:col-span-1" onClick={() => setLines((ls) => (ls.length > 1 ? ls.filter((_, k) => k !== i) : ls))}><T>Quitar</T></button>
             </div>
           ))}
         </div>
@@ -195,7 +198,7 @@ export default function NewDocumentForm(props: {
           </div>
         )}
         <div className="mt-3 flex items-center justify-between">
-          <button type="button" className="font-brand text-sm text-brand-primary underline" onClick={() => setLines((ls) => [...ls, { kind: 'free', stock_item_id: null, description: '', qty: 1, unit_price: 0 }])}>+ Agregar línea</button>
+          <button type="button" className="font-brand text-sm text-brand-primary underline" onClick={() => setLines((ls) => [...ls, { kind: 'free', stock_item_id: null, description: '', qty: 1, unit_price: 0 }])}><T>+ Agregar línea</T></button>
           <span className="font-display text-lg text-brand-primary">Total {money(total)}</span>
         </div>
         {(modality === 'credit_sale' || modality === 'layaway' || modality === 'consignment') && ownLocations.length > 0 && (
@@ -209,10 +212,10 @@ export default function NewDocumentForm(props: {
       </section>
 
       <section className="rounded-2xl border border-gray-200 bg-white p-5">
-        <h2 className="font-brand text-sm font-semibold text-brand-primary mb-3">4. Cómo se paga</h2>
+        <h2 className="font-brand text-sm font-semibold text-brand-primary mb-3"><T>4. Cómo se paga</T></h2>
         <div className="flex gap-4 font-brand text-sm text-brand-primary mb-3">
-          <label className="flex items-center gap-2"><input type="radio" checked={planType === 'free'} onChange={() => setPlanType('free')} /> Abonos libres</label>
-          <label className="flex items-center gap-2"><input type="radio" checked={planType === 'installments'} onChange={() => setPlanType('installments')} /> Cuotas</label>
+          <label className="flex items-center gap-2"><input type="radio" checked={planType === 'free'} onChange={() => setPlanType('free')} /> <T>Abonos libres</T></label>
+          <label className="flex items-center gap-2"><input type="radio" checked={planType === 'installments'} onChange={() => setPlanType('installments')} /> <T>Cuotas</T></label>
         </div>
         {planType === 'free' ? (
           <div className="max-w-xs">
@@ -221,9 +224,9 @@ export default function NewDocumentForm(props: {
           </div>
         ) : (
           <div className="grid gap-3 md:grid-cols-3">
-            <div><label className={label}>Número de cuotas</label><input type="number" min={1} className={input} value={instCount} onChange={(e) => setInstCount(Math.max(1, Number(e.target.value)))} /></div>
-            <div><label className={label}>Primera cuota</label><input type="date" className={input} value={instFirst} onChange={(e) => setInstFirst(e.target.value)} /></div>
-            <div><label className={label}>Frecuencia</label>
+            <div><label className={label}><T>Número de cuotas</T></label><input type="number" min={1} className={input} value={instCount} onChange={(e) => setInstCount(Math.max(1, Number(e.target.value)))} /></div>
+            <div><label className={label}><T>Primera cuota</T></label><input type="date" className={input} value={instFirst} onChange={(e) => setInstFirst(e.target.value)} /></div>
+            <div><label className={label}><T>Frecuencia</T></label>
               <select className={input} value={instEvery} onChange={(e) => setInstEvery(e.target.value as 'months' | 'days15')}><option value="months">Mensual</option><option value="days15">Quincenal</option></select>
             </div>
             <p className="md:col-span-3 font-brand text-xs text-brand-primary/60">Se reparte el saldo (total − anticipo) en {instCount} cuota(s) de aproximadamente {money(Math.floor((total - advance) / Math.max(1, instCount)))}.</p>
@@ -231,8 +234,8 @@ export default function NewDocumentForm(props: {
         )}
         {showAdvance && (
           <div className="mt-4 grid gap-3 md:grid-cols-3">
-            <div><label className={label}>Anticipo recibido hoy</label><input type="number" min={0} className={input} value={advance} onChange={(e) => setAdvance(Math.max(0, Number(e.target.value)))} /></div>
-            <div><label className={label}>Medio</label>
+            <div><label className={label}><T>Anticipo recibido hoy</T></label><input type="number" min={0} className={input} value={advance} onChange={(e) => setAdvance(Math.max(0, Number(e.target.value)))} /></div>
+            <div><label className={label}><T>Medio</T></label>
               <select className={input} value={advanceMethod} onChange={(e) => setAdvanceMethod(e.target.value as typeof advanceMethod)}>
                 <option value="cash">Efectivo</option><option value="transfer">Transferencia</option><option value="card">Tarjeta</option><option value="other">Otro</option>
               </select>
@@ -244,7 +247,7 @@ export default function NewDocumentForm(props: {
         )}
         {modality === 'special_order' && (
           <div className="mt-4 max-w-md">
-            <label className={label}>Entrega</label>
+            <label className={label}><T>Entrega</T></label>
             <select className={input} value={policy} onChange={(e) => setPolicy(e.target.value as typeof policy)}>
               <option value="">Usar la regla de la tienda ({props.defaultDeliveryPolicy === 'require_full_payment' ? 'pagar todo antes de entregar' : 'se puede entregar con saldo'})</option>
               <option value="require_full_payment">Entregar solo con el pago completo</option>
@@ -252,12 +255,12 @@ export default function NewDocumentForm(props: {
             </select>
           </div>
         )}
-        <div className="mt-4"><label className={label}>Notas</label><textarea className={input} rows={2} value={notes} onChange={(e) => setNotes(e.target.value)} /></div>
+        <div className="mt-4"><label className={label}><T>Notas</T></label><textarea className={input} rows={2} value={notes} onChange={(e) => setNotes(e.target.value)} /></div>
       </section>
 
       {error && <p role="alert" className="font-brand text-sm text-red-600">{error}</p>}
       <div className="flex justify-end gap-3">
-        <button type="button" onClick={() => router.push('/cartera')} className="font-brand text-sm text-brand-primary/60">Cancelar</button>
+        <button type="button" onClick={() => router.push('/cartera')} className="font-brand text-sm text-brand-primary/60"><T>Cancelar</T></button>
         <button type="button" onClick={submit} disabled={pending} className="rounded-full bg-brand-primary px-6 py-2.5 font-brand text-sm text-white hover:bg-brand-dark disabled:opacity-60">
           {pending ? 'Guardando…' : 'Crear documento'}
         </button>

@@ -4,6 +4,8 @@ import { PageHeader } from '@merkiai/ui'
 import { listEntityTranslationItems, listBlockTranslationItems, coverageOf, FIELD_LABELS, LONG_FIELDS, type TranslatableEntity, type TranslationItem } from '@merkiai/database'
 import { requireTranslations, TYPE_LABELS } from '@/lib/translations'
 import TranslationsWorkspace from './TranslationsWorkspace'
+import { T } from '@merkiai/ui'
+import { getAdminTx } from '@/lib/ui-locale'
 
 export const metadata: Metadata = { title: 'Traducciones' }
 export const dynamic = 'force-dynamic'
@@ -13,16 +15,17 @@ type TabKey = TranslatableEntity | 'blocks'
 
 /** E28 · HU-464 · traducir el contenido de la tienda idioma por idioma. */
 export default async function TraduccionesPage({ searchParams }: { searchParams: Promise<Record<string, string | undefined>> }) {
+  const tx = await getAdminTx()
   const sp = await searchParams
   const ctx = await requireTranslations()
 
   if (ctx.locales.length === 0) {
     return (
       <div className="space-y-6 max-w-3xl">
-        <PageHeader title="Traducciones" description="Traduce productos, categorías, páginas, blog y bloques a los idiomas de tu tienda." />
+        <PageHeader title={tx("Traducciones")} description="Traduce productos, categorías, páginas, blog y bloques a los idiomas de tu tienda." />
         <section className="rounded-2xl border border-gray-200 bg-white p-6 font-brand text-sm text-brand-primary">
           Tu tienda publica un solo idioma. Para traducir el contenido, habilita otro idioma en{' '}
-          <Link href="/configuracion/idiomas" className="underline">Configuración → Idiomas y mercados</Link>.
+          <Link href="/configuracion/idiomas" className="underline"><T>Configuración → Idiomas y mercados</T></Link>.
         </section>
       </div>
     )
@@ -44,7 +47,7 @@ export default async function TraduccionesPage({ searchParams }: { searchParams:
   return (
     <div className="space-y-6">
       <PageHeader
-        title="Traducciones"
+        title={tx("Traducciones")}
         description="Traduce tu contenido idioma por idioma. Lo que no traduzcas se muestra en el idioma original de la tienda."
       />
       <TranslationsWorkspace

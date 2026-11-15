@@ -12,6 +12,7 @@ import EditItemForm from './EditItemForm'
 import TransferForm from './TransferForm'
 import TransferInbox from './TransferInbox'
 import { formatNumber, formatDateTime } from '@merkiai/i18n'
+import { T } from '@merkiai/ui'
 
 export const metadata: Metadata = { title: 'Kardex' }
 export const dynamic = 'force-dynamic'
@@ -56,13 +57,13 @@ export default async function KardexPage({ params }: { params: Promise<{ key: st
     <div className="space-y-6">
       <PageHeader title={`Kardex · ${item.name}`} description={`Disponible: ${fmt(available)} · Costo unitario: ${cost == null ? '—' : fmt(cost)}`} />
       <div className="flex items-center gap-4">
-        <a href="/inventario" className="font-brand text-sm text-brand-primary/60 underline">← Volver a Inventario</a>
+        <a href="/inventario" className="font-brand text-sm text-brand-primary/60 underline"><T>← Volver a Inventario</T></a>
         <a href={`/api/admin/operations/export?type=kardex&item=${item.id}`} className="font-brand text-sm text-brand-primary underline">Exportar kardex (CSV)</a>
         <EditItemForm item={{ id: item.id, name: item.name, item_class: item.item_class, uom_id: item.uom_id, sellable: item.sellable, active: item.active, reorder_point: item.reorder_point ?? null }} uoms={uoms.map((u) => ({ id: u.id, code: u.code }))} />
       </div>
       {showByLocation && (
         <div className="bg-white rounded-2xl p-5 shadow-sm">
-          <h2 className="font-display text-brand-primary text-lg mb-3">Disponible por ubicación</h2>
+          <h2 className="font-display text-brand-primary text-lg mb-3"><T>Disponible por ubicación</T></h2>
           <table className="w-full text-sm font-brand max-w-md">
             <tbody>
               {byLocation.map((b) => (
@@ -90,17 +91,17 @@ export default async function KardexPage({ params }: { params: Promise<{ key: st
         <table className="w-full text-sm font-brand">
           <thead className="bg-slate-50 text-brand-primary/60 text-xs uppercase">
             <tr>
-              <th className="text-left px-4 py-3">Fecha</th>
-              <th className="text-left px-4 py-3">Tipo</th>
-              <th className="text-right px-4 py-3">Cantidad</th>
-              <th className="text-left px-4 py-3">Unidad</th>
-              <th className="text-left px-4 py-3">Motivo</th>
-              <th className="text-left px-4 py-3">Referencia</th>
+              <th className="text-left px-4 py-3"><T>Fecha</T></th>
+              <th className="text-left px-4 py-3"><T>Tipo</T></th>
+              <th className="text-right px-4 py-3"><T>Cantidad</T></th>
+              <th className="text-left px-4 py-3"><T>Unidad</T></th>
+              <th className="text-left px-4 py-3"><T>Motivo</T></th>
+              <th className="text-left px-4 py-3"><T>Referencia</T></th>
             </tr>
           </thead>
           <tbody>
             {movs.length === 0 && (
-              <tr><td colSpan={6} className="px-4 py-8 text-center text-brand-primary/40">Sin movimientos.</td></tr>
+              <tr><td colSpan={6} className="px-4 py-8 text-center text-brand-primary/40"><T>Sin movimientos.</T></td></tr>
             )}
             {movs.map((m) => (
               <tr key={m.id} className="border-t border-gray-100">
