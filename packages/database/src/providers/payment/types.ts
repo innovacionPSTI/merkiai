@@ -33,6 +33,8 @@ export interface CreatePaymentParams {
   redirectUrl: string
   /** URL where the gateway sends webhook notifications */
   webhookUrl: string
+  /** E28 · HU-465 · idioma del comprador (BCP 47, p. ej. `en-US`) para pasarelas que lo soportan. */
+  locale?: string | null
 }
 
 export type PaymentStatus = 'approved' | 'rejected' | 'pending'

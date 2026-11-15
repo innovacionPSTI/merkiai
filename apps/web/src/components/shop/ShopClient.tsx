@@ -12,13 +12,13 @@ import { getProductOptions, getVariantAttrs, getVariantLabel, isColorValue, swat
 import { buildShopQuery, type ShopUrlState } from '@/lib/shop-filters'
 import SearchBox from './SearchBox'
 import WishlistButton from './WishlistButton'
-import { formatMoney } from '@merkiai/i18n'
+import { useT, useFormat } from '@/components/i18n/I18nProvider'
 
 const SORTS = [
-  { value: 'destacados', label: 'Destacados' },
-  { value: 'precio-asc',  label: 'Menor precio' },
-  { value: 'precio-desc', label: 'Mayor precio' },
-  { value: 'nombre',      label: 'A–Z' },
+  { value: 'destacados', label: 'sort_featured' },
+  { value: 'precio-asc',  label: 'sort_price_asc' },
+  { value: 'precio-desc', label: 'sort_price_desc' },
+  { value: 'nombre',      label: 'sort_name' },
 ]
 
 interface Props {
@@ -59,13 +59,14 @@ function FilterPanel({
   onSelectCategory, onToggleAttr, onClearFilters, hasFilters, colorMap,
   priceBounds, minPrice, maxPrice, onApplyPrice,
 }: FilterPanelProps) {
+  const t = useT('web.shop')
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
-        <h2 className="font-brand font-semibold text-brand-primary text-sm">Filtros</h2>
+        <h2 className="font-brand font-semibold text-brand-primary text-sm">{t('filters')}</h2>
         {hasFilters && (
           <button onClick={onClearFilters} className="font-brand text-xs text-brand-primary/40 hover:text-brand-primary underline transition-colors">
-            Limpiar
+            {t('clear')}
           </button>
         )}
       </div>
@@ -77,9 +78,9 @@ function FilterPanel({
 
       {categories.length > 1 && (
         <div>
-          <p className="font-brand text-xs font-semibold text-brand-primary/50 uppercase tracking-wider mb-3">Categoría</p>
+          <p className="font-brand text-xs font-semibold text-brand-primary/50 uppercase tracking-wider mb-3">{t('category')}</p>
           <div className="space-y-1.5">
-            <FilterRow label="Todas" active={selectedCategory === null} onClick={() => onSelectCategory(null)} />
+            <FilterRow label={t('all')} active={selectedCategory === null} onClick={() => onSelectCategory(null)} />
             {categories.map((c) => (
               <FilterRow key={c.id} label={c.name} active={selectedCategory === c.id}
                 onClick={() => onSelectCategory(selectedCategory === c.id ? null : c.id)} />
@@ -140,6 +141,7 @@ function PriceFilter({ bounds, minPrice, maxPrice, onApply }: {
   maxPrice: number | null
   onApply: (min: number | null, max: number | null) => void
 }) {
+  const t = useT('web.shop')
   const [lo, setLo] = useState(minPrice != null ? String(minPrice) : '')
   const [hi, setHi] = useState(maxPrice != null ? String(maxPrice) : '')
   // Re-sincroniza si cambia el estado (navegación / limpiar).
@@ -160,17 +162,17 @@ function PriceFilter({ bounds, minPrice, maxPrice, onApply }: {
 
   return (
     <div>
-      <p className="font-brand text-xs font-semibold text-brand-primary/50 uppercase tracking-wider mb-3">Precio</p>
+      <p className="font-brand text-xs font-semibold text-brand-primary/50 uppercase tracking-wider mb-3">{t('price')}</p>
       <div className="flex items-center gap-2">
         <input type="number" inputMode="numeric" min={0} value={lo} onChange={(e) => setLo(e.target.value)}
-          placeholder={String(bounds.min)} aria-label="Precio mínimo" className={inputCls} />
+          placeholder={String(bounds.min)} aria-label={t('min_price')} className={inputCls} />
         <span className="text-brand-primary/30">–</span>
         <input type="number" inputMode="numeric" min={0} value={hi} onChange={(e) => setHi(e.target.value)}
-          placeholder={String(bounds.max)} aria-label="Precio máximo" className={inputCls} />
+          placeholder={String(bounds.max)} aria-label={t('max_price')} className={inputCls} />
       </div>
       <button onClick={apply}
         className="mt-2 w-full font-brand text-xs border border-brand-primary text-brand-primary rounded-lg py-1.5 hover:bg-brand-primary hover:text-brand-cream transition-colors">
-        Aplicar
+        {t('apply')}
       </button>
     </div>
   )
@@ -179,12 +181,14 @@ function PriceFilter({ bounds, minPrice, maxPrice, onApply }: {
 // ── Main component (presentacional; navega por URL → SSR, HU-270) ─────────────
 
 export default function ShopClient({ products, total, pageSize, facets, state, gridVariant = 'comfortable', colorMap }: Props) {
+  const t = useT('web.shop')
+  const { money } = useFormat()
   const router = useRouter()
   const addItem = useCartStore((s) => s.addItem)
   const [mobileFiltersOpen, setMobileFiltersOpen] = useState(false)
 
   const fmt = (n: number) =>
-    formatMoney(n)
+    money(n)
 
   /** Navega con un estado parcial; resetea a página 1 salvo que se indique page. */
   function nav(partial: Partial<ShopUrlState>) {
@@ -233,10 +237,10 @@ export default function ShopClient({ products, total, pageSize, facets, state, g
 
         <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between mb-8">
           <div>
-            <h1 className="font-display text-brand-primary text-section">Catálogo</h1>
+            <h1 className="font-display text-brand-primary text-section">{t('catalog')}</h1>
             <p className="font-brand text-sm text-brand-primary/50 mt-1">
-              {total} {total === 1 ? 'producto' : 'productos'}
-              {hasFilters && <span className="ml-1 text-brand-primary/40">filtrados</span>}
+              {t('count', { count: total })}
+              {hasFilters && <span className="ml-1 text-brand-primary/40">{t('filtered')}</span>}
             </p>
           </div>
 
@@ -263,7 +267,7 @@ export default function ShopClient({ products, total, pageSize, facets, state, g
 
             <select value={state.orden} onChange={(e) => nav({ orden: e.target.value })}
               className="font-brand text-sm border border-brand-primary/20 rounded-full px-4 py-2 bg-white text-brand-primary focus:outline-none focus:border-brand-primary">
-              {SORTS.map((s) => <option key={s.value} value={s.value}>{s.label}</option>)}
+              {SORTS.map((s) => <option key={s.value} value={s.value}>{t(s.label)}</option>)}
             </select>
           </div>
         </div>
@@ -278,9 +282,9 @@ export default function ShopClient({ products, total, pageSize, facets, state, g
           <div className="flex-1 min-w-0">
             {products.length === 0 ? (
               <div className="py-24 text-center">
-                <p className="font-brand text-brand-primary/40 text-xl mb-4">No hay productos con estos filtros.</p>
+                <p className="font-brand text-brand-primary/40 text-xl mb-4">{t('no_results')}</p>
                 {hasFilters && (
-                  <button onClick={clearFilters} className="font-brand text-sm text-brand-primary underline">Limpiar filtros</button>
+                  <button onClick={clearFilters} className="font-brand text-sm text-brand-primary underline">{t('clear_filters')}</button>
                 )}
               </div>
             ) : (
@@ -307,8 +311,8 @@ export default function ShopClient({ products, total, pageSize, facets, state, g
           <div className="absolute inset-0 bg-black/40 backdrop-blur-sm" onClick={() => setMobileFiltersOpen(false)} />
           <div className="absolute inset-y-0 left-0 w-72 bg-white shadow-xl overflow-y-auto">
             <div className="flex items-center justify-between px-5 py-4 border-b border-gray-100">
-              <h2 className="font-brand font-semibold text-brand-primary">Filtros</h2>
-              <button onClick={() => setMobileFiltersOpen(false)} aria-label="Cerrar filtros"
+              <h2 className="font-brand font-semibold text-brand-primary">{t('filters')}</h2>
+              <button onClick={() => setMobileFiltersOpen(false)} aria-label={t('close_filters')}
                 className="font-brand text-sm text-brand-primary/40 hover:text-brand-primary inline-flex">
                 <Icon name="close" size={18} />
               </button>
@@ -317,7 +321,7 @@ export default function ShopClient({ products, total, pageSize, facets, state, g
             <div className="sticky bottom-0 border-t border-gray-100 p-4 bg-white">
               <button onClick={() => setMobileFiltersOpen(false)}
                 className="w-full font-brand text-sm bg-brand-primary text-brand-cream py-3 rounded-xl hover:bg-brand-dark transition-colors">
-                Ver {total} {total === 1 ? 'producto' : 'productos'}
+                Ver {t('count', { count: total })}
               </button>
             </div>
           </div>
@@ -330,6 +334,7 @@ export default function ShopClient({ products, total, pageSize, facets, state, g
 // ── Pager ─────────────────────────────────────────────────────────────────────
 
 function Pager({ page, pageCount, onPage }: { page: number; pageCount: number; onPage: (p: number) => void }) {
+  const t = useT('web.shop')
   const pages: number[] = []
   const from = Math.max(1, page - 2)
   const to = Math.min(pageCount, page + 2)
@@ -337,8 +342,8 @@ function Pager({ page, pageCount, onPage }: { page: number; pageCount: number; o
   const btn = 'font-brand text-sm w-9 h-9 rounded-full flex items-center justify-center transition-colors disabled:opacity-40'
 
   return (
-    <nav className="flex items-center justify-center gap-1.5 mt-10" aria-label="Paginación">
-      <button onClick={() => onPage(page - 1)} disabled={page <= 1} aria-label="Página anterior"
+    <nav className="flex items-center justify-center gap-1.5 mt-10" aria-label={t('pagination')}>
+      <button onClick={() => onPage(page - 1)} disabled={page <= 1} aria-label={t('prev_page')}
         className={`${btn} border border-brand-primary/20 text-brand-primary hover:bg-brand-primary/5`}>
         <Icon name="chevron-left" size={16} />
       </button>
@@ -360,7 +365,7 @@ function Pager({ page, pageCount, onPage }: { page: number; pageCount: number; o
           <button onClick={() => onPage(pageCount)} className={`${btn} text-brand-primary hover:bg-brand-primary/5`}>{pageCount}</button>
         </>
       )}
-      <button onClick={() => onPage(page + 1)} disabled={page >= pageCount} aria-label="Página siguiente"
+      <button onClick={() => onPage(page + 1)} disabled={page >= pageCount} aria-label={t('next_page')}
         className={`${btn} border border-brand-primary/20 text-brand-primary hover:bg-brand-primary/5`}>
         <Icon name="chevron-right" size={16} />
       </button>
@@ -376,6 +381,7 @@ function ProductCard({ product, fmt, addItem, colorMap }: {
   addItem: (item: CartItem) => void
   colorMap?: Record<string, string>
 }) {
+  const t = useT('web.shop')
   const ecommerceEnabled = useEcommerceEnabled() // HU-173 · modo vitrina
   const image = product.images[0]
   const activeVariants = product.variants.filter((v) => v.active)
@@ -413,7 +419,7 @@ function ProductCard({ product, fmt, addItem, colorMap }: {
         )}
         {product.featured && (
           <span className="absolute top-3 left-3 bg-brand-primary text-brand-cream text-[10px] font-brand font-semibold px-2 py-0.5 rounded-full">
-            Destacado
+            {t('featured')}
           </span>
         )}
         <div className="absolute bottom-0 left-0 right-0 h-8 bg-white rounded-t-[60%]" />
@@ -456,7 +462,7 @@ function ProductCard({ product, fmt, addItem, colorMap }: {
 
         <div className="flex flex-wrap items-center justify-between gap-x-2 gap-y-2 mt-3">
           <div className="min-w-0">
-            {hasMultiplePrices && <span className="font-brand text-[10px] text-brand-primary/40">Desde</span>}
+            {hasMultiplePrices && <span className="font-brand text-[10px] text-brand-primary/40">{t('from')}</span>}
             <p className="font-brand font-bold text-brand-price leading-tight flex items-baseline gap-2">
               {defaultVariant ? fmt(minPrice) : '—'}
               {defaultVariant?.compare_at_price && defaultVariant.compare_at_price > defaultVariant.price && (
@@ -466,7 +472,7 @@ function ProductCard({ product, fmt, addItem, colorMap }: {
           </div>
           {canQuickAdd && ecommerceEnabled ? (
             outOfStock ? (
-              <span className="shrink-0 whitespace-nowrap rounded-full border border-brand-primary/20 text-brand-primary/40 px-3 py-1 text-xs font-brand">Agotado</span>
+              <span className="shrink-0 whitespace-nowrap rounded-full border border-brand-primary/20 text-brand-primary/40 px-3 py-1 text-xs font-brand">{t('sold_out')}</span>
             ) : (
             <button
               onClick={() => {
@@ -490,13 +496,13 @@ function ProductCard({ product, fmt, addItem, colorMap }: {
                 })
               }}
               className="shrink-0 whitespace-nowrap rounded-full border border-brand-primary text-brand-primary px-3 py-1 text-xs font-brand hover:bg-brand-primary hover:text-brand-cream transition-colors">
-              Agregar
+              {t('add')}
             </button>
             )
           ) : (
             <Link href={`/shop/${product.slug}`}
               className="shrink-0 whitespace-nowrap rounded-full border border-brand-primary text-brand-primary px-3 py-1 text-xs font-brand hover:bg-brand-primary hover:text-brand-cream transition-colors">
-              Ver opciones
+              {t('see_options')}
             </Link>
           )}
         </div>

@@ -24,6 +24,8 @@ export interface CreateOrderInput {
   store_credit_amount?: number
   /** Permite forzar estado pagado (pago total con crédito, sin pasarela). */
   payment_status?: 'pending' | 'approved' | 'rejected' | 'refunded'
+  /** E28 · HU-465 · idioma en que se hizo el pedido (correos por idioma). */
+  locale?: string | null
 }
 
 export async function createOrder(input: CreateOrderInput, db: Db): Promise<Order> {

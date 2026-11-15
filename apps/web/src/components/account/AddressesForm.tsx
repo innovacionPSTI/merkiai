@@ -4,10 +4,10 @@ import { useState, useEffect } from 'react'
 import type { CustomerAddress } from '@merkiai/database'
 import SearchableSelect from '@/components/ui/SearchableSelect'
 import { DEPARTMENTS, getCitiesForDepartment } from '@merkiai/ui'
-import { formatAddress, validateAddress, countryName, createTranslator } from '@merkiai/i18n'
+import { formatAddress, validateAddress, countryName } from '@merkiai/i18n'
+import { useT } from '@/components/i18n/I18nProvider'
 import RegionalAddressFields from '@/components/address/RegionalAddressFields'
 
-const tr = createTranslator()
 
 interface AddrForm {
   label:       string
@@ -57,6 +57,7 @@ function AddressFormFields({
   countries: string[]
   onCountryChange: (country: string) => void
 }) {
+  const tr = useT()
   return (
     <div className="space-y-4">
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -185,6 +186,7 @@ function AddressFormFields({
 }
 
 export default function AddressesForm() {
+  const tr = useT()
   const [addresses, setAddresses] = useState<CustomerAddress[]>([])
   const [loading, setLoading]     = useState(true)
   const [adding, setAdding]       = useState(false)

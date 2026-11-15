@@ -16,7 +16,7 @@ export type { EmailConfig } from '@merkiai/database'
 export { sendShippingNotification, sendStatusNotification } from '@merkiai/database'
 
 import type { EmailConfig } from '@merkiai/database'
-import { formatMoney, formatAddressInline } from '@merkiai/i18n'
+import { formatMoney, formatAddressInline, createTranslator, type Translator } from '@merkiai/i18n'
 
 // ── sendEmail helper (privado — solo para funciones web-only) ────────────────
 
@@ -55,7 +55,7 @@ function fromName(name: string | null | undefined): string {
   return String(name ?? '').replace(/[<>"\\\r\n]/g, '').trim().slice(0, 80) || 'Mi Tienda'
 }
 
-function orderItemsTable(order: Order): string {
+function orderItemsTable(order: Order, tr: Translator = createTranslator(), money: (n: number) => string = formatCOP): string {
 
   const rows = order.items
     .map(
@@ -66,7 +66,7 @@ function orderItemsTable(order: Order): string {
         <span style="color: #8a6a4a; font-size: 12px;">${esc(item.variant_label)}</span>
       </td>
       <td style="padding: 10px 0; text-align: center; font-family: sans-serif; font-size: 14px; color: #3d2a1a;">${item.qty}</td>
-      <td style="padding: 10px 0; text-align: right; font-family: sans-serif; font-size: 14px; color: #3d2a1a;">${formatCOP(item.price * item.qty)}</td>
+      <td style="padding: 10px 0; text-align: right; font-family: sans-serif; font-size: 14px; color: #3d2a1a;">${money(item.price * item.qty)}</td>
     </tr>`,
     )
     .join('')
@@ -75,21 +75,21 @@ function orderItemsTable(order: Order): string {
     <table width="100%" cellpadding="0" cellspacing="0" style="border-collapse: collapse; margin-bottom: 16px;">
       <thead>
         <tr style="background: #fff8ec;">
-          <th style="text-align: left; padding: 8px 0; font-family: sans-serif; font-size: 12px; color: #8a6a4a; text-transform: uppercase; letter-spacing: 0.05em;">Producto</th>
-          <th style="text-align: center; padding: 8px 0; font-family: sans-serif; font-size: 12px; color: #8a6a4a; text-transform: uppercase; letter-spacing: 0.05em;">Cant.</th>
-          <th style="text-align: right; padding: 8px 0; font-family: sans-serif; font-size: 12px; color: #8a6a4a; text-transform: uppercase; letter-spacing: 0.05em;">Subtotal</th>
+          <th style="text-align: left; padding: 8px 0; font-family: sans-serif; font-size: 12px; color: #8a6a4a; text-transform: uppercase; letter-spacing: 0.05em;">${esc(tr('email.order.product'))}</th>
+          <th style="text-align: center; padding: 8px 0; font-family: sans-serif; font-size: 12px; color: #8a6a4a; text-transform: uppercase; letter-spacing: 0.05em;">${esc(tr('email.order.qty'))}</th>
+          <th style="text-align: right; padding: 8px 0; font-family: sans-serif; font-size: 12px; color: #8a6a4a; text-transform: uppercase; letter-spacing: 0.05em;">${esc(tr('email.order.subtotal'))}</th>
         </tr>
       </thead>
       <tbody>${rows}</tbody>
     </table>`
 }
 
-function baseTemplate(content: string, config: EmailConfig): string {
+function baseTemplate(content: string, config: EmailConfig, lang = 'es'): string {
   const name = config.storeName ?? 'Mi Tienda'
   const url  = (config.siteUrl ?? process.env.NEXT_PUBLIC_SITE_URL ?? '').replace(/\/$/, '')
 
   return `<!DOCTYPE html>
-<html lang="es">
+<html lang="${esc(lang)}">
 <head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"></head>
 <body style="margin: 0; padding: 0; background-color: #fff8ec;">
   <table width="100%" cellpadding="0" cellspacing="0">
@@ -143,44 +143,49 @@ export async function sendOrderConfirmation(order: Order, config: EmailConfig): 
   const addr = order.shipping_addr
   // HU-468 · dirección en el formato de su país (CO conserva el orden histórico).
   const addressText = formatAddressInline(addr, { includeCountry: !!addr.country && addr.country !== 'CO' })
+  // E28 · HU-465 · el correo sale en el idioma del pedido (es-CO si no se registró).
+  const locale = (order as { locale?: string | null }).locale || 'es-CO'
+  const t = createTranslator(locale, 'email.order')
+  const tt = createTranslator(locale)
+  const money = (n: number) => formatMoney(n, { locale })
 
   const content = `
-    <h2 style="margin: 0 0 8px; color: #614a2a; font-size: 20px; font-family: sans-serif;">¡Gracias por tu pedido!</h2>
+    <h2 style="margin: 0 0 8px; color: #614a2a; font-size: 20px; font-family: sans-serif;">${esc(t('title'))}</h2>
     <p style="margin: 0 0 24px; color: #8a6a4a; font-size: 14px; font-family: sans-serif;">
-      Tu pago fue confirmado y tu pedido está siendo preparado con mucho cariño.
+      ${esc(t('body'))}
     </p>
     <div style="background: #fff8ec; border-radius: 12px; padding: 16px; margin-bottom: 24px;">
-      <p style="margin: 0; font-size: 13px; color: #8a6a4a; font-family: sans-serif;">Número de pedido</p>
+      <p style="margin: 0; font-size: 13px; color: #8a6a4a; font-family: sans-serif;">${esc(t('number'))}</p>
       <p style="margin: 4px 0 0; font-size: 22px; font-weight: 700; color: #614a2a; letter-spacing: 0.05em; font-family: sans-serif;">${order.order_number}</p>
     </div>
-    ${orderItemsTable(order)}
+    ${orderItemsTable(order, tt, money)}
     <table width="100%" cellpadding="0" cellspacing="0" style="margin-bottom: 24px;">
       <tr>
-        <td style="font-size: 13px; color: #8a6a4a; padding: 4px 0; font-family: sans-serif;">Subtotal</td>
-        <td style="text-align: right; font-size: 13px; color: #3d2a1a; padding: 4px 0; font-family: sans-serif;">${formatCOP(order.subtotal)}</td>
+        <td style="font-size: 13px; color: #8a6a4a; padding: 4px 0; font-family: sans-serif;">${esc(t('subtotal'))}</td>
+        <td style="text-align: right; font-size: 13px; color: #3d2a1a; padding: 4px 0; font-family: sans-serif;">${money(order.subtotal)}</td>
       </tr>
       <tr>
-        <td style="font-size: 13px; color: #8a6a4a; padding: 4px 0; font-family: sans-serif;">Envío</td>
-        <td style="text-align: right; font-size: 13px; color: #3d2a1a; padding: 4px 0; font-family: sans-serif;">${order.shipping_cost === 0 ? 'Gratis' : formatCOP(order.shipping_cost)}</td>
+        <td style="font-size: 13px; color: #8a6a4a; padding: 4px 0; font-family: sans-serif;">${esc(t('shipping'))}</td>
+        <td style="text-align: right; font-size: 13px; color: #3d2a1a; padding: 4px 0; font-family: sans-serif;">${order.shipping_cost === 0 ? esc(t('free')) : money(order.shipping_cost)}</td>
       </tr>
       <tr style="border-top: 2px solid #f0e8d0;">
-        <td style="font-size: 16px; font-weight: 700; color: #614a2a; padding: 10px 0 0; font-family: sans-serif;">Total</td>
-        <td style="text-align: right; font-size: 16px; font-weight: 700; color: #614a2a; padding: 10px 0 0; font-family: sans-serif;">${formatCOP(order.total)}</td>
+        <td style="font-size: 16px; font-weight: 700; color: #614a2a; padding: 10px 0 0; font-family: sans-serif;">${esc(t('total'))}</td>
+        <td style="text-align: right; font-size: 16px; font-weight: 700; color: #614a2a; padding: 10px 0 0; font-family: sans-serif;">${money(order.total)}</td>
       </tr>
     </table>
     <div style="background: #fff0d1; border-radius: 12px; padding: 16px; margin-bottom: 24px;">
-      <p style="margin: 0 0 4px; font-size: 13px; font-weight: 700; color: #614a2a; font-family: sans-serif;">Dirección de envío</p>
+      <p style="margin: 0 0 4px; font-size: 13px; font-weight: 700; color: #614a2a; font-family: sans-serif;">${esc(t('address'))}</p>
       <p style="margin: 0; font-size: 13px; color: #8a6a4a; font-family: sans-serif;">${esc(order.customer_name)}<br/>${esc(addressText)}</p>
     </div>
     <p style="margin: 0; font-size: 13px; color: #8a6a4a; text-align: center; font-family: sans-serif;">
-      Te notificaremos cuando tu pedido sea despachado con el número de tracking.
+      ${esc(t('tracking'))}
     </p>`
 
   await sendEmail(config, {
     from: `${fromName(name)} <${config.fromEmail}>`,
     to: [order.customer_email],
-    subject: `Pedido confirmado ${order.order_number} — ${name}`,
-    html: baseTemplate(content, config),
+    subject: t('subject', { orderNumber: order.order_number, store: name }),
+    html: baseTemplate(content, config, locale),
   })
 }
 

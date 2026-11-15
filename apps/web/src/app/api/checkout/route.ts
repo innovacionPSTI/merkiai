@@ -2,6 +2,8 @@ import { NextRequest, NextResponse } from 'next/server'
 import { hydrateManagedPayment, gatewayMethod } from '@/lib/merkiai-pagos'
 import { createOrder, resolveActivePayment, gatewayFromInstance, getStockForVariants, TuCompraGateway, ensureCustomer, listActivePromotions, computePromotions, getGiftCardByCode, getStoreCreditBalance, computeRedemption, redeemStoreValue, refundStoreValue, applyStockForOrder, getBundlesByIds, expandBundleLines, getCouponByCode, validateCoupon, getShippingConfig, reportError } from '@merkiai/database'
 import { storeCountries } from '@/lib/store-countries'
+import { getLocaleConfig } from '@/lib/request-locale'
+import { normalizeLocale } from '@merkiai/i18n'
 import { sanitizeCheckoutAddress } from '@/lib/shipping-address'
 import { stackServerApp } from '@/stack'
 import { baseUrlFromRequest } from '@/lib/base-url'
@@ -158,6 +160,8 @@ export async function POST(req: NextRequest) {
       // HU-298 · clave de intento (idempotencia del canje): el cliente envía una
       // clave estable por intento de checkout y la reenvía en cada reintento.
       idempotency_key,
+      // E28 · HU-465 · idioma del pedido (validado contra los idiomas publicados).
+      locale: rawLocale,
     } = body
     const redeemKey: string | null =
       typeof idempotency_key === 'string' && idempotency_key.length > 0 && idempotency_key.length <= 100
@@ -190,6 +194,8 @@ export async function POST(req: NextRequest) {
     const addrCheck = sanitizeCheckoutAddress(address, phone, allowedCountries)
     if (!addrCheck.ok) return NextResponse.json({ error: addrCheck.error }, { status: 400 })
     const shippingAddr = addrCheck.address
+    const requestedLocale = normalizeLocale(typeof rawLocale === 'string' ? rawLocale : null)
+    const orderLocale = requestedLocale && (await getLocaleConfig().catch(() => null))?.locales.includes(requestedLocale) ? requestedLocale : null
 
     // ── HU-168 Fase 2 · expandir líneas de BUNDLE a sus componentes. Guarded:
     // si no hay líneas de bundle, `orderItems` es la lista normal sin cambios.
@@ -483,7 +489,7 @@ export async function POST(req: NextRequest) {
         customer_name: name,
         customer_email: email,
         customer_phone: phone ?? null,
-        shipping_addr: shippingAddr,
+        shipping_addr: shippingAddr, locale: orderLocale,
         items: orderItems,
         subtotal: serverSubtotal,
         shipping_cost: serverShipping,
@@ -511,7 +517,7 @@ export async function POST(req: NextRequest) {
         customer_name: name,
         customer_email: email,
         customer_phone: phone ?? null,
-        shipping_addr: shippingAddr,
+        shipping_addr: shippingAddr, locale: orderLocale,
         items: orderItems,
         subtotal: serverSubtotal,
         shipping_cost: serverShipping,
@@ -557,7 +563,7 @@ export async function POST(req: NextRequest) {
         tenant_id: tenantId,
         customer_id: customerId,
         customer_name: name, customer_email: email, customer_phone: phone ?? null,
-        shipping_addr: shippingAddr, items: orderItems, subtotal: serverSubtotal, shipping_cost: serverShipping, discount: effectiveDiscount, total: effectiveTotal,
+        shipping_addr: shippingAddr, locale: orderLocale, items: orderItems, subtotal: serverSubtotal, shipping_cost: serverShipping, discount: effectiveDiscount, total: effectiveTotal,
         payment_method: 'tucompra', skydropx_rate_id, carrier_name, ...creditOrderFields,
       }, getMachineDb(tenantId))
       orderWasCreated = true
@@ -685,7 +691,7 @@ export async function POST(req: NextRequest) {
       customer_name: name,
       customer_email: email,
       customer_phone: phone ?? null,
-      shipping_addr: shippingAddr,
+      shipping_addr: shippingAddr, locale: orderLocale,
       items: orderItems,
       subtotal: serverSubtotal,
       shipping_cost: serverShipping,
@@ -709,6 +715,8 @@ export async function POST(req: NextRequest) {
       customerEmail: email,
       customerName: name,
       customerPhone: phone ?? undefined,
+      // HU-465 · la pasarela muestra su página en el idioma del pedido (si lo soporta).
+      locale: orderLocale,
       items: (orderItems as Array<{ variant_id: number; product_name?: string; qty: number; price?: number }>).map((i) => ({
         id: String(i.variant_id),
         title: i.product_name ?? '',

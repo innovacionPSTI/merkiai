@@ -9,6 +9,7 @@ import { buildThemeCSS } from '@/lib/theme-css'
 import { getStoreContext } from '@/lib/store-context'
 import { headers } from 'next/headers'
 import { getPageLang } from '@/lib/request-locale'
+import { I18nProvider } from '@/components/i18n/I18nProvider'
 import './globals.css'
 
 // ── Fuentes ───────────────────────────────────────────────────────────────────
@@ -98,9 +99,11 @@ export default async function RootLayout({ children }: { children: React.ReactNo
   const fontsHref = googleFontsHref(theme?.font_display, theme?.font_body)
   // Hardening · nonce de la CSP (middleware) para los scripts inline de Stack Auth.
   const nonce = (await headers()).get('x-nonce') ?? undefined
+  // E28 · HU-462/465 · idioma de la petición (atributo lang + textos de la interfaz).
+  const lang = await getPageLang().catch(() => 'es-CO')
 
   return (
-    <html lang={await getPageLang().catch(() => 'es-CO')}>
+    <html lang={lang}>
       <head>
         {/* Fuentes del tema (Google Fonts en runtime; el build no depende de Google) */}
         <link rel="preconnect" href="https://fonts.googleapis.com" />
@@ -118,7 +121,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
           <StackTheme nonce={nonce}>
             <Suspense fallback={null}><CartSyncOnLogin /></Suspense>
             <Suspense fallback={null}><WishlistSyncOnLogin /></Suspense>
-            {children}
+            <I18nProvider locale={lang}>{children}</I18nProvider>
           </StackTheme>
         </StackProvider>
         {analyticsEnabled && <Analytics />}

@@ -1,5 +1,6 @@
 import Link from 'next/link'
 import type { Page } from '@merkiai/database'
+import { getT } from '@/lib/i18n-server'
 
 /* ── SVG brand icons ────────────────────────────────────────────────────── */
 
@@ -57,7 +58,7 @@ interface FooterProps {
 
 /* ── Component ──────────────────────────────────────────────────────────── */
 
-export default function Footer({
+export default async function Footer({
   logoUrl,
   storeName,
   whatsapp,
@@ -65,6 +66,8 @@ export default function Footer({
   pages = [],
   footerFlags = {},
 }: FooterProps) {
+  // E28 · HU-465 · textos en el idioma de la petición.
+  const t = await getT('web.footer')
   const wa = whatsapp ?? '573XXXXXXXXX'
   const showStore = footerFlags.showStore ?? true
   const showBlog  = footerFlags.showBlog  ?? true
@@ -106,7 +109,7 @@ export default function Footer({
           <div className="col-span-2 md:col-span-1">
             <div className="flex items-center gap-2 mb-4">
               {logoUrl ? (
-                <img src={logoUrl} alt="Logo" className="h-10 w-auto object-contain" />
+                <img src={logoUrl} alt={storeName ?? 'Logo'} className="h-10 w-auto object-contain" />
               ) : (
                 <div className="w-10 h-10 rounded-full bg-brand-cream flex items-center justify-center">
                   <span className="font-display text-brand-primary text-sm font-bold">▲</span>
@@ -115,7 +118,7 @@ export default function Footer({
             </div>
             <p className="font-brand text-xs text-brand-cream/60 leading-relaxed">
               © {new Date().getFullYear()} {storeName ?? 'Mi Tienda'}<br />
-              Todos los derechos reservados.
+              {t('rights')}
             </p>
 
             {/* Redes sociales */}
@@ -140,16 +143,16 @@ export default function Footer({
           {/* Tienda */}
           {showStore && (
             <div>
-              <h4 className="font-brand font-semibold text-sm mb-3 text-brand-cream/80">Tienda</h4>
+              <h4 className="font-brand font-semibold text-sm mb-3 text-brand-cream/80">{t('shop')}</h4>
               <ul className="space-y-2">
                 <li>
                   <Link href="/shop" className="font-brand text-xs text-brand-cream/50 hover:text-brand-cream transition-colors">
-                    Todos los productos
+                    {t('all_products')}
                   </Link>
                 </li>
                 <li>
                   <Link href="/shop" className="font-brand text-xs text-brand-cream/50 hover:text-brand-cream transition-colors">
-                    Novedades
+                    {t('new')}
                   </Link>
                 </li>
               </ul>
@@ -159,11 +162,11 @@ export default function Footer({
           {/* Blog */}
           {showBlog && (
             <div>
-              <h4 className="font-brand font-semibold text-sm mb-3 text-brand-cream/80">Blog</h4>
+              <h4 className="font-brand font-semibold text-sm mb-3 text-brand-cream/80">{t('blog')}</h4>
               <ul className="space-y-2">
                 <li>
                   <Link href="/blog" className="font-brand text-xs text-brand-cream/50 hover:text-brand-cream transition-colors">
-                    Todos los artículos
+                    {t('all_posts')}
                   </Link>
                 </li>
               </ul>
@@ -173,7 +176,7 @@ export default function Footer({
           {/* Servicios — desde pages dinámicas */}
           {servicioPages.length > 0 && (
             <div>
-              <h4 className="font-brand font-semibold text-sm mb-3 text-brand-cream/80">Servicios</h4>
+              <h4 className="font-brand font-semibold text-sm mb-3 text-brand-cream/80">{t('services')}</h4>
               <ul className="space-y-2">
                 {servicioPages.map((p) => (
                   <li key={p.key}>
@@ -192,7 +195,7 @@ export default function Footer({
           {/* Nosotros — desde pages dinámicas */}
           {nosotrosPages.length > 0 && (
             <div>
-              <h4 className="font-brand font-semibold text-sm mb-3 text-brand-cream/80">Nosotros</h4>
+              <h4 className="font-brand font-semibold text-sm mb-3 text-brand-cream/80">{t('about')}</h4>
               <ul className="space-y-2">
                 {nosotrosPages.map((p) => (
                   <li key={p.key}>
@@ -200,7 +203,7 @@ export default function Footer({
                       href={`/${p.slug}`}
                       className="font-brand text-xs text-brand-cream/50 hover:text-brand-cream transition-colors"
                     >
-                      Historia
+                      {t('story')}
                     </Link>
                   </li>
                 ))}
@@ -209,7 +212,7 @@ export default function Footer({
                     href="/nosotros#contacto"
                     className="font-brand text-xs text-brand-cream/50 hover:text-brand-cream transition-colors"
                   >
-                    Contacto
+                    {t('contact')}
                   </Link>
                 </li>
               </ul>
@@ -219,16 +222,16 @@ export default function Footer({
           {/* Legal */}
           {showLegal && (
             <div>
-              <h4 className="font-brand font-semibold text-sm mb-3 text-brand-cream/80">Legal</h4>
+              <h4 className="font-brand font-semibold text-sm mb-3 text-brand-cream/80">{t('legal')}</h4>
               <ul className="space-y-2">
                 <li>
                   <Link href="/terms" className="font-brand text-xs text-brand-cream/50 hover:text-brand-cream transition-colors">
-                    Términos
+                    {t('terms')}
                   </Link>
                 </li>
                 <li>
                   <Link href="/privacy" className="font-brand text-xs text-brand-cream/50 hover:text-brand-cream transition-colors">
-                    Privacidad
+                    {t('privacy')}
                   </Link>
                 </li>
               </ul>

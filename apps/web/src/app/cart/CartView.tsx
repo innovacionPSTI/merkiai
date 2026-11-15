@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react'
 import Link from 'next/link'
 import { Icon } from '@merkiai/ui'
 import { useCartStore } from '@/store/cart'
-import { formatMoney } from '@merkiai/i18n'
+import { useT, useFormat } from '@/components/i18n/I18nProvider'
 
 interface ShippingPublicConfig {
   provider: 'fixed' | 'skydropx'
@@ -33,6 +33,8 @@ export default function CartView({ density = 'comfortable' }: Props) {
     thumb: compact ? 'w-14 h-14 rounded-lg bg-brand-cream flex-shrink-0 overflow-hidden' : 'w-20 h-20 rounded-xl bg-brand-cream flex-shrink-0 overflow-hidden',
   }
   const { items, removeItem, updateQty, subtotal, clearCart } = useCartStore()
+  const t = useT('web.cart')
+  const { money } = useFormat()
   const [shippingCfg, setShippingCfg] = useState<ShippingPublicConfig>(FALLBACK_CONFIG)
   const [cfgLoaded, setCfgLoaded] = useState(false)
 
@@ -44,8 +46,7 @@ export default function CartView({ density = 'comfortable' }: Props) {
       .finally(() => setCfgLoaded(true))
   }, [])
 
-  const fmt = (n: number) =>
-    formatMoney(n)
+  const fmt = (n: number) => money(n)
 
   const sub = subtotal()
 
@@ -72,10 +73,10 @@ export default function CartView({ density = 'comfortable' }: Props) {
             <path strokeLinecap="round" strokeLinejoin="round" d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z" />
           </svg>
         </div>
-        <h1 className="font-display text-brand-primary text-3xl">Tu carrito está vacío</h1>
-        <p className="font-brand text-brand-primary/50">Agrega productos para continuar</p>
+        <h1 className="font-display text-brand-primary text-3xl">{t('empty')}</h1>
+        <p className="font-brand text-brand-primary/50">{t('empty_hint')}</p>
         <Link href="/shop" className="bg-brand-primary text-brand-cream rounded-full px-8 py-3 font-brand font-medium hover:bg-brand-dark transition-colors">
-          Explorar tienda
+          {t('explore')}
         </Link>
       </div>
     )
@@ -84,7 +85,7 @@ export default function CartView({ density = 'comfortable' }: Props) {
   return (
     <div className="bg-brand-cream min-h-screen pt-20">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
-        <h1 className="font-display text-brand-primary text-section mb-10">Mi Carrito</h1>
+        <h1 className="font-display text-brand-primary text-section mb-10">{t('title')}</h1>
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
           {/* Items */}
@@ -106,22 +107,22 @@ export default function CartView({ density = 'comfortable' }: Props) {
                     <div className="flex items-center gap-3">
                       <div className="flex flex-col items-end">
                         <div className="flex items-center gap-2 border border-brand-primary/20 rounded-full px-3 py-1">
-                          <button onClick={() => updateQty(item.variantId, item.qty - 1)} className="text-brand-primary font-bold" aria-label={`Quitar una unidad de ${item.productName}`}>−</button>
+                          <button onClick={() => updateQty(item.variantId, item.qty - 1)} className="text-brand-primary font-bold" aria-label={t('remove_one', { name: item.productName })}>−</button>
                           <span className="font-brand text-sm w-5 text-center" aria-live="polite">{item.qty}</span>
                           <button
                             onClick={() => updateQty(item.variantId, item.qty + 1)}
                             disabled={!item.allowBackorder && item.stock != null && item.qty >= item.stock}
                             className="text-brand-primary font-bold disabled:opacity-30 disabled:cursor-not-allowed"
-                            aria-label={`Agregar una unidad de ${item.productName}`}
+                            aria-label={t('add_one', { name: item.productName })}
                           >
                             +
                           </button>
                         </div>
                         {!item.allowBackorder && item.stock != null && item.qty >= item.stock && (
-                          <span className="font-brand text-[11px] text-amber-600 mt-1">Máximo {item.stock} disponibles</span>
+                          <span className="font-brand text-[11px] text-amber-600 mt-1">{t('max_available', { count: item.stock })}</span>
                         )}
                       </div>
-                      <button onClick={() => removeItem(item.variantId)} className="text-brand-primary/30 hover:text-red-500 transition-colors" aria-label={`Eliminar ${item.productName} del carrito`}>
+                      <button onClick={() => removeItem(item.variantId)} className="text-brand-primary/30 hover:text-red-500 transition-colors" aria-label={t('remove_item', { name: item.productName })}>
                         <svg className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24" aria-hidden="true">
                           <path strokeLinecap="round" strokeLinejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
                         </svg>
@@ -134,17 +135,17 @@ export default function CartView({ density = 'comfortable' }: Props) {
 
             <div className="flex justify-between items-center pt-2">
               <Link href="/shop" className="font-brand text-sm text-brand-primary/60 hover:text-brand-primary transition-colors">
-                ← Seguir comprando
+                {t('keep_shopping')}
               </Link>
               <button onClick={clearCart} className="font-brand text-sm text-red-400 hover:text-red-600 transition-colors">
-                Vaciar carrito
+                {t('clear')}
               </button>
             </div>
           </div>
 
           {/* Resumen */}
           <div className="bg-white rounded-2xl p-6 shadow-sm h-fit sticky top-24">
-            <h2 className="font-brand font-semibold text-brand-primary text-lg mb-5">Resumen del pedido</h2>
+            <h2 className="font-brand font-semibold text-brand-primary text-lg mb-5">{t('summary')}</h2>
 
             {/* Barra de progreso hacia envío gratis */}
             {shippingCfg.free_shipping_enabled && !isFreeShipping && cfgLoaded && (
@@ -156,27 +157,31 @@ export default function CartView({ density = 'comfortable' }: Props) {
                   />
                 </div>
                 <p className="font-brand text-xs text-brand-primary/50 mt-1.5">
-                  Te faltan <strong>{fmt(amountToFreeShipping)}</strong> para envío gratis
+                  {(() => {
+                    const amount = fmt(amountToFreeShipping)
+                    const [before, after = ''] = t('free_shipping_missing', { amount }).split(amount)
+                    return <>{before}<strong>{amount}</strong>{after}</>
+                  })()}
                 </p>
               </div>
             )}
 
             <div className="space-y-3 mb-5">
               <div className="flex justify-between font-brand text-sm">
-                <span className="text-brand-primary/60">Subtotal</span>
+                <span className="text-brand-primary/60">{t('subtotal')}</span>
                 <span className="text-brand-primary font-medium">{fmt(sub)}</span>
               </div>
               <div className="flex justify-between font-brand text-sm">
-                <span className="text-brand-primary/60">Envío</span>
+                <span className="text-brand-primary/60">{t('shipping')}</span>
                 <span className="text-brand-primary font-medium">
                   {!cfgLoaded ? (
-                    <span className="text-brand-primary/30">Calculando...</span>
+                    <span className="text-brand-primary/30">{t('calculating')}</span>
                   ) : isFreeShipping ? (
-                    <span className="text-green-600">Gratis</span>
+                    <span className="text-green-600">{t('free')}</span>
                   ) : shippingCfg.provider === 'skydropx' ? (
                     <span className="text-brand-primary/60">
                       ~{fmt(shippingCfg.fixed_rate)}
-                      <span className="block text-xs font-normal text-brand-primary/40">Estimado — se calcula en el pago</span>
+                      <span className="block text-xs font-normal text-brand-primary/40">{t('estimated')}</span>
                     </span>
                   ) : (
                     fmt(shippingCost)
@@ -185,7 +190,7 @@ export default function CartView({ density = 'comfortable' }: Props) {
               </div>
               <hr className="border-brand-primary/10" />
               <div className="flex justify-between font-brand font-bold text-brand-primary text-lg">
-                <span>Total</span>
+                <span>{t('total')}</span>
                 <span>{fmt(total)}</span>
               </div>
             </div>
@@ -194,11 +199,11 @@ export default function CartView({ density = 'comfortable' }: Props) {
             <div className="flex gap-2 mb-5">
               <input
                 type="text"
-                placeholder="Código de cupón"
+                placeholder={t('coupon_placeholder')}
                 className="flex-1 border border-brand-primary/20 rounded-xl px-3 py-2 font-brand text-sm focus:outline-none focus:border-brand-primary"
               />
               <button className="border border-brand-primary text-brand-primary rounded-xl px-4 py-2 font-brand text-sm hover:bg-brand-primary hover:text-brand-cream transition-colors">
-                Aplicar
+                {t('apply')}
               </button>
             </div>
 
@@ -206,11 +211,11 @@ export default function CartView({ density = 'comfortable' }: Props) {
               href="/checkout"
               className="block w-full text-center bg-brand-primary text-brand-cream rounded-full py-3.5 font-brand font-medium hover:bg-brand-dark transition-colors"
             >
-              Proceder al pago
+              {t('checkout')}
             </Link>
 
             <div className="mt-4 flex flex-col gap-1">
-              <p className="font-brand text-xs text-brand-primary/40 text-center inline-flex items-center justify-center gap-1.5"><Icon name="lock" size={13} /> Pago seguro</p>
+              <p className="font-brand text-xs text-brand-primary/40 text-center inline-flex items-center justify-center gap-1.5"><Icon name="lock" size={13} /> {t('secure')}</p>
               <div className="flex justify-center gap-3 mt-1">
                 <span className="font-brand text-xs text-brand-primary/40">Wompi</span>
                 <span className="font-brand text-xs text-brand-primary/40">·</span>

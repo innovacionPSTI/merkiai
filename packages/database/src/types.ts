@@ -216,6 +216,7 @@ export type Database = {
           id: number
           tenant_id: string
           order_number: string
+          locale?: string | null
           customer_id: string | null
           customer_name: string
           customer_email: string
@@ -257,6 +258,7 @@ export type Database = {
           id?: number
           tenant_id?: string
           order_number: string
+          locale?: string | null
           customer_id?: string | null
           customer_name: string
           customer_email: string
@@ -298,6 +300,7 @@ export type Database = {
           id?: number
           tenant_id?: string
           order_number?: string
+          locale?: string | null
           customer_id?: string | null
           customer_name?: string
           customer_email?: string

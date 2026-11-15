@@ -6,7 +6,8 @@
  * Las etiquetas y las reglas salen de `@merkiai/i18n` (catálogo regional).
  */
 import { SearchableSelect } from '@merkiai/ui'
-import { createTranslator, getRegion, isValidPostalCode, normalizePostalCode } from '@merkiai/i18n'
+import { getRegion, isValidPostalCode, normalizePostalCode } from '@merkiai/i18n'
+import { useT } from '@/components/i18n/I18nProvider'
 
 export interface RegionalAddressValue {
   country: string
@@ -16,11 +17,11 @@ export interface RegionalAddressValue {
   postal_code: string
 }
 
-const t = createTranslator()
 const inputCls = 'w-full border border-brand-primary/20 rounded-xl px-4 py-2.5 font-brand text-sm focus:outline-none focus:border-brand-primary'
 const labelCls = 'font-brand text-sm font-semibold text-brand-primary block mb-1'
 
 export default function RegionalAddressFields({ value, onChange }: { value: RegionalAddressValue; onChange: (patch: Partial<RegionalAddressValue>) => void }) {
+  const t = useT()
   const region = getRegion(value.country)
   const subdivisions = Array.isArray(region.subdivisions) ? [...region.subdivisions] : []
   const cpInvalid = !!value.postal_code && !isValidPostalCode(region.country, value.postal_code)
@@ -51,7 +52,7 @@ export default function RegionalAddressFields({ value, onChange }: { value: Regi
 
       <div>
         <label className={labelCls}>
-          {t('address.postal_code')}{region.postalCode.required ? ' *' : <span className="font-normal text-brand-primary/40"> (opcional)</span>}
+          {t('address.postal_code')}{region.postalCode.required ? ' *' : <span className="font-normal text-brand-primary/40"> {t('web.checkout.optional')}</span>}
         </label>
         <input
           type="text"

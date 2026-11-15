@@ -61,7 +61,8 @@ export class PayzenGateway implements PaymentGateway {
       currency: params.currency || 'COP',
       orderId: params.orderNumber,
       channelOptions: { channelType: 'URL' },
-      locale: 'es_ES',
+      // E28 · HU-465 · página de pago en el idioma del comprador (PayZen: es_ES / en_US).
+      locale: params.locale?.toLowerCase().startsWith('en') ? 'en_US' : 'es_ES',
       customer: {
         email: params.customerEmail,
         reference: params.orderNumber,

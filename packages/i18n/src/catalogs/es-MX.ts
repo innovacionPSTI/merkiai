@@ -3,6 +3,9 @@ const esMX = {
   common: {
     computer: 'Computadora',
   },
+  web: {
+    checkout: { address_placeholder: 'Av. Reforma 222, Int. 3' },
+  },
   address: {
     region: 'Estado',
     city: 'Municipio o alcaldía',

@@ -6,9 +6,10 @@ import { useCartStore } from '@/store/cart'
 import type { ShippingRate } from '@/lib/shipping/types'
 import SearchableSelect from '@/components/ui/SearchableSelect'
 import { DEPARTMENTS, getCitiesForDepartment } from '@merkiai/ui'
-import { getRegion, validateAddress, countryName, createTranslator } from '@merkiai/i18n'
+import { getRegion, validateAddress, countryName } from '@merkiai/i18n'
 import RegionalAddressFields from '@/components/address/RegionalAddressFields'
 import { formatMoney } from '@merkiai/i18n'
+import { useT, useFormat, useLocale } from '@/components/i18n/I18nProvider'
 
 type Step = 1 | 2 | 3
 
@@ -47,7 +48,6 @@ interface Props {
   countries?: string[]
 }
 
-const tr = createTranslator()
 
 const FALLBACK_CFG: ShippingPublicConfig = {
   provider: 'fixed', fixed_rate: 8000,
@@ -80,6 +80,12 @@ function addressToShipping(addr: SavedAddress, countries: string[]): ShippingInf
 
 export default function CheckoutClient({ initialEmail = '', defaultAddress = null, countries = ['CO'] }: Props) {
   const { items, subtotal, clearCart } = useCartStore()
+  // E28 · HU-465 · textos y formatos en el idioma de la petición.
+  const t = useT('web.checkout')
+  const tr = useT()
+  const { money } = useFormat()
+  const locale = useLocale()
+  const fmt = (n: number) => money(n)
 
   // HU-298 · clave de idempotencia estable por intento de checkout: se reutiliza
   // en cada reintento (reenvío) del mismo pago para que el canje de gift card/saldo
@@ -262,10 +268,10 @@ export default function CheckoutClient({ initialEmail = '', defaultAddress = nul
       } else {
         // Error de cotización (p.ej. total muy bajo, dirección inválida): mensaje inline.
         const data = await res.json().catch(() => ({}))
-        setRatesError(data.error || 'No pudimos calcular las tarifas de envío. Se aplicará la tarifa estándar al confirmar.')
+        setRatesError(data.error || t('rates_error'))
       }
     } catch {
-      setRatesError('No pudimos calcular las tarifas de envío. Se aplicará la tarifa estándar al confirmar.')
+      setRatesError(t('rates_error'))
     }
     finally {
       setRatesLoading(false)
@@ -285,10 +291,10 @@ export default function CheckoutClient({ initialEmail = '', defaultAddress = nul
         body: JSON.stringify({ code: couponCode.trim(), subtotal: sub }),
       })
       const data = await res.json()
-      if (!res.ok) { setCouponError(data.error ?? 'Cupón inválido'); return }
+      if (!res.ok) { setCouponError(data.error ?? t('coupon_invalid')); return }
       setCouponDiscount(data.discount)
       setCouponApplied(data.code)
-    } catch { setCouponError('Error aplicando el cupón') }
+    } catch { setCouponError(t('coupon_error')) }
     finally { setCouponLoading(false) }
   }
 
@@ -317,8 +323,8 @@ export default function CheckoutClient({ initialEmail = '', defaultAddress = nul
       })
       const d = await res.json()
       if (d?.giftCard?.balance > 0) setGiftCardBalance(d.giftCard.balance)
-      else { setGiftCardBalance(0); setGiftCardError('Gift card inválida o sin saldo.') }
-    } catch { setGiftCardError('Error validando la gift card.') }
+      else { setGiftCardBalance(0); setGiftCardError(t('gift_card_invalid')) }
+    } catch { setGiftCardError(t('gift_card_error')) }
   }
 
   const sub = subtotal()
@@ -344,8 +350,8 @@ export default function CheckoutClient({ initialEmail = '', defaultAddress = nul
     return (
       <div className="bg-brand-cream min-h-screen pt-20 flex items-center justify-center">
         <div className="text-center">
-          <p className="font-brand text-brand-primary/50 mb-4">Tu carrito está vacío</p>
-          <Link href="/shop" className="font-brand text-sm text-brand-primary underline">Volver a la tienda</Link>
+          <p className="font-brand text-brand-primary/50 mb-4">{t('empty')}</p>
+          <Link href="/shop" className="font-brand text-sm text-brand-primary underline">{t('back_to_shop')}</Link>
         </div>
       </div>
     )
@@ -371,6 +377,8 @@ export default function CheckoutClient({ initialEmail = '', defaultAddress = nul
           gift_card_code: giftCardBalance > 0 ? giftCardCode.trim() : null,
           use_store_credit: useCredit,
           idempotency_key: idempotencyKeyRef.current,
+          // HU-465 · idioma del pedido (correos y comunicaciones).
+          locale,
           shipping_rate: selectedRate
             ? {
                 id: selectedRate.id,
@@ -519,16 +527,16 @@ export default function CheckoutClient({ initialEmail = '', defaultAddress = nul
             {/* Paso 1: Contacto */}
             {step === 1 && (
               <div className="bg-white rounded-2xl p-6 shadow-sm">
-                <h2 className="font-brand font-semibold text-brand-primary text-xl mb-5">1. Información de contacto</h2>
+                <h2 className="font-brand font-semibold text-brand-primary text-xl mb-5">{t('step_contact')}</h2>
                 <div className="space-y-4">
                   <div>
-                    <label className="font-brand text-sm font-semibold text-brand-primary block mb-1">Email *</label>
-                    <input type="email" value={contact.email} onChange={(e) => setContact({ email: e.target.value })} placeholder="tu@correo.com" required
+                    <label className="font-brand text-sm font-semibold text-brand-primary block mb-1">{t('email')} *</label>
+                    <input type="email" value={contact.email} onChange={(e) => setContact({ email: e.target.value })} placeholder={t('email_placeholder')} required
                       className="w-full border border-brand-primary/20 rounded-xl px-4 py-2.5 font-brand text-sm focus:outline-none focus:border-brand-primary" />
                   </div>
                   <button onClick={() => contact.email && setStep(2)} disabled={!contact.email}
                     className="w-full bg-brand-primary text-brand-cream rounded-full py-3 font-brand font-medium hover:bg-brand-dark transition-colors disabled:opacity-40">
-                    Continuar al envío →
+                    {t('to_shipping')}
                   </button>
                 </div>
               </div>
@@ -537,10 +545,10 @@ export default function CheckoutClient({ initialEmail = '', defaultAddress = nul
             {/* Paso 2: Envío */}
             {step === 2 && (
               <div className="bg-white rounded-2xl p-6 shadow-sm">
-                <h2 className="font-brand font-semibold text-brand-primary text-xl mb-5">2. Dirección de envío</h2>
+                <h2 className="font-brand font-semibold text-brand-primary text-xl mb-5">{t('step_shipping')}</h2>
                 <div className="space-y-4">
                   <div className="grid grid-cols-2 gap-4">
-                    {[{ key: 'name', label: 'Nombre', placeholder: 'Juan' }, { key: 'lastname', label: 'Apellido', placeholder: 'García' }].map((f) => (
+                    {[{ key: 'name', label: t('first_name'), placeholder: '' }, { key: 'lastname', label: t('last_name'), placeholder: '' }].map((f) => (
                       <div key={f.key}>
                         <label className="font-brand text-sm font-semibold text-brand-primary block mb-1">{f.label} *</label>
                         <input type="text" value={shipping[f.key as keyof ShippingInfo]} onChange={(e) => setShipping({ ...shipping, [f.key]: e.target.value })} placeholder={f.placeholder}
@@ -565,10 +573,10 @@ export default function CheckoutClient({ initialEmail = '', defaultAddress = nul
 
                   {/* Dirección */}
                   <div>
-                    <label className="font-brand text-sm font-semibold text-brand-primary block mb-1">Dirección *</label>
+                    <label className="font-brand text-sm font-semibold text-brand-primary block mb-1">{t('address')} *</label>
                     <input type="text" value={shipping.address}
                       onChange={(e) => setShipping({ ...shipping, address: e.target.value })}
-                      placeholder="Calle 123 #45-67, Apto 8"
+                      placeholder={t('address_placeholder')}
                       className="w-full border border-brand-primary/20 rounded-xl px-4 py-2.5 font-brand text-sm focus:outline-none focus:border-brand-primary" />
                   </div>
 
@@ -581,11 +589,11 @@ export default function CheckoutClient({ initialEmail = '', defaultAddress = nul
                   {/* Departamento y Ciudad */}
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <SearchableSelect
-                      label="Departamento"
+                      label={t('department')}
                       required
                       value={shipping.department}
                       options={DEPARTMENTS}
-                      placeholder="Selecciona departamento"
+                      placeholder={t('choose_department')}
                       onChange={(dept) => {
                         setShipping({ ...shipping, department: dept, city: '' })
                         setRatesFetched(false)
@@ -594,11 +602,11 @@ export default function CheckoutClient({ initialEmail = '', defaultAddress = nul
                       }}
                     />
                     <SearchableSelect
-                      label="Ciudad / Municipio"
+                      label={t('city')}
                       required
                       value={shipping.city}
                       options={getCitiesForDepartment(shipping.department)}
-                      placeholder={shipping.department ? 'Selecciona ciudad' : 'Primero elige departamento'}
+                      placeholder={shipping.department ? t('choose_city') : t('department_first')}
                       disabled={!shipping.department}
                       onChange={(city) => {
                         setShipping({ ...shipping, city })
@@ -612,14 +620,14 @@ export default function CheckoutClient({ initialEmail = '', defaultAddress = nul
                   {/* Código postal */}
                   <div>
                     <label className="font-brand text-sm font-semibold text-brand-primary block mb-1">
-                      Código postal <span className="font-normal text-brand-primary/40">(opcional)</span>
+                      {t('postal_code')} <span className="font-normal text-brand-primary/40">{t('optional')}</span>
                     </label>
                     <input type="text" value={shipping.postal_code}
                       onChange={(e) => {
                         const v = e.target.value.replace(/\D/g, '').slice(0, 6)
                         setShipping({ ...shipping, postal_code: v })
                       }}
-                      placeholder="6 dígitos"
+                      placeholder={t('six_digits')}
                       maxLength={6}
                       inputMode="numeric"
                       className={`w-40 border rounded-xl px-4 py-2.5 font-brand text-sm focus:outline-none transition-colors ${
@@ -629,14 +637,14 @@ export default function CheckoutClient({ initialEmail = '', defaultAddress = nul
                       }`}
                     />
                     {shipping.postal_code && shipping.postal_code.length !== 6 && (
-                      <p className="font-brand text-xs text-amber-600 mt-1">El código postal debe tener 6 dígitos</p>
+                      <p className="font-brand text-xs text-amber-600 mt-1">{t('postal_code_6')}</p>
                     )}
                   </div>
                   </>)}
 
                   {/* Teléfono */}
                   <div>
-                    <label className="font-brand text-sm font-semibold text-brand-primary block mb-1">Teléfono *</label>
+                    <label className="font-brand text-sm font-semibold text-brand-primary block mb-1">{t('phone')} *</label>
                     <input type="tel" value={shipping.phone}
                       onChange={(e) => setShipping({ ...shipping, phone: e.target.value })}
                       placeholder={`+${getRegion(shipping.country).callingCode} ${getRegion(shipping.country).phoneExample}`}
@@ -650,7 +658,7 @@ export default function CheckoutClient({ initialEmail = '', defaultAddress = nul
                         <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
                         <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
                       </svg>
-                      <p className="font-brand text-sm text-brand-primary/50">Calculando opciones de envío…</p>
+                      <p className="font-brand text-sm text-brand-primary/50">{t('rates_loading')}</p>
                     </div>
                   )}
 
@@ -663,13 +671,13 @@ export default function CheckoutClient({ initialEmail = '', defaultAddress = nul
 
                   {carrierQuotes && !isFreeShipping && ratesFetched && !ratesError && availableRates.length === 0 && (
                     <p className="font-brand text-sm text-amber-600 bg-amber-50 rounded-xl px-4 py-3">
-                      No se encontraron tarifas para esta dirección. Se aplicará tarifa estándar al confirmar.
+                      {t('rates_none')}
                     </p>
                   )}
 
                   {carrierQuotes && !isFreeShipping && availableRates.length > 0 && (
                     <div>
-                      <p className="font-brand text-sm font-semibold text-brand-primary mb-2">Elige tu transportadora</p>
+                      <p className="font-brand text-sm font-semibold text-brand-primary mb-2">{t('choose_carrier')}</p>
                       <div className="space-y-2">
                         {availableRates.map((rate) => (
                           <label key={rate.id} className={`flex items-center justify-between gap-4 p-3 rounded-xl border-2 cursor-pointer transition-colors ${selectedRateId === rate.id ? 'border-brand-primary bg-brand-cream/40' : 'border-brand-primary/10 hover:border-brand-primary/30'}`}>
@@ -677,7 +685,7 @@ export default function CheckoutClient({ initialEmail = '', defaultAddress = nul
                               <input type="radio" name="shipping_rate" value={rate.id} checked={selectedRateId === rate.id} onChange={() => setSelectedRateId(rate.id)} className="accent-brand-primary" />
                               <div>
                                 <p className="font-brand text-sm font-semibold text-brand-primary">{rate.carrier_name}</p>
-                                <p className="font-brand text-xs text-brand-primary/50">{rate.service_name} · {rate.days} día{rate.days !== 1 ? 's' : ''} hábil{rate.days !== 1 ? 'es' : ''}</p>
+                                <p className="font-brand text-xs text-brand-primary/50">{rate.service_name} · {t('business_days', { days: rate.days })}</p>
                               </div>
                             </div>
                             <span className="font-brand text-sm font-bold text-brand-primary">{fmt(rate.total_price)}</span>
@@ -706,17 +714,17 @@ export default function CheckoutClient({ initialEmail = '', defaultAddress = nul
                             onClick={fetchRates}
                             className="w-full border-2 border-brand-primary text-brand-primary rounded-full py-3 font-brand font-medium hover:bg-brand-primary hover:text-brand-cream transition-colors"
                           >
-                            Ver opciones de envío →
+                            {t('see_rates')}
                           </button>
                         )}
                         <div className="flex gap-3">
-                          <button onClick={() => setStep(1)} className="flex-1 border border-brand-primary/20 text-brand-primary rounded-full py-3 font-brand font-medium hover:border-brand-primary transition-colors">← Atrás</button>
+                          <button onClick={() => setStep(1)} className="flex-1 border border-brand-primary/20 text-brand-primary rounded-full py-3 font-brand font-medium hover:border-brand-primary transition-colors">{t('back')}</button>
                           <button
                             onClick={() => { if (canProceed) setStep(3) }}
                             disabled={!canProceed || ratesLoading}
                             className="flex-1 bg-brand-primary text-brand-cream rounded-full py-3 font-brand font-medium hover:bg-brand-dark transition-colors disabled:opacity-40"
                           >
-                            Continuar al pago →
+                            {t('to_payment')}
                           </button>
                         </div>
                       </div>
@@ -729,13 +737,12 @@ export default function CheckoutClient({ initialEmail = '', defaultAddress = nul
             {/* Paso 3: Pago */}
             {step === 3 && (
               <div className="bg-white rounded-2xl p-6 shadow-sm">
-                <h2 className="font-brand font-semibold text-brand-primary text-xl mb-5">3. Método de pago</h2>
+                <h2 className="font-brand font-semibold text-brand-primary text-xl mb-5">{t('step_payment')}</h2>
                 {manualPayment ? (
                   <div className="bg-brand-yellow/20 rounded-xl p-4 mb-6">
-                    <p className="font-brand font-semibold text-brand-primary mb-1">Pago coordinado con la tienda</p>
+                    <p className="font-brand font-semibold text-brand-primary mb-1">{t('manual_title')}</p>
                     <p className="font-brand text-sm text-brand-primary/70">
-                      Al confirmar, tu pedido quedará registrado como <strong>pendiente de pago</strong>.
-                      El equipo de la tienda te contactará para coordinar y validar el pago antes de despacharlo.
+                      {t('manual_body')}
                     </p>
                   </div>
                 ) : (
@@ -797,7 +804,7 @@ export default function CheckoutClient({ initialEmail = '', defaultAddress = nul
                     ) : (
                       <div className="bg-brand-yellow/20 rounded-xl p-4 mb-6">
                         <p className="font-brand text-sm text-brand-primary/70">
-                          💡 El widget de {gateways.find((g) => g.value === paymentMethod)?.label ?? paymentMethod} se cargará al confirmar. Datos protegidos con SSL.
+                          💡 {t('widget_hint', { gateway: gateways.find((g) => g.value === paymentMethod)?.label ?? paymentMethod })}
                         </p>
                       </div>
                     )}
@@ -809,9 +816,9 @@ export default function CheckoutClient({ initialEmail = '', defaultAddress = nul
                   </div>
                 )}
                 <div className="flex gap-3">
-                  <button onClick={() => setStep(2)} className="flex-1 border border-brand-primary/20 text-brand-primary rounded-full py-3 font-brand font-medium hover:border-brand-primary transition-colors">← Atrás</button>
+                  <button onClick={() => setStep(2)} className="flex-1 border border-brand-primary/20 text-brand-primary rounded-full py-3 font-brand font-medium hover:border-brand-primary transition-colors">{t('back')}</button>
                   <button onClick={handleConfirm} disabled={loading} className="flex-1 bg-brand-primary text-brand-cream rounded-full py-3 font-brand font-medium hover:bg-brand-dark transition-colors disabled:opacity-50">
-                    {loading ? 'Procesando...' : 'Confirmar pedido'}
+                    {loading ? t('processing') : t('confirm')}
                   </button>
                 </div>
               </div>
@@ -821,7 +828,7 @@ export default function CheckoutClient({ initialEmail = '', defaultAddress = nul
           {/* Resumen lateral */}
           <div className="lg:col-span-2">
             <div className="bg-white rounded-2xl p-6 shadow-sm sticky top-24 space-y-4">
-              <h3 className="font-brand font-semibold text-brand-primary">Resumen</h3>
+              <h3 className="font-brand font-semibold text-brand-primary">{t('summary')}</h3>
 
               {/* Items */}
               <div className="space-y-3">
@@ -849,11 +856,11 @@ export default function CheckoutClient({ initialEmail = '', defaultAddress = nul
                       <p className="font-brand text-xs font-semibold text-green-700">🎟️ {couponApplied}</p>
                       <p className="font-brand text-xs text-green-600">−{fmt(couponDiscount)}</p>
                     </div>
-                    <button onClick={removeCoupon} className="font-brand text-xs text-green-600 hover:text-red-500 transition-colors">Quitar</button>
+                    <button onClick={removeCoupon} className="font-brand text-xs text-green-600 hover:text-red-500 transition-colors">{t('remove')}</button>
                   </div>
                 ) : (
                   <div className="space-y-1.5">
-                    <p className="font-brand text-xs font-semibold text-brand-primary">¿Tienes un cupón?</p>
+                    <p className="font-brand text-xs font-semibold text-brand-primary">{t('have_coupon')}</p>
                     <div className="flex gap-2">
                       <input
                         type="text"
@@ -868,7 +875,7 @@ export default function CheckoutClient({ initialEmail = '', defaultAddress = nul
                         disabled={!couponCode.trim() || couponLoading}
                         className="px-4 py-2 bg-brand-primary text-brand-cream rounded-xl font-brand text-sm hover:bg-brand-dark transition-colors disabled:opacity-40"
                       >
-                        {couponLoading ? '...' : 'Aplicar'}
+                        {couponLoading ? '...' : t('apply')}
                       </button>
                     </div>
                     {couponError && <p className="font-brand text-xs text-red-500">{couponError}</p>}
@@ -883,20 +890,20 @@ export default function CheckoutClient({ initialEmail = '', defaultAddress = nul
                     type="text" value={giftCardCode}
                     onChange={(e) => { setGiftCardCode(e.target.value); setGiftCardBalance(0); setGiftCardError('') }}
                     onKeyDown={(e) => e.key === 'Enter' && applyGiftCard()}
-                    placeholder="Código de gift card"
+                    placeholder={t('gift_card_placeholder')}
                     className="flex-1 rounded-lg border border-brand-primary/15 px-3 py-2 font-brand text-sm focus:border-brand-primary focus:outline-none"
                   />
                   <button onClick={applyGiftCard} type="button"
                     className="font-brand text-sm border border-brand-primary/20 text-brand-primary rounded-lg px-4 py-2 hover:bg-brand-cream">
-                    Aplicar
+                    {t('apply')}
                   </button>
                 </div>
                 {giftCardError && <p className="font-brand text-xs text-red-500">{giftCardError}</p>}
-                {giftCardBalance > 0 && <p className="font-brand text-xs text-green-600">🎁 Gift card válida — saldo {fmt(giftCardBalance)}</p>}
+                {giftCardBalance > 0 && <p className="font-brand text-xs text-green-600">🎁 {t('gift_card_valid', { amount: fmt(giftCardBalance) })}</p>}
                 {storeCredit > 0 && (
                   <label className="flex items-center gap-2 font-brand text-sm text-brand-primary">
                     <input type="checkbox" checked={useCredit} onChange={(e) => setUseCredit(e.target.checked)} className="w-4 h-4 accent-brand-primary" />
-                    Usar mi saldo a favor ({fmt(storeCredit)})
+                    {t('use_credit', { amount: fmt(storeCredit) })}
                   </label>
                 )}
               </div>
@@ -904,22 +911,22 @@ export default function CheckoutClient({ initialEmail = '', defaultAddress = nul
               {/* Totales */}
               <div className="border-t border-gray-100 pt-3 space-y-2 text-sm font-brand">
                 <div className="flex justify-between">
-                  <span className="text-brand-primary/60">Subtotal</span>
+                  <span className="text-brand-primary/60">{t('subtotal')}</span>
                   <span className="text-brand-primary">{fmt(sub)}</span>
                 </div>
                 {couponDiscount > 0 && (
                   <div className="flex justify-between text-green-600">
-                    <span>Descuento ({couponApplied})</span>
+                    <span>{t('discount', { code: couponApplied ?? '' })}</span>
                     <span>−{fmt(couponDiscount)}</span>
                   </div>
                 )}
                 <div className="flex justify-between">
-                  <span className="text-brand-primary/60">Envío</span>
+                  <span className="text-brand-primary/60">{t('shipping')}</span>
                   <span className="text-brand-primary">
                     {isFreeShipping
-                      ? <span className="text-green-600">Gratis</span>
+                      ? <span className="text-green-600">{t('free')}</span>
                       : ratesLoading
-                        ? <span className="text-brand-primary/40">Calculando...</span>
+                        ? <span className="text-brand-primary/40">{t('calculating')}</span>
                         : shippingCfg.provider === 'skydropx' && availableRates.length === 0
                           ? <span className="text-brand-primary/50">~{fmt(shippingCfg.fixed_rate)}</span>
                           : fmt(shippingCost)}
@@ -930,13 +937,13 @@ export default function CheckoutClient({ initialEmail = '', defaultAddress = nul
                 )}
                 {creditApplied > 0 && (
                   <div className="flex justify-between text-green-600">
-                    <span>Gift card / saldo</span>
+                    <span>{t('credit')}</span>
                     <span>−{fmt(creditApplied)}</span>
                   </div>
                 )}
                 <hr className="border-brand-primary/10" />
                 <div className="flex justify-between font-bold text-brand-primary text-base">
-                  <span>Total</span>
+                  <span>{t('total')}</span>
                   <span>{fmt(displayTotal)}</span>
                 </div>
               </div>

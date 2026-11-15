@@ -11,7 +11,7 @@ import ShareButton from './ShareButton'
 import ShippingEstimator from './ShippingEstimator'
 import BackInStock from './BackInStock'
 import VipCountdown from './VipCountdown'
-import { formatMoney } from '@merkiai/i18n'
+import { useT, useFormat } from '@/components/i18n/I18nProvider'
 
 interface Props {
   product: ProductWithVariants
@@ -41,6 +41,9 @@ interface Props {
 }
 
 export default function ProductDetail({ product, related, trustBadges = [], layoutVariant = 'gallery-left', galleryVariant = 'lightbox', ctaVariant = 'sticky-mobile', colorMap, showEstimator = false, showShare = true, vipLocked = false, vipMember = false, vipCampaign, vipDiscountPercent = 0 }: Props) {
+  // E28 · HU-465 · textos y precios en el idioma de la petición.
+  const t = useT('web.pdp')
+  const { money } = useFormat()
   // HU-293 · precio de campaña VIP (solo display; el total lo recalcula el
   // servidor en el checkout para evitar doble descuento).
   const vipPct = vipMember && vipDiscountPercent > 0 ? vipDiscountPercent : 0
@@ -83,8 +86,7 @@ export default function ProductDetail({ product, related, trustBadges = [], layo
   const addItem = useCartStore((s) => s.addItem)
   const ecommerceEnabled = useEcommerceEnabled() // HU-173 · modo vitrina oculta la compra
 
-  const fmt = (n: number) =>
-    formatMoney(n)
+  const fmt = (n: number) => money(n)
 
   // Values for each option, in the order they first appear across active variants
   const optionValues = useMemo<Record<string, string[]>>(() => {
@@ -179,7 +181,7 @@ export default function ProductDetail({ product, related, trustBadges = [], layo
     if (prices.length === 0) return '—'
     const min = Math.min(...prices)
     const max = Math.max(...prices)
-    return min === max ? fmt(min) : `Desde ${fmt(min)}`
+    return min === max ? fmt(min) : t('from_price', { price: fmt(min) })
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [selectedVariant, activeVariants, vipPct])
 
@@ -254,7 +256,7 @@ export default function ProductDetail({ product, related, trustBadges = [], layo
   const allowBackorder = !!product.allow_backorder
   const stockWarning =
     !allowBackorder && selectedVariant && selectedVariant.stock > 0 && selectedVariant.stock <= 5
-      ? `Solo quedan ${selectedVariant.stock} unidades`
+      ? t('only_left', { count: selectedVariant.stock })
       : null
   const isOutOfStock = !allowBackorder && selectedVariant && selectedVariant.stock === 0
   // Tope de cantidad: el stock de la variante (salvo backorder)
@@ -297,9 +299,9 @@ export default function ProductDetail({ product, related, trustBadges = [], layo
       {/* Breadcrumb */}
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-8">
         <nav className="font-brand text-sm text-brand-primary/50 flex gap-2">
-          <Link href="/" className="hover:text-brand-primary transition-colors">Inicio</Link>
+          <Link href="/" className="hover:text-brand-primary transition-colors">{t('home')}</Link>
           <span>/</span>
-          <Link href="/shop" className="hover:text-brand-primary transition-colors">Tienda</Link>
+          <Link href="/shop" className="hover:text-brand-primary transition-colors">{t('shop')}</Link>
           <span>/</span>
           <span className="text-brand-primary">{product.name}</span>
         </nav>
@@ -407,7 +409,7 @@ export default function ProductDetail({ product, related, trustBadges = [], layo
                           </span>
                         ) : (
                           <span className="font-brand text-xs text-amber-600 font-medium">
-                            · Selecciona una opción
+                            {'· ' + t('choose_option')}
                           </span>
                         )}
                       </div>
@@ -503,17 +505,17 @@ export default function ProductDetail({ product, related, trustBadges = [], layo
               <p className="font-brand text-xs text-amber-600 mb-4">{stockWarning}</p>
             )}
             {isOutOfStock && (
-              <p className="font-brand text-xs text-red-500 mb-4">Sin stock disponible</p>
+              <p className="font-brand text-xs text-red-500 mb-4">{t('no_stock')}</p>
             )}
             {!stockWarning && !isOutOfStock && <div className="mb-6" />}
 
             {/* Cantidad */}
             <div className="flex items-center gap-4 mb-6">
-              <p className="font-brand text-sm font-semibold text-brand-primary">Cantidad</p>
+              <p className="font-brand text-sm font-semibold text-brand-primary">{t('quantity')}</p>
               <div className="flex items-center gap-3 border border-brand-primary/20 rounded-full px-4 py-2">
                 <button
                   onClick={() => setQty(Math.max(1, qty - 1))}
-                  aria-label="Reducir cantidad"
+                  aria-label={t('decrease')}
                   className="text-brand-primary font-bold text-lg leading-none w-5 flex items-center justify-center"
                 >
                   −
@@ -524,7 +526,7 @@ export default function ProductDetail({ product, related, trustBadges = [], layo
                 <button
                   onClick={() => setQty(Math.min(maxQty, qty + 1))}
                   disabled={atMaxQty}
-                  aria-label="Aumentar cantidad"
+                  aria-label={t('increase')}
                   className="text-brand-primary font-bold text-lg leading-none w-5 flex items-center justify-center disabled:opacity-30 disabled:cursor-not-allowed"
                 >
                   +
@@ -572,12 +574,12 @@ export default function ProductDetail({ product, related, trustBadges = [], layo
                     }`}
                   >
                     {addedFeedback
-                      ? 'Agregado al carrito'
+                      ? t('added')
                       : isOutOfStock
-                        ? 'Sin stock'
+                        ? t('out_of_stock')
                         : !isFullySelected
-                          ? `Selecciona ${missingAttrs[0] ?? 'una opción'}`
-                          : 'Agregar al carrito'}
+                          ? t('choose', { option: missingAttrs[0] ?? t('an_option') })
+                          : t('add_to_cart')}
                   </button>
                   <Link
                     href="/checkout"
@@ -588,7 +590,7 @@ export default function ProductDetail({ product, related, trustBadges = [], layo
                         : 'opacity-40 pointer-events-none'
                     }`}
                   >
-                    Comprar ahora
+                    {t('buy_now')}
                   </Link>
                 </>
               )}
@@ -619,7 +621,7 @@ export default function ProductDetail({ product, related, trustBadges = [], layo
         {related.length > 0 && (
           <div className="mt-24">
             <h2 className="font-display text-brand-primary text-section mb-8">
-              También te puede gustar
+              {t('you_may_like')}
             </h2>
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
               {related.map((p) => {
@@ -680,7 +682,7 @@ export default function ProductDetail({ product, related, trustBadges = [], layo
           <button
             type="button"
             onClick={() => setLightboxOpen(false)}
-            aria-label="Cerrar"
+            aria-label={t('close')}
             autoFocus
             className="absolute top-4 right-4 w-11 h-11 rounded-full bg-white/10 text-white text-2xl leading-none flex items-center justify-center hover:bg-white/20 focus:outline-none focus:ring-2 focus:ring-white"
           >
@@ -712,12 +714,12 @@ export default function ProductDetail({ product, related, trustBadges = [], layo
             }`}
           >
             {addedFeedback
-              ? 'Agregado'
+              ? t('added')
               : isOutOfStock
-                ? 'Sin stock'
+                ? t('out_of_stock')
                 : !isFullySelected
-                  ? `Selecciona ${missingAttrs[0] ?? 'opción'}`
-                  : 'Agregar'}
+                  ? t('choose', { option: missingAttrs[0] ?? t('an_option') })
+                  : t('add_to_cart')}
           </button>
         </div>
       )}

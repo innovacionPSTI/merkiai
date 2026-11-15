@@ -9,6 +9,7 @@ import WishlistNavLink from '@/components/layout/WishlistNavLink'
 import NavAuthButton from '@/components/auth/NavAuthButton'
 import SearchBox from '@/components/shop/SearchBox'
 import type { NavItemWithChildren } from '@merkiai/database'
+import { useT } from '@/components/i18n/I18nProvider'
 
 interface NavbarProps {
   logoUrl?: string | null
@@ -91,6 +92,7 @@ export default function Navbar({
   showAuth = true,
   showWishlist = true,
 }: NavbarProps) {
+  const t = useT('web.nav')
   const [scrolled, setScrolled]   = useState(false)
   const [menuOpen, setMenuOpen]   = useState(false)
   const [cartOpen, setCartOpen]   = useState(false)
@@ -173,7 +175,7 @@ export default function Navbar({
                 <button
                   onClick={() => setCartOpen(true)}
                   className="relative p-2 text-brand-primary hover:text-brand-dark transition-colors"
-                  aria-label="Carrito"
+                  aria-label={t('cart')}
                 >
                   <svg className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z" />
@@ -190,7 +192,7 @@ export default function Navbar({
               <button
                 onClick={() => setMenuOpen(!menuOpen)}
                 className="lg:hidden p-2 text-brand-primary"
-                aria-label="Menú"
+                aria-label={t('menu')}
               >
                 <svg className="w-6 h-6" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
                   {menuOpen ? (

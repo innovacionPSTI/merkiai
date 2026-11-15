@@ -1,6 +1,6 @@
 # Detalle · E28 — Internacionalización y mercados (idiomas, regiones, moneda)
 
-> **Épica:** **E28 · Internacionalización y mercados** (HU-460…468). **Diseño:** **ADR-011**. **Estado:** 🟡 en curso — HU-460 ✅ (v272) · HU-461 ✅ (v273) · HU-468 ✅ (v274) · HU-463 ✅ (v275) · HU-462 ✅ (v276).
+> **Épica:** **E28 · Internacionalización y mercados** (HU-460…468). **Diseño:** **ADR-011**. **Estado:** 🟡 en curso — HU-460 ✅ (v272) · HU-461 ✅ (v273) · HU-468 ✅ (v274) · HU-463 ✅ (v275) · HU-462 ✅ (v276) · HU-465 🟡 (v277).
 > **Absorbe:** HU-114a → HU-463 · HU-114b → HU-462 · HU-114c → HU-464 (E2).
 > **Construye sobre:** listas de precio (HU-407), multi-dominio (HU-279), schema de bloques del Constructor, correos idempotentes (HU-162), entitlements (ADR-002), middleware con tenant + CSP (v270), IA (HU-118).
 >
@@ -92,7 +92,7 @@
 
 > Como comprador, quiero que la tienda, el carrito, el checkout, mi cuenta y los correos estén en mi idioma, para comprar con confianza.
 
-**Talla:** L · **Módulo:** extracción de textos de `apps/web` (componentes de tienda, checkout, cuenta, estados de pedido, errores, validaciones de formulario, pagar saldo) al catálogo `web.*`/`email.*`; traducciones `es`, sobrescrituras `es-CO`/`es-MX`/`es-ES` y `en`. **Estado:** 🔲
+**Talla:** L · **Módulo:** extracción de textos de `apps/web` (componentes de tienda, checkout, cuenta, estados de pedido, errores, validaciones de formulario, pagar saldo) al catálogo `web.*`/`email.*`; traducciones `es`, sobrescrituras `es-CO`/`es-MX`/`es-ES` y `en`. **Estado:** 🟡 en código (v277): infraestructura (`I18nProvider` en el root layout con el locale de la petición, `useT`/`useFormat`/`useLocale` en cliente, `getT` en servidor) y **≈160 textos** extraídos al catálogo `web.*`/`email.*` con `en` al 100 % y `es-ES` (cesta, añadir, tramitar pedido, móvil): navegación, pie, carrito (cajón y página), **checkout completo** (pasos, dirección, envío, pago, resumen, cupones, gift card, errores), ficha de producto, catálogo (filtros, orden, paginación, tarjetas) y **correo de confirmación** en el idioma del pedido (`orders.locale`, validado contra los idiomas publicados). Precios con el formato del idioma (la moneda sigue siendo la del dato). PayZen abre su página en `es_ES`/`en_US`. *Pendiente:* Mi cuenta, blog, consulta de pedido, pagar saldo, correos restantes (envío, newsletter, recordatorios) y los medios propios de Tu Compra (Nequi/Daviplata/PSE, solo Colombia); MercadoPago/Wompi/Bold no aceptan idioma por API.
 
 | # | Escenario | Resultado |
 |---|-----------|-----------|

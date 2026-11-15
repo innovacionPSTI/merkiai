@@ -3,7 +3,7 @@
 import { useEffect } from 'react'
 import Link from 'next/link'
 import { useCartStore } from '@/store/cart'
-import { formatMoney } from '@merkiai/i18n'
+import { useT, useFormat } from '@/components/i18n/I18nProvider'
 
 interface CartDrawerProps {
   open: boolean
@@ -12,6 +12,8 @@ interface CartDrawerProps {
 
 export default function CartDrawer({ open, onClose }: CartDrawerProps) {
   const { items, removeItem, updateQty, subtotal } = useCartStore()
+  const t = useT('web.cart')
+  const { money } = useFormat()
 
   // Cerrar con Escape
   useEffect(() => {
@@ -26,8 +28,7 @@ export default function CartDrawer({ open, onClose }: CartDrawerProps) {
     return () => { document.body.style.overflow = '' }
   }, [open])
 
-  const fmt = (n: number) =>
-    formatMoney(n)
+  const fmt = (n: number) => money(n)
 
   return (
     <>
@@ -48,7 +49,7 @@ export default function CartDrawer({ open, onClose }: CartDrawerProps) {
         {/* Header */}
         <div className="flex items-center justify-between px-6 py-4 border-b border-brand-primary/10">
           <h2 className="font-display text-brand-primary text-2xl">
-            Mi Carrito
+            {t('title')}
           </h2>
           <button
             onClick={onClose}
@@ -67,9 +68,9 @@ export default function CartDrawer({ open, onClose }: CartDrawerProps) {
               <svg className="w-16 h-16" fill="none" stroke="currentColor" strokeWidth={1.5} viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z" />
               </svg>
-              <p className="font-brand text-sm">Tu carrito está vacío</p>
+              <p className="font-brand text-sm">{t('empty')}</p>
               <button onClick={onClose} className="font-brand text-sm text-brand-primary underline">
-                Explorar tienda
+                {t('explore')}
               </button>
             </div>
           ) : (
@@ -136,25 +137,25 @@ export default function CartDrawer({ open, onClose }: CartDrawerProps) {
         {items.length > 0 && (
           <div className="px-6 py-4 border-t border-brand-primary/10 space-y-3 bg-brand-cream">
             <div className="flex justify-between font-brand">
-              <span className="text-brand-primary/60">Subtotal</span>
+              <span className="text-brand-primary/60">{t('subtotal')}</span>
               <span className="font-bold text-brand-primary">{fmt(subtotal())}</span>
             </div>
             <p className="font-brand text-xs text-brand-primary/40">
-              Envío calculado en el checkout
+              {t('shipping_at_checkout')}
             </p>
             <Link
               href="/checkout"
               onClick={onClose}
               className="block w-full text-center bg-brand-primary text-brand-cream rounded-full py-3 font-brand font-medium hover:bg-brand-dark transition-colors"
             >
-              Proceder al pago
+              {t('checkout')}
             </Link>
             <Link
               href="/cart"
               onClick={onClose}
               className="block w-full text-center border border-brand-primary text-brand-primary rounded-full py-3 font-brand font-medium hover:bg-brand-primary hover:text-brand-cream transition-colors"
             >
-              Ver carrito completo
+              {t('view_full')}
             </Link>
           </div>
         )}
