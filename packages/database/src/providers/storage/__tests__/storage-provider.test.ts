@@ -64,3 +64,25 @@ describe('SupabaseStorageProvider', () => {
     expect(getStorageProvider({ client: fakeClient() }).name).toBe('supabase')
   })
 })
+
+describe('SupabaseStorageProvider · RLS por tenant (e17/77)', () => {
+  it('con ensureBuckets=false no lista ni crea buckets (el JWT de tenant no puede)', async () => {
+    const { SupabaseStorageProvider } = await import('../SupabaseStorageProvider')
+    const calls: string[] = []
+    const client = {
+      storage: {
+        from: () => ({
+          async upload() { calls.push('upload'); return { error: null } },
+          async remove() { return { error: null } },
+          getPublicUrl: (p: string) => ({ data: { publicUrl: `https://x/${p}` } }),
+        }),
+        async listBuckets() { calls.push('list'); return { data: [] } },
+        async createBucket() { calls.push('create'); return { error: null } },
+      },
+    }
+    const p = new SupabaseStorageProvider(client, undefined, false)
+    const o = await p.upload({ tenantId: 't1', folder: 'products', filename: 'a.png', contentType: 'image/png', body: new Uint8Array([1]) })
+    expect(calls).toEqual(['upload'])
+    expect(o.key).toBe('products/t1/a.png')
+  })
+})

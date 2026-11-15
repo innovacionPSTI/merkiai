@@ -1,7 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { stackServerApp } from './stack'
 import { consoleUrl } from './lib/console-url'
-import { isCrossSiteMutation } from '@merkiai/tenancy/security'
+import { isCrossSiteMutation, generateNonce } from '@merkiai/tenancy/security'
+import { contentSecurityPolicy } from './lib/csp'
 
 /**
  * Middleware de Merkiai Web.
@@ -124,7 +125,7 @@ function crossSiteBlocked(request: NextRequest): NextResponse | null {
   return null
 }
 
-export async function middleware(request: NextRequest) {
+async function route(request: NextRequest, reqHeaders: Headers): Promise<NextResponse> {
   const { pathname } = request.nextUrl
   const csrf = crossSiteBlocked(request)
   if (csrf) return csrf
@@ -179,7 +180,7 @@ export async function middleware(request: NextRequest) {
 
     // HU-194: tenant suspendido/cancelado → "servicio pausado".
     if (info.status === 'suspended' || info.status === 'canceled') {
-      return NextResponse.rewrite(new URL('/servicio-pausado', request.url))
+      return NextResponse.rewrite(new URL('/servicio-pausado', request.url), { request: { headers: reqHeaders } })
     }
 
     // HU-279: dominio canónico. Si el tenant tiene dominio propio y la tienda se
@@ -209,7 +210,7 @@ export async function middleware(request: NextRequest) {
   }
 
   // Stack Auth handler: nunca proteger
-  if (pathname.startsWith('/handler')) return NextResponse.next()
+  if (pathname.startsWith('/handler')) return NextResponse.next({ request: { headers: reqHeaders } })
 
   // Rutas protegidas: /account/*
   if (pathname.startsWith('/account')) {
@@ -221,7 +222,24 @@ export async function middleware(request: NextRequest) {
     }
   }
 
-  return NextResponse.next()
+  return NextResponse.next({ request: { headers: reqHeaders } })
+}
+
+/**
+ * Hardening · CSP con nonce por petición: Next.js lee el nonce de la cabecera
+ * `Content-Security-Policy` de la PETICIÓN y lo pone en sus propios scripts; el
+ * layout lo toma de `x-nonce` para los scripts de Stack Auth. La misma política
+ * se devuelve en la respuesta (todas las ramas: next, rewrite, redirect, 403).
+ */
+export async function middleware(request: NextRequest) {
+  const nonce = generateNonce()
+  const csp = contentSecurityPolicy(nonce)
+  const reqHeaders = new Headers(request.headers)
+  reqHeaders.set('x-nonce', nonce)
+  reqHeaders.set('Content-Security-Policy', csp)
+  const res = await route(request, reqHeaders)
+  res.headers.set('Content-Security-Policy', csp)
+  return res
 }
 
 export const config = {

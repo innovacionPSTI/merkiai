@@ -38,3 +38,20 @@ describe('hardening · utilidades de seguridad', () => {
     expect(sniffImageType(new TextEncoder().encode('<html>'))).toBeNull()
   })
 })
+
+describe('CSP con nonce', () => {
+  it('genera nonces base64 de 128 bits distintos', async () => {
+    const { generateNonce } = await import('../security')
+    const a = generateNonce(); const b = generateNonce()
+    expect(a).toMatch(/^[A-Za-z0-9+/]{22}==$/)
+    expect(a).not.toBe(b)
+  })
+  it('script-src con nonce + strict-dynamic; eval solo en dev', async () => {
+    const { nonceScriptSrc } = await import('../security')
+    const prod = nonceScriptSrc('abc')
+    expect(prod).toContain("'nonce-abc'")
+    expect(prod).toContain("'strict-dynamic'")
+    expect(prod).not.toContain('unsafe-eval')
+    expect(nonceScriptSrc('abc', { dev: true })).toContain("'unsafe-eval'")
+  })
+})

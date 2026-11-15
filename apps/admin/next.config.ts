@@ -2,38 +2,9 @@ import type { NextConfig } from 'next'
 
 // ── Security headers ───────────────────────────────────────────────────────────
 
-// HU-128 v3 · el Constructor incrusta la tienda (subdominio del tenant) en el
-// iframe de vista previa. Sin `frame-src`, el CSP del admin cae a default-src
-// 'self' y bloquea el iframe. Se permite el dominio base del storefront.
-const STOREFRONT_BASE = (process.env.STOREFRONT_BASE_DOMAIN ?? 'merkiai.com').trim()
-
-// HU-440 · formulario incrustado de PayZen (librería, estilos, API, iframes de 3DS).
-const PAYZEN = 'https://static.payzen.lat https://api.payzen.lat https://*.payzen.lat'
-
-// HU-432 · origen público de los archivos cuando el storage es R2/S3 (CDN/dominio del bucket).
-const MEDIA_ORIGIN = (() => {
-  try { return process.env.STORAGE_PUBLIC_BASE_URL ? new URL(process.env.STORAGE_PUBLIC_BASE_URL).origin : '' } catch { return '' }
-})()
-
-const CSP = [
-  "default-src 'self'",
-  // Hardening: 'unsafe-eval' solo en desarrollo (React Refresh); producción sin eval.
-  `script-src 'self' 'unsafe-inline'${process.env.NODE_ENV === 'production' ? '' : " 'unsafe-eval'"} ${PAYZEN}`,
-  `style-src 'self' 'unsafe-inline' ${PAYZEN}`,
-  `font-src 'self' ${PAYZEN}`,
-  `img-src 'self' data: blob: https://*.supabase.co ${PAYZEN} ${MEDIA_ORIGIN}`.trim(),
-  // Stack Auth + Supabase
-  `connect-src 'self' https://*.supabase.co wss://*.supabase.co https://*.stack-auth.com ${PAYZEN}`,
-  // Vista previa: permitir incrustar el storefront del tenant (subdominios).
-  `frame-src 'self' https://*.${STOREFRONT_BASE} ${PAYZEN}`,
-  "frame-ancestors 'none'",
-  "base-uri 'self'",
-  "object-src 'none'",
-  `form-action 'self' ${PAYZEN}`,
-].join('; ')
+// CSP: la emite el middleware con nonce por petición (src/lib/csp.ts).
 
 const SECURITY_HEADERS = [
-  { key: 'Content-Security-Policy',    value: CSP },
   { key: 'X-Frame-Options',           value: 'DENY' },
   { key: 'X-Content-Type-Options',    value: 'nosniff' },
   { key: 'Referrer-Policy',          value: 'strict-origin-when-cross-origin' },

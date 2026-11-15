@@ -14,13 +14,19 @@ const MAX_SIZE = 5 * 1024 * 1024 // 5 MB
 /**
  * Proveedor de storage del entorno (HU-432): `supabase` (default) o `r2`/`s3`
  * (S3-compatible, firma SigV4). Mismo formato de clave en todos.
+ *
+ * Hardening (e17/77): con `STORAGE_RLS_ENFORCED=true`, Supabase Storage se usa
+ * con el cliente del JWT de tenant (sin service-role) y la frontera la aplica
+ * RLS en `storage.objects`. Sin la variable, service-role confinado al borde.
  */
-function storageForRequest() {
+function storageForRequest(tenantId: string) {
   const provider = process.env.STORAGE_PROVIDER || 'supabase'
+  const rls = process.env.STORAGE_RLS_ENFORCED === 'true'
   return getStorageProvider({
     provider,
-    client: provider === 'supabase' ? createServerClient() : undefined,
+    client: provider === 'supabase' ? (rls ? getAdminDb(tenantId) : createServerClient()) : undefined,
     s3: provider === 'supabase' ? null : s3ConfigFromEnv(),
+    ensureBuckets: !rls,
   })
 }
 
@@ -68,7 +74,7 @@ export async function POST(req: NextRequest) {
 
   let storage
   try {
-    storage = storageForRequest()
+    storage = storageForRequest(adminUser.tenantId)
   } catch (e) {
     console.error('[upload]', e instanceof Error ? e.message : e)
     return NextResponse.json({ error: 'El almacenamiento no está configurado.' }, { status: 503 })
@@ -127,7 +133,7 @@ export async function DELETE(req: NextRequest) {
 
   try {
     // El provider valida ownsKey(tenant, key) → borrado cruzado bloqueado.
-    await storageForRequest().remove(adminUser.tenantId, key)
+    await storageForRequest(adminUser.tenantId).remove(adminUser.tenantId, key)
   } catch (e) {
     return NextResponse.json({ error: e instanceof Error ? e.message : 'Error al borrar' }, { status: 500 })
   }

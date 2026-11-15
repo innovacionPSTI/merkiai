@@ -69,3 +69,27 @@ export function sniffImageType(bytes: Uint8Array): 'image/jpeg' | 'image/png' | 
   if (b.length >= 12 && b[0] === 0x52 && b[1] === 0x49 && b[2] === 0x46 && b[3] === 0x46 && b[8] === 0x57 && b[9] === 0x45 && b[10] === 0x42 && b[11] === 0x50) return 'image/webp'
   return null
 }
+
+// ── CSP con nonce ──────────────────────────────────────────────────────────────
+
+/** Nonce aleatorio por petición (base64 de 128 bits; Web Crypto, válido en edge y node). */
+export function generateNonce(): string {
+  const bytes = new Uint8Array(16)
+  crypto.getRandomValues(bytes)
+  let bin = ''
+  for (const b of bytes) bin += String.fromCharCode(b)
+  return btoa(bin)
+}
+
+/**
+ * Directiva `script-src` estricta con nonce (CSP nivel 3):
+ *  - `'nonce-…'` + `'strict-dynamic'`: solo corren los scripts que Next.js marca
+ *    con el nonce y los que ESOS scripts carguen (chunks, PayZen, analytics).
+ *    Un `<script>` inyectado por un atacante (XSS) no trae el nonce → bloqueado.
+ *  - `https:` y `'unsafe-inline'` son SOLO compatibilidad con navegadores sin
+ *    CSP3: los modernos los ignoran cuando hay nonce/strict-dynamic.
+ *  - `'unsafe-eval'` solo en desarrollo (React Refresh).
+ */
+export function nonceScriptSrc(nonce: string, opts: { dev?: boolean } = {}): string {
+  return `script-src 'self' 'nonce-${nonce}' 'strict-dynamic'${opts.dev ? " 'unsafe-eval'" : ''} https: 'unsafe-inline'`
+}

@@ -95,6 +95,8 @@ export default async function RootLayout({ children }: { children: React.ReactNo
 
   // Solo las 2 familias que el tema use (display + body).
   const fontsHref = googleFontsHref(theme?.font_display, theme?.font_body)
+  // Hardening · nonce de la CSP (middleware) para los scripts inline de Stack Auth.
+  const nonce = (await headers()).get('x-nonce') ?? undefined
 
   return (
     <html lang="es">
@@ -112,7 +114,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
       </head>
       <body>
         <StackProvider app={stackServerApp}>
-          <StackTheme>
+          <StackTheme nonce={nonce}>
             <Suspense fallback={null}><CartSyncOnLogin /></Suspense>
             <Suspense fallback={null}><WishlistSyncOnLogin /></Suspense>
             {children}

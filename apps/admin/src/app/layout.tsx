@@ -143,7 +143,7 @@ export default async function AdminRootLayout({ children }: { children: React.Re
       </head>
       <body className="bg-gray-50">
         <StackProvider app={stackServerApp}>
-          <StackTheme>
+          <StackTheme nonce={headersList.get('x-nonce') ?? undefined}>
             {billingBypass ? (
               <main className="min-h-screen p-6 md:p-10">{children}</main>
             ) : tenantBlocked ? (

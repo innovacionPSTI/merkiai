@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { stackServerApp } from './stack'
-import { isCrossSiteMutation } from '@merkiai/tenancy/security'
+import { isCrossSiteMutation, generateNonce } from '@merkiai/tenancy/security'
+import { contentSecurityPolicy } from './lib/csp'
 
 /**
  * Middleware del panel admin Merkiai.
@@ -30,13 +31,13 @@ function crossSiteBlocked(request: NextRequest): NextResponse | null {
   return null
 }
 
-export async function middleware(request: NextRequest) {
+async function route(request: NextRequest, reqHeaders: Headers): Promise<NextResponse> {
   const { pathname } = request.nextUrl
   const csrf = crossSiteBlocked(request)
   if (csrf) return csrf
 
   // Inyectar pathname en headers para que el layout lo lea
-  const requestHeaders = new Headers(request.headers)
+  const requestHeaders = reqHeaders
   requestHeaders.set('x-pathname', pathname)
 
   // ── Bloquear sign-up ─────────────────────────────────────────────────────
@@ -73,6 +74,23 @@ export async function middleware(request: NextRequest) {
   }
 
   return NextResponse.next({ request: { headers: requestHeaders } })
+}
+
+/**
+ * Hardening · CSP con nonce por petición: Next.js lee el nonce de la cabecera
+ * `Content-Security-Policy` de la PETICIÓN y lo pone en sus propios scripts; el
+ * layout lo toma de `x-nonce` para los scripts de Stack Auth. La misma política
+ * se devuelve en la respuesta (todas las ramas: next, rewrite, redirect, 403).
+ */
+export async function middleware(request: NextRequest) {
+  const nonce = generateNonce()
+  const csp = contentSecurityPolicy(nonce)
+  const reqHeaders = new Headers(request.headers)
+  reqHeaders.set('x-nonce', nonce)
+  reqHeaders.set('Content-Security-Policy', csp)
+  const res = await route(request, reqHeaders)
+  res.headers.set('Content-Security-Policy', csp)
+  return res
 }
 
 export const config = {

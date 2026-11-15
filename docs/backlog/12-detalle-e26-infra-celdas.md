@@ -80,7 +80,7 @@ GUC `app.tenant_id`** + rol dedicado (ADR-001); migraciones aplicables a ambos d
 
 **Módulo:** CDN/borde (Cloudflare) + **ISR** + R2 para el storefront; **Redis** (Upstash →
 ElastiCache) para estado distribuido (rate-limit HU-300, caché `resolve-tenant`/entitlements,
-`cacheHandler` ISR multi-instancia). Ver ADR-008 §5B. **Estado:** 🔲
+`cacheHandler` ISR multi-instancia). Ver ADR-008 §5B. **Estado:** 🟡 parcial (v270): AC-2 rate-limit en Redis (Upstash REST, claves `rl:<tenant>:…`) entregado y opcional por env; caché de resolución/entitlements, ISR y borde pendientes.
 
 | # | Escenario | Resultado |
 |---|-----------|-----------|

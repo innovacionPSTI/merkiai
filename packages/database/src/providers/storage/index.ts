@@ -38,6 +38,8 @@ export interface StorageProviderConfig {
   s3?: S3StorageConfig | null
   /** Tenant por defecto (para permitir borrar objetos legacy sin prefijo). */
   defaultTenantId?: string
+  /** Crear buckets faltantes (service-role). `false` cuando el cliente es el JWT de tenant (e17/77). */
+  ensureBuckets?: boolean
 }
 
 /** Lee la configuración S3/R2 del entorno. `null` si falta algún dato. */
@@ -71,6 +73,6 @@ export function getStorageProvider(config: StorageProviderConfig): StorageProvid
       return new S3StorageProvider(config.s3)
     case 'supabase':
     default:
-      return new SupabaseStorageProvider(config.client, config.defaultTenantId)
+      return new SupabaseStorageProvider(config.client, config.defaultTenantId, config.ensureBuckets ?? true)
   }
 }

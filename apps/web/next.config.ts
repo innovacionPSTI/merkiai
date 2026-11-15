@@ -7,33 +7,15 @@ import type { NextConfig } from 'next'
 // origen del admin vía `ADMIN_PREVIEW_ORIGIN` (p. ej. https://admin.merkiai.com).
 // Si no se define, el framing sigue bloqueado ('none') y el preview va en pestaña nueva.
 const ADMIN_ORIGIN = process.env.ADMIN_PREVIEW_ORIGIN?.trim()
-const FRAME_ANCESTORS = ADMIN_ORIGIN ? `'self' ${ADMIN_ORIGIN}` : "'none'"
 
 // HU-432 · origen público de los archivos cuando el storage es R2/S3 (CDN/dominio del bucket).
 const MEDIA_ORIGIN = (() => {
   try { return process.env.STORAGE_PUBLIC_BASE_URL ? new URL(process.env.STORAGE_PUBLIC_BASE_URL).origin : '' } catch { return '' }
 })()
 
-const CSP = [
-  "default-src 'self'",
-  // Next.js requires unsafe-inline for hydration scripts; nonce-based CSP requires custom server
-  // Hardening: 'unsafe-eval' solo en desarrollo (React Refresh); producción sin eval.
-  `script-src 'self' 'unsafe-inline'${process.env.NODE_ENV === 'production' ? '' : " 'unsafe-eval'"} https://vercel.live`,
-  "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
-  "font-src 'self' https://fonts.gstatic.com",
-  `img-src 'self' data: blob: https://*.supabase.co https://res.cloudinary.com ${MEDIA_ORIGIN}`.trim(),
-  // Stack Auth + Supabase + Vercel Analytics
-  "connect-src 'self' https://*.supabase.co wss://*.supabase.co https://*.stack-auth.com https://*.vercel-insights.com https://vitals.vercel-insights.com",
-  "media-src 'self' https://*.supabase.co",
-  `frame-ancestors ${FRAME_ANCESTORS}`,
-  "base-uri 'self'",
-  // /pagar-saldo (HU-455) envía el formulario a la tienda, que redirige a la pasarela.
-  "form-action 'self' https://checkout.wompi.co https://*.mercadopago.com https://*.mercadopago.com.co https://checkout.bold.co https://*.payzen.lat",
-  "object-src 'none'",
-].join('; ')
+// CSP: la emite el middleware con nonce por petición (src/lib/csp.ts).
 
 const SECURITY_HEADERS = [
-  { key: 'Content-Security-Policy',        value: CSP },
   // XFO solo soporta DENY/SAMEORIGIN; con un origen de admin externo se delega en
   // `frame-ancestors` (CSP, que lo supersede). Sin admin configurado → DENY.
   ...(ADMIN_ORIGIN ? [] : [{ key: 'X-Frame-Options', value: 'DENY' }]),

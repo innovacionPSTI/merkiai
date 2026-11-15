@@ -38,7 +38,7 @@ DATABASE_URL="postgres://…tienda-prod…" bash scripts/db-apply.sh --no-seeds
 PLATFORM_DATABASE_URL="postgres://…plataforma-prod…" bash scripts/db-apply-platform.sh
 ```
 
-- [ ] Tienda: llega hasta `e17/74_payzen_payment_method.sql`.
+- [ ] Tienda: llega hasta `e17/77_storage_rls.sql` (incluye `75` uso de storage, `76` cartera y `77` RLS de storage).
 - [ ] Plataforma: llega hasta `14_fee_invoices.sql` (incluye `10` infra por tenant, `11` vault, `12` billing, `13` Merkiai Pagos, `14` cobro de comisiones).
 - [ ] Verificación rápida en plataforma: `select count(*) from plans;` (> 0) y que existan `subscriptions`, `merkiai_payment_accounts`, `fee_invoices`.
 
@@ -51,7 +51,8 @@ Cargar la columna **prod** de `docs/ENV-VARS-MATRIZ.md` en cada proyecto de Verc
 - [ ] **`PREVIEW_SIGNING_SECRET`** idéntico en web y admin.
 - [ ] **Console**: `AWS_ACCESS_KEY_ID`/`AWS_SECRET_ACCESS_KEY`/`AWS_REGION`/`MERKIAI_VAULT_KEY_ALIAS=alias/merkiai-prod-tenant-secrets` (sin esto, en prod el vault falla cerrado).
 - [ ] **Console**: `PAYZEN_SHOP_ID`, `PAYZEN_PASSWORD` (`prodpassword_…`), `PAYZEN_PUBLIC_KEY`, `RESEND_API_KEY`, `BILLING_EMAIL_FROM`, **`CRON_SECRET`**.
-- [ ] **Web**: `TENANT_RESOLUTION_STRICT=true`; **sin** `DEFAULT_TENANT_ID` ni `DRAFT_SECRET`.
+- [ ] **Web**: `TENANT_RESOLUTION_STRICT=true`; **sin** `DEFAULT_TENANT_ID` ni `DRAFT_SECRET`. *(Recomendado)* `UPSTASH_REDIS_REST_URL`/`_TOKEN` para el rate limit (HU-434).
+- [ ] **Admin**: `STORAGE_RLS_ENFORCED=true` (tras la migración e17/77; probar una subida de imagen en dev primero).
 - [ ] **Redeploy** de las 3 apps después de cargar variables (las `NEXT_PUBLIC_*` se fijan en el build).
 
 ## 4. Stack Auth en producción **[OPS]**
@@ -90,6 +91,7 @@ Cargar la columna **prod** de `docs/ENV-VARS-MATRIZ.md` en cada proyecto de Verc
 - [ ] Aislamiento: un producto creado en el tenant no aparece en otra tienda.
 - [ ] El dueño paga su plan (§6) → la tienda queda **activa**.
 - [ ] Logs sin 401/500 en `/api/internal/*` ni en `/api/billing/payzen/ipn`.
+- [ ] Consola del navegador sin errores de CSP en tienda, admin (incluye pagar plan con PayZen) y consola; login de Stack Auth funcional.
 
 ## 9. Rollback y post-activación
 
@@ -106,4 +108,4 @@ Cargar la columna **prod** de `docs/ENV-VARS-MATRIZ.md` en cada proyecto de Verc
 - **nov-2026 (v260)**: cobro de planes, pasarelas de venta PayZen (propia y Merkiai Pagos), comisiones, vault KMS y separación de prod incorporados a este runbook.
 
 ### Pendientes de código conocidos (no bloquean el release)
-- RLS de `storage.objects` por prefijo de path (hoy aislamiento por path en la app).
+- Ninguno de seguridad. (RLS de `storage.objects` resuelto en v270 · e17/77.)

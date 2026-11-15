@@ -7,8 +7,10 @@
  *
  * Recibe un cliente Supabase con permisos de Storage (service-role) inyectado
  * por la ruta: el service-role queda SOLO en el borde (la ruta), no disperso.
- * Endurecimiento futuro (HU-227): políticas RLS sobre `storage.objects` por
- * prefijo de path + JWT de tenant, para llevar la frontera al motor de storage.
+ * Hardening (e17/77): con `STORAGE_RLS_ENFORCED=true` la ruta inyecta el cliente
+ * con JWT de tenant (sin service-role) y las políticas RLS de `storage.objects`
+ * solo permiten escribir bajo el prefijo del tenant. En ese modo los buckets ya
+ * existen (los crea la migración) y no se intenta crearlos (`ensureBuckets=false`).
  */
 import type { StorageProvider, StorageUploadInput, StorageObject } from './types'
 
@@ -33,6 +35,8 @@ export class SupabaseStorageProvider implements StorageProvider {
     private readonly client: SupabaseStorageLike,
     /** Tenant por defecto: permite borrar objetos legacy sin prefijo de tenant. */
     private readonly defaultTenantId = '00000000-0000-0000-0000-000000000001',
+    /** Crear el bucket si no existe (requiere service-role). `false` con RLS por tenant. */
+    private readonly ensureBuckets = true,
   ) {}
 
   /** Path del objeto dentro del bucket: `<tenantId>/<filename>`. */
@@ -57,8 +61,9 @@ export class SupabaseStorageProvider implements StorageProvider {
     const bucket = folder
     const path = this.objectPath(tenantId, filename)
 
-    // Asegurar bucket público (idempotente).
-    const { data: buckets } = await this.client.storage.listBuckets()
+    // Asegurar bucket público (idempotente). Con RLS por tenant no aplica: la
+    // migración e17/77 crea los buckets y el JWT de tenant no puede listarlos.
+    const { data: buckets } = this.ensureBuckets ? await this.client.storage.listBuckets() : { data: [{ name: bucket }] }
     if (!buckets?.some((b) => b.name === bucket)) {
       const { error } = await this.client.storage.createBucket(bucket, { public: true })
       if (error) throw new Error(`No se pudo crear el bucket: ${error.message}`)

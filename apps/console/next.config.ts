@@ -3,21 +3,9 @@ import type { NextConfig } from 'next'
 // ── Security headers (hardening) ──────────────────────────────────────────────
 // La consola es el plano de control: no se incrusta en ningún sitio, no carga
 // scripts de terceros y solo habla con su Supabase y Stack Auth.
-const CSP = [
-  "default-src 'self'",
-  `script-src 'self' 'unsafe-inline'${process.env.NODE_ENV === 'production' ? '' : " 'unsafe-eval'"}`,
-  "style-src 'self' 'unsafe-inline'",
-  "font-src 'self' data:",
-  "img-src 'self' data: blob: https://*.supabase.co",
-  "connect-src 'self' https://*.supabase.co wss://*.supabase.co https://*.stack-auth.com",
-  "frame-ancestors 'none'",
-  "base-uri 'self'",
-  "form-action 'self'",
-  "object-src 'none'",
-].join('; ')
+// CSP: la emite el middleware con nonce por petición (src/lib/csp.ts).
 
 const SECURITY_HEADERS = [
-  { key: 'Content-Security-Policy', value: CSP },
   { key: 'X-Frame-Options', value: 'DENY' },
   { key: 'X-Content-Type-Options', value: 'nosniff' },
   { key: 'Referrer-Policy', value: 'no-referrer' },

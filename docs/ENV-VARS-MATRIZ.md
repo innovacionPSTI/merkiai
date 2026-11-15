@@ -39,6 +39,7 @@
 | `PREVIEW_SIGNING_SECRET` | **HMAC** del token de preview. Coincide con admin del ambiente | = admin-prod | = admin-dev | = admin-test |
 | `ADMIN_PREVIEW_ORIGIN` | Origin del admin autorizado a incrustar el iframe de preview | admin prod | admin dev | admin test |
 | `STORAGE_PUBLIC_BASE_URL` *(solo con R2/S3)* | Dominio público del bucket: habilita las imágenes en `next/image` y la CSP (HU-432). = admin | media prod | media dev | omitir |
+| `UPSTASH_REDIS_REST_URL` · `UPSTASH_REDIS_REST_TOKEN` *(opcional, HU-434)* | Rate limit en **Redis** (Upstash REST) para cupones, gift cards y pago de saldo. Sin ellas se usa la RPC de Postgres (y memoria como último recurso) | recomendado | opcional | omitir |
 | `MAINTENANCE_MODE` | Cierra la tienda si `true` | `false` | `false` | `false` |
 | `SENTRY_DSN` / `NEXT_PUBLIC_SENTRY_DSN` (+ `_ENVIRONMENT`, `_TRACES_SAMPLE_RATE`) | Observabilidad opcional (guarded) | opcional | omitir | omitir |
 | ~~`DRAFT_SECRET`~~ | **Muerta** (reemplazada por preview por-tenant HU-128) | borrar | borrar | borrar |
@@ -67,6 +68,7 @@
 | ~~`NEXT_PUBLIC_DRAFT_SECRET`~~ | **Retirada** (hardening): secreto expuesto al navegador para una ruta que ya no existía | borrar | borrar | borrar |
 | `STOREFRONT_BASE_DOMAIN` | Dominio base para construir el host del tenant | dominio prod | dominio dev | dominio test |
 | `STORAGE_PROVIDER` | Storage de archivos: `supabase` (default) · `r2` · `s3` (HU-432) | `r2` al migrar | `supabase` | `supabase` |
+| `STORAGE_RLS_ENFORCED` *(solo supabase)* | Hardening e17/77: subidas/borrados con el JWT del tenant (sin service-role) y RLS en `storage.objects`. Activar tras correr la migración y probar una subida | `true` | `true` | `true` |
 | `STORAGE_S3_ENDPOINT` · `STORAGE_S3_BUCKET` · `STORAGE_S3_REGION` *(solo r2/s3)* | Endpoint S3 (R2: `https://<cuenta>.r2.cloudflarestorage.com`), bucket y región (R2: `auto`) | bucket prod | bucket dev | — |
 | `STORAGE_S3_ACCESS_KEY_ID` · `STORAGE_S3_SECRET_ACCESS_KEY` *(solo r2/s3)* | **Llaves** del bucket (permiso de escritura solo sobre ese bucket). Con celdas (HU-430) pasan a kms-vault por celda | propio | propio | — |
 | `STORAGE_PUBLIC_BASE_URL` *(solo r2/s3)* | Dominio público del bucket (URL de los archivos). Mismo valor en web | media prod | media dev | — |

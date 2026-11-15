@@ -1,0 +1,44 @@
+diff -ruN a/dist/components/elements/ssr-layout-effect.js b/dist/components/elements/ssr-layout-effect.js
+--- a/dist/components/elements/ssr-layout-effect.js	2026-11-14 21:40:41.547004061 -0500
++++ b/dist/components/elements/ssr-layout-effect.js	2026-11-14 21:40:41.606004061 -0500
+@@ -8,7 +8,17 @@
+ //#region src/components/elements/ssr-layout-effect.tsx
+ function SsrScript(props) {
+ 	(0, react.useLayoutEffect)(() => {
+-		(0, eval)(props.script);
++		try { (0, eval)(props.script); } catch (_e) {
++			// Merkiai: CSP sin 'unsafe-eval' → se reinyecta como <script> con el nonce de la página.
++			try {
++				const s = document.createElement("script");
++				const n = props.nonce || (document.querySelector("script[nonce]") || {}).nonce;
++				if (n) s.nonce = n;
++				s.textContent = props.script;
++				document.head.appendChild(s);
++				s.remove();
++			} catch (_e2) {}
++		}
+ 	}, []);
+ 	return /* @__PURE__ */ (0, react_jsx_runtime.jsx)("script", {
+ 		suppressHydrationWarning: true,
+diff -ruN a/dist/esm/components/elements/ssr-layout-effect.js b/dist/esm/components/elements/ssr-layout-effect.js
+--- a/dist/esm/components/elements/ssr-layout-effect.js	2026-11-14 21:40:41.546004061 -0500
++++ b/dist/esm/components/elements/ssr-layout-effect.js	2026-11-14 21:40:41.606004061 -0500
+@@ -6,7 +6,17 @@
+ //#region src/components/elements/ssr-layout-effect.tsx
+ function SsrScript(props) {
+ 	useLayoutEffect(() => {
+-		(0, eval)(props.script);
++		try { (0, eval)(props.script); } catch (_e) {
++			// Merkiai: CSP sin 'unsafe-eval' → se reinyecta como <script> con el nonce de la página.
++			try {
++				const s = document.createElement("script");
++				const n = props.nonce || (document.querySelector("script[nonce]") || {}).nonce;
++				if (n) s.nonce = n;
++				s.textContent = props.script;
++				document.head.appendChild(s);
++				s.remove();
++			} catch (_e2) {}
++		}
+ 	}, []);
+ 	return /* @__PURE__ */ jsx("script", {
+ 		suppressHydrationWarning: true,

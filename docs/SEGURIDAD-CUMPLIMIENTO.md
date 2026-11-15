@@ -7,7 +7,7 @@
 > organizacionales (políticas, gestión de riesgos, personal, proveedores) y la revisión de un
 > auditor independiente.
 >
-> Versión: v269 (nov-2026) · Revisión de hardening completa sobre lo implementado.
+> Versión: v270 (nov-2026) · Revisión de hardening + cierre de riesgos residuales técnicos + políticas base (`docs/politicas/`).
 
 ---
 
@@ -32,11 +32,13 @@
 | — | Markdown del blog/legal: escapa HTML y valida `href` (rechaza `javascript:`/`data:`) | — | ✅ Verificado |
 | — | CSS de tema inyectado: solo valores numéricos (hex→RGB) y fuentes de una lista cerrada | — | ✅ Verificado |
 
-**Riesgos residuales aceptados (con plan):**
-- `script-src 'unsafe-inline'` (Next.js sin nonces): se mitiga con el escape de salida; plan: CSP con *nonce* vía middleware.
-- Rate limit con *fallback* en memoria si la RPC distribuida falla (HU-300): aceptable; plan: Redis (HU-434).
+**Riesgos residuales (v270):**
+- ✅ ~~`script-src 'unsafe-inline'`~~ → **CSP con nonce por petición + `'strict-dynamic'`** en web, admin y consola (middleware). `'unsafe-inline'`/`https:` quedan solo como compatibilidad para navegadores sin CSP3 (los modernos los ignoran). Parche de `@stackframe/stack` (`patches/`) para que su script de tema no dependa de `eval`.
+- ✅ ~~Rate limit con *fallback* en memoria~~ → **Redis (Upstash REST)** como primer nivel cuando se configura (HU-434); RPC de Postgres y memoria quedan como respaldo.
+- ✅ ~~Aislamiento de archivos solo en la app~~ → **RLS en `storage.objects` por prefijo de tenant** (e17/77) y subidas con JWT de tenant (`STORAGE_RLS_ENFORCED=true`).
 - Webhook de MercadoPago con firma opcional: el estado siempre se **re-consulta a la API** de MP (no se confía en el cuerpo).
 - Firma MD5 de Tu Compra (impuesta por el proveedor): el estado se re-consulta por API autenticada.
+- `style-src 'unsafe-inline'` (estilos de tema y librerías): impacto bajo, sin ejecución de código.
 
 ---
 
@@ -70,8 +72,8 @@ Estas no se resuelven con código; son necesarias para SOC 2 Tipo I/II o ISO 270
 
 | Brecha | Qué hace falta | Marco |
 |---|---|---|
-| Políticas formales | Política de seguridad de la información, uso aceptable, control de acceso, gestión de cambios, respuesta a incidentes, continuidad, retención de datos, cifrado | CC1–CC2 / cl. 5, A.5.1 |
-| Gestión de riesgos | Metodología + registro de riesgos + revisión anual; Declaración de Aplicabilidad (SoA) para ISO | CC3 / cl. 6.1, 8.2 |
+| Políticas formales | **Borradores listos en `docs/politicas/` (01–08)**: falta aprobación de la dirección, comunicación al personal y evidencia de operación | CC1–CC2 / cl. 5, A.5.1 |
+| Gestión de riesgos | Registro inicial en `docs/politicas/07-registro-riesgos.md`; falta revisión trimestral con acta y la Declaración de Aplicabilidad (SoA) para ISO | CC3 / cl. 6.1, 8.2 |
 | **MFA obligatorio** | Exigir MFA a operadores de consola y administradores de tienda (configuración de Stack Auth) y a las cuentas de Vercel/Supabase/AWS/GitHub | CC6.1 / A.8.5 |
 | Revisiones de acceso | Revisión trimestral de usuarios con acceso a consola, nubes y repositorio, con evidencia | CC6.2 / A.5.18 |
 | Respaldo y restauración | Activar PITR en Supabase de prod, prueba de restauración documentada (semestral), RPO/RTO definidos | A1.2–A1.3 / A.8.13 |
@@ -81,7 +83,6 @@ Estas no se resuelven con código; son necesarias para SOC 2 Tipo I/II o ISO 270
 | Personal | Acuerdos de confidencialidad, capacitación anual en seguridad, alta/baja de personal | CC1.4 / A.6.1–A.6.5 |
 | Registro de auditoría centralizado | Retención ≥1 año de `audit_log` y logs de plataforma, exportación a almacenamiento inmutable | CC7.2 / A.8.15 |
 | Pentest externo | Prueba de penetración anual antes de salir con clientes de mayor tamaño | CC4.1 / A.8.29 |
-| CSP con nonce | Retirar `'unsafe-inline'` de `script-src` | CC6.8 / A.8.26 |
 | Protección de rama en GitHub | Activar las reglas de `docs/CICD.md` §4 y marcar `CI` y `Security` como checks obligatorios; reemplazar el equipo de CODEOWNERS por el real | CC8.1 / A.8.32 |
 
 ---
