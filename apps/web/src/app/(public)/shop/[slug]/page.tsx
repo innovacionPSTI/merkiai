@@ -9,6 +9,7 @@ import RecentlyViewed from '@/components/shop/RecentlyViewed'
 import { buildProductJsonLd } from '@/lib/json-ld'
 import { getRequestCatalogDb } from '@/lib/tenant-db'
 import { resolveGateForProduct } from '@/lib/vip-access'
+import { localize, localizeOne, resolveBaseSlug } from '@/lib/request-locale'
 
 interface Props {
   params: Promise<{ slug: string }>
@@ -16,7 +17,7 @@ interface Props {
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { slug } = await params
-  const product = await getProductBySlug(slug, await getRequestCatalogDb()).catch(() => null)
+  const product = await loadProduct(slug, await getRequestCatalogDb())
   if (!product) return {}
 
   const title       = product.seo_title ?? product.name
@@ -44,6 +45,19 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 
 export const dynamic = 'force-dynamic'
 
+/**
+ * HU-463 · producto en el idioma de la petición: acepta el slug base o el
+ * traducido (AC-4) y superpone las traducciones (no-op en el idioma por defecto).
+ */
+async function loadProduct(slug: string, db: Awaited<ReturnType<typeof getRequestCatalogDb>>) {
+  let product = await getProductBySlug(slug, db).catch(() => null)
+  if (!product) {
+    const baseSlug = await resolveBaseSlug(db, 'product', slug).catch(() => null)
+    if (baseSlug) product = await getProductBySlug(baseSlug, db).catch(() => null)
+  }
+  return localizeOne(db, 'product', product)
+}
+
 export default async function ProductPage({ params }: Props) {
   const { slug } = await params
   // E17/HU-156+157: catálogo tenant-scoped por RLS (rol anon) con el tenant
@@ -51,7 +65,7 @@ export default async function ProductPage({ params }: Props) {
   // los singletons a fila-por-tenant (cola de HU-156).
   const db = await getRequestCatalogDb()
   const [product, ctx] = await Promise.all([
-    getProductBySlug(slug, db).catch(() => null),
+    loadProduct(slug, db),
     getStoreContext().catch(() => null),
   ])
   if (!product) notFound()
@@ -59,6 +73,7 @@ export default async function ProductPage({ params }: Props) {
 
   const related = await getProducts(undefined, db)
     .then((all) => all.filter((p) => p.id !== product.id && p.category_id === product.category_id).slice(0, 3))
+    .then((rows) => localize(db, 'product', rows))
     .catch(() => [])
 
   // HU-101 · estadística (estrellas/JSON-LD) desde ratings ligeros + primera

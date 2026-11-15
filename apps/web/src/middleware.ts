@@ -236,6 +236,8 @@ export async function middleware(request: NextRequest) {
   const csp = contentSecurityPolicy(nonce)
   const reqHeaders = new Headers(request.headers)
   reqHeaders.set('x-nonce', nonce)
+  // HU-463/462 · `x-locale` lo fija SOLO el middleware (nunca el cliente).
+  reqHeaders.delete('x-locale')
   reqHeaders.set('Content-Security-Policy', csp)
   const res = await route(request, reqHeaders)
   res.headers.set('Content-Security-Policy', csp)

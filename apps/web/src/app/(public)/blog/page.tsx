@@ -3,6 +3,7 @@ import { getStoreContext } from '@/lib/store-context'
 import Link from 'next/link'
 import type { Metadata } from 'next'
 import { formatDate } from '@merkiai/i18n'
+import { localize } from '@/lib/request-locale'
 
 export const metadata: Metadata = {
   title: 'Blog',
@@ -21,7 +22,7 @@ export default async function BlogPage({
 }) {
   const { categoria: category } = await searchParams
   const ctx = await getStoreContext().catch(() => null)
-  const posts = ctx ? await getBlogPosts({ category, limit: 20 }, ctx.db).catch(() => []) : []
+  const posts = ctx ? await getBlogPosts({ category, limit: 20 }, ctx.db).then((rows) => localize(ctx.db, 'blog_post', rows)).catch(() => []) : []
   const featured = posts[0]
   const rest = posts.slice(1)
 

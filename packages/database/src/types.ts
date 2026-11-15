@@ -2101,6 +2101,8 @@ export type Database = {
           row_id: string | null
           row_layout: string | null
           col_index: number | null
+          /** HU-463 · traducciones por locale: { "<locale>": { "<campo>": "texto" } }. */
+          translations?: Json
           created_at: string
           updated_at: string
         }
@@ -2175,6 +2177,8 @@ export type Database = {
           enabled: boolean
           order_index: number
           draft: Json | null
+          /** HU-463 · traducciones por locale: { "<locale>": { "<campo>": "texto" } }. */
+          translations?: Json
           created_at: string
           updated_at: string
         }

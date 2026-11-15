@@ -4,6 +4,7 @@ import { getRequestCatalogDb } from '@/lib/tenant-db'
 import { requireStoreContext } from '@/lib/store-context'
 import { parseShopUrl } from '@/lib/shop-filters'
 import type { Metadata } from 'next'
+import { localize } from '@/lib/request-locale'
 
 export const metadata: Metadata = {
   title: 'Tienda',
@@ -46,7 +47,7 @@ export default async function TiendaPage({
 
   return (
     <ShopClient
-      products={pageResult.products}
+      products={await localize(db, 'product', pageResult.products)}
       total={pageResult.total}
       pageSize={PAGE_SIZE}
       facets={facets}

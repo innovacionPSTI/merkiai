@@ -11,16 +11,27 @@ import ShareWhatsApp from '@/components/blog/ShareWhatsApp'
 import { markdownToHtml } from '@/lib/markdown'
 import { buildArticleJsonLd } from '@/lib/json-ld'
 import { formatDate } from '@merkiai/i18n'
+import { localize, localizeOne, resolveBaseSlug } from '@/lib/request-locale'
 
 interface Props {
   params: Promise<{ slug: string }>
+}
+
+/** HU-463 · entrada en el idioma de la petición (slug base o traducido). */
+async function loadPost(slug: string, db: Parameters<typeof getBlogPostBySlug>[1]) {
+  let post = await getBlogPostBySlug(slug, db).catch(() => null)
+  if (!post) {
+    const baseSlug = await resolveBaseSlug(db, 'blog_post', slug).catch(() => null)
+    if (baseSlug) post = await getBlogPostBySlug(baseSlug, db).catch(() => null)
+  }
+  return localizeOne(db, 'blog_post', post)
 }
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { slug } = await params
   const ctx = await getStoreContext().catch(() => null)
   if (!ctx) return {}
-  const post = await getBlogPostBySlug(slug, ctx.db).catch(() => null)
+  const post = await loadPost(slug, ctx.db)
   if (!post) return {}
 
   const title       = post.seo_title ?? post.title
@@ -63,7 +74,7 @@ export default async function BlogPostPage({ params }: Props) {
   const post = await (
     draftMode
       ? getBlogPostBySlugAny(slug, getMachineDb(ctx.tenantId))
-      : getBlogPostBySlug(slug, ctx.db)
+      : loadPost(slug, ctx.db)
   ).catch(() => null)
 
   const storeConfig = ctx.config
@@ -71,6 +82,7 @@ export default async function BlogPostPage({ params }: Props) {
 
   const related = await getBlogPosts({ category: post.category ?? undefined, limit: 3 }, ctx.db)
     .then((posts) => posts.filter((p) => p.id !== post.id).slice(0, 2))
+    .then((rows) => localize(ctx.db, 'blog_post', rows))
     .catch(() => [])
 
   // JSON-LD — Article schema (lógica pura en @/lib/json-ld)

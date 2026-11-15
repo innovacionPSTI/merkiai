@@ -13,7 +13,8 @@
  *   testimonials → TestimonialsSection (carrusel de testimonios)
  *   whatsapp     → WhatsAppSection  (botón/formulario de WhatsApp)
  */
-import type { PageSection, SectionItem } from '@merkiai/database'
+import { localizeSection, type PageSection, type SectionItem } from '@merkiai/database'
+import { getRequestLocale } from '@/lib/request-locale'
 
 import HeroSection         from './HeroSection'
 import TextSection         from './TextSection'
@@ -37,8 +38,11 @@ interface Props {
   whatsappNumber?: string | null
 }
 
-export default function SectionRenderer({ section, pageKey, whatsappNumber }: Props) {
-  if (!section.enabled) return null
+export default async function SectionRenderer({ section: raw, pageKey, whatsappNumber }: Props) {
+  if (!raw.enabled) return null
+  // HU-463 · textos del bloque en el idioma de la petición (misma referencia en el idioma por defecto).
+  const { locale, defaultLocale } = await getRequestLocale()
+  const section = localizeSection(raw, locale, defaultLocale)
   // HU-253 · estilo compartido (fondo/espaciado) desde settings.style_*.
   return <SectionShell settings={section.settings}>{renderSection(section, pageKey, whatsappNumber)}</SectionShell>
 }

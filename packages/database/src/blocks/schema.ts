@@ -52,6 +52,11 @@ export interface BlockField {
   /** Valor por defecto (fallback de render y del formulario). */
   default?: string | number | boolean
   required?: boolean
+  /**
+   * HU-463 · ¿Se traduce por idioma? Por defecto sí para `text`/`textarea`/
+   * `richtext` y no para el resto (URLs, imágenes, colores…). `false` lo excluye.
+   */
+  translatable?: boolean
 }
 
 export interface BlockItemSchema {
