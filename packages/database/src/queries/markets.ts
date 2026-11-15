@@ -11,7 +11,7 @@
  * operaciones. Sin filas, la tienda tiene el mercado virtual "Colombia"
  * (es-CO, COP): cero regresión (AC-1).
  */
-import { SUPPORTED_LOCALES, normalizeLocale, DEFAULT_LOCALE, type Locale } from '@merkiai/i18n'
+import { SUPPORTED_LOCALES, SUPPORTED_COUNTRIES, normalizeLocale, DEFAULT_LOCALE, type Locale, type CountryCode } from '@merkiai/i18n'
 import type { Db } from '../client'
 
 export interface Market {
@@ -108,6 +108,18 @@ export function enabledLocales(markets: Pick<Market, 'locales' | 'active'>[]): L
   const out: Locale[] = []
   for (const m of markets) if (m.active) for (const l of m.locales) if (!out.includes(l)) out.push(l)
   return out
+}
+
+/**
+ * Países a los que vende la tienda (HU-468): los de los mercados activos que la
+ * plataforma soporta, con los del mercado por defecto primero. Sin datos → CO.
+ */
+export function marketCountries(markets: Market[]): CountryCode[] {
+  const supported = SUPPORTED_COUNTRIES as readonly string[]
+  const ordered = [...markets].filter((m) => m.active).sort((a, b) => Number(b.is_default) - Number(a.is_default))
+  const out: CountryCode[] = []
+  for (const m of ordered) for (const c of m.countries) if (supported.includes(c) && !out.includes(c as CountryCode)) out.push(c as CountryCode)
+  return out.length ? out : ['CO']
 }
 
 /** Mercado por defecto (o el primero, o el virtual si no hay ninguno). */

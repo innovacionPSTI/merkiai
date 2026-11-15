@@ -8,6 +8,7 @@
  * El saldo SIEMPRE es proyección del libro; nunca se escribe un saldo.
  * Todas las funciones reciben un cliente acotado por RLS al tenant (admin).
  */
+import { isValidDocument, normalizeDocument } from '@merkiai/i18n'
 import type { Db } from '../client'
 import {
   normalizeLines, buildEqualInstallments, validateCustomInstallments, allocatePayment,
@@ -54,6 +55,8 @@ export interface Party {
   credit_limit: number | null
   default_terms_days: number | null
   document_id: string | null
+  /** HU-468 · tipo de documento según el país (CC, NIT, RFC, NIF…). */
+  document_type?: string | null
   balance?: number
 }
 
@@ -119,7 +122,7 @@ export async function saveReceivablesSettings(db: Db, tenantId: string, s: Parti
 
 // ─── Contrapartes ─────────────────────────────────────────────────────────────
 
-const PARTY_COLS = 'id, name, email, phone, party_role, credit_limit, default_terms_days, document_id'
+const PARTY_COLS = 'id, name, email, phone, party_role, credit_limit, default_terms_days, document_id, document_type'
 
 export async function listParties(db: Db, opts: { role?: 'customer' | 'consignee'; search?: string; withBalance?: boolean } = {}): Promise<Party[]> {
   let q = t(db).from('customers').select(PARTY_COLS).order('name', { ascending: true }).limit(500)
@@ -148,15 +151,19 @@ export async function savePartyCredit(db: Db, id: string, patch: Partial<Pick<Pa
 export async function createParty(
   db: Db,
   tenantId: string,
-  input: { name: string; email?: string | null; phone?: string | null; party_role?: 'customer' | 'consignee'; credit_limit?: number | null; default_terms_days?: number | null; document_id?: string | null },
+  input: { name: string; email?: string | null; phone?: string | null; party_role?: 'customer' | 'consignee'; credit_limit?: number | null; default_terms_days?: number | null; document_id?: string | null; document_type?: string | null },
 ): Promise<Party> {
   const name = input.name?.trim()
   if (!name) throw new Error('El nombre es obligatorio.')
   const email = input.email?.trim().toLowerCase() || null
   if (email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) throw new Error('El correo no es válido.')
+  // HU-468 · documento según su tipo (formato y dígito de control cuando aplica).
+  const docType = input.document_type?.trim().toUpperCase() || null
+  const docNumber = input.document_id ? normalizeDocument(input.document_id) : null
+  if (docType && docNumber && !isValidDocument(docType, docNumber)) throw new Error(`El número de ${docType} no es válido.`)
   const { data, error } = await t(db).from('customers').insert({
     tenant_id: tenantId, name, email, phone: input.phone?.trim() || null, party_role: input.party_role ?? 'customer',
-    credit_limit: input.credit_limit ?? null, default_terms_days: input.default_terms_days ?? null, document_id: input.document_id?.trim() || null,
+    credit_limit: input.credit_limit ?? null, default_terms_days: input.default_terms_days ?? null, document_id: docNumber || null, document_type: docNumber ? docType : null,
   }).select(PARTY_COLS).single()
   if (error?.code === '23505') throw new Error('Ya existe una contraparte con ese correo.')
   fail('crear contraparte', error)

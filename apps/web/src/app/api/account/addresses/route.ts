@@ -4,6 +4,8 @@ import { ensureCustomer } from '@merkiai/database'
 import { getRequestUserDb } from '@/lib/tenant-db'
 import { resolveTenant } from '@/lib/tenant-context';
 import { getMachineDb } from '@/lib/machine-db'
+import { storeCountries } from '@/lib/store-countries'
+import { sanitizeCheckoutAddress } from '@/lib/shipping-address'
 
 /**
  * GET  /api/account/addresses — direcciones del cliente logueado (pre-llena checkout).
@@ -33,7 +35,8 @@ export async function GET() {
       .order('created_at', { ascending: false })
 
     if (error) throw error
-    return NextResponse.json({ addresses: addresses ?? [] })
+    // HU-468 · países disponibles para el formulario (mercados de la tienda).
+    return NextResponse.json({ addresses: addresses ?? [], countries: await storeCountries(tenantId) })
   } catch (err) {
     console.error('[account/addresses GET]', err)
     return NextResponse.json({ error: 'Error interno' }, { status: 500 })
@@ -49,6 +52,7 @@ export async function POST(request: NextRequest) {
     const body = await request.json() as {
       label?: string; full_name: string; phone?: string; address: string
       city: string; department?: string; postal_code?: string; is_default?: boolean
+      country?: string; neighborhood?: string
     }
 
     if (!body.full_name || !body.address || !body.city) {
@@ -59,6 +63,10 @@ export async function POST(request: NextRequest) {
     const customer = await ensureCustomer({
       stackUserId: user.id, email: user.primaryEmail, name: user.displayName, tenantId,
     }, getMachineDb(tenantId))
+
+    // HU-468 · reglas del país (Colombia sin cambios).
+    const chk = sanitizeCheckoutAddress(body, body.phone, await storeCountries(tenantId), { phoneRequired: false })
+    if (!chk.ok) return NextResponse.json({ error: chk.error }, { status: 400 })
 
     const db = await getRequestUserDb(user.id)
 
@@ -81,7 +89,10 @@ export async function POST(request: NextRequest) {
         address: body.address,
         city: body.city,
         department: body.department ?? null,
-        postal_code: body.postal_code ?? null,
+        postal_code: chk.address.postal_code ?? null,
+        country: chk.address.country,
+        neighborhood: chk.address.neighborhood ?? null,
+        phone_e164: chk.phoneE164,
         is_default: body.is_default ?? false,
         tenant_id: tenantId,
       })

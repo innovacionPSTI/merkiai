@@ -2463,6 +2463,9 @@ export type Database = {
           city: string
           department: string | null
           postal_code: string | null
+          country: string
+          neighborhood: string | null
+          phone_e164: string | null
           is_default: boolean
           created_at: string
         }
@@ -2477,6 +2480,9 @@ export type Database = {
           city: string
           department?: string | null
           postal_code?: string | null
+          country?: string
+          neighborhood?: string | null
+          phone_e164?: string | null
           is_default?: boolean
           created_at?: string
         }
@@ -2491,6 +2497,9 @@ export type Database = {
           city?: string
           department?: string | null
           postal_code?: string | null
+          country?: string
+          neighborhood?: string | null
+          phone_e164?: string | null
           is_default?: boolean
           created_at?: string
         }
@@ -2789,9 +2798,16 @@ export interface ProductImage {
 export interface ShippingAddress {
   address: string
   city: string
+  /** Departamento (CO) / estado / provincia según el país (HU-468). */
   department: string
   postal_code?: string
   reference?: string
+  /** HU-468 · país ISO alfa-2 (ausente en pedidos antiguos = CO). */
+  country?: string
+  /** HU-468 · barrio / colonia (México). */
+  neighborhood?: string | null
+  /** HU-468 · teléfono normalizado E.164. */
+  phone_e164?: string | null
 }
 
 export interface OrderItem {

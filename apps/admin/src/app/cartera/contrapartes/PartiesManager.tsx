@@ -14,11 +14,11 @@ const money = (n: number) => formatMoney(n || 0)
 const input = 'rounded-xl border border-brand-primary/20 px-3 py-2 font-brand text-sm focus:border-brand-primary focus:outline-none'
 const num = (v: string) => (v.trim() === '' ? null : Math.max(0, Number(v.replace(/[.\s$]/g, ''))))
 
-export default function PartiesManager({ parties, consignmentEnabled }: { parties: PartyRow[]; consignmentEnabled: boolean }) {
+export default function PartiesManager({ parties, consignmentEnabled, documentTypes = [] }: { parties: PartyRow[]; consignmentEnabled: boolean; documentTypes?: { code: string; label: string }[] }) {
   const router = useRouter()
   const [pending, start] = useTransition()
   const [msg, setMsg] = useState<{ ok: boolean; text: string } | null>(null)
-  const [form, setForm] = useState({ name: '', email: '', phone: '', role: 'customer' as 'customer' | 'consignee', credit: '', terms: '', doc: '' })
+  const [form, setForm] = useState({ name: '', email: '', phone: '', role: 'customer' as 'customer' | 'consignee', credit: '', terms: '', doc: '', docType: documentTypes[0]?.code ?? '' })
   const [edit, setEdit] = useState<Record<string, { credit: string; terms: string }>>({})
   const [filter, setFilter] = useState<'all' | 'customer' | 'consignee' | 'debt'>('all')
 
@@ -33,7 +33,15 @@ export default function PartiesManager({ parties, consignmentEnabled }: { partie
           <input className={input} placeholder="Nombre *" value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} />
           <input className={input} placeholder="Correo" value={form.email} onChange={(e) => setForm({ ...form, email: e.target.value })} />
           <input className={input} placeholder="Teléfono" value={form.phone} onChange={(e) => setForm({ ...form, phone: e.target.value })} />
-          <input className={input} placeholder="NIT / cédula" value={form.doc} onChange={(e) => setForm({ ...form, doc: e.target.value })} />
+          {/* HU-468 · tipo de documento según el país de la tienda */}
+          <div className="flex gap-2">
+            {documentTypes.length > 0 && (
+              <select className={`${input} w-28`} aria-label="Tipo de documento" value={form.docType} onChange={(e) => setForm({ ...form, docType: e.target.value })}>
+                {documentTypes.map((d) => <option key={d.code} value={d.code}>{d.label}</option>)}
+              </select>
+            )}
+            <input className={`${input} flex-1 min-w-0`} placeholder="Número de documento" value={form.doc} onChange={(e) => setForm({ ...form, doc: e.target.value })} />
+          </div>
           <select className={input} value={form.role} onChange={(e) => setForm({ ...form, role: e.target.value as 'customer' | 'consignee' })}>
             <option value="customer">Cliente</option>
             {consignmentEnabled && <option value="consignee">Aliado (consignación)</option>}
@@ -42,8 +50,8 @@ export default function PartiesManager({ parties, consignmentEnabled }: { partie
           <input className={input} placeholder="Plazo en días (opcional)" value={form.terms} onChange={(e) => setForm({ ...form, terms: e.target.value })} />
           <button type="button" disabled={pending || !form.name.trim()} className="rounded-full bg-brand-primary px-5 py-2 font-brand text-sm text-white disabled:opacity-50"
             onClick={() => start(async () => {
-              const r = await createPartyAction({ name: form.name, email: form.email || undefined, phone: form.phone || undefined, party_role: form.role, credit_limit: num(form.credit), default_terms_days: num(form.terms), document_id: form.doc || undefined })
-              done(r); if (r.ok) setForm({ name: '', email: '', phone: '', role: form.role, credit: '', terms: '', doc: '' })
+              const r = await createPartyAction({ name: form.name, email: form.email || undefined, phone: form.phone || undefined, party_role: form.role, credit_limit: num(form.credit), default_terms_days: num(form.terms), document_id: form.doc || undefined, document_type: form.doc ? form.docType || undefined : undefined })
+              done(r); if (r.ok) setForm({ name: '', email: '', phone: '', role: form.role, credit: '', terms: '', doc: '', docType: form.docType })
             })}>Agregar</button>
         </div>
       </section>

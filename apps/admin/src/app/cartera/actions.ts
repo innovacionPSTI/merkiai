@@ -150,7 +150,7 @@ export async function adjustAction(documentId: number, delta: number, note: stri
   }, ['/cartera'], { action: 'receivable.adjust', entity: 'receivable_document', entityId: documentId, metadata: { delta, note } })
 }
 
-export async function createPartyAction(input: { name: string; email?: string; phone?: string; party_role: 'customer' | 'consignee'; credit_limit?: number | null; default_terms_days?: number | null; document_id?: string }): Promise<ActionResult> {
+export async function createPartyAction(input: { name: string; email?: string; phone?: string; party_role: 'customer' | 'consignee'; credit_limit?: number | null; default_terms_days?: number | null; document_id?: string; document_type?: string }): Promise<ActionResult> {
   return run(async ({ db, tenantId }) => {
     const p = await createParty(db, tenantId, input)
     return { ok: true, id: p.id, message: `${p.name} creado.` }

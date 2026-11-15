@@ -6,6 +6,8 @@ import { useCartStore } from '@/store/cart'
 import type { ShippingRate } from '@/lib/shipping/types'
 import SearchableSelect from '@/components/ui/SearchableSelect'
 import { DEPARTMENTS, getCitiesForDepartment } from '@merkiai/ui'
+import { getRegion, validateAddress, countryName, createTranslator } from '@merkiai/i18n'
+import RegionalAddressFields from '@/components/address/RegionalAddressFields'
 import { formatMoney } from '@merkiai/i18n'
 
 type Step = 1 | 2 | 3
@@ -15,6 +17,8 @@ interface ContactInfo { email: string }
 interface ShippingInfo {
   name: string; lastname: string; address: string
   city: string; department: string; phone: string; postal_code: string
+  /** HU-468 · país de envío (ISO alfa-2) y barrio/colonia (México). */
+  country: string; neighborhood: string
 }
 
 interface ShippingPublicConfig {
@@ -32,12 +36,18 @@ interface SavedAddress {
   department: string | null
   postal_code: string | null
   is_default: boolean
+  country?: string | null
+  neighborhood?: string | null
 }
 
 interface Props {
   initialEmail?: string
   defaultAddress?: SavedAddress | null
+  /** HU-468 · países a los que vende la tienda (el primero es el predeterminado). */
+  countries?: string[]
 }
+
+const tr = createTranslator()
 
 const FALLBACK_CFG: ShippingPublicConfig = {
   provider: 'fixed', fixed_rate: 8000,
@@ -53,7 +63,7 @@ const FALLBACK_GATEWAYS: GatewayOption[] = [
 const fmt = (n: number) =>
   formatMoney(n)
 
-function addressToShipping(addr: SavedAddress): ShippingInfo {
+function addressToShipping(addr: SavedAddress, countries: string[]): ShippingInfo {
   const parts = addr.full_name.trim().split(/\s+/)
   return {
     name: parts[0] ?? '',
@@ -63,10 +73,12 @@ function addressToShipping(addr: SavedAddress): ShippingInfo {
     city: addr.city,
     department: addr.department ?? '',
     postal_code: addr.postal_code ?? '',
+    country: addr.country && countries.includes(addr.country) ? addr.country : (countries[0] ?? 'CO'),
+    neighborhood: addr.neighborhood ?? '',
   }
 }
 
-export default function CheckoutClient({ initialEmail = '', defaultAddress = null }: Props) {
+export default function CheckoutClient({ initialEmail = '', defaultAddress = null, countries = ['CO'] }: Props) {
   const { items, subtotal, clearCart } = useCartStore()
 
   // HU-298 · clave de idempotencia estable por intento de checkout: se reutiliza
@@ -81,8 +93,8 @@ export default function CheckoutClient({ initialEmail = '', defaultAddress = nul
   const [contact, setContact]   = useState<ContactInfo>({ email: initialEmail })
   const [shipping, setShipping] = useState<ShippingInfo>(
     defaultAddress
-      ? addressToShipping(defaultAddress)
-      : { name: '', lastname: '', address: '', city: '', department: '', phone: '', postal_code: '' }
+      ? addressToShipping(defaultAddress, countries)
+      : { name: '', lastname: '', address: '', city: '', department: '', phone: '', postal_code: '', country: countries[0] ?? 'CO', neighborhood: '' }
   )
   const [paymentMethod, setPaymentMethod] = useState<string>('wompi')
   const [gateways, setGateways]           = useState<GatewayOption[]>(FALLBACK_GATEWAYS)
@@ -210,7 +222,8 @@ export default function CheckoutClient({ initialEmail = '', defaultAddress = nul
 
   // Obtener tarifas Skydropx
   const fetchRates = async () => {
-    if (shippingCfg.provider !== 'skydropx') return
+    // HU-468 · la transportadora integrada cotiza solo envíos dentro de Colombia.
+    if (shippingCfg.provider !== 'skydropx' || shipping.country !== 'CO') return
     setRatesLoading(true)
     setAvailableRates([])
     setSelectedRateId(null)
@@ -312,9 +325,10 @@ export default function CheckoutClient({ initialEmail = '', defaultAddress = nul
   const isFreeShipping = shippingCfg.free_shipping_enabled && sub >= shippingCfg.free_shipping_min_amount
 
   const selectedRate = availableRates.find((r) => r.id === selectedRateId)
+  const carrierQuotes = shippingCfg.provider === 'skydropx' && shipping.country === 'CO'
   const shippingCost = isFreeShipping
     ? 0
-    : shippingCfg.provider === 'skydropx' && selectedRate
+    : carrierQuotes && selectedRate
       ? selectedRate.total_price
       : shippingCfg.fixed_rate
 
@@ -348,7 +362,7 @@ export default function CheckoutClient({ initialEmail = '', defaultAddress = nul
           email: contact.email,
           name: `${shipping.name} ${shipping.lastname}`,
           phone: shipping.phone,
-          address: { address: shipping.address, city: shipping.city, department: shipping.department, postal_code: shipping.postal_code },
+          address: { address: shipping.address, city: shipping.city, department: shipping.department, postal_code: shipping.postal_code, country: shipping.country, neighborhood: shipping.neighborhood || null },
           items: items.map((i) => ({ variant_id: i.variantId, bundle_id: i.bundleId, product_name: i.productName, variant_label: i.variantLabel, qty: i.qty, price: i.price })),
           subtotal: sub,
           shipping_cost: shippingCost,
@@ -534,6 +548,21 @@ export default function CheckoutClient({ initialEmail = '', defaultAddress = nul
                       </div>
                     ))}
                   </div>
+                  {/* HU-468 · País (solo si la tienda vende a más de uno) */}
+                  {countries.length > 1 && (
+                    <div>
+                      <label className="font-brand text-sm font-semibold text-brand-primary block mb-1">{tr('address.country')} *</label>
+                      <select value={shipping.country}
+                        onChange={(e) => {
+                          setShipping({ ...shipping, country: e.target.value, department: '', city: '', neighborhood: '', postal_code: '' })
+                          setRatesFetched(false); setAvailableRates([]); setSelectedRateId(null)
+                        }}
+                        className="w-full border border-brand-primary/20 rounded-xl px-4 py-2.5 font-brand text-sm focus:outline-none focus:border-brand-primary bg-white">
+                        {countries.map((c) => <option key={c} value={c}>{countryName(c)}</option>)}
+                      </select>
+                    </div>
+                  )}
+
                   {/* Dirección */}
                   <div>
                     <label className="font-brand text-sm font-semibold text-brand-primary block mb-1">Dirección *</label>
@@ -543,6 +572,12 @@ export default function CheckoutClient({ initialEmail = '', defaultAddress = nul
                       className="w-full border border-brand-primary/20 rounded-xl px-4 py-2.5 font-brand text-sm focus:outline-none focus:border-brand-primary" />
                   </div>
 
+                  {shipping.country !== 'CO' ? (
+                    <RegionalAddressFields
+                      value={{ country: shipping.country, department: shipping.department, city: shipping.city, neighborhood: shipping.neighborhood, postal_code: shipping.postal_code }}
+                      onChange={(patch) => setShipping({ ...shipping, ...patch })}
+                    />
+                  ) : (<>
                   {/* Departamento y Ciudad */}
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <SearchableSelect
@@ -597,18 +632,19 @@ export default function CheckoutClient({ initialEmail = '', defaultAddress = nul
                       <p className="font-brand text-xs text-amber-600 mt-1">El código postal debe tener 6 dígitos</p>
                     )}
                   </div>
+                  </>)}
 
                   {/* Teléfono */}
                   <div>
                     <label className="font-brand text-sm font-semibold text-brand-primary block mb-1">Teléfono *</label>
                     <input type="tel" value={shipping.phone}
                       onChange={(e) => setShipping({ ...shipping, phone: e.target.value })}
-                      placeholder="+57 300 123 4567"
+                      placeholder={`+${getRegion(shipping.country).callingCode} ${getRegion(shipping.country).phoneExample}`}
                       className="w-full border border-brand-primary/20 rounded-xl px-4 py-2.5 font-brand text-sm focus:outline-none focus:border-brand-primary" />
                   </div>
 
                   {/* Selector de transportadora (Skydropx) */}
-                  {shippingCfg.provider === 'skydropx' && !isFreeShipping && ratesLoading && (
+                  {carrierQuotes && !isFreeShipping && ratesLoading && (
                     <div className="flex items-center gap-3 py-3 px-4 bg-brand-cream/50 rounded-xl">
                       <svg className="animate-spin w-4 h-4 text-brand-primary/50" fill="none" viewBox="0 0 24 24">
                         <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
@@ -619,19 +655,19 @@ export default function CheckoutClient({ initialEmail = '', defaultAddress = nul
                   )}
 
                   {/* Error específico de cotización (total muy bajo, dirección inválida, etc.) */}
-                  {shippingCfg.provider === 'skydropx' && !isFreeShipping && ratesFetched && ratesError && (
+                  {carrierQuotes && !isFreeShipping && ratesFetched && ratesError && (
                     <p className="font-brand text-sm text-amber-700 bg-amber-50 border border-amber-200 rounded-xl px-4 py-3">
                       {ratesError}
                     </p>
                   )}
 
-                  {shippingCfg.provider === 'skydropx' && !isFreeShipping && ratesFetched && !ratesError && availableRates.length === 0 && (
+                  {carrierQuotes && !isFreeShipping && ratesFetched && !ratesError && availableRates.length === 0 && (
                     <p className="font-brand text-sm text-amber-600 bg-amber-50 rounded-xl px-4 py-3">
                       No se encontraron tarifas para esta dirección. Se aplicará tarifa estándar al confirmar.
                     </p>
                   )}
 
-                  {shippingCfg.provider === 'skydropx' && !isFreeShipping && availableRates.length > 0 && (
+                  {carrierQuotes && !isFreeShipping && availableRates.length > 0 && (
                     <div>
                       <p className="font-brand text-sm font-semibold text-brand-primary mb-2">Elige tu transportadora</p>
                       <div className="space-y-2">
@@ -653,8 +689,10 @@ export default function CheckoutClient({ initialEmail = '', defaultAddress = nul
 
                   {(() => {
                     const { name, lastname, address, city, department, phone } = shipping
-                    const formReady = !!(name && lastname && address && city && department && phone)
-                    const needsRates = shippingCfg.provider === 'skydropx' && !isFreeShipping
+                    // HU-468 · fuera de Colombia se aplican las reglas del país (CP, región, colonia, teléfono).
+                    const regionalErrors = shipping.country === 'CO' ? {} : validateAddress({ ...shipping })
+                    const formReady = !!(name && lastname && address && city && department && phone) && Object.keys(regionalErrors).length === 0
+                    const needsRates = carrierQuotes && !isFreeShipping
                     // Show "calculate" button when form is filled but rates not yet fetched
                     const showCalculate = needsRates && formReady && !ratesFetched && !ratesLoading
                     // Can proceed if: not skydropx, or free shipping, or rates fetched (even if empty — we fallback)

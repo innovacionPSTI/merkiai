@@ -8,7 +8,8 @@
     ".": "./src/index.ts",
     "./format": "./src/format.ts",
     "./locales": "./src/locales.ts",
-    "./messages": "./src/messages.ts"
+    "./messages": "./src/messages.ts",
+    "./regions": "./src/regions.ts"
   },
   "scripts": {
     "test": "jest"

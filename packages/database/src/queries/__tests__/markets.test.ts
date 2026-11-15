@@ -141,3 +141,32 @@ describe('HU-461 · capa de datos', () => {
     await expect(deleteMarket(db, T, 1)).rejects.toThrow(/por defecto/)
   })
 })
+
+describe('HU-468 · países de venta', () => {
+  it('une países soportados de mercados activos, el default primero; CO si no hay', async () => {
+    const { marketCountries } = await import('../markets')
+    const mx: Market = { ...co, id: 2, key: 'mx', countries: ['MX', 'BR'], is_default: false }
+    const us: Market = { ...co, id: 3, key: 'us', countries: ['US'], is_default: false, active: false }
+    expect(marketCountries([mx, co, us])).toEqual(['CO', 'MX'])
+    expect(marketCountries([{ ...co, countries: [] }])).toEqual(['CO'])
+  })
+})
+
+describe('HU-468 · AC-3 · documento de la contraparte', () => {
+  it('rechaza un NIT con dígito de verificación inválido y normaliza el válido', async () => {
+    const { createParty } = await import('../receivables')
+    const inserted: Record<string, unknown>[] = []
+    const db = {
+      from: () => ({
+        insert: (row: Record<string, unknown>) => {
+          inserted.push(row)
+          return { select: () => ({ single: async () => ({ data: { id: 'p1', ...row }, error: null }) }) }
+        },
+      }),
+    } as never
+    await expect(createParty(db, 't', { name: 'Aliado', document_type: 'NIT', document_id: '900123456-1' })).rejects.toThrow(/NIT no es válido/)
+    expect(inserted).toHaveLength(0)
+    await createParty(db, 't', { name: 'Aliado', document_type: 'nit', document_id: '900.123.456-8' })
+    expect(inserted[0]).toMatchObject({ document_id: '900123456-8', document_type: 'NIT' })
+  })
+})

@@ -16,7 +16,7 @@ export type { EmailConfig } from '@merkiai/database'
 export { sendShippingNotification, sendStatusNotification } from '@merkiai/database'
 
 import type { EmailConfig } from '@merkiai/database'
-import { formatMoney } from '@merkiai/i18n'
+import { formatMoney, formatAddressInline } from '@merkiai/i18n'
 
 // ── sendEmail helper (privado — solo para funciones web-only) ────────────────
 
@@ -141,7 +141,8 @@ export function buildEmailConfig(
 export async function sendOrderConfirmation(order: Order, config: EmailConfig): Promise<void> {
   const name = config.storeName ?? 'Mi Tienda'
   const addr = order.shipping_addr
-  const addressText = `${addr.address}, ${addr.city}, ${addr.department}`
+  // HU-468 · dirección en el formato de su país (CO conserva el orden histórico).
+  const addressText = formatAddressInline(addr, { includeCountry: !!addr.country && addr.country !== 'CO' })
 
   const content = `
     <h2 style="margin: 0 0 8px; color: #614a2a; font-size: 20px; font-family: sans-serif;">¡Gracias por tu pedido!</h2>

@@ -5,6 +5,8 @@ import { stackServerApp } from '@/stack'
 import CheckoutClient from '@/components/checkout/CheckoutClient'
 import { getRequestUserDb } from '@/lib/tenant-db'
 import { getStoreContext } from '@/lib/store-context'
+import { resolveTenant } from '@/lib/tenant-context'
+import { storeCountries } from '@/lib/store-countries'
 
 export const metadata: Metadata = { title: 'Checkout' }
 
@@ -16,6 +18,8 @@ interface SavedAddress {
   department: string | null
   postal_code: string | null
   is_default: boolean
+  country?: string | null
+  neighborhood?: string | null
 }
 
 async function getDefaultAddress(): Promise<SavedAddress | null> {
@@ -48,7 +52,7 @@ async function getDefaultAddress(): Promise<SavedAddress | null> {
 
     const { data: addresses } = await supabase
       .from('customer_addresses')
-      .select('full_name, phone, address, city, department, postal_code, is_default')
+      .select('full_name, phone, address, city, department, postal_code, is_default, country, neighborhood')
       .eq('customer_id', customerId)
       .order('is_default', { ascending: false })
       .order('created_at', { ascending: false })
@@ -60,6 +64,16 @@ async function getDefaultAddress(): Promise<SavedAddress | null> {
   }
 }
 
+/** HU-468 · países a los que vende la tienda (sus mercados). Fail-safe: Colombia. */
+async function getStoreCountries(): Promise<string[]> {
+  try {
+    const { tenantId } = await resolveTenant()
+    return await storeCountries(tenantId)
+  } catch {
+    return ['CO']
+  }
+}
+
 export default async function CheckoutPage() {
   // HU-173 · peldaño e-commerce: en modo vitrina/catálogo no hay checkout.
   // El carrito (store-context) ya está gated; aquí se redirige por si se llega
@@ -67,9 +81,10 @@ export default async function CheckoutPage() {
   const ctx = await getStoreContext().catch(() => null)
   if (ctx && ctx.ecommerceEnabled === false) redirect('/')
 
-  const [defaultAddress, user] = await Promise.all([
+  const [defaultAddress, user, countries] = await Promise.all([
     getDefaultAddress(),
     stackServerApp.getUser().catch(() => null),
+    getStoreCountries(),
   ])
 
   return (
@@ -77,6 +92,7 @@ export default async function CheckoutPage() {
       <CheckoutClient
         initialEmail={user?.primaryEmail ?? ''}
         defaultAddress={defaultAddress}
+        countries={countries}
       />
     </Suspense>
   )

@@ -4,6 +4,10 @@ import { useState, useEffect } from 'react'
 import type { CustomerAddress } from '@merkiai/database'
 import SearchableSelect from '@/components/ui/SearchableSelect'
 import { DEPARTMENTS, getCitiesForDepartment } from '@merkiai/ui'
+import { formatAddress, validateAddress, countryName, createTranslator } from '@merkiai/i18n'
+import RegionalAddressFields from '@/components/address/RegionalAddressFields'
+
+const tr = createTranslator()
 
 interface AddrForm {
   label:       string
@@ -14,11 +18,15 @@ interface AddrForm {
   department:  string
   postal_code: string
   is_default:  boolean
+  /** HU-468 · país (ISO alfa-2) y barrio/colonia. */
+  country:     string
+  neighborhood: string
 }
 
 const EMPTY: AddrForm = {
   label: '', full_name: '', phone: '', address: '',
   city: '', department: '', postal_code: '', is_default: false,
+  country: 'CO', neighborhood: '',
 }
 
 function fromAddress(a: CustomerAddress): AddrForm {
@@ -31,6 +39,8 @@ function fromAddress(a: CustomerAddress): AddrForm {
     department:  a.department  ?? '',
     postal_code: a.postal_code ?? '',
     is_default:  a.is_default  ?? false,
+    country:     a.country     ?? 'CO',
+    neighborhood: a.neighborhood ?? '',
   }
 }
 
@@ -38,10 +48,14 @@ function AddressFormFields({
   form,
   onChange,
   onDepartmentChange,
+  countries,
+  onCountryChange,
 }: {
   form: AddrForm
   onChange: (key: keyof AddrForm, value: string | boolean) => void
   onDepartmentChange: (dept: string) => void
+  countries: string[]
+  onCountryChange: (country: string) => void
 }) {
   return (
     <div className="space-y-4">
@@ -98,6 +112,25 @@ function AddressFormFields({
           />
         </div>
 
+        {/* HU-468 · País (solo si la tienda vende a más de uno) */}
+        {countries.length > 1 && (
+          <div className="sm:col-span-2">
+            <label className="font-brand text-xs font-semibold text-brand-primary block mb-1">{tr('address.country')} *</label>
+            <select value={form.country} onChange={(e) => onCountryChange(e.target.value)}
+              className="w-full border border-gray-200 rounded-xl px-4 py-2.5 font-brand text-sm focus:outline-none focus:border-brand-primary bg-white">
+              {countries.map((c) => <option key={c} value={c}>{countryName(c)}</option>)}
+            </select>
+          </div>
+        )}
+
+        {form.country !== 'CO' ? (
+          <div className="sm:col-span-2">
+            <RegionalAddressFields
+              value={{ country: form.country, department: form.department, city: form.city, neighborhood: form.neighborhood, postal_code: form.postal_code }}
+              onChange={(patch) => { for (const [k, v] of Object.entries(patch)) onChange(k as keyof AddrForm, v as string) }}
+            />
+          </div>
+        ) : (<>
         {/* Departamento */}
         <SearchableSelect
           label="Departamento *"
@@ -134,6 +167,7 @@ function AddressFormFields({
             className="w-full border border-gray-200 rounded-xl px-4 py-2.5 font-brand text-sm focus:outline-none focus:border-brand-primary"
           />
         </div>
+        </>)}
       </div>
 
       {/* Default checkbox */}
@@ -159,6 +193,7 @@ export default function AddressesForm() {
   const [saving, setSaving]       = useState(false)
   const [deletingId, setDeletingId] = useState<string | null>(null)
   const [error, setError]         = useState('')
+  const [countries, setCountries] = useState<string[]>(['CO'])
 
   useEffect(() => {
     loadAddresses()
@@ -169,6 +204,7 @@ export default function AddressesForm() {
     try {
       const data = await fetch('/api/account/addresses').then((r) => r.json())
       setAddresses(data.addresses ?? [])
+      if (Array.isArray(data.countries) && data.countries.length) setCountries(data.countries)
     } finally {
       setLoading(false)
     }
@@ -182,9 +218,13 @@ export default function AddressesForm() {
     setForm((prev) => ({ ...prev, department: dept, city: '' }))
   }
 
+  function handleCountryChange(country: string) {
+    setForm((prev) => ({ ...prev, country, department: '', city: '', neighborhood: '', postal_code: '' }))
+  }
+
   function startAdd() {
     setEditingId(null)
-    setForm(EMPTY)
+    setForm({ ...EMPTY, country: countries[0] ?? 'CO' })
     setError('')
     setAdding(true)
   }
@@ -206,8 +246,14 @@ export default function AddressesForm() {
   async function handleSave(e: React.FormEvent) {
     e.preventDefault()
     if (!form.full_name || !form.address || !form.city || !form.department) {
-      setError('Nombre, dirección, ciudad y departamento son obligatorios')
+      setError('Nombre, dirección, ciudad y región son obligatorios')
       return
+    }
+    // HU-468 · reglas del país (fuera de Colombia): CP, región, colonia y teléfono si se indica.
+    if (form.country !== 'CO') {
+      const errs = validateAddress({ ...form, phone: form.phone || undefined })
+      const first = Object.values(errs)[0]
+      if (first) { setError(tr(first)); return }
     }
     setSaving(true)
     setError('')
@@ -291,7 +337,7 @@ export default function AddressesForm() {
                   className="border-2 border-brand-primary/20 rounded-2xl p-5 space-y-4 bg-brand-cream/20"
                 >
                   <p className="font-brand text-sm font-semibold text-brand-primary">Editar dirección</p>
-                  <AddressFormFields form={form} onChange={handleChange} onDepartmentChange={handleDepartmentChange} />
+                  <AddressFormFields form={form} onChange={handleChange} onDepartmentChange={handleDepartmentChange} countries={countries} onCountryChange={handleCountryChange} />
                   {error && <p className="font-brand text-sm text-red-600">{error}</p>}
                   <div className="flex gap-3">
                     <button
@@ -328,12 +374,10 @@ export default function AddressesForm() {
                         )}
                       </div>
                       <p className="font-brand text-sm font-semibold text-brand-primary">{addr.full_name}</p>
-                      <p className="font-brand text-xs text-brand-primary/60 mt-0.5">
-                        {addr.address}
-                      </p>
-                      <p className="font-brand text-xs text-brand-primary/60">
-                        {addr.city}{addr.department ? `, ${addr.department}` : ''}
-                      </p>
+                      {/* HU-468 · dirección en el formato de su país */}
+                      {formatAddress({ ...addr, department: addr.department ?? '' }, { includeCountry: countries.length > 1 }).map((line, i) => (
+                        <p key={i} className={`font-brand text-xs text-brand-primary/60${i === 0 ? ' mt-0.5' : ''}`}>{line}</p>
+                      ))}
                       {addr.phone && (
                         <p className="font-brand text-xs text-brand-primary/40 mt-0.5">{addr.phone}</p>
                       )}
@@ -386,7 +430,7 @@ export default function AddressesForm() {
           className="border border-brand-primary/10 rounded-2xl p-5 space-y-4 bg-brand-cream/20"
         >
           <p className="font-brand text-sm font-semibold text-brand-primary">Nueva dirección</p>
-          <AddressFormFields form={form} onChange={handleChange} onDepartmentChange={handleDepartmentChange} />
+          <AddressFormFields form={form} onChange={handleChange} onDepartmentChange={handleDepartmentChange} countries={countries} onCountryChange={handleCountryChange} />
           {error && <p className="font-brand text-sm text-red-600">{error}</p>}
           <div className="flex gap-3">
             <button

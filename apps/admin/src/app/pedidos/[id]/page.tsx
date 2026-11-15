@@ -8,7 +8,7 @@ import OrderNotes from './OrderNotes'
 import ReconcileBoldButton from './ReconcileBoldButton'
 import PaymentStatusValidator from './PaymentStatusValidator'
 import ReturnsManager from './ReturnsManager'
-import { formatMoney } from '@merkiai/i18n'
+import { formatMoney, formatAddress, formatPhone } from '@merkiai/i18n'
 
 export const metadata: Metadata = { title: 'Detalle de pedido' }
 
@@ -143,11 +143,11 @@ export default async function PedidoDetailPage({ params }: { params: Promise<{ i
             <div className="font-brand text-sm text-brand-primary/70 space-y-1">
               {(() => {
                 const addr = order.shipping_addr as any
+                // HU-468 · dirección en el formato de su país (CO = formato histórico).
                 return (
                   <>
-                    <p>{addr.address}</p>
-                    <p>{addr.city}, {addr.department}</p>
-                    {addr.postal_code && <p>CP: {addr.postal_code}</p>}
+                    {formatAddress(addr, { includeCountry: !!addr.country && addr.country !== 'CO' }).map((line, i) => <p key={i}>{line}</p>)}
+                    {addr.phone_e164 && <p>{formatPhone(addr.phone_e164, { international: addr.country !== 'CO' })}</p>}
                   </>
                 )
               })()}

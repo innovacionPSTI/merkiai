@@ -8,5 +8,6 @@
 export * from './locales'
 export * from './messages'
 export * from './format'
+export * from './regions'
 export { formatMessage, parseMessage, MessageSyntaxError } from './icu'
 export { CATALOGS } from './catalogs'

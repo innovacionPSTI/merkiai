@@ -1,6 +1,6 @@
 # Detalle · E28 — Internacionalización y mercados (idiomas, regiones, moneda)
 
-> **Épica:** **E28 · Internacionalización y mercados** (HU-460…468). **Diseño:** **ADR-011**. **Estado:** 🟡 en curso — HU-460 ✅ (v272) · HU-461 ✅ (v273).
+> **Épica:** **E28 · Internacionalización y mercados** (HU-460…468). **Diseño:** **ADR-011**. **Estado:** 🟡 en curso — HU-460 ✅ (v272) · HU-461 ✅ (v273) · HU-468 ✅ (v274).
 > **Absorbe:** HU-114a → HU-463 · HU-114b → HU-462 · HU-114c → HU-464 (E2).
 > **Construye sobre:** listas de precio (HU-407), multi-dominio (HU-279), schema de bloques del Constructor, correos idempotentes (HU-162), entitlements (ADR-002), middleware con tenant + CSP (v270), IA (HU-118).
 >
@@ -135,7 +135,7 @@
 
 > Como comprador de otro país, quiero un formulario de dirección y datos que corresponda a mi país, para completar la compra sin campos que no me aplican.
 
-**Talla:** M · **Módulo:** catálogo por país (campos y orden de la dirección, divisiones administrativas —se reutiliza `colombia-locations`; se agregan estados de México, provincias de España, estados de EE. UU.—, validación de código postal, tipos de documento: CC/NIT, RFC/CURP, NIF/NIE, SSN no; prefijo telefónico E.164); `formatAddress`/`formatPhone`; envíos (Skydropx) reciben la dirección normalizada. **Estado:** 🔲
+**Talla:** M · **Módulo:** catálogo por país (campos y orden de la dirección, divisiones administrativas —se reutiliza `colombia-locations`; se agregan estados de México, provincias de España, estados de EE. UU.—, validación de código postal, tipos de documento: CC/NIT, RFC/CURP, NIF/NIE, SSN no; prefijo telefónico E.164); `formatAddress`/`formatPhone`; envíos (Skydropx) reciben la dirección normalizada. **Estado:** ✅ en código (v274): catálogo `@merkiai/i18n/regions` (CO con DIVIPOLA, 32 estados de MX, 52 provincias de ES, estados de EE. UU.; CP por país; teléfono a **E.164** y presentación nacional/internacional; documentos con dígito de control: **NIT (DIAN)**, CC/CE, RFC, CURP, **NIF/DNI y NIE** con letra; `formatAddress`/`formatAddressInline` en el orden de cada país; `validateAddress` compartido cliente/servidor). Migración `e17/79_regional_address.sql` (`customer_addresses.country/neighborhood/phone_e164`, `customers.document_type`). **Checkout y Mis direcciones**: selector de país solo si la tienda vende a más de uno (países de sus mercados), campos regionales fuera de CO, barrera server-side en `/api/checkout` y en la libreta de direcciones; el snapshot del pedido guarda `country`/`neighborhood`/`phone_e164`. Impresión con el formato del país en el detalle del pedido (admin) y en el correo de confirmación. Cartera → Clientes y aliados ofrece los **tipos de documento del país de la tienda** y valida el número. *Límites:* la transportadora integrada (Skydropx) cotiza solo en CO — fuera de CO rige la tarifa estándar; el checkout aún no pide documento (llega con facturación/HU-465).
 
 | # | Escenario | Resultado |
 |---|-----------|-----------|

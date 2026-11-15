@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { hydrateManagedPayment, gatewayMethod } from '@/lib/merkiai-pagos'
 import { createOrder, resolveActivePayment, gatewayFromInstance, getStockForVariants, TuCompraGateway, ensureCustomer, listActivePromotions, computePromotions, getGiftCardByCode, getStoreCreditBalance, computeRedemption, redeemStoreValue, refundStoreValue, applyStockForOrder, getBundlesByIds, expandBundleLines, getCouponByCode, validateCoupon, getShippingConfig, reportError } from '@merkiai/database'
+import { storeCountries } from '@/lib/store-countries'
+import { sanitizeCheckoutAddress } from '@/lib/shipping-address'
 import { stackServerApp } from '@/stack'
 import { baseUrlFromRequest } from '@/lib/base-url'
 import { resolveTenant } from '@/lib/tenant-context';
@@ -36,7 +38,7 @@ function isRateLimited(ip: string): boolean {
 async function saveAddressForUser(
   stackUserId: string,
   userEmail: string,
-  shipping: { name: string; phone: string | null; address: string; city: string; department: string | null; postal_code: string | null },
+  shipping: { name: string; phone: string | null; address: string; city: string; department: string | null; postal_code: string | null; country?: string; neighborhood?: string | null; phone_e164?: string | null },
   tenantId: string,
 ) {
   try {
@@ -93,6 +95,10 @@ async function saveAddressForUser(
       city: shipping.city,
       department: shipping.department,
       postal_code: shipping.postal_code,
+      // HU-468 · país, barrio/colonia y teléfono E.164 (CO por defecto).
+      country: shipping.country ?? 'CO',
+      neighborhood: shipping.neighborhood ?? null,
+      phone_e164: shipping.phone_e164 ?? null,
       is_default: isDefault,
       tenant_id: tenantId,
     })
@@ -159,8 +165,8 @@ export async function POST(req: NextRequest) {
         : null
 
     // Extract carrier info from the rate the user selected
-    const skydropx_rate_id: string | null = shipping_rate?.id ?? null
-    const carrier_name: string | null = shipping_rate?.carrier_name ?? null
+    let skydropx_rate_id: string | null = shipping_rate?.id ?? null
+    let carrier_name: string | null = shipping_rate?.carrier_name ?? null
 
     if (!email || !name || !address || !items?.length) {
       return NextResponse.json({ error: 'Datos incompletos' }, { status: 400 })
@@ -176,6 +182,14 @@ export async function POST(req: NextRequest) {
     if (!resolveFeature(entitlements, FEATURES.ECOMMERCE)) {
       return NextResponse.json({ error: 'Esta tienda opera en modo catálogo; la compra en línea no está disponible.' }, { status: 403 })
     }
+
+    // ── E28 · HU-468 · dirección por país (barrera server-side): país dentro de
+    // los mercados de la tienda y reglas del país (CP, región, colonia, teléfono).
+    // Colombia sin cambios de validación (AC-5).
+    const allowedCountries = await storeCountries(tenantId)
+    const addrCheck = sanitizeCheckoutAddress(address, phone, allowedCountries)
+    if (!addrCheck.ok) return NextResponse.json({ error: addrCheck.error }, { status: 400 })
+    const shippingAddr = addrCheck.address
 
     // ── HU-168 Fase 2 · expandir líneas de BUNDLE a sus componentes. Guarded:
     // si no hay líneas de bundle, `orderItems` es la lista normal sin cambios.
@@ -222,6 +236,9 @@ export async function POST(req: NextRequest) {
       const sc = await getShippingConfig(mdbPricing, tenantId)
       if (sc.free_shipping_enabled && serverSubtotal >= sc.free_shipping_min_amount) serverShipping = 0
       else if (sc.provider === 'fixed') serverShipping = Math.max(0, Math.round(sc.fixed_rate))
+      // HU-468 · la transportadora integrada cotiza solo en Colombia: fuera de CO
+      // rige la tarifa estándar de la tienda.
+      else if (shippingAddr.country !== 'CO') { serverShipping = Math.max(0, Math.round(sc.fixed_rate)); skydropx_rate_id = null; carrier_name = null }
       // 'skydropx'/transportadora: se mantiene la tarifa seleccionada (server-issued).
     } catch { /* fail-safe: conserva el valor recibido */ }
 
@@ -443,10 +460,13 @@ export async function POST(req: NextRequest) {
           saveAddressForUser(sessionUser.id, sessionUser.primaryEmail, {
             name,
             phone: phone ?? null,
-            address: address.address,
-            city: address.city,
-            department: address.department ?? null,
-            postal_code: address.postal_code ?? null,
+            address: shippingAddr.address,
+            city: shippingAddr.city,
+            department: shippingAddr.department || null,
+            postal_code: shippingAddr.postal_code ?? null,
+            country: shippingAddr.country,
+            neighborhood: shippingAddr.neighborhood ?? null,
+            phone_e164: shippingAddr.phone_e164 ?? null,
           }, tenantId)
         }
       } catch { /* non-critical */ }
@@ -463,7 +483,7 @@ export async function POST(req: NextRequest) {
         customer_name: name,
         customer_email: email,
         customer_phone: phone ?? null,
-        shipping_addr: address,
+        shipping_addr: shippingAddr,
         items: orderItems,
         subtotal: serverSubtotal,
         shipping_cost: serverShipping,
@@ -491,7 +511,7 @@ export async function POST(req: NextRequest) {
         customer_name: name,
         customer_email: email,
         customer_phone: phone ?? null,
-        shipping_addr: address,
+        shipping_addr: shippingAddr,
         items: orderItems,
         subtotal: serverSubtotal,
         shipping_cost: serverShipping,
@@ -537,7 +557,7 @@ export async function POST(req: NextRequest) {
         tenant_id: tenantId,
         customer_id: customerId,
         customer_name: name, customer_email: email, customer_phone: phone ?? null,
-        shipping_addr: address, items: orderItems, subtotal: serverSubtotal, shipping_cost: serverShipping, discount: effectiveDiscount, total: effectiveTotal,
+        shipping_addr: shippingAddr, items: orderItems, subtotal: serverSubtotal, shipping_cost: serverShipping, discount: effectiveDiscount, total: effectiveTotal,
         payment_method: 'tucompra', skydropx_rate_id, carrier_name, ...creditOrderFields,
       }, getMachineDb(tenantId))
       orderWasCreated = true
@@ -665,7 +685,7 @@ export async function POST(req: NextRequest) {
       customer_name: name,
       customer_email: email,
       customer_phone: phone ?? null,
-      shipping_addr: address,
+      shipping_addr: shippingAddr,
       items: orderItems,
       subtotal: serverSubtotal,
       shipping_cost: serverShipping,
