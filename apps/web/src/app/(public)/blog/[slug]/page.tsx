@@ -11,7 +11,8 @@ import ShareWhatsApp from '@/components/blog/ShareWhatsApp'
 import { markdownToHtml } from '@/lib/markdown'
 import { buildArticleJsonLd } from '@/lib/json-ld'
 import { formatDate } from '@merkiai/i18n'
-import { localize, localizeOne, resolveBaseSlug, alternatesFor, pathInRequestLocale } from '@/lib/request-locale'
+import { localize, localizeOne, resolveBaseSlug, alternatesFor, pathInRequestLocale, getPageLang } from '@/lib/request-locale'
+import { getT } from '@/lib/i18n-server'
 
 interface Props {
   params: Promise<{ slug: string }>
@@ -69,6 +70,9 @@ export const dynamic = 'force-dynamic'
 export default async function BlogPostPage({ params }: Props) {
   const { slug } = await params
   const draftMode = await isPreviewMode()
+  // E28 · HU-465 · textos y fechas en el idioma de la petición.
+  const t = await getT('web.blog')
+  const locale = await getPageLang().catch(() => 'es-CO')
 
   const ctx = await getStoreContext().catch(() => null)
   if (!ctx) notFound()
@@ -114,7 +118,7 @@ export default async function BlogPostPage({ params }: Props) {
       {/* Draft mode banner */}
       {draftMode && !post.published && (
         <div className="bg-amber-400 text-amber-900 text-center py-2.5 px-4 font-brand text-sm font-semibold inline-flex items-center justify-center gap-2 w-full">
-          <Icon name="alert" size={15} /> Modo borrador — Este artículo no está publicado. Solo tú puedes verlo.
+          <Icon name="alert" size={15} /> {t('draft')}
         </div>
       )}
 
@@ -128,7 +132,7 @@ export default async function BlogPostPage({ params }: Props) {
       <div className="max-w-3xl mx-auto px-4 sm:px-6 py-16">
         {/* Breadcrumb */}
         <nav className="font-brand text-sm text-brand-primary/50 flex gap-2 mb-8">
-          <Link href="/blog" className="hover:text-brand-primary">Blog</Link>
+          <Link href="/blog" className="hover:text-brand-primary">{t('title')}</Link>
           {post.category && (
             <>
               <span>/</span>
@@ -146,6 +150,7 @@ export default async function BlogPostPage({ params }: Props) {
           <p className="font-brand text-sm text-brand-primary/40 mb-3">
             {post.published_at
               ? formatDate(post.published_at, {
+                locale,
                   weekday: 'long', day: 'numeric', month: 'long', year: 'numeric',
                 })
               : ''}
@@ -170,7 +175,7 @@ export default async function BlogPostPage({ params }: Props) {
         {/* Compartir */}
         {post.published && (
           <div className="mt-12 pt-8 border-t border-brand-primary/10 flex items-center gap-4">
-            <p className="font-brand text-sm text-brand-primary/50">Compartir:</p>
+            <p className="font-brand text-sm text-brand-primary/50">{t('share')}</p>
             <ShareWhatsApp title={post.title} />
           </div>
         )}
@@ -178,7 +183,7 @@ export default async function BlogPostPage({ params }: Props) {
         {/* Artículos relacionados */}
         {related.length > 0 && (
           <div className="mt-16">
-            <h2 className="font-display text-brand-primary text-2xl mb-6">Artículos relacionados</h2>
+            <h2 className="font-display text-brand-primary text-2xl mb-6">{t('related')}</h2>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               {related.map((p) => (
                 <Link key={p.id} href={`/blog/${p.slug}`} className="group bg-white rounded-2xl p-5 shadow-sm hover:shadow-card transition-shadow">
@@ -186,7 +191,7 @@ export default async function BlogPostPage({ params }: Props) {
                     {p.title}
                   </p>
                   <p className="font-brand text-xs text-brand-primary/40">
-                    {p.published_at ? formatDate(p.published_at, { day: 'numeric', month: 'long' }) : ''}
+                    {p.published_at ? formatDate(p.published_at, { day: 'numeric', month: 'long', locale }) : ''}
                   </p>
                 </Link>
               ))}

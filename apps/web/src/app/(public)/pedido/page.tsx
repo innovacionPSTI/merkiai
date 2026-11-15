@@ -7,15 +7,9 @@
  */
 import { useState } from 'react'
 import { formatMoney, formatDate } from '@merkiai/i18n'
+import { useT, useLocale } from '@/components/i18n/I18nProvider'
 
-const fmt = (n: number) =>
-  formatMoney(n)
-const fmtDate = (s: string) => formatDate(s, { day: 'numeric', month: 'long', year: 'numeric' })
-
-const STATUS_LABEL: Record<string, string> = {
-  pending: 'Pendiente', processing: 'En preparación', shipped: 'En camino',
-  delivered: 'Entregado', cancelled: 'Cancelado', exception: 'Inconveniente',
-}
+const KNOWN_STATUS = ['pending', 'processing', 'shipped', 'delivered', 'cancelled', 'exception']
 
 interface GuestOrder {
   order_number: string; status: string; payment_status: string | null; created_at: string
@@ -24,6 +18,12 @@ interface GuestOrder {
 }
 
 export default function GuestOrderLookupPage() {
+  // E28 · HU-465 · textos, fechas y montos en el idioma de la petición.
+  const t = useT('web.track')
+  const to = useT('web.orders')
+  const locale = useLocale()
+  const fmt = (n: number) => formatMoney(n, { locale })
+  const fmtDate = (s: string) => formatDate(s, { day: 'numeric', month: 'long', year: 'numeric', locale })
   const [orderNumber, setOrderNumber] = useState('')
   const [email, setEmail] = useState('')
   const [loading, setLoading] = useState(false)
@@ -39,35 +39,35 @@ export default function GuestOrderLookupPage() {
         body: JSON.stringify({ order_number: orderNumber, email }),
       })
       const data = await res.json()
-      if (!res.ok) { setError(data.error ?? 'No se pudo consultar el pedido.'); return }
+      if (!res.ok) { setError(data.error ?? t('error')); return }
       setOrder(data.order)
     } catch {
-      setError('No se pudo consultar el pedido.')
+      setError(t('error'))
     } finally { setLoading(false) }
   }
 
   return (
     <div className="min-h-screen bg-brand-cream pt-24">
       <div className="max-w-xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
-        <h1 className="font-display text-brand-primary text-section mb-2">Consultar mi pedido</h1>
+        <h1 className="font-display text-brand-primary text-section mb-2">{t('title')}</h1>
         <p className="font-brand text-sm text-brand-primary/50 mb-8">
-          Ingresa el número de pedido y el correo con el que compraste para ver su estado.
+          {t('intro')}
         </p>
 
         <form onSubmit={submit} className="bg-white rounded-2xl shadow-sm p-6 space-y-4">
           <div>
-            <label className="font-brand text-xs text-brand-primary/50 block mb-1">Número de pedido</label>
+            <label className="font-brand text-xs text-brand-primary/50 block mb-1">{t('number')}</label>
             <input
               value={orderNumber} onChange={(e) => setOrderNumber(e.target.value)}
-              placeholder="Ej: ORD-0042"
+              placeholder={t('number_placeholder')}
               className="w-full border border-gray-200 rounded-xl px-4 py-2.5 font-brand text-sm text-brand-primary focus:outline-none focus:border-brand-primary"
             />
           </div>
           <div>
-            <label className="font-brand text-xs text-brand-primary/50 block mb-1">Correo electrónico</label>
+            <label className="font-brand text-xs text-brand-primary/50 block mb-1">{t('email')}</label>
             <input
               type="email" value={email} onChange={(e) => setEmail(e.target.value)}
-              placeholder="tu@correo.com"
+              placeholder={t('email_placeholder')}
               className="w-full border border-gray-200 rounded-xl px-4 py-2.5 font-brand text-sm text-brand-primary focus:outline-none focus:border-brand-primary"
             />
           </div>
@@ -76,7 +76,7 @@ export default function GuestOrderLookupPage() {
             type="submit" disabled={loading}
             className="w-full font-brand text-sm bg-brand-primary text-brand-cream rounded-full py-3 hover:bg-brand-dark transition-colors disabled:opacity-50"
           >
-            {loading ? 'Consultando…' : 'Consultar pedido'}
+            {loading ? t('loading') : t('submit')}
           </button>
         </form>
 
@@ -84,17 +84,17 @@ export default function GuestOrderLookupPage() {
           <div className="bg-white rounded-2xl shadow-sm p-6 mt-6">
             <div className="flex items-center justify-between mb-4">
               <div>
-                <p className="font-brand text-xs text-brand-primary/40 uppercase tracking-wider">Pedido</p>
+                <p className="font-brand text-xs text-brand-primary/40 uppercase tracking-wider">{to('order')}</p>
                 <p className="font-display text-brand-primary text-xl">{order.order_number}</p>
               </div>
               <span className="font-brand text-sm font-medium bg-brand-cream text-brand-primary rounded-full px-3 py-1">
-                {STATUS_LABEL[order.status] ?? order.status}
+                {KNOWN_STATUS.includes(order.status) ? to(`status_${order.status}`) : order.status}
               </span>
             </div>
-            <p className="font-brand text-xs text-brand-primary/50">Fecha: {fmtDate(order.created_at)}</p>
+            <p className="font-brand text-xs text-brand-primary/50">{t('date', { date: fmtDate(order.created_at) })}</p>
             {order.tracking_number && (
               <p className="font-brand text-sm text-brand-primary mt-2">
-                Guía: <strong>{order.tracking_number}</strong>{order.carrier_name ? ` · ${order.carrier_name}` : ''}
+                {to('guide')}: <strong>{order.tracking_number}</strong>{order.carrier_name ? ` · ${order.carrier_name}` : ''}
               </p>
             )}
             <hr className="border-brand-primary/10 my-4" />
@@ -107,7 +107,7 @@ export default function GuestOrderLookupPage() {
             </ul>
             <hr className="border-brand-primary/10 my-4" />
             <div className="flex justify-between font-brand font-bold text-brand-primary">
-              <span>Total</span><span>{fmt(order.total)}</span>
+              <span>{to('total')}</span><span>{fmt(order.total)}</span>
             </div>
           </div>
         )}

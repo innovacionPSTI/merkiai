@@ -4,6 +4,8 @@ import Link from 'next/link'
 import type { Metadata } from 'next'
 import { formatDate } from '@merkiai/i18n'
 import { localize, alternatesFor } from '@/lib/request-locale'
+import { getT } from '@/lib/i18n-server'
+import { getPageLang } from '@/lib/request-locale'
 
 export async function generateMetadata(): Promise<Metadata> {
   return {
@@ -25,6 +27,9 @@ export default async function BlogPage({
   searchParams: Promise<Record<string, string | undefined>>
 }) {
   const { categoria: category } = await searchParams
+  // E28 · HU-465 · textos y fechas en el idioma de la petición.
+  const t = await getT('web.blog')
+  const locale = await getPageLang().catch(() => 'es-CO')
   const ctx = await getStoreContext().catch(() => null)
   const posts = ctx ? await getBlogPosts({ category, limit: 20 }, ctx.db).then((rows) => localize(ctx.db, 'blog_post', rows)).catch(() => []) : []
   const featured = posts[0]
@@ -36,14 +41,14 @@ export default async function BlogPage({
         {/* Header */}
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-6 mb-12">
           <h1 className="font-display text-brand-primary text-section">
-            Blog
+            {t('title')}
           </h1>
           <div className="flex flex-wrap gap-2">
             <Link
               href="/blog"
               className={`rounded-full px-4 py-1.5 font-brand text-sm border transition-colors ${!category ? 'bg-brand-primary text-brand-cream border-brand-primary' : 'border-brand-primary/20 text-brand-primary hover:border-brand-primary'}`}
             >
-              Todos
+              {t('all')}
             </Link>
             {CATEGORIES.map((cat) => (
               <Link
@@ -59,7 +64,7 @@ export default async function BlogPage({
 
         {posts.length === 0 ? (
           <p className="font-brand text-brand-primary/40 text-center py-24 text-xl">
-            No hay artículos publicados aún.
+            {t('empty')}
           </p>
         ) : (
           <>
@@ -78,7 +83,7 @@ export default async function BlogPage({
                   </div>
                   <div className="lg:w-1/2 p-8 lg:p-12 flex flex-col justify-center">
                     <span className="font-brand text-xs text-brand-primary/40 uppercase tracking-wider mb-3">
-                      Artículo destacado
+                      {t('featured')}
                     </span>
                     <h2 className="font-brand font-semibold text-brand-primary text-2xl lg:text-3xl mb-4 group-hover:text-brand-dark transition-colors">
                       {featured.title}
@@ -91,10 +96,10 @@ export default async function BlogPage({
                     <div className="flex items-center justify-between">
                       <p className="font-brand text-xs text-brand-primary/40">
                         {featured.published_at
-                          ? formatDate(featured.published_at, { day: 'numeric', month: 'long', year: 'numeric' })
+                          ? formatDate(featured.published_at, { day: 'numeric', month: 'long', year: 'numeric', locale })
                           : ''}
                       </p>
-                      <span className="font-brand text-sm text-brand-primary underline">Leer más →</span>
+                      <span className="font-brand text-sm text-brand-primary underline">{t('read_more')}</span>
                     </div>
                   </div>
                 </div>
@@ -118,13 +123,13 @@ export default async function BlogPage({
                     <div className="p-5">
                       <p className="font-brand text-xs text-brand-primary/40 mb-1">
                         {post.published_at
-                          ? formatDate(post.published_at, { day: 'numeric', month: 'long', year: 'numeric' })
+                          ? formatDate(post.published_at, { day: 'numeric', month: 'long', year: 'numeric', locale })
                           : ''}
                       </p>
                       <h3 className="font-brand font-semibold text-brand-primary mb-2 group-hover:text-brand-dark transition-colors line-clamp-2">
                         {post.title}
                       </h3>
-                      <span className="font-brand text-xs text-brand-primary/60 underline">Leer más →</span>
+                      <span className="font-brand text-xs text-brand-primary/60 underline">{t('read_more')}</span>
                     </div>
                   </Link>
                 ))}

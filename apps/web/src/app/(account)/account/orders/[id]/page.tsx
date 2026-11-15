@@ -6,7 +6,9 @@ import { getOrderById } from '@merkiai/database'
 import type { OrderItem } from '@merkiai/database'
 import { getRequestUserDb } from '@/lib/tenant-db'
 import ReorderButton from '@/components/account/ReorderButton'
-import { formatMoney, formatDate } from '@merkiai/i18n'
+import { formatMoney, formatDate, formatAddress } from '@merkiai/i18n'
+import { getT } from '@/lib/i18n-server'
+import { getPageLang } from '@/lib/request-locale'
 
 export const metadata: Metadata = { title: 'Detalle del pedido' }
 export const dynamic = 'force-dynamic'
@@ -15,11 +17,9 @@ export const dynamic = 'force-dynamic'
 
 type OrderStatus = 'pending' | 'processing' | 'shipped' | 'delivered' | 'cancelled' | 'exception'
 
-const STATUS_STEPS: Array<{ key: OrderStatus; label: string; desc: string }> = [
-  { key: 'pending',    label: 'Pedido recibido',   desc: 'Tu pedido fue registrado y el pago está siendo procesado.' },
-  { key: 'processing', label: 'En preparación',    desc: 'Estamos empacando tu pedido con mucho cuidado.' },
-  { key: 'shipped',    label: 'En camino',          desc: 'Tu pedido fue despachado y está en camino a tu dirección.' },
-  { key: 'delivered',  label: 'Entregado',          desc: '¡Tu pedido llegó! Esperamos que lo disfrutes.' },
+// HU-465 · etiquetas en el catálogo `web.orders.step_<estado>` (+ `_desc`).
+const STATUS_STEPS: Array<{ key: OrderStatus }> = [
+  { key: 'pending' }, { key: 'processing' }, { key: 'shipped' }, { key: 'delivered' },
 ]
 
 const STATUS_COLORS: Record<string, { badge: string; dot: string; ring: string }> = {
@@ -35,12 +35,8 @@ function statusIndex(s: string): number {
   return STATUS_STEPS.findIndex((step) => step.key === s)
 }
 
-const COP = { format: (n: number) => formatMoney(n) }
-
-function fmt(date: string) {
-  return formatDate(date, {
-    day: 'numeric', month: 'long', year: 'numeric',
-  })
+function fmtIn(locale: string) {
+  return (date: string) => formatDate(date, { day: 'numeric', month: 'long', year: 'numeric', locale })
 }
 
 // ── Page ─────────────────────────────────────────────────────────────────────
@@ -51,6 +47,11 @@ interface Props {
 
 export default async function PedidoDetailPage({ params }: Props) {
   const { id } = await params
+  // E28 · HU-465 · textos, fechas y montos en el idioma de la petición.
+  const t = await getT('web.orders')
+  const locale = await getPageLang().catch(() => 'es-CO')
+  const COP = { format: (n: number) => formatMoney(n, { locale }) }
+  const fmt = fmtIn(locale)
 
   const user = await stackServerApp.getUser()
   if (!user) redirect('/login')
@@ -82,16 +83,12 @@ export default async function PedidoDetailPage({ params }: Props) {
           </svg>
         </Link>
         <div>
-          <p className="font-brand text-xs text-brand-primary/40 uppercase tracking-wider">Pedido</p>
+          <p className="font-brand text-xs text-brand-primary/40 uppercase tracking-wider">{t('order')}</p>
           <h1 className="font-display text-brand-primary text-2xl leading-tight">{order.order_number}</h1>
         </div>
         <span className={`ml-auto inline-flex items-center gap-1.5 font-brand text-xs font-medium rounded-full px-3 py-1 ${st.badge}`}>
           <span className={`w-1.5 h-1.5 rounded-full ${st.dot}`} />
-          {order.status === 'pending' ? 'Pendiente' :
-           order.status === 'processing' ? 'En preparación' :
-           order.status === 'shipped' ? 'En camino' :
-           order.status === 'delivered' ? 'Entregado' :
-           order.status === 'cancelled' ? 'Cancelado' : 'Excepción'}
+          {t(`status_${['pending', 'processing', 'shipped', 'delivered', 'cancelled'].includes(order.status) ? order.status : 'exception'}`)}
         </span>
       </div>
 
@@ -107,7 +104,7 @@ export default async function PedidoDetailPage({ params }: Props) {
       {/* Timeline */}
       {!isCancelled && (
         <div className="bg-white rounded-2xl p-6 shadow-sm">
-          <h2 className="font-brand font-semibold text-brand-primary mb-6">Estado del pedido</h2>
+          <h2 className="font-brand font-semibold text-brand-primary mb-6">{t('status_title')}</h2>
           <div className="relative">
             {/* Línea de fondo */}
             <div className="absolute left-4 top-4 bottom-4 w-0.5 bg-brand-primary/10" />
@@ -147,10 +144,10 @@ export default async function PedidoDetailPage({ params }: Props) {
                     {/* Content */}
                     <div className="pt-1 pb-2 min-h-[2rem]">
                       <p className={`font-brand font-semibold text-sm ${done ? 'text-brand-primary' : 'text-brand-primary/30'}`}>
-                        {step.label}
+                        {t(`step_${step.key}`)}
                       </p>
                       {current && (
-                        <p className="font-brand text-xs text-brand-primary/50 mt-0.5">{step.desc}</p>
+                        <p className="font-brand text-xs text-brand-primary/50 mt-0.5">{t(`step_${step.key}_desc`)}</p>
                       )}
                     </div>
                   </div>
@@ -168,7 +165,7 @@ export default async function PedidoDetailPage({ params }: Props) {
                   <path strokeLinecap="round" strokeLinejoin="round" d="M13 16V6a1 1 0 00-1-1H4a1 1 0 00-1 1v10l2 2m8-12h3l3 4v4h-2m-4 0H9" />
                 </svg>
                 <div>
-                  <p className="font-brand text-xs text-brand-primary/40">Número de guía</p>
+                  <p className="font-brand text-xs text-brand-primary/40">{t('tracking')}</p>
                   <p className="font-brand font-semibold text-brand-primary font-mono tracking-wide">
                     {order.tracking_number}
                   </p>
@@ -188,17 +185,17 @@ export default async function PedidoDetailPage({ params }: Props) {
       {isCancelled && (
         <div className="bg-red-50 border border-red-100 rounded-2xl p-5">
           <p className="font-brand font-semibold text-red-700">
-            {order.status === 'cancelled' ? 'Pedido cancelado' : 'Excepción en el envío'}
+            {order.status === 'cancelled' ? t('cancelled_title') : t('exception_title')}
           </p>
           <p className="font-brand text-sm text-red-600/80 mt-1">
-            Si tienes preguntas, contáctanos con el número de pedido <strong>{order.order_number}</strong>.
+            {t('contact_us', { number: order.order_number })}
           </p>
         </div>
       )}
 
       {/* Resumen del pedido */}
       <div className="bg-white rounded-2xl p-6 shadow-sm">
-        <h2 className="font-brand font-semibold text-brand-primary mb-4">Productos</h2>
+        <h2 className="font-brand font-semibold text-brand-primary mb-4">{t('products')}</h2>
         <div className="space-y-3">
           {order.items.map((item, i) => (
             <div key={i} className="flex items-center justify-between gap-3">
@@ -215,21 +212,21 @@ export default async function PedidoDetailPage({ params }: Props) {
 
         <div className="mt-4 pt-4 border-t border-brand-primary/8 space-y-1.5">
           <div className="flex justify-between font-brand text-sm text-brand-primary/60">
-            <span>Subtotal</span>
+            <span>{t('subtotal')}</span>
             <span>{COP.format(order.subtotal)}</span>
           </div>
           {order.discount > 0 && (
             <div className="flex justify-between font-brand text-sm text-green-600">
-              <span>Descuento</span>
+              <span>{t('discount')}</span>
               <span>−{COP.format(order.discount)}</span>
             </div>
           )}
           <div className="flex justify-between font-brand text-sm text-brand-primary/60">
-            <span>Envío</span>
-            <span>{order.shipping_cost === 0 ? 'Gratis' : COP.format(order.shipping_cost)}</span>
+            <span>{t('shipping')}</span>
+            <span>{order.shipping_cost === 0 ? t('free') : COP.format(order.shipping_cost)}</span>
           </div>
           <div className="flex justify-between font-brand font-bold text-brand-primary pt-1.5 border-t border-brand-primary/8">
-            <span>Total</span>
+            <span>{t('total')}</span>
             <span>{COP.format(order.total)}</span>
           </div>
         </div>
@@ -237,43 +234,38 @@ export default async function PedidoDetailPage({ params }: Props) {
 
       {/* Dirección de envío */}
       <div className="bg-white rounded-2xl p-6 shadow-sm">
-        <h2 className="font-brand font-semibold text-brand-primary mb-3">Dirección de entrega</h2>
+        <h2 className="font-brand font-semibold text-brand-primary mb-3">{t('address')}</h2>
         <p className="font-brand text-sm text-brand-primary font-medium">{order.customer_name}</p>
-        <p className="font-brand text-sm text-brand-primary/60 mt-0.5">
-          {order.shipping_addr.address}
-        </p>
-        <p className="font-brand text-sm text-brand-primary/60">
-          {order.shipping_addr.city}, {order.shipping_addr.department}
-          {order.shipping_addr.postal_code ? ` — ${order.shipping_addr.postal_code}` : ''}
-        </p>
+        {/* HU-468 · dirección en el formato de su país */}
+        {formatAddress(order.shipping_addr, { locale, includeCountry: !!order.shipping_addr.country && order.shipping_addr.country !== 'CO' }).map((line, i) => (
+          <p key={i} className={`font-brand text-sm text-brand-primary/60${i === 0 ? ' mt-0.5' : ''}`}>{line}</p>
+        ))}
       </div>
 
       {/* Info de pago */}
       <div className="bg-white rounded-2xl p-6 shadow-sm">
-        <h2 className="font-brand font-semibold text-brand-primary mb-3">Información de pago</h2>
+        <h2 className="font-brand font-semibold text-brand-primary mb-3">{t('payment')}</h2>
         <div className="space-y-1.5 font-brand text-sm">
           <div className="flex justify-between">
-            <span className="text-brand-primary/50">Estado</span>
+            <span className="text-brand-primary/50">{t('payment_status')}</span>
             <span className={`font-medium ${order.payment_status === 'approved' ? 'text-green-600' : order.payment_status === 'rejected' ? 'text-red-600' : 'text-amber-600'}`}>
-              {order.payment_status === 'approved' ? 'Aprobado' :
-               order.payment_status === 'rejected' ? 'Rechazado' :
-               order.payment_status === 'refunded' ? 'Reembolsado' : 'Pendiente'}
+              {t(`pay_${['approved', 'rejected', 'refunded'].includes(order.payment_status ?? '') ? order.payment_status : 'pending'}`)}
             </span>
           </div>
           {order.payment_method && (
             <div className="flex justify-between">
-              <span className="text-brand-primary/50">Método</span>
+              <span className="text-brand-primary/50">{t('method')}</span>
               <span className="text-brand-primary font-medium capitalize">{order.payment_method}</span>
             </div>
           )}
           {order.payment_id && (
             <div className="flex justify-between">
-              <span className="text-brand-primary/50">Referencia</span>
+              <span className="text-brand-primary/50">{t('reference')}</span>
               <span className="text-brand-primary font-mono text-xs">{order.payment_id}</span>
             </div>
           )}
           <div className="flex justify-between">
-            <span className="text-brand-primary/50">Fecha</span>
+            <span className="text-brand-primary/50">{t('date')}</span>
             <span className="text-brand-primary">{fmt(order.created_at)}</span>
           </div>
         </div>

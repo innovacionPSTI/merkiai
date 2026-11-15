@@ -6,20 +6,25 @@ import { getRequestUserDb } from '@/lib/tenant-db'
 import { resolveTenant } from '@/lib/tenant-context';
 import { getMachineDb } from '@/lib/machine-db'
 import { formatMoney, formatDate } from '@merkiai/i18n'
+import { getT } from '@/lib/i18n-server'
+import { getPageLang } from '@/lib/request-locale'
 
 export const metadata: Metadata = { title: 'Mis pedidos' }
 
-const STATUS: Record<string, { label: string; color: string; dot: string }> = {
-  pending:    { label: 'Pendiente',  color: 'bg-amber-50 text-amber-700',   dot: 'bg-amber-400' },
-  processing: { label: 'Preparando', color: 'bg-blue-50 text-blue-700',     dot: 'bg-blue-400' },
-  shipped:    { label: 'En camino',  color: 'bg-violet-50 text-violet-700', dot: 'bg-violet-400' },
-  delivered:  { label: 'Entregado',  color: 'bg-green-50 text-green-700',   dot: 'bg-green-400' },
-  cancelled:  { label: 'Cancelado',  color: 'bg-red-50 text-red-600',       dot: 'bg-red-400' },
+const STATUS: Record<string, { color: string; dot: string }> = {
+  pending:    { color: 'bg-amber-50 text-amber-700',   dot: 'bg-amber-400' },
+  processing: { color: 'bg-blue-50 text-blue-700',     dot: 'bg-blue-400' },
+  shipped:    { color: 'bg-violet-50 text-violet-700', dot: 'bg-violet-400' },
+  delivered:  { color: 'bg-green-50 text-green-700',   dot: 'bg-green-400' },
+  cancelled:  { color: 'bg-red-50 text-red-600',       dot: 'bg-red-400' },
 }
 
-const COP = { format: (n: number) => formatMoney(n) }
 
 export default async function PedidosPage() {
+  // E28 · HU-465 · textos, fechas y montos en el idioma de la petición.
+  const t = await getT('web.orders')
+  const locale = await getPageLang().catch(() => 'es-CO')
+  const COP = { format: (n: number) => formatMoney(n, { locale }) }
   const user = await stackServerApp.getUser()
 
   // HU-156: provisioning del cliente (vincula por stack_id/email + reclama
@@ -45,11 +50,9 @@ export default async function PedidosPage() {
     <div className="space-y-6">
       {/* Header */}
       <div>
-        <h1 className="font-display text-brand-primary text-3xl lg:text-4xl">Mis pedidos</h1>
+        <h1 className="font-display text-brand-primary text-3xl lg:text-4xl">{t('my_orders')}</h1>
         <p className="font-brand text-sm text-brand-primary/50 mt-1">
-          {orders.length > 0
-            ? `${orders.length} pedido${orders.length !== 1 ? 's' : ''} en tu historial`
-            : 'Tu historial de compras aparecerá aquí'}
+          {orders.length > 0 ? t('history_count', { count: orders.length }) : t('history_empty')}
         </p>
       </div>
 
@@ -61,15 +64,15 @@ export default async function PedidosPage() {
               <path strokeLinecap="round" strokeLinejoin="round" d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z" />
             </svg>
           </div>
-          <p className="font-brand font-semibold text-brand-primary mb-1">Aún no tienes pedidos</p>
+          <p className="font-brand font-semibold text-brand-primary mb-1">{t('empty')}</p>
           <p className="font-brand text-sm text-brand-primary/50 mb-6">
-            Explora nuestro catálogo y encuentra lo que buscas
+            {t('empty_hint')}
           </p>
           <Link
             href="/shop"
             className="inline-flex items-center gap-2 bg-brand-primary text-brand-cream rounded-full px-6 py-2.5 font-brand text-sm hover:bg-brand-dark transition-colors"
           >
-            Ir a la tienda
+            {t('go_shop')}
             <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" />
             </svg>
@@ -78,7 +81,7 @@ export default async function PedidosPage() {
       ) : (
         <div className="space-y-3">
           {orders.map((order) => {
-            const st = STATUS[order.status] ?? { label: order.status, color: 'bg-gray-50 text-gray-600', dot: 'bg-gray-400' }
+            const st = { label: t(`status_${STATUS[order.status] ? order.status : 'exception'}`), ...(STATUS[order.status] ?? { color: 'bg-gray-50 text-gray-600', dot: 'bg-gray-400' }) }
 
             return (
               <Link
@@ -94,11 +97,7 @@ export default async function PedidosPage() {
                       {order.order_number}
                     </p>
                     <p className="font-brand text-xs text-brand-primary/40 mt-0.5">
-                      {formatDate(order.created_at, {
-                        day: 'numeric',
-                        month: 'long',
-                        year: 'numeric',
-                      })}
+                      {formatDate(order.created_at, { day: 'numeric', month: 'long', year: 'numeric', locale })}
                     </p>
                   </div>
 

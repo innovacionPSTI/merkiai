@@ -5,6 +5,7 @@ import { ensureCustomer } from '@merkiai/database'
 import { getRequestUserDb } from '@/lib/tenant-db'
 import { resolveTenant } from '@/lib/tenant-context'
 import { getMachineDb } from '@/lib/machine-db'
+import { getT } from '@/lib/i18n-server'
 
 export const metadata: Metadata = { title: 'Mi perfil' }
 
@@ -58,6 +59,7 @@ async function getDefaultAddress(
 }
 
 export default async function MiCuentaPage() {
+  const t = await getT('web.account')
   const user = await stackServerApp.getUser()
 
   const displayName = user?.displayName ?? ''
@@ -80,10 +82,10 @@ export default async function MiCuentaPage() {
       {/* Header */}
       <div>
         <h1 className="font-display text-brand-primary text-3xl lg:text-4xl">
-          Hola, {firstName}
+          {t('hello', { name: firstName })}
         </h1>
         <p className="font-brand text-sm text-brand-primary/50 mt-1">
-          Aquí puedes gestionar tu cuenta y revisar tus pedidos
+          {t('intro')}
         </p>
       </div>
 
@@ -100,9 +102,9 @@ export default async function MiCuentaPage() {
                   <path strokeLinecap="round" strokeLinejoin="round" d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z" />
                 </svg>
               </div>
-              <p className="font-brand font-semibold text-brand-primary">Mis pedidos</p>
+              <p className="font-brand font-semibold text-brand-primary">{t('nav_orders')}</p>
               <p className="font-brand text-xs text-brand-primary/50 mt-0.5">
-                Historial y estado de tus compras
+                {t('orders_hint')}
               </p>
             </div>
             <svg className="w-4 h-4 text-brand-primary/30 group-hover:text-brand-primary transition-colors mt-1" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
@@ -123,9 +125,9 @@ export default async function MiCuentaPage() {
                   <path strokeLinecap="round" strokeLinejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
                 </svg>
               </div>
-              <p className="font-brand font-semibold text-brand-primary">Seguridad</p>
+              <p className="font-brand font-semibold text-brand-primary">{t('security')}</p>
               <p className="font-brand text-xs text-brand-primary/50 mt-0.5">
-                Cambia tu contraseña y datos de acceso
+                {t('security_hint')}
               </p>
             </div>
             <svg className="w-4 h-4 text-brand-primary/30 group-hover:text-brand-primary transition-colors mt-1" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
@@ -138,7 +140,7 @@ export default async function MiCuentaPage() {
       {/* Datos del perfil */}
       <div className="bg-white rounded-2xl shadow-sm overflow-hidden">
         <div className="flex items-center justify-between px-6 py-4 border-b border-brand-primary/8">
-          <h2 className="font-brand font-semibold text-brand-primary">Mis datos</h2>
+          <h2 className="font-brand font-semibold text-brand-primary">{t('my_data')}</h2>
           <Link
             href="/account/settings"
             className="font-brand text-sm text-brand-primary/60 hover:text-brand-primary transition-colors flex items-center gap-1"
@@ -146,22 +148,22 @@ export default async function MiCuentaPage() {
             <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
             </svg>
-            Editar
+            {t('edit')}
           </Link>
         </div>
         <div className="px-6 py-5 space-y-4">
           <div className="flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-4">
             <span className="font-brand text-xs text-brand-primary/40 sm:w-20 flex-shrink-0 uppercase tracking-wide">
-              Nombre
+              {t('name')}
             </span>
             <span className="font-brand text-sm text-brand-primary">
-              {displayName || <span className="text-brand-primary/30 italic">Sin nombre</span>}
+              {displayName || <span className="text-brand-primary/30 italic">{t('no_name')}</span>}
             </span>
           </div>
           <div className="h-px bg-brand-primary/6" />
           <div className="flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-4">
             <span className="font-brand text-xs text-brand-primary/40 sm:w-20 flex-shrink-0 uppercase tracking-wide">
-              Email
+              {t('email')}
             </span>
             <span className="font-brand text-sm text-brand-primary">{email}</span>
           </div>
@@ -172,16 +174,16 @@ export default async function MiCuentaPage() {
       <div className="bg-white rounded-2xl shadow-sm overflow-hidden">
         <div className="flex items-center justify-between px-6 py-4 border-b border-brand-primary/8">
           <div>
-            <h2 className="font-brand font-semibold text-brand-primary">Dirección de envío</h2>
+            <h2 className="font-brand font-semibold text-brand-primary">{t('address')}</h2>
             <p className="font-brand text-xs text-brand-primary/40 mt-0.5">
-              Dirección predeterminada para tus compras
+              {t('address_hint')}
             </p>
           </div>
           <Link
             href="/account/profile"
             className="font-brand text-xs text-brand-primary/50 hover:text-brand-primary transition-colors flex items-center gap-1"
           >
-            Gestionar
+            {t('manage')}
             <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" />
             </svg>
@@ -203,13 +205,13 @@ export default async function MiCuentaPage() {
           ) : (
             <div className="text-center py-4">
               <p className="font-brand text-sm text-brand-primary/40 mb-3">
-                No tienes ninguna dirección guardada
+                {t('no_address')}
               </p>
               <Link
                 href="/account/profile"
                 className="font-brand text-sm text-brand-primary border border-brand-primary/20 rounded-full px-4 py-2 hover:bg-brand-cream transition-colors"
               >
-                Agregar dirección
+                {t('add_address')}
               </Link>
             </div>
           )}

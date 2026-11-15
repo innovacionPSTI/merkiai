@@ -4,6 +4,7 @@ import { Suspense } from 'react'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import LogoutButton from '@/components/auth/LogoutButton'
+import { useT } from '@/components/i18n/I18nProvider'
 
 interface Props {
   displayName: string
@@ -14,7 +15,7 @@ const navLinks = [
   {
     href: '/account',
     exact: true,
-    label: 'Inicio',
+    label: 'nav_home',
     icon: (
       <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
         <path strokeLinecap="round" strokeLinejoin="round" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" />
@@ -24,7 +25,7 @@ const navLinks = [
   {
     href: '/account/profile',
     exact: false,
-    label: 'Mi perfil',
+    label: 'nav_profile',
     icon: (
       <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
         <path strokeLinecap="round" strokeLinejoin="round" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
@@ -34,7 +35,7 @@ const navLinks = [
   {
     href: '/account/orders',
     exact: false,
-    label: 'Mis pedidos',
+    label: 'nav_orders',
     icon: (
       <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
         <path strokeLinecap="round" strokeLinejoin="round" d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z" />
@@ -44,7 +45,7 @@ const navLinks = [
   {
     href: '/account/settings',
     exact: false,
-    label: 'Configuración',
+    label: 'nav_settings',
     icon: (
       <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
         <path strokeLinecap="round" strokeLinejoin="round" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
@@ -67,6 +68,7 @@ function getInitials(name: string, email: string): string {
 
 export default function AccountSidebar({ displayName, email }: Props) {
   const pathname = usePathname()
+  const t = useT('web.account')
 
   const isActive = (href: string, exact: boolean) =>
     exact ? pathname === href : pathname.startsWith(href)
@@ -90,7 +92,7 @@ export default function AccountSidebar({ displayName, email }: Props) {
               }`}
             >
               {link.icon}
-              {link.label}
+              {t(link.label)}
             </Link>
           )
         })}
@@ -133,7 +135,7 @@ export default function AccountSidebar({ displayName, email }: Props) {
                   <span className={active ? 'text-brand-primary' : 'text-brand-primary/40'}>
                     {link.icon}
                   </span>
-                  {link.label}
+                  {t(link.label)}
                   {active && (
                     <span className="ml-auto w-1.5 h-1.5 rounded-full bg-brand-primary" />
                   )}
@@ -151,7 +153,7 @@ export default function AccountSidebar({ displayName, email }: Props) {
               <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" d="M10 19l-7-7m0 0l7-7m-7 7h18" />
               </svg>
-              Volver a la tienda
+              {t('back_to_shop')}
             </Link>
             <Suspense fallback={null}>
               <LogoutButton />

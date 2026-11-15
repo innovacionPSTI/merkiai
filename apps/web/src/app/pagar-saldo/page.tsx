@@ -1,13 +1,14 @@
 import type { Metadata } from 'next'
-import { verifyReceivableLink, MODALITY_LABEL, type Modality } from '@merkiai/database'
+import { verifyReceivableLink, type Modality } from '@merkiai/database'
 import { resolveTenant } from '@/lib/tenant-context'
 import { getMachineDb } from '@/lib/machine-db'
 import { formatMoney } from '@merkiai/i18n'
+import { getT } from '@/lib/i18n-server'
+import { getPageLang } from '@/lib/request-locale'
 
 export const metadata: Metadata = { title: 'Pagar saldo', robots: { index: false, follow: false } }
 export const dynamic = 'force-dynamic'
 
-const money = (n: number) => formatMoney(n)
 
 /**
  * E27 · HU-455 — Página pública para pagar el saldo de un documento de cartera
@@ -16,6 +17,10 @@ const money = (n: number) => formatMoney(n)
  */
 export default async function PagarSaldoPage({ searchParams }: { searchParams: Promise<{ d?: string; s?: string; estado?: string; error?: string }> }) {
   const sp = await searchParams
+  // E28 · HU-465 · textos y montos en el idioma de la petición.
+  const t = await getT('web.balance')
+  const locale = await getPageLang().catch(() => 'es-CO')
+  const money = (n: number) => formatMoney(n, { locale })
   const { tenantId } = await resolveTenant()
   const documentId = Number(sp.d)
   const valid = verifyReceivableLink(tenantId, documentId, sp.s, process.env.INTERNAL_API_SECRET)
@@ -40,32 +45,32 @@ export default async function PagarSaldoPage({ searchParams }: { searchParams: P
       <div className="w-full max-w-md rounded-2xl bg-white p-8 shadow-sm text-center">
         {!doc ? (
           <>
-            <h1 className="font-display text-2xl text-brand-primary mb-2">Enlace no válido</h1>
-            <p className="font-brand text-sm text-brand-primary/70">El enlace de pago no es válido o ya no está disponible. Pide uno nuevo a la tienda.</p>
+            <h1 className="font-display text-2xl text-brand-primary mb-2">{t('invalid_title')}</h1>
+            <p className="font-brand text-sm text-brand-primary/70">{t('invalid_body')}</p>
           </>
         ) : sp.estado === 'procesando' ? (
           <>
-            <h1 className="font-display text-2xl text-brand-primary mb-2">Estamos confirmando tu pago</h1>
-            <p className="font-brand text-sm text-brand-primary/70">En unos minutos se reflejará en tu saldo. Gracias.</p>
+            <h1 className="font-display text-2xl text-brand-primary mb-2">{t('processing_title')}</h1>
+            <p className="font-brand text-sm text-brand-primary/70">{t('processing_body')}</p>
           </>
         ) : doc.balance <= 0 ? (
           <>
-            <h1 className="font-display text-2xl text-brand-primary mb-2">¡Estás al día!</h1>
-            <p className="font-brand text-sm text-brand-primary/70">{doc.number} no tiene saldo pendiente.</p>
+            <h1 className="font-display text-2xl text-brand-primary mb-2">{t('paid_title')}</h1>
+            <p className="font-brand text-sm text-brand-primary/70">{t('paid_body', { number: doc.number })}</p>
           </>
         ) : (
           <>
-            <p className="font-brand text-xs uppercase tracking-wide text-brand-primary/50">{MODALITY_LABEL[doc.modality]} {doc.number}</p>
-            <h1 className="font-display text-2xl text-brand-primary mt-1">{doc.party ? `Hola, ${doc.party}` : 'Pagar saldo'}</h1>
-            <p className="font-brand text-sm text-brand-primary/70 mt-3">Saldo pendiente</p>
+            <p className="font-brand text-xs uppercase tracking-wide text-brand-primary/50">{t(`modality_${doc.modality}`)} {doc.number}</p>
+            <h1 className="font-display text-2xl text-brand-primary mt-1">{doc.party ? t('hello', { name: doc.party }) : t('title')}</h1>
+            <p className="font-brand text-sm text-brand-primary/70 mt-3">{t('pending')}</p>
             <p className="font-display text-3xl text-brand-primary">{money(doc.balance)}</p>
             {sp.error && <p role="alert" className="mt-3 font-brand text-sm text-red-600">{sp.error}</p>}
             <form action="/api/receivables/pay" method="post" className="mt-6">
               <input type="hidden" name="d" value={documentId} />
               <input type="hidden" name="s" value={sp.s} />
-              <button type="submit" className="w-full rounded-full bg-brand-primary px-6 py-3 font-brand text-sm text-white hover:opacity-90">Pagar {money(doc.balance)}</button>
+              <button type="submit" className="w-full rounded-full bg-brand-primary px-6 py-3 font-brand text-sm text-white hover:opacity-90">{t('pay', { amount: money(doc.balance) })}</button>
             </form>
-            <p className="mt-3 font-brand text-xs text-brand-primary/50">Serás redirigido a la pasarela de pago segura de la tienda.</p>
+            <p className="mt-3 font-brand text-xs text-brand-primary/50">{t('redirect_note')}</p>
           </>
         )}
       </div>
