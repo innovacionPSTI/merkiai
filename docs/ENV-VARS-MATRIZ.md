@@ -2,10 +2,16 @@
 
 > **Guard activo (HU-364):** `pnpm env:check` (y el job de CI) falla si una app usa una variable que no está en su `.env.example`. El rename `CONTROL_PLANE_URL → CONSOLE_URL` está **cerrado**: el nombre viejo ya no se lee (v262).
 >
-> **Estado (v262): casi definitiva.** Ya están en código HU-361 (infra por-tenant desde la
-> consola), HU-362 (vault AWS KMS), el rename `CONTROL_PLANE_URL → CONSOLE_URL` (HU-364) y las
-> variables de **billing PayZen** (HU-440). Falta para congelarla: pasar dominios a Cloudflare (HU-431, ya en código) y
-> separar producción (runbook `docs/GO-LIVE-SAAS.md`, ver §Roadmap).
+> **Estado (v270): casi definitiva.** En código: HU-361 (infra por tenant desde la consola),
+> HU-362 (vault AWS KMS), HU-364 (rename `CONSOLE_URL`), HU-440/441/442 (billing y pasarelas
+> PayZen), HU-431 (Cloudflare for SaaS), HU-432 (storage R2/S3), HU-434 parcial (rate limit en
+> Redis) y hardening v269–v270 (CSP con nonce, RLS de storage). Falta para congelarla: separar
+> producción (runbook `docs/GO-LIVE-SAAS.md`) y activar Cloudflare/R2.
+>
+> **Cambios v269–v270:** nuevas `STORAGE_RLS_ENFORCED` (admin) y `UPSTASH_REDIS_REST_URL` /
+> `UPSTASH_REDIS_REST_TOKEN` (web, opcionales). Retirada `NEXT_PUBLIC_DRAFT_SECRET` (admin). La
+> CSP ya no vive en `next.config` sino en el middleware: `ADMIN_PREVIEW_ORIGIN`,
+> `STOREFRONT_BASE_DOMAIN` y `STORAGE_PUBLIC_BASE_URL` se leen por petición.
 
 ## Leyenda
 
@@ -17,6 +23,7 @@
 - Secretos en **negrita** en la descripción.
 - *(opcional)* — tiene default en código; cargar solo para cambiarlo.
 - **llaves test PayZen** — PayZen solo tiene modo test y producción: dev y test usan las llaves de **test** de la misma tienda.
+- **No cargar** las que pone la plataforma: `NODE_ENV`, `VERCEL_ENV`, `NEXT_RUNTIME` (las lee el código, pero las define Vercel/Next).
 
 ---
 
@@ -113,13 +120,13 @@ Clasificación que **congela HU-364** (y que E26/celdas completa). Hoy solo se r
 | Clase | Variables | Dónde viven |
 |---|---|---|
 | **Bootstrap / root of trust (SIEMPRE en env)** | `AWS_ACCESS_KEY_ID`, `AWS_SECRET_ACCESS_KEY`, `AWS_REGION`, `MERKIAI_VAULT_KEY_ALIAS`, `INTERNAL_API_SECRET` (o `PROVISIONING_API_SECRET`) | env del console (no pueden ir al vault: lo abren) |
-| **Infra por-ambiente (en env; opcional respaldar en Vault)** | Supabase del control-plane (`NEXT_PUBLIC_SUPABASE_URL`+`SERVICE_ROLE_KEY`), Stack (`*HEXCLAVE*`, `NEXT_PUBLIC_STACK_API_URL`), URLs (`CONSOLE_URL`, `*_SITE_URL`, `*_ADMIN_URL`, `STOREFRONT_BASE_DOMAIN`, `NEXT_PUBLIC_ROOT_DOMAIN`), preview (`PREVIEW_SIGNING_SECRET`), flags, `MAINTENANCE_MODE`, `TENANT_RESOLUTION_STRICT` | env por-ambiente |
+| **Infra por-ambiente (en env; opcional respaldar en Vault)** | Supabase del control-plane (`NEXT_PUBLIC_SUPABASE_URL`+`SERVICE_ROLE_KEY`), Stack (`*HEXCLAVE*`, `NEXT_PUBLIC_STACK_API_URL`), URLs (`CONSOLE_URL`, `*_SITE_URL`, `*_ADMIN_URL`, `STOREFRONT_BASE_DOMAIN`, `NEXT_PUBLIC_ROOT_DOMAIN`), preview (`PREVIEW_SIGNING_SECRET`), flags, `MAINTENANCE_MODE`, `TENANT_RESOLUTION_STRICT`, `STORAGE_RLS_ENFORCED`, Redis (`UPSTASH_REDIS_REST_*`) | env por-ambiente |
 | **Billing de plataforma (env del console)** | `PAYZEN_SHOP_ID`, `PAYZEN_PASSWORD`, `PAYZEN_PUBLIC_KEY`, `RESEND_API_KEY`, `BILLING_EMAIL_FROM`, `CRON_SECRET` (+ opcionales `PAYZEN_API_URL`, `BILLING_DUNNING_*`) | env del console; `PAYZEN_PASSWORD` y `RESEND_API_KEY` candidatas a vault en la separación de prod |
 | **Datos de billing por tenant (nunca en env)** | Token del medio de pago del tenant (`paymentMethodToken`) | kms-vault (`subscriptions.payment_token_ref`) |
 | **Pasarelas de venta del tenant (nunca en env)** | PayZen BYO (HU-442): id + contraseña en `integration_instances` de la tienda, como las demás pasarelas. **Merkiai Pagos** (HU-441): contraseña de la tienda PayZen gestionada **en kms-vault** (`merkiai_payment_accounts.password_ref`), servida a web por la consola | BD de tienda / kms-vault |
 | **→ A Vault (secreto, deja de ser env plano)** | Token de Cloudflare (**hecho** HU-431: ref en `platform_settings`); `HOSTING_API_TOKEN` queda como respaldo; **llaves de datos/storage por celda** (anon/service/JWT de la celda, claves S3/R2) — ya hoy por-tenant en vault | kms-vault |
 | **→ A Vault por-celda con E26 (HU-430)** | De **web/admin**: `NEXT_PUBLIC_SUPABASE_URL`, `SUPABASE_SERVICE_ROLE_KEY`, anon key, `SUPABASE_JWT_SECRET` (hoy = la celda compartida por env) → se resuelven **por celda** desde `infra_cells`+vault | kms-vault / `infra_cells` |
-| **Retiro (ya no se usan)** | `CONTROL_PLANE_URL` (web/admin, retirado v262 → borrar en Vercel), `DEFAULT_TENANT_ID` (opcional estricto), `DRAFT_SECRET` (web), `DOMAIN_A_RECORD`/`DOMAIN_CNAME_TARGET`; con Cloudflare: `HOSTING_PROJECT_ID`/`TEAM_ID`/`A_RECORD`/`CNAME_TARGET` | borrar |
+| **Retiro (ya no se usan)** | `CONTROL_PLANE_URL` (web/admin, retirado v262 → borrar en Vercel), `DEFAULT_TENANT_ID` (opcional estricto), `DRAFT_SECRET` (web), `NEXT_PUBLIC_DRAFT_SECRET` (admin, v269), `DOMAIN_A_RECORD`/`DOMAIN_CNAME_TARGET`; con Cloudflare: `HOSTING_PROJECT_ID`/`TEAM_ID`/`A_RECORD`/`CNAME_TARGET` | borrar |
 
 > **Regla:** lo único que **nunca** va al vault es el bootstrap (las llaves que lo abren). Todo
 > lo demás que sea secreto puede respaldarse en vault; las URLs/flags siguen como env por-ambiente.
@@ -145,6 +152,7 @@ Clasificación que **congela HU-364** (y que E26/celdas completa). Hoy solo se r
 - `TENANT_RESOLUTION_STRICT=true` en los tres → `DEFAULT_TENANT_ID` se omite.
 - **Llaves PayZen de producción solo en prod.** dev/test usan las de test: una IPN de test nunca puede activar un tenant real.
 - **Config fuera de env (PayZen):** en el Back Office de PayZen de cada modo, registrar la URL de notificación (IPN) `https://<console del ambiente>/api/billing/payzen/ipn`.
+- **Storage con Supabase:** `STORAGE_RLS_ENFORCED=true` solo después de correr `e17/77_storage_rls.sql` en la BD de tienda del ambiente (sin la migración, las subidas fallan).
 - **Barrido de mora:** Vercel Cron (`apps/console/vercel.json`, diario 11:00 UTC = 6:00 Colombia) llama `GET /api/internal/billing/sweep` con `CRON_SECRET`. Sin `CRON_SECRET` el cron responde 401 (fail-closed). Disparo manual: `POST` con `x-internal-secret`.
 
 ---
@@ -159,6 +167,8 @@ Estado de las HU que mueven esta matriz:
 - **HU-364 — Congelar env vars** 🟡: rename `CONTROL_PLANE_URL → CONSOLE_URL` **cerrado** (alias retirado en v262) y guard `env:check` activo. Falta ejecutar la separación de producción (runbook); el token de dominios ya va al vault con HU-431.
 - **HU-440 — Billing PayZen** 🟡: variables `PAYZEN_*`, `BILLING_*`, `RESEND_API_KEY`, `CRON_SECRET` añadidas (console). Llaves pendientes de PayZen.
 - **HU-431 — Cloudflare for SaaS** 🟡 en código (v263): `HOSTING_PROVIDER=cloudflare` + `HOSTING_ZONE_ID` + `HOSTING_CNAME_TARGET`; token en vault. Al activarlo se retiran `HOSTING_PROJECT_ID`/`TEAM_ID`/`A_RECORD`.
+- **HU-432 — Storage R2/S3** 🟡 en código: `STORAGE_PROVIDER` + `STORAGE_S3_*` + `STORAGE_PUBLIC_BASE_URL`. Con Supabase, `STORAGE_RLS_ENFORCED` (v270).
+- **HU-434 — Redis** 🟡 parcial (v270): `UPSTASH_REDIS_REST_URL`/`_TOKEN` para el rate limit (web). Caché de resolución/ISR pendiente.
 - **HU-430 — Celdas** 🔲: las `SUPABASE_*` de web/admin pasarán a resolverse por celda (vault + `infra_cells`).
 
 **Matiz importante:** incluso con HU-361/362, las variables de **infra por-ambiente**
