@@ -1,6 +1,6 @@
 # Detalle · E28 — Internacionalización y mercados (idiomas, regiones, moneda)
 
-> **Épica:** **E28 · Internacionalización y mercados** (HU-460…468). **Diseño:** **ADR-011**. **Estado:** 🟡 en curso — HU-460 ✅ (v272) · HU-461 ✅ (v273) · HU-468 ✅ (v274).
+> **Épica:** **E28 · Internacionalización y mercados** (HU-460…468). **Diseño:** **ADR-011**. **Estado:** 🟡 en curso — HU-460 ✅ (v272) · HU-461 ✅ (v273) · HU-468 ✅ (v274) · HU-463 ✅ (v275).
 > **Absorbe:** HU-114a → HU-463 · HU-114b → HU-462 · HU-114c → HU-464 (E2).
 > **Construye sobre:** listas de precio (HU-407), multi-dominio (HU-279), schema de bloques del Constructor, correos idempotentes (HU-162), entitlements (ADR-002), middleware con tenant + CSP (v270), IA (HU-118).
 >
@@ -62,7 +62,7 @@
 
 > Como comerciante, quiero traducir productos, categorías, páginas, blog, menús y legales, para que cada versión de mi tienda esté en su idioma.
 
-**Talla:** L · **Módulo:** migraciones `*_translations` (productos, variantes —nombre de opción—, categorías, colecciones, páginas, entradas de blog) con `(tenant_id, entity_id, locale, campos, slug, seo_title, seo_description)` y slug único por `(tenant, locale)`; campos `translatable` en el schema de bloques (mapa por locale en `jsonb`); capa de lectura por locale con fallback; correos y legales por idioma. **Estado:** 🔲
+**Talla:** L · **Módulo:** migraciones `*_translations` (productos, variantes —nombre de opción—, categorías, colecciones, páginas, entradas de blog) con `(tenant_id, entity_id, locale, campos, slug, seo_title, seo_description)` y slug único por `(tenant, locale)`; campos `translatable` en el schema de bloques (mapa por locale en `jsonb`); capa de lectura por locale con fallback; correos y legales por idioma. **Estado:** ✅ en código (v275): migración `e17/80_content_translations.sql` (`product_translations`, `category_translations`, `blog_post_translations`, `page_translations` con slug único por tienda+idioma y RLS; `translations` JSONB en `page_sections`/`section_items`; `orders.locale`). Capa `queries/translations.ts`: fusión campo a campo con cascada **locale → idioma base → contenido por defecto** (un vacío nunca tapa), marca `_translated` para no anunciar en `hreflang` lo no traducido, lote por entidad, **cero consultas en el idioma por defecto**, resolución por **slug traducido**, `saveTranslation` (normaliza slug, borra si queda vacía). Bloques: `localizeSection` aplica solo campos de texto del schema (`translatable`; URLs/imágenes nunca) a la sección y sus ítems. Storefront: PDP (slug base o traducido), listado, relacionados, blog (detalle y lista) y **todas las secciones** (`SectionRenderer`) leen el locale de la petición (`x-locale`, que el middleware limpia para que solo él lo fije en HU-462). *Pendiente:* AC-6 correos por idioma va con HU-465 (ya existe `orders.locale`); variantes, colecciones dinámicas y categorías en facetas, con HU-462/464.
 
 | # | Escenario | Resultado |
 |---|-----------|-----------|
