@@ -17,7 +17,8 @@ const MEDIA_ORIGIN = (() => {
 
 const CSP = [
   "default-src 'self'",
-  `script-src 'self' 'unsafe-inline' 'unsafe-eval' ${PAYZEN}`,
+  // Hardening: 'unsafe-eval' solo en desarrollo (React Refresh); producción sin eval.
+  `script-src 'self' 'unsafe-inline'${process.env.NODE_ENV === 'production' ? '' : " 'unsafe-eval'"} ${PAYZEN}`,
   `style-src 'self' 'unsafe-inline' ${PAYZEN}`,
   `font-src 'self' ${PAYZEN}`,
   `img-src 'self' data: blob: https://*.supabase.co ${PAYZEN} ${MEDIA_ORIGIN}`.trim(),
@@ -27,6 +28,7 @@ const CSP = [
   `frame-src 'self' https://*.${STOREFRONT_BASE} ${PAYZEN}`,
   "frame-ancestors 'none'",
   "base-uri 'self'",
+  "object-src 'none'",
   `form-action 'self' ${PAYZEN}`,
 ].join('; ')
 
@@ -42,6 +44,7 @@ const SECURITY_HEADERS = [
 // ── Config ─────────────────────────────────────────────────────────────────────
 
 const nextConfig: NextConfig = {
+  poweredByHeader: false,
   transpilePackages: ['@merkiai/ui', '@merkiai/database'],
 
   // El barrel @merkiai/database re-exporta utilidades server-only (preview.ts →

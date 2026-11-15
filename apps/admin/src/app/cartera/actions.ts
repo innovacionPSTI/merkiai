@@ -9,7 +9,7 @@ import { revalidatePath } from 'next/cache'
 import {
   createReceivableDocument, registerPayment, deliverLines, reportConsignmentSale, returnConsignment,
   voidDocument, writeOffDocument, adjustDocument, createProductionForLine, suggestLinePrices,
-  getStatement, resolveEmailConfig, sendRawEmail, MODALITY_LABEL, signReceivableLink, createParty, savePartyCredit, saveReceivablesSettings, createLocation,
+  getStatement, resolveEmailConfig, sendRawEmail, MODALITY_LABEL, signReceivableLink, logAudit, createParty, savePartyCredit, saveReceivablesSettings, createLocation,
   isModality, type CreateDocumentInput, type ReceivablePaymentMethod, type ReceivablesSettings,
 } from '@merkiai/database'
 import { requireCartera } from '@/lib/cartera'
@@ -17,11 +17,21 @@ import { resolveStoreBaseUrl } from '@/lib/store-url'
 
 export type ActionResult = { ok: true; id?: number | string; message?: string } | { ok: false; error: string }
 
-async function run(fn: (ctx: Awaited<ReturnType<typeof requireCartera>>) => Promise<ActionResult>, paths: string[] = ['/cartera']): Promise<ActionResult> {
+type AuditSpec = { action: string; entity: string; entityId?: string | number | null; summary?: string; metadata?: Record<string, unknown> }
+
+async function run(fn: (ctx: Awaited<ReturnType<typeof requireCartera>>) => Promise<ActionResult>, paths: string[] = ['/cartera'], audit?: AuditSpec): Promise<ActionResult> {
   try {
     const ctx = await requireCartera()
     const r = await fn(ctx)
     for (const p of paths) revalidatePath(p)
+    // Trazabilidad (SOC 2 CC7 / ISO 27001 A.8.15): operaciones de dinero quedan en la auditoría.
+    if (audit && r.ok) {
+      await logAudit(ctx.db, {
+        tenantId: ctx.tenantId, actorEmail: ctx.adminUser.email, actorRole: ctx.adminUser.role,
+        action: audit.action, entity: audit.entity, entityId: audit.entityId ?? r.id ?? null,
+        summary: audit.summary ?? r.message ?? null, metadata: audit.metadata,
+      })
+    }
     return r
   } catch (e) {
     // redirect()/notFound() de Next se relanzan; el resto vuelve como mensaje.
@@ -36,7 +46,7 @@ export async function createDocumentAction(input: CreateDocumentInput): Promise<
     if (input.modality === 'consignment' && !consignmentEnabled) return { ok: false, error: 'La consignación no está habilitada en tu plan.' }
     const doc = await createReceivableDocument(db, tenantId, { ...input, created_by: adminUser.displayName ?? null })
     return { ok: true, id: doc.id, message: `Documento ${doc.number} creado.` }
-  })
+  }, ['/cartera'], { action: 'receivable.create', entity: 'receivable_document', metadata: { modality: input.modality, party_id: input.party_id } })
 }
 
 export async function registerPaymentAction(input: { party_id: string; amount: number; method: ReceivablePaymentMethod; reference?: string; note?: string; document_id?: number | null; line_id?: number | null; op_key: string }): Promise<ActionResult> {
@@ -45,7 +55,7 @@ export async function registerPaymentAction(input: { party_id: string; amount: n
     const r = await registerPayment(db, tenantId, { ...input, created_by: adminUser.displayName ?? null })
     if (r.deduped) return { ok: true, message: 'Este abono ya estaba registrado.' }
     return { ok: true, message: r.surplus > 0 ? `Abono registrado. Quedó un saldo a favor de ${r.surplus} como crédito en tienda.` : 'Abono registrado.' }
-  }, ['/cartera', '/cartera/contrapartes'])
+  }, ['/cartera', '/cartera/contrapartes'], { action: 'receivable.payment', entity: 'receivable_document', entityId: input.document_id ?? null, metadata: { party_id: input.party_id, amount: input.amount, method: input.method } })
 }
 
 export async function deliverAction(documentId: number, items: Array<{ line_id: number; qty: number }>, locationId?: number | null): Promise<ActionResult> {
@@ -113,14 +123,14 @@ export async function returnConsignmentAction(documentId: number, lineId: number
   return run(async ({ db, tenantId }) => {
     await returnConsignment(db, tenantId, documentId, lineId, qty, toLocationId)
     return { ok: true, message: 'Devolución registrada y descontada del saldo.' }
-  })
+  }, ['/cartera'], { action: 'receivable.consignment_return', entity: 'receivable_document', entityId: documentId, metadata: { lineId, qty } })
 }
 
 export async function voidAction(documentId: number, refund: 'store_credit' | 'refund', note: string): Promise<ActionResult> {
   return run(async ({ db, tenantId, adminUser }) => {
     await voidDocument(db, tenantId, documentId, { refund, note: note || 'Anulado', created_by: adminUser.displayName ?? null })
     return { ok: true, message: 'Documento anulado.' }
-  })
+  }, ['/cartera'], { action: 'receivable.void', entity: 'receivable_document', entityId: documentId, metadata: { refund, note } })
 }
 
 export async function writeOffAction(documentId: number, note: string): Promise<ActionResult> {
@@ -128,7 +138,7 @@ export async function writeOffAction(documentId: number, note: string): Promise<
     if (!note.trim()) return { ok: false, error: 'Explica por qué se castiga la deuda.' }
     await writeOffDocument(db, tenantId, documentId, note, adminUser.displayName ?? null)
     return { ok: true, message: 'Saldo castigado.' }
-  })
+  }, ['/cartera'], { action: 'receivable.write_off', entity: 'receivable_document', entityId: documentId, metadata: { note } })
 }
 
 export async function adjustAction(documentId: number, delta: number, note: string): Promise<ActionResult> {
@@ -136,7 +146,7 @@ export async function adjustAction(documentId: number, delta: number, note: stri
     if (!delta) return { ok: false, error: 'El ajuste no puede ser cero.' }
     await adjustDocument(db, tenantId, documentId, Math.round(delta), note, adminUser.displayName ?? null)
     return { ok: true, message: 'Ajuste registrado.' }
-  })
+  }, ['/cartera'], { action: 'receivable.adjust', entity: 'receivable_document', entityId: documentId, metadata: { delta, note } })
 }
 
 export async function createPartyAction(input: { name: string; email?: string; phone?: string; party_role: 'customer' | 'consignee'; credit_limit?: number | null; default_terms_days?: number | null; document_id?: string }): Promise<ActionResult> {
@@ -150,7 +160,7 @@ export async function updatePartyAction(id: string, patch: { credit_limit?: numb
   return run(async ({ db }) => {
     await savePartyCredit(db, id, patch)
     return { ok: true, message: 'Condiciones actualizadas.' }
-  }, ['/cartera/contrapartes'])
+  }, ['/cartera/contrapartes'], { action: 'receivable.party_terms', entity: 'customer', entityId: id, metadata: patch })
 }
 
 /** Crea la ubicación de consignación del aliado (stock que tiene en su poder). */
@@ -168,5 +178,5 @@ export async function saveSettingsAction(s: Partial<ReceivablesSettings>): Promi
   return run(async ({ db, tenantId }) => {
     await saveReceivablesSettings(db, tenantId, s)
     return { ok: true, message: 'Ajustes guardados.' }
-  }, ['/cartera/ajustes'])
+  }, ['/cartera/ajustes'], { action: 'receivable.settings', entity: 'receivables_settings', metadata: s as Record<string, unknown> })
 }

@@ -49,14 +49,24 @@ function formatCOP(amount: number): string {
   }).format(amount)
 }
 
+/** Hardening (XSS en correos): escapa datos de cliente/comerciante antes de insertarlos en HTML. */
+function esc(s: unknown): string {
+  return String(s ?? '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#39;')
+}
+/** Nombre de remitente sin caracteres que rompan la cabecera From. */
+function fromName(name: string | null | undefined): string {
+  return String(name ?? '').replace(/[<>"\\\r\n]/g, '').trim().slice(0, 80) || 'Mi Tienda'
+}
+
 function orderItemsTable(order: Order): string {
+
   const rows = order.items
     .map(
       (item) => `
     <tr style="border-bottom: 1px solid #f0e8d0;">
       <td style="padding: 10px 0; font-family: sans-serif; font-size: 14px; color: #3d2a1a;">
-        <strong>${item.product_name}</strong><br/>
-        <span style="color: #8a6a4a; font-size: 12px;">${item.variant_label}</span>
+        <strong>${esc(item.product_name)}</strong><br/>
+        <span style="color: #8a6a4a; font-size: 12px;">${esc(item.variant_label)}</span>
       </td>
       <td style="padding: 10px 0; text-align: center; font-family: sans-serif; font-size: 14px; color: #3d2a1a;">${item.qty}</td>
       <td style="padding: 10px 0; text-align: right; font-family: sans-serif; font-size: 14px; color: #3d2a1a;">${formatCOP(item.price * item.qty)}</td>
@@ -91,7 +101,7 @@ function baseTemplate(content: string, config: EmailConfig): string {
         <table width="600" cellpadding="0" cellspacing="0" style="background: #ffffff; border-radius: 16px; overflow: hidden; max-width: 600px;">
           <tr>
             <td style="background: #614a2a; padding: 24px 32px; text-align: center;">
-              <h1 style="margin: 0; color: #fff8ec; font-size: 24px; letter-spacing: 0.1em;">${name}</h1>
+              <h1 style="margin: 0; color: #fff8ec; font-size: 24px; letter-spacing: 0.1em;">${esc(name)}</h1>
             </td>
           </tr>
           <tr>
@@ -100,7 +110,7 @@ function baseTemplate(content: string, config: EmailConfig): string {
           <tr>
             <td style="background: #fff0d1; padding: 16px 32px; text-align: center; border-top: 1px solid #f0e8d0;">
               <p style="margin: 0; font-size: 12px; color: #8a6a4a; font-family: sans-serif;">
-                ${name}${url ? ` · <a href="${url}" style="color: #614a2a;">${url.replace(/^https?:\/\//, '')}</a>` : ''}
+                ${esc(name)}${url ? ` · <a href="${esc(url)}" style="color: #614a2a;">${url.replace(/^https?:\/\//, '')}</a>` : ''}
               </p>
             </td>
           </tr>
@@ -162,14 +172,14 @@ export async function sendOrderConfirmation(order: Order, config: EmailConfig): 
     </table>
     <div style="background: #fff0d1; border-radius: 12px; padding: 16px; margin-bottom: 24px;">
       <p style="margin: 0 0 4px; font-size: 13px; font-weight: 700; color: #614a2a; font-family: sans-serif;">Dirección de envío</p>
-      <p style="margin: 0; font-size: 13px; color: #8a6a4a; font-family: sans-serif;">${order.customer_name}<br/>${addressText}</p>
+      <p style="margin: 0; font-size: 13px; color: #8a6a4a; font-family: sans-serif;">${esc(order.customer_name)}<br/>${esc(addressText)}</p>
     </div>
     <p style="margin: 0; font-size: 13px; color: #8a6a4a; text-align: center; font-family: sans-serif;">
       Te notificaremos cuando tu pedido sea despachado con el número de tracking.
     </p>`
 
   await sendEmail(config, {
-    from: `${name} <${config.fromEmail}>`,
+    from: `${fromName(name)} <${config.fromEmail}>`,
     to: [order.customer_email],
     subject: `Pedido confirmado ${order.order_number} — ${name}`,
     html: baseTemplate(content, config),
@@ -185,7 +195,7 @@ export async function sendNewsletterConfirmation(
   const siteUrl = (config.siteUrl ?? process.env.NEXT_PUBLIC_SITE_URL ?? '').replace(/\/$/, '')
 
   const content = `
-    <h2 style="margin: 0 0 8px; color: #614a2a; font-size: 20px; font-family: sans-serif;">¡Ya eres parte de la familia ${name}!</h2>
+    <h2 style="margin: 0 0 8px; color: #614a2a; font-size: 20px; font-family: sans-serif;">¡Ya eres parte de la familia ${esc(name)}!</h2>
     <p style="margin: 0 0 16px; color: #8a6a4a; font-size: 14px; font-family: sans-serif;">
       Gracias por suscribirte a nuestro boletín. Te mantendremos al tanto de
       novedades, promociones y contenido exclusivo.
@@ -205,7 +215,7 @@ export async function sendNewsletterConfirmation(
     </p>`
 
   await sendEmail(config, {
-    from: `${name} <${config.fromEmail}>`,
+    from: `${fromName(name)} <${config.fromEmail}>`,
     to: [to],
     subject: `¡Bienvenido al boletín de ${name}! ☕`,
     html: baseTemplate(content, config),
@@ -222,7 +232,7 @@ export async function sendWelcomeEmail(
   const siteUrl   = (config.siteUrl ?? process.env.NEXT_PUBLIC_SITE_URL ?? '').replace(/\/$/, '')
 
   const content = `
-    <h2 style="margin: 0 0 8px; color: #614a2a; font-size: 20px; font-family: sans-serif;">¡Bienvenido a ${storeName}, ${name}!</h2>
+    <h2 style="margin: 0 0 8px; color: #614a2a; font-size: 20px; font-family: sans-serif;">¡Bienvenido a ${esc(storeName)}, ${esc(name)}!</h2>
     <p style="margin: 0 0 24px; color: #8a6a4a; font-size: 14px; font-family: sans-serif;">
       Tu cuenta ha sido creada exitosamente. Ya puedes explorar nuestro catálogo
       y hacer seguimiento de tus pedidos desde tu cuenta.
@@ -235,7 +245,7 @@ export async function sendWelcomeEmail(
     </div>` : ''}`
 
   await sendEmail(config, {
-    from: `${storeName} <${config.fromEmail}>`,
+    from: `${fromName(storeName)} <${config.fromEmail}>`,
     to: [to],
     subject: `Bienvenido a ${storeName} — Cuenta creada`,
     html: baseTemplate(content, config),

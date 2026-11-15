@@ -12,6 +12,7 @@ import { maskInstance } from '@/lib/mask-instance'
 export async function GET() {
   const adminUser = await getAdminUser()
   if (!adminUser) return NextResponse.json({ error: 'No autorizado' }, { status: 401 })
+  if (adminUser.role !== 'super_admin' && adminUser.role !== 'admin') return NextResponse.json({ error: 'Solo un administrador puede gestionar integraciones.' }, { status: 403 })
   try {
     const list = await listInstances(getAdminDb(adminUser.tenantId), adminUser.tenantId, 'payment')
     return NextResponse.json({ instances: list.map((i) => maskInstance(i, getProviderDef('payment', i.provider))) })
@@ -24,6 +25,7 @@ export async function GET() {
 export async function POST(req: NextRequest) {
   const adminUser = await getAdminUser()
   if (!adminUser) return NextResponse.json({ error: 'No autorizado' }, { status: 401 })
+  if (adminUser.role !== 'super_admin' && adminUser.role !== 'admin') return NextResponse.json({ error: 'Solo un administrador puede gestionar integraciones.' }, { status: 403 })
   try {
     const body = await req.json() as {
       provider?: string; label?: string | null; environment?: 'test' | 'production'

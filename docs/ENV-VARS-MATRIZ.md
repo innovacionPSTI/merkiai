@@ -64,7 +64,7 @@
 | `NEXT_PUBLIC_FEATURE_COLLECTIONS` | Flag build-time Colecciones | según negocio | `true` | `true` |
 | `NEXT_PUBLIC_FEATURE_INVENTORY` | Flag build-time Inventario/Operaciones | según negocio | `true` | `true` |
 | `PREVIEW_SIGNING_SECRET` | **HMAC** del preview. Coincide con web del ambiente | = web-prod | = web-dev | = web-test |
-| `NEXT_PUBLIC_DRAFT_SECRET` | Secreto del enlace "ver borrador" del blog | propio | propio | propio |
+| ~~`NEXT_PUBLIC_DRAFT_SECRET`~~ | **Retirada** (hardening): secreto expuesto al navegador para una ruta que ya no existía | borrar | borrar | borrar |
 | `STOREFRONT_BASE_DOMAIN` | Dominio base para construir el host del tenant | dominio prod | dominio dev | dominio test |
 | `STORAGE_PROVIDER` | Storage de archivos: `supabase` (default) · `r2` · `s3` (HU-432) | `r2` al migrar | `supabase` | `supabase` |
 | `STORAGE_S3_ENDPOINT` · `STORAGE_S3_BUCKET` · `STORAGE_S3_REGION` *(solo r2/s3)* | Endpoint S3 (R2: `https://<cuenta>.r2.cloudflarestorage.com`), bucket y región (R2: `auto`) | bucket prod | bucket dev | — |
@@ -111,7 +111,7 @@ Clasificación que **congela HU-364** (y que E26/celdas completa). Hoy solo se r
 | Clase | Variables | Dónde viven |
 |---|---|---|
 | **Bootstrap / root of trust (SIEMPRE en env)** | `AWS_ACCESS_KEY_ID`, `AWS_SECRET_ACCESS_KEY`, `AWS_REGION`, `MERKIAI_VAULT_KEY_ALIAS`, `INTERNAL_API_SECRET` (o `PROVISIONING_API_SECRET`) | env del console (no pueden ir al vault: lo abren) |
-| **Infra por-ambiente (en env; opcional respaldar en Vault)** | Supabase del control-plane (`NEXT_PUBLIC_SUPABASE_URL`+`SERVICE_ROLE_KEY`), Stack (`*HEXCLAVE*`, `NEXT_PUBLIC_STACK_API_URL`), URLs (`CONSOLE_URL`, `*_SITE_URL`, `*_ADMIN_URL`, `STOREFRONT_BASE_DOMAIN`, `NEXT_PUBLIC_ROOT_DOMAIN`), preview (`PREVIEW_SIGNING_SECRET`, `NEXT_PUBLIC_DRAFT_SECRET`), flags, `MAINTENANCE_MODE`, `TENANT_RESOLUTION_STRICT` | env por-ambiente |
+| **Infra por-ambiente (en env; opcional respaldar en Vault)** | Supabase del control-plane (`NEXT_PUBLIC_SUPABASE_URL`+`SERVICE_ROLE_KEY`), Stack (`*HEXCLAVE*`, `NEXT_PUBLIC_STACK_API_URL`), URLs (`CONSOLE_URL`, `*_SITE_URL`, `*_ADMIN_URL`, `STOREFRONT_BASE_DOMAIN`, `NEXT_PUBLIC_ROOT_DOMAIN`), preview (`PREVIEW_SIGNING_SECRET`), flags, `MAINTENANCE_MODE`, `TENANT_RESOLUTION_STRICT` | env por-ambiente |
 | **Billing de plataforma (env del console)** | `PAYZEN_SHOP_ID`, `PAYZEN_PASSWORD`, `PAYZEN_PUBLIC_KEY`, `RESEND_API_KEY`, `BILLING_EMAIL_FROM`, `CRON_SECRET` (+ opcionales `PAYZEN_API_URL`, `BILLING_DUNNING_*`) | env del console; `PAYZEN_PASSWORD` y `RESEND_API_KEY` candidatas a vault en la separación de prod |
 | **Datos de billing por tenant (nunca en env)** | Token del medio de pago del tenant (`paymentMethodToken`) | kms-vault (`subscriptions.payment_token_ref`) |
 | **Pasarelas de venta del tenant (nunca en env)** | PayZen BYO (HU-442): id + contraseña en `integration_instances` de la tienda, como las demás pasarelas. **Merkiai Pagos** (HU-441): contraseña de la tienda PayZen gestionada **en kms-vault** (`merkiai_payment_accounts.password_ref`), servida a web por la consola | BD de tienda / kms-vault |

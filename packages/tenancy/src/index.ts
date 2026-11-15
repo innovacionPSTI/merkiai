@@ -69,3 +69,5 @@ export type {
 } from './billing'
 export { createPayzenBillingProvider, verifyPayzenIpn, payzenSignature, payzenRrule, normalizePayzenAnswer } from './billing-payzen'
 export type { PayzenConfig } from './billing-payzen'
+
+export { escapeHtml, safeJsonForScript, safeReturnPath, safeFromName, isCrossSiteMutation, sniffImageType } from './security'

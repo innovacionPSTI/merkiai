@@ -3,6 +3,7 @@ import {
   getStorageUsage, recordStorageObject, removeStorageObject, checkStorageQuota,
 } from '@merkiai/database'
 import { getTenantEntitlements, resolveLimit, LIMITS } from '@/lib/entitlements'
+import { sniffImageType } from '@merkiai/tenancy/security'
 import { NextRequest, NextResponse } from 'next/server'
 import { getAdminUser } from '@/lib/auth'
 import { getAdminDb } from '@/lib/admin-db'
@@ -44,7 +45,15 @@ export async function POST(req: NextRequest) {
   if (file.size > MAX_SIZE)
     return NextResponse.json({ error: 'El archivo excede 5 MB' }, { status: 400 })
 
-  const ext = file.name.split('.').pop()?.toLowerCase() ?? 'jpg'
+  // Hardening: el tipo real se verifica por "magic bytes" (el content-type lo
+  // declara el cliente y es falsificable: p. ej. HTML/SVG disfrazado de imagen).
+  const bytes = new Uint8Array(await file.arrayBuffer())
+  const realType = sniffImageType(bytes)
+  if (!realType || realType !== file.type) {
+    return NextResponse.json({ error: 'El archivo no es una imagen válida (JPG, PNG, WebP o GIF).' }, { status: 400 })
+  }
+  const EXT: Record<string, string> = { 'image/jpeg': 'jpg', 'image/png': 'png', 'image/webp': 'webp', 'image/gif': 'gif' }
+  const ext = EXT[realType]
   const filename = `${Date.now()}-${Math.random().toString(36).slice(2)}.${ext}`
 
   // HU-432 · tope de almacenamiento del plan (`max_medios_mb`; sin límite = ilimitado).
@@ -72,7 +81,7 @@ export async function POST(req: NextRequest) {
       folder,
       filename,
       contentType: file.type,
-      body: await file.arrayBuffer(),
+      body: bytes,
     })
   } catch (e) {
     return NextResponse.json({ error: e instanceof Error ? e.message : 'Error al subir' }, { status: 500 })

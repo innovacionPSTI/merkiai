@@ -11,6 +11,8 @@ import { getAdminUser } from '@/lib/auth'
 import { getAdminDb } from '@/lib/admin-db'
 import { maskInstance } from '@/lib/mask-instance'
 
+const isFullAccess = (role: string) => role === 'super_admin' || role === 'admin'
+
 type Kind = 'payment' | 'shipping' | 'email'
 
 function cleanCreds(creds?: Record<string, string>): Record<string, string> {
@@ -22,6 +24,8 @@ function cleanCreds(creds?: Record<string, string>): Record<string, string> {
 export async function listHandler(kind: Kind) {
   const u = await getAdminUser()
   if (!u) return NextResponse.json({ error: 'No autorizado' }, { status: 401 })
+  // Hardening (mínimo privilegio): credenciales de integraciones solo para admin/super_admin.
+  if (!isFullAccess(u.role)) return NextResponse.json({ error: 'Solo un administrador puede gestionar integraciones.' }, { status: 403 })
   try {
     const list = await listInstances(getAdminDb(u.tenantId), u.tenantId, kind)
     return NextResponse.json({ instances: list.map((i) => maskInstance(i, getProviderDef(kind, i.provider))) })
@@ -34,6 +38,8 @@ export async function listHandler(kind: Kind) {
 export async function createHandler(kind: Kind, req: NextRequest) {
   const u = await getAdminUser()
   if (!u) return NextResponse.json({ error: 'No autorizado' }, { status: 401 })
+  // Hardening (mínimo privilegio): credenciales de integraciones solo para admin/super_admin.
+  if (!isFullAccess(u.role)) return NextResponse.json({ error: 'Solo un administrador puede gestionar integraciones.' }, { status: 403 })
   try {
     const body = await req.json() as { provider?: string; label?: string | null; environment?: 'test' | 'production'; credentials?: Record<string, string>; settings?: Record<string, unknown> }
     const def = body.provider ? getProviderDef(kind, body.provider) : undefined
@@ -56,6 +62,8 @@ export async function createHandler(kind: Kind, req: NextRequest) {
 export async function patchHandler(kind: Kind, id: string, req: NextRequest) {
   const u = await getAdminUser()
   if (!u) return NextResponse.json({ error: 'No autorizado' }, { status: 401 })
+  // Hardening (mínimo privilegio): credenciales de integraciones solo para admin/super_admin.
+  if (!isFullAccess(u.role)) return NextResponse.json({ error: 'Solo un administrador puede gestionar integraciones.' }, { status: 403 })
   try {
     const body = await req.json() as { label?: string | null; environment?: 'test' | 'production'; credentials?: Record<string, string>; settings?: Record<string, unknown>; enabled?: boolean }
     const creds = cleanCreds(body.credentials)
@@ -76,6 +84,8 @@ export async function patchHandler(kind: Kind, id: string, req: NextRequest) {
 export async function deleteHandler(id: string) {
   const u = await getAdminUser()
   if (!u) return NextResponse.json({ error: 'No autorizado' }, { status: 401 })
+  // Hardening (mínimo privilegio): credenciales de integraciones solo para admin/super_admin.
+  if (!isFullAccess(u.role)) return NextResponse.json({ error: 'Solo un administrador puede gestionar integraciones.' }, { status: 403 })
   try {
     await removeInstance(getAdminDb(u.tenantId), u.tenantId, id)
     return NextResponse.json({ ok: true })
@@ -88,6 +98,8 @@ export async function deleteHandler(id: string) {
 export async function activateHandler(kind: Kind, req: NextRequest) {
   const u = await getAdminUser()
   if (!u) return NextResponse.json({ error: 'No autorizado' }, { status: 401 })
+  // Hardening (mínimo privilegio): credenciales de integraciones solo para admin/super_admin.
+  if (!isFullAccess(u.role)) return NextResponse.json({ error: 'Solo un administrador puede gestionar integraciones.' }, { status: 403 })
   try {
     const { id } = await req.json() as { id?: string | null }
     const db = getAdminDb(u.tenantId)

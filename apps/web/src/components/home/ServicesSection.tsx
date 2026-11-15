@@ -1,4 +1,5 @@
 import Link from 'next/link'
+import { escapeHtml } from '@merkiai/tenancy/security'
 import Image from 'next/image'
 import type { SectionItem } from '@merkiai/database'
 
@@ -45,7 +46,7 @@ export default function ServicesSection({ items }: Props) {
                 <h2
                   className="font-display text-brand-cream leading-none mb-4"
                   style={{ fontSize: 'clamp(2.5rem, 5vw, 4.5rem)' }}
-                  dangerouslySetInnerHTML={{ __html: item.title.replace(/\\n/g, '<br/>') }}
+                  dangerouslySetInnerHTML={{ __html: escapeHtml(item.title).replace(/\\n/g, '<br/>') }}
                 />
               )}
 

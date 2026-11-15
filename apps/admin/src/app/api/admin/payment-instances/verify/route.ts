@@ -11,6 +11,7 @@ import { getAdminDb } from '@/lib/admin-db'
 export async function POST(req: NextRequest) {
   const adminUser = await getAdminUser()
   if (!adminUser) return NextResponse.json({ error: 'No autorizado' }, { status: 401 })
+  if (adminUser.role !== 'super_admin' && adminUser.role !== 'admin') return NextResponse.json({ error: 'Solo un administrador puede gestionar integraciones.' }, { status: 403 })
   const { id } = await req.json().catch(() => ({})) as { id?: string }
   const list = await listInstances(getAdminDb(adminUser.tenantId), adminUser.tenantId, 'payment').catch(() => [])
   const inst = list.find((i) => i.id === id)

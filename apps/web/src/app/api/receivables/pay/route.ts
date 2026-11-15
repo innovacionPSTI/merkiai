@@ -6,7 +6,7 @@
  * el abono en cartera en vez de buscar un pedido.
  */
 import { NextRequest, NextResponse } from 'next/server'
-import { verifyReceivableLink, receivablePaymentReference, resolveActivePayment, gatewayFromInstance } from '@merkiai/database'
+import { verifyReceivableLink, receivablePaymentReference, resolveActivePayment, gatewayFromInstance, checkRateLimit } from '@merkiai/database'
 import { resolveTenant } from '@/lib/tenant-context'
 import { getMachineDb } from '@/lib/machine-db'
 import { baseUrlFromRequest } from '@/lib/base-url'
@@ -26,6 +26,10 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: 'Enlace no válido' }, { status: 403 })
   }
   const db = getMachineDb(tenantId)
+  // Hardening: limita intentos de iniciar pago por IP (evita abuso de sesiones en la pasarela).
+  const ip = req.headers.get('x-forwarded-for')?.split(',')[0]?.trim() || 'unknown'
+  const rl = await checkRateLimit(db, { tenantId, bucket: 'receivables.pay', ident: ip, windowSecs: 60, max: 10, lockSecs: 300 })
+  if (!rl.allowed) return back('Demasiados intentos. Espera unos minutos e intenta de nuevo.')
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const anyDb = db as any
   const [{ data: doc }, { data: bal }] = await Promise.all([

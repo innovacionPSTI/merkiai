@@ -1,6 +1,7 @@
 'use client'
 
 import { Suspense, useEffect, useState } from 'react'
+import { safeReturnPath } from '@merkiai/tenancy/security'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { useStackApp, useUser } from '@stackframe/stack'
 import { LoginScreen } from '@merkiai/ui'
@@ -11,7 +12,8 @@ function AdminLogin() {
   const user = useUser()
   const router = useRouter()
   const searchParams = useSearchParams()
-  const returnTo = searchParams.get('after_auth_return_to') ?? '/dashboard'
+  // Hardening: solo rutas relativas del mismo origen (evita open redirect).
+  const returnTo = safeReturnPath(searchParams.get('after_auth_return_to'), '/dashboard')
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
 

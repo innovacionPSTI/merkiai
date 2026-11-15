@@ -17,7 +17,8 @@ const MEDIA_ORIGIN = (() => {
 const CSP = [
   "default-src 'self'",
   // Next.js requires unsafe-inline for hydration scripts; nonce-based CSP requires custom server
-  "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://vercel.live",
+  // Hardening: 'unsafe-eval' solo en desarrollo (React Refresh); producción sin eval.
+  `script-src 'self' 'unsafe-inline'${process.env.NODE_ENV === 'production' ? '' : " 'unsafe-eval'"} https://vercel.live`,
   "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
   "font-src 'self' https://fonts.gstatic.com",
   `img-src 'self' data: blob: https://*.supabase.co https://res.cloudinary.com ${MEDIA_ORIGIN}`.trim(),
@@ -26,7 +27,9 @@ const CSP = [
   "media-src 'self' https://*.supabase.co",
   `frame-ancestors ${FRAME_ANCESTORS}`,
   "base-uri 'self'",
-  "form-action 'self'",
+  // /pagar-saldo (HU-455) envía el formulario a la tienda, que redirige a la pasarela.
+  "form-action 'self' https://checkout.wompi.co https://*.mercadopago.com https://*.mercadopago.com.co https://checkout.bold.co https://*.payzen.lat",
+  "object-src 'none'",
 ].join('; ')
 
 const SECURITY_HEADERS = [
@@ -44,6 +47,7 @@ const SECURITY_HEADERS = [
 // ── Config ─────────────────────────────────────────────────────────────────────
 
 const nextConfig: NextConfig = {
+  poweredByHeader: false,
   transpilePackages: ['@merkiai/ui', '@merkiai/database'],
 
   // Ver apps/admin: evita UnhandledSchemeError de `node:crypto` (preview.ts del

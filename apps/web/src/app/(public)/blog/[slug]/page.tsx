@@ -1,4 +1,5 @@
 import { getBlogPostBySlug, getBlogPostBySlugAny, getBlogPosts } from '@merkiai/database'
+import { safeJsonForScript } from '@merkiai/tenancy/security'
 import { Icon } from '@merkiai/ui'
 import { getStoreContext } from '@/lib/store-context'
 import { getMachineDb } from '@/lib/machine-db'
@@ -88,7 +89,7 @@ export default async function BlogPostPage({ params }: Props) {
     <>
       <script
         type="application/ld+json"
-        dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
+        dangerouslySetInnerHTML={{ __html: safeJsonForScript(jsonLd) }}
       />
     <div className="bg-brand-cream min-h-screen pt-16">
       {/* Draft mode banner */}

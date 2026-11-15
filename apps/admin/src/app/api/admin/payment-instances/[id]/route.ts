@@ -8,6 +8,7 @@ import { maskInstance } from '@/lib/mask-instance'
 export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   const adminUser = await getAdminUser()
   if (!adminUser) return NextResponse.json({ error: 'No autorizado' }, { status: 401 })
+  if (adminUser.role !== 'super_admin' && adminUser.role !== 'admin') return NextResponse.json({ error: 'Solo un administrador puede gestionar integraciones.' }, { status: 403 })
   const { id } = await params
   try {
     const body = await req.json() as {
@@ -32,6 +33,7 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
 export async function DELETE(_req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   const adminUser = await getAdminUser()
   if (!adminUser) return NextResponse.json({ error: 'No autorizado' }, { status: 401 })
+  if (adminUser.role !== 'super_admin' && adminUser.role !== 'admin') return NextResponse.json({ error: 'Solo un administrador puede gestionar integraciones.' }, { status: 403 })
   const { id } = await params
   try {
     await removeInstance(getAdminDb(adminUser.tenantId), adminUser.tenantId, id)

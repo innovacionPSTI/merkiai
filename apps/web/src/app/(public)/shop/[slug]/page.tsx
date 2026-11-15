@@ -1,4 +1,5 @@
 import { getProductBySlug, getProducts, getTemplateVariant, getVariantTypes, buildSwatchColorMap, getApprovedRatings, getApprovedReviewsPage, reviewStats, REVIEWS_PAGE_SIZE } from '@merkiai/database'
+import { safeJsonForScript } from '@merkiai/tenancy/security'
 import { getStoreContext } from '@/lib/store-context'
 import { notFound } from 'next/navigation'
 import type { Metadata } from 'next'
@@ -95,7 +96,7 @@ export default async function ProductPage({ params }: Props) {
     <>
       <script
         type="application/ld+json"
-        dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
+        dangerouslySetInnerHTML={{ __html: safeJsonForScript(jsonLd) }}
       />
       <ProductDetail
         product={product}

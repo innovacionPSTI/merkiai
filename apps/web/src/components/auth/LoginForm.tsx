@@ -1,6 +1,7 @@
 'use client'
 
 import { useEffect, useState } from 'react'
+import { safeReturnPath } from '@merkiai/tenancy/security'
 import Link from 'next/link'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { useStackApp, useUser } from '@stackframe/stack'
@@ -10,7 +11,8 @@ export default function LoginForm() {
   const user = useUser()
   const router = useRouter()
   const searchParams = useSearchParams()
-  const returnTo = searchParams.get('returnTo') ?? '/account'
+  // Hardening: solo rutas relativas del mismo origen (evita open redirect).
+  const returnTo = safeReturnPath(searchParams.get('returnTo'), '/account')
 
   // HU-214: si ya hay sesión (p.ej. tras volver de Google), reenviar.
   useEffect(() => {
