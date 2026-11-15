@@ -160,6 +160,35 @@ const es = {
     },
     confirmation: { title: '¡Gracias por tu compra!' },
   },
+  admin: {
+    common: {
+      sign_out: 'Cerrar sesión', search: 'Buscar…', language: 'Idioma del panel', collapse: 'Colapsar {name}', expand: 'Expandir {name}',
+      switch_store: 'Cambiar de tienda', choose_store: 'Elegir tienda',
+      past_due: 'No pudimos cobrar tu plan. Actualiza tu pago para evitar la suspensión de la tienda.', go_billing: 'Ir a Plan y facturación',
+    },
+    roles: { super_admin: 'Super Admin', admin: 'Administrador', gestor_tienda: 'Gestor de tienda', vendedor: 'Vendedor' },
+    nav: {
+      dashboard: 'Dashboard', onboarding: 'Configura tu tienda', group_catalog: 'Catálogo', productos: 'Productos', categorias: 'Categorías',
+      variantes: 'Variantes', bundles: 'Bundles', resenas: 'Reseñas', group_sales: 'Ventas', pedidos: 'Pedidos', reportes: 'Reportes',
+      clientes: 'Clientes', cupones: 'Cupones', promociones: 'Promociones', gift_cards: 'Gift cards', ventas_vip: 'Ventas VIP',
+      group_operations: 'Operaciones', operaciones: 'Tablero', inventario: 'Inventario', compras: 'Compras', produccion: 'Producción',
+      modificadores: 'Modificadores', listas_precio: 'Listas de precio', cotizaciones: 'Cotizaciones', cartera: 'Cartera',
+      group_content: 'Contenido', contenido: 'Páginas', constructor: 'Constructor', colecciones: 'Colecciones', blog: 'Blog',
+      traducciones: 'Traducciones', newsletter: 'Newsletter', group_appearance: 'Apariencia', plantillas: 'Plantillas',
+      configuracion_temas: 'Temas', media: 'Archivos', configuracion: 'Configuración', configuracion_general: 'General',
+      configuracion_dominio: 'Dominio', configuracion_idiomas: 'Idiomas y mercados', configuracion_envios: 'Envíos',
+      configuracion_pagos: 'Pagos', configuracion_emails: 'Emails', configuracion_plantillas_correo: 'Plantillas de correo',
+      redirects: 'Redirecciones', configuracion_legal: 'Legal', facturacion: 'Plan y facturación', group_system: 'Sistema',
+      usuarios: 'Usuarios', ubicaciones: 'Ubicaciones', auditoria: 'Auditoría', emails: 'Correos', sistema_apariencia: 'Apariencia',
+    },
+  },
+  console: {
+    nav: {
+      group_platform: 'Plataforma', tenants: 'Tenants', plans: 'Planes', presets: 'Presets', subscriptions: 'Suscripciones',
+      merkiai_payments: 'Merkiai Pagos', infrastructure: 'Infraestructura', domains: 'Dominios', audit: 'Auditoría',
+    },
+    common: { sign_out: 'Cerrar sesión', signing_out: 'Saliendo…', language: 'Idioma' },
+  },
   email: {
     order: {
       subject: 'Pedido confirmado {orderNumber} — {store}', title: '¡Gracias por tu pedido!',

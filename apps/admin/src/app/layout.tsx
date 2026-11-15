@@ -17,6 +17,9 @@ import { isTenantBlocked } from '@/lib/tenant-status'
 import { resolveFeature, FEATURES } from '@merkiai/tenancy'
 import TenantSuspended from '@/components/TenantSuspended'
 import { canManageBilling } from '@/lib/billing'
+import { I18nProvider } from '@merkiai/ui'
+import { createTranslator } from '@merkiai/i18n'
+import { getAdminLocale } from '@/lib/ui-locale'
 
 const cormorant = Cormorant_Garamond({
   subsets: ['latin'],
@@ -135,8 +138,12 @@ export default async function AdminRootLayout({ children }: { children: React.Re
   const billingBypass = tenantBlocked && billingAllowed && pathname.startsWith('/facturacion')
   const showPastDue = Boolean(adminUser) && isProtectedRoute && tenantInfo.status === 'past_due' && billingAllowed
 
+  // E28 · HU-466 · idioma del panel del usuario (perfil → cookie → navegador → es-CO).
+  const uiLocale = await getAdminLocale().catch(() => 'es-CO')
+  const tc = createTranslator(uiLocale, 'admin.common')
+
   return (
-    <html lang="es" className={`${cormorant.variable} ${dmSans.variable}`}>
+    <html lang={uiLocale} className={`${cormorant.variable} ${dmSans.variable}`}>
       <head>
         {/* Tema del panel: sobreescribe los defaults de globals.css con valores de admin_config */}
         {adminCSS && <style dangerouslySetInnerHTML={{ __html: adminCSS }} />}
@@ -144,6 +151,7 @@ export default async function AdminRootLayout({ children }: { children: React.Re
       <body className="bg-gray-50">
         <StackProvider app={stackServerApp}>
           <StackTheme nonce={headersList.get('x-nonce') ?? undefined}>
+            <I18nProvider locale={uiLocale}>
             {billingBypass ? (
               <main className="min-h-screen p-6 md:p-10">{children}</main>
             ) : tenantBlocked ? (
@@ -157,20 +165,20 @@ export default async function AdminRootLayout({ children }: { children: React.Re
                     <div className="flex items-center gap-3">
                       <input
                         type="search"
-                        placeholder="Buscar..."
+                        placeholder={tc('search')}
                         className="font-brand text-sm border border-gray-200 rounded-full px-4 py-2 w-64 focus:outline-none focus:border-brand-primary"
                       />
                       {workspaces.length > 1 && (
                         <a
                           href="/seleccionar-tienda"
-                          title="Cambiar de tienda"
+                          title={tc('switch_store')}
                           className="flex items-center gap-2 font-brand text-sm border border-gray-200 rounded-full px-3 py-2 hover:border-brand-primary transition-colors"
                         >
                           <span className="w-6 h-6 rounded-md bg-brand-cream text-brand-primary text-xs font-semibold flex items-center justify-center">
                             {(activeWorkspace?.name ?? 'T').slice(0, 1).toUpperCase()}
                           </span>
                           <span className="hidden sm:block max-w-[140px] truncate text-brand-primary">
-                            {activeWorkspace?.name ?? 'Elegir tienda'}
+                            {activeWorkspace?.name ?? tc('choose_store')}
                           </span>
                           <span className="text-brand-primary/40">▾</span>
                         </a>
@@ -183,15 +191,15 @@ export default async function AdminRootLayout({ children }: { children: React.Re
                         </div>
                         <div className="hidden sm:block text-right">
                           <p className="text-sm font-medium truncate max-w-[140px]">{displayName}</p>
-                          <p className="text-xs text-brand-primary/40">{adminUser.role.replace('_', ' ')}</p>
+                          <p className="text-xs text-brand-primary/40">{createTranslator(uiLocale, 'admin.roles')(adminUser.role)}</p>
                         </div>
                       </div>
                     </div>
                   </header>
                   {showPastDue && (
                     <div role="status" className="bg-amber-50 border-b border-amber-200 px-6 py-2.5 font-brand text-sm text-amber-800 flex flex-wrap items-center justify-between gap-2">
-                      <span>No pudimos cobrar tu plan. Actualiza tu pago para evitar la suspensión de la tienda.</span>
-                      <a href="/facturacion" className="underline font-medium">Ir a Plan y facturación</a>
+                      <span>{tc('past_due')}</span>
+                      <a href="/facturacion" className="underline font-medium">{tc('go_billing')}</a>
                     </div>
                   )}
                   <main className="flex-1 p-6">{children}</main>
@@ -201,6 +209,7 @@ export default async function AdminRootLayout({ children }: { children: React.Re
               /* Rutas públicas: handler/*, no-autorizado */
               <>{children}</>
             )}
+            </I18nProvider>
           </StackTheme>
         </StackProvider>
       </body>

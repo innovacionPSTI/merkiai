@@ -8,6 +8,8 @@ import { Icon } from '@merkiai/ui'
 import type { AdminRole, AdminSection } from '@/lib/roles'
 import { ROLE_CONFIG } from '@/lib/roles'
 import { FEATURES } from '@/lib/features'
+import { useT } from '@merkiai/ui'
+import PanelLocaleSelect from './PanelLocaleSelect'
 
 // ── Tipos ────────────────────────────────────────────────────────────────────
 
@@ -184,6 +186,16 @@ const NAV: NavNode[] = [
 
 /** HU-350/HU-359 · aplica el gating runtime del Constructor sobre el NAV estático
  *  (filtra el leaf `/constructor` cuando el plan/flag no lo habilita). */
+// ── E28 · HU-466 · etiquetas del menú por idioma (clave derivada del href) ─────
+const GROUP_KEYS: Record<string, string> = {
+  'Catálogo': 'group_catalog', 'Ventas': 'group_sales', 'Operaciones': 'group_operations',
+  'Contenido': 'group_content', 'Apariencia': 'group_appearance', 'Sistema': 'group_system',
+}
+function navKey(node: { label: string; href?: string }): string {
+  if (node.href) return node.href.replace(/^\//, '').replace(/[/-]/g, '_') || 'dashboard'
+  return GROUP_KEYS[node.label] ?? node.label
+}
+
 function navFor(pageBuilder: boolean, collections: boolean, inventory: boolean, priceLists: boolean, quotes: boolean, multiLocation: boolean, receivables = false): NavNode[] {
   const hidden = new Set<string>()
   // HU-368 · con el Constructor disponible, "Páginas" (/contenido) se retira; sin
@@ -287,6 +299,11 @@ export default function AdminSidebar({ role, allowedSections: allowedSectionsPro
   }
 
   async function handleSignOut() { await app.signOut() }
+  // E28 · HU-466 · etiquetas e idioma del panel.
+  const ta = useT('admin')
+  const tc = useT('admin.common')
+  const tn = useT('admin.nav')
+  const L = (node: { label: string; href?: string }) => { const k = navKey(node); return tn.has(k) ? tn(k) : node.label }
 
   // Filtra los nodos visibles según el rol
   const visibleNodes = nav.filter((node) => {
@@ -352,7 +369,7 @@ export default function AdminSidebar({ role, allowedSections: allowedSectionsPro
                 }`}
               >
                 <span className="text-base leading-none">{node.icon}</span>
-                {node.label}
+                {L(node)}
               </Link>
             )
           }
@@ -375,11 +392,11 @@ export default function AdminSidebar({ role, allowedSections: allowedSectionsPro
                 >
                   <Link href={node.href} className="flex items-center gap-3 px-3 py-2.5 flex-1 min-w-0">
                     <span className="text-base leading-none">{node.icon}</span>
-                    <span className="flex-1">{node.label}</span>
+                    <span className="flex-1">{L(node)}</span>
                   </Link>
                   <button
                     type="button"
-                    aria-label={isOpen ? `Colapsar ${node.label}` : `Expandir ${node.label}`}
+                    aria-label={isOpen ? `Colapsar ${L(node)}` : `Expandir ${L(node)}`}
                     aria-expanded={isOpen}
                     onClick={() => toggleGroup(node.label)}
                     className="shrink-0 px-3 py-2.5 text-current/70 hover:text-current"
@@ -413,7 +430,7 @@ export default function AdminSidebar({ role, allowedSections: allowedSectionsPro
                             }`}
                           >
                             {sub.icon && <span className="text-sm leading-none">{sub.icon}</span>}
-                            {sub.label}
+                            {L(sub)}
                           </Link>
                         )
                       })}
@@ -435,7 +452,7 @@ export default function AdminSidebar({ role, allowedSections: allowedSectionsPro
           )
 
           return (
-            <div key={node.label}>
+            <div key={L(node)}>
               {/* Cabecera del grupo */}
               <button
                 onClick={() => toggleGroup(node.label)}
@@ -446,7 +463,7 @@ export default function AdminSidebar({ role, allowedSections: allowedSectionsPro
                 }`}
               >
                 <span className="text-base leading-none">{node.icon}</span>
-                <span className="flex-1 text-left">{node.label}</span>
+                <span className="flex-1 text-left">{L(node)}</span>
                 <svg
                   className={`w-3 h-3 transition-transform duration-200 ${isOpen ? 'rotate-90' : ''}`}
                   fill="none"
@@ -476,7 +493,7 @@ export default function AdminSidebar({ role, allowedSections: allowedSectionsPro
                             }`}
                           >
                             <span className="text-sm leading-none">{child.icon}</span>
-                            {child.label}
+                            {L(child)}
                             <svg
                               className={`ml-auto w-2.5 h-2.5 transition-transform ${isLeafActive ? 'rotate-90' : ''}`}
                               fill="none" stroke="currentColor" strokeWidth={2.5} viewBox="0 0 24 24"
@@ -501,7 +518,7 @@ export default function AdminSidebar({ role, allowedSections: allowedSectionsPro
                                       }`}
                                     >
                                       {sub.icon && <span className="text-sm leading-none">{sub.icon}</span>}
-                                      {sub.label}
+                                      {L(sub)}
                                     </Link>
                                   )
                                 })}
@@ -524,7 +541,7 @@ export default function AdminSidebar({ role, allowedSections: allowedSectionsPro
                         }`}
                       >
                         <span className="text-sm leading-none">{child.icon}</span>
-                        {child.label}
+                        {L(child)}
                       </Link>
                     )
                   })}
@@ -537,6 +554,7 @@ export default function AdminSidebar({ role, allowedSections: allowedSectionsPro
 
       {/* Footer */}
       <div className="p-4 border-t border-brand-cream/10 space-y-3">
+        <div className="px-3"><PanelLocaleSelect /></div>
         <div className="px-3">
           <span className={`text-xs font-brand font-semibold px-2.5 py-1 rounded-full ${
             role === 'super_admin' ? 'bg-red-500/20 text-red-300' :
@@ -544,7 +562,7 @@ export default function AdminSidebar({ role, allowedSections: allowedSectionsPro
             role === 'vendedor'    ? 'bg-green-500/20 text-green-300' :
                                      'bg-blue-500/20 text-blue-300'
           }`}>
-            {ROLE_CONFIG[role].label}
+            {ta(`roles.${role}`)}
           </span>
         </div>
         <button
@@ -554,7 +572,7 @@ export default function AdminSidebar({ role, allowedSections: allowedSectionsPro
           <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" d="M15.75 9V5.25A2.25 2.25 0 0013.5 3h-6a2.25 2.25 0 00-2.25 2.25v13.5A2.25 2.25 0 007.5 21h6a2.25 2.25 0 002.25-2.25V15M12 9l-3 3m0 0l3 3m-3-3h12.75" />
           </svg>
-          Cerrar sesión
+          {tc('sign_out')}
         </button>
       </div>
     </aside>

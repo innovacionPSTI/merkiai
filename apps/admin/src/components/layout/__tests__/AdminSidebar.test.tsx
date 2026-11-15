@@ -11,6 +11,8 @@ import AdminSidebar from '../AdminSidebar'
 
 jest.mock('next/navigation', () => ({ usePathname: () => '/dashboard' }))
 jest.mock('@stackframe/stack', () => ({ useStackApp: () => ({ signOut: jest.fn() }) }))
+// HU-466 · el selector de idioma usa una server action (no aplica en jsdom).
+jest.mock('../PanelLocaleSelect', () => function PanelLocaleSelect() { return null })
 
 describe('AdminSidebar', () => {
   it('muestra la navegación y el logout para super_admin', () => {
@@ -82,5 +84,17 @@ describe('AdminSidebar', () => {
     expect(screen.getByText('Catálogo')).toBeInTheDocument()
     expect(screen.queryByText('Configuración')).not.toBeInTheDocument()
     expect(screen.queryByText('Sistema')).not.toBeInTheDocument()
+  })
+})
+
+describe('AdminSidebar · HU-466 idioma del panel', () => {
+  it('en inglés traduce grupos, enlaces, rol y cierre de sesión', () => {
+    // eslint-disable-next-line @typescript-eslint/no-require-imports
+    const { I18nProvider } = require('@merkiai/ui')
+    render(<I18nProvider locale="en-US"><AdminSidebar role="super_admin" /></I18nProvider>)
+    expect(screen.getByText('Catalog')).toBeInTheDocument()
+    expect(screen.getByText('Settings')).toBeInTheDocument()
+    expect(screen.getByText('Sign out')).toBeInTheDocument()
+    expect(screen.getByText('Super admin')).toBeInTheDocument()
   })
 })

@@ -2,11 +2,13 @@
 
 import { useStackApp } from '@stackframe/stack'
 import { useState } from 'react'
+import { useT } from '@merkiai/ui'
 
 /** Cierra la sesión de Stack Auth y redirige a `/login` (afterSignOut). */
 export default function LogoutButton() {
   const app = useStackApp()
   const [busy, setBusy] = useState(false)
+  const t = useT('console.common')
 
   return (
     <button
@@ -30,7 +32,7 @@ export default function LogoutButton() {
         opacity: busy ? 0.6 : 1,
       }}
     >
-      {busy ? 'Saliendo…' : 'Cerrar sesión'}
+      {busy ? t('signing_out') : t('sign_out')}
     </button>
   )
 }

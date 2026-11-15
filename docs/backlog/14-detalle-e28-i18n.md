@@ -1,6 +1,6 @@
 # Detalle · E28 — Internacionalización y mercados (idiomas, regiones, moneda)
 
-> **Épica:** **E28 · Internacionalización y mercados** (HU-460…468). **Diseño:** **ADR-011**. **Estado:** 🟡 en curso — HU-460 ✅ (v272) · HU-461 ✅ (v273) · HU-468 ✅ (v274) · HU-463 ✅ (v275) · HU-462 ✅ (v276) · HU-465 ✅ (v279, salvo plantillas de correo) · HU-464 ✅ (v278, sin IA).
+> **Épica:** **E28 · Internacionalización y mercados** (HU-460…468). **Diseño:** **ADR-011**. **Estado:** 🟡 en curso — HU-460 ✅ (v272) · HU-461 ✅ (v273) · HU-468 ✅ (v274) · HU-463 ✅ (v275) · HU-462 ✅ (v276) · HU-465 ✅ (v279, salvo plantillas de correo) · HU-464 ✅ (v278, sin IA) · HU-466 🟡 F1 (v280).
 > **Absorbe:** HU-114a → HU-463 · HU-114b → HU-462 · HU-114c → HU-464 (E2).
 > **Construye sobre:** listas de precio (HU-407), multi-dominio (HU-279), schema de bloques del Constructor, correos idempotentes (HU-162), entitlements (ADR-002), middleware con tenant + CSP (v270), IA (HU-118).
 >
@@ -106,7 +106,7 @@
 
 > Como comerciante u operador, quiero usar el panel en mi idioma, para trabajar cómodo aunque mi tienda venda en otro.
 
-**Talla:** XL (progresiva) · **Módulo:** preferencia de idioma por usuario (perfil, luego cookie, luego `Accept-Language`, luego `es-CO`), selector en el menú de cuenta, extracción de textos del admin por módulos (navegación y configuración primero; luego catálogo, pedidos, operaciones, cartera) y de la consola (`es` + `en`). **Estado:** 🔲
+**Talla:** XL (progresiva) · **Módulo:** preferencia de idioma por usuario (perfil, luego cookie, luego `Accept-Language`, luego `es-CO`), selector en el menú de cuenta, extracción de textos del admin por módulos (navegación y configuración primero; luego catálogo, pedidos, operaciones, cartera) y de la consola (`es` + `en`). **Estado:** 🟡 F1 en código (v280): proveedor de idioma único en `@merkiai/ui` (`I18nProvider`/`useT`/`useFormat`/`useLocale`, compartido por web, admin y consola); **admin**: idioma por usuario (`profiles.ui_locale`, migración `e17/81_profile_ui_locale.sql`) → cookie → `Accept-Language` → es-CO, selector en el pie del menú (se aplica a todos los perfiles del correo, sin cambiar URLs), `<html lang>`, **menú lateral completo, roles, barra superior y aviso de mora** traducidos; **consola**: idioma es/en por operador (cookie), selector en la barra superior, menú y cierre de sesión traducidos. Módulos no extraídos siguen en español sin errores (AC-4). *Siguiente (F2+):* extraer pantallas por módulo (Configuración, Catálogo, Pedidos, Operaciones, Cartera) y las pantallas de la consola.
 
 | # | Escenario | Resultado |
 |---|-----------|-----------|
