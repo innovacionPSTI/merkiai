@@ -38,7 +38,7 @@ DATABASE_URL="postgres://…tienda-prod…" bash scripts/db-apply.sh --no-seeds
 PLATFORM_DATABASE_URL="postgres://…plataforma-prod…" bash scripts/db-apply-platform.sh
 ```
 
-- [ ] Tienda: llega hasta `e17/77_storage_rls.sql` (incluye `75` uso de storage, `76` cartera y `77` RLS de storage).
+- [ ] Tienda: llega hasta `e17/78_markets.sql` (incluye `75` uso de storage, `76` cartera, `77` RLS de storage y `78` mercados).
 - [ ] Plataforma: llega hasta `14_fee_invoices.sql` (incluye `10` infra por tenant, `11` vault, `12` billing, `13` Merkiai Pagos, `14` cobro de comisiones).
 - [ ] Verificación rápida en plataforma: `select count(*) from plans;` (> 0) y que existan `subscriptions`, `merkiai_payment_accounts`, `fee_invoices`.
 

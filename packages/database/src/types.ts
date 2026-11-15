@@ -972,6 +972,54 @@ export type Database = {
         }
         Relationships: []
       }
+      markets: {
+        Row: {
+          id: number
+          tenant_id: string
+          key: string
+          name: string
+          countries: string[]
+          currency: string
+          price_list_id: number | null
+          locales: string[]
+          default_locale: string
+          domain: string | null
+          is_default: boolean
+          active: boolean
+          created_at: string
+          updated_at: string
+        }
+        Insert: {
+          id?: number
+          tenant_id?: string
+          key: string
+          name: string
+          countries?: string[]
+          currency?: string
+          price_list_id?: number | null
+          locales: string[]
+          default_locale: string
+          domain?: string | null
+          is_default?: boolean
+          active?: boolean
+          created_at?: string
+          updated_at?: string
+        }
+        Update: {
+          key?: string
+          name?: string
+          countries?: string[]
+          currency?: string
+          price_list_id?: number | null
+          locales?: string[]
+          default_locale?: string
+          domain?: string | null
+          is_default?: boolean
+          active?: boolean
+          updated_at?: string
+        }
+        Relationships: []
+      }
       price_lists: {
         Row: {
           id: number
@@ -2773,6 +2821,7 @@ export type OrderReturn = Database['public']['Tables']['order_returns']['Row']
 export type AuditLogEntry = Database['public']['Tables']['audit_log']['Row']
 export type NewsletterSubscriber = Database['public']['Tables']['newsletter_subscribers']['Row']
 export type StoreConfigRow = Database['public']['Tables']['store_config']['Row']
+export type MarketRow = Database['public']['Tables']['markets']['Row']
 export type PaymentConfig = Database['public']['Tables']['payment_config']['Row']
 
 export type Customer = Database['public']['Tables']['customers']['Row']

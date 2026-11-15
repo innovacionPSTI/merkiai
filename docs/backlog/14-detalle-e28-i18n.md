@@ -1,6 +1,6 @@
 # Detalle · E28 — Internacionalización y mercados (idiomas, regiones, moneda)
 
-> **Épica:** **E28 · Internacionalización y mercados** (HU-460…468). **Diseño:** **ADR-011**. **Estado:** 🟡 en curso — HU-460 ✅ (v272).
+> **Épica:** **E28 · Internacionalización y mercados** (HU-460…468). **Diseño:** **ADR-011**. **Estado:** 🟡 en curso — HU-460 ✅ (v272) · HU-461 ✅ (v273).
 > **Absorbe:** HU-114a → HU-463 · HU-114b → HU-462 · HU-114c → HU-464 (E2).
 > **Construye sobre:** listas de precio (HU-407), multi-dominio (HU-279), schema de bloques del Constructor, correos idempotentes (HU-162), entitlements (ADR-002), middleware con tenant + CSP (v270), IA (HU-118).
 >
@@ -29,7 +29,7 @@
 
 > Como comerciante, quiero elegir en qué idiomas y para qué países vende mi tienda, para llegar a clientes de otros mercados sin crear otra tienda.
 
-**Talla:** M · **Módulo:** migración `markets` (`tenant_id`, nombre, países, moneda, lista de precios opcional, locales habilitados, locale por defecto, dominio opcional, activo) + `store_config.default_locale`; admin **Configuración → Idiomas y mercados**; entitlements `max_idiomas` (límite) y `markets` (feature) en el catálogo; RLS por tenant. **Estado:** 🔲
+**Talla:** M · **Módulo:** migración `markets` (`tenant_id`, nombre, países, moneda, lista de precios opcional, locales habilitados, locale por defecto, dominio opcional, activo) + `store_config.default_locale`; admin **Configuración → Idiomas y mercados**; entitlements `max_idiomas` (límite) y `markets` (feature) en el catálogo; RLS por tenant. **Estado:** ✅ en código (v273): migración `e17/78_markets.sql` (checks de locales soportados, idioma por defecto habilitado, ISO de moneda; índice único parcial = un solo mercado por defecto; RLS lectura pública por tenant + admin_all; **mercado "Colombia" sembrado para toda tienda existente**); capa `queries/markets.ts` con validación **pura del conjunto completo** (`validateMarkets`: un default activo, límite `max_idiomas` por locales distintos, feature `markets`, moneda base mientras no haya HU-467, dominios y claves únicos) + mercado virtual para tiendas sin filas; entitlements `markets` (default off) y `max_idiomas` (default **1**); admin **Configuración → Idiomas y mercados** (solo admin/super_admin) con tarjetas por mercado, editor, aviso de plan, eliminación con diálogo de marca y **auditoría** (`market.create/update/delete`). *Decisión:* el locale por defecto de la tienda se **deriva** del mercado por defecto (no se duplica en `store_config`).
 
 | # | Escenario | Resultado |
 |---|-----------|-----------|

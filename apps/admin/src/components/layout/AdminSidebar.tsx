@@ -153,6 +153,7 @@ const NAV: NavNode[] = [
     children: [
       { href: '/configuracion/general', label: 'General', icon: <Icon name="settings" /> },
       { href: '/configuracion/dominio', label: 'Dominio', icon: <Icon name="domain" /> },
+      { href: '/configuracion/idiomas', label: 'Idiomas y mercados', icon: <Icon name="domain" />, fullAccessOnly: true },
       { href: '/configuracion/envios',  label: 'Envíos',  icon: <Icon name="truck" />, fullAccessOnly: true },
       { href: '/configuracion/pagos',   label: 'Pagos',   icon: <Icon name="money" />, fullAccessOnly: true },
       { href: '/configuracion/emails',  label: 'Emails',  icon: <Icon name="bell" />, fullAccessOnly: true },

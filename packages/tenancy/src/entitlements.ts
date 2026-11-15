@@ -149,6 +149,9 @@ export const FEATURES = {
   EDITABLE_CHROME: 'editable_chrome',
   /** Elegir entre estructuras de sitio / blueprints (HU-373). */
   SITE_BLUEPRINTS: 'site_blueprints',
+  // ── E28 · Internacionalización (ADR-011) ───────────────────────────────────
+  /** HU-461 · más de un mercado (países/moneda/precios propios). */
+  MARKETS: 'markets',
 } as const
 
 /** Claves de límite (cuantitativas; null = ilimitado). */
@@ -166,6 +169,8 @@ export const LIMITS = {
   MAX_MEDIA_MB: 'max_medios_mb',
   /** HU-369 · niveles permitidos en la navegación. */
   MAX_NAV_DEPTH: 'max_niveles_nav',
+  /** E28 · HU-461 · versiones de idioma (locales) publicables en la tienda. */
+  MAX_LANGUAGES: 'max_idiomas',
 } as const
 
 export const ENTITLEMENTS_CATALOG: EntitlementDef[] = [
@@ -194,6 +199,7 @@ export const ENTITLEMENTS_CATALOG: EntitlementDef[] = [
   { key: FEATURES.CONTENT_MODE,      kind: 'feature', label: 'Modo solo contenido',   description: 'Edita textos/imágenes pero no la estructura (plan básico).', default: false },
   { key: FEATURES.EDITABLE_CHROME,   kind: 'feature', label: 'Header/Footer editables', description: 'Construir el encabezado y el pie con bloques (regiones).', default: false },
   { key: FEATURES.SITE_BLUEPRINTS,   kind: 'feature', label: 'Estructuras de sitio',   description: 'Elegir entre estructuras de sitio (blueprints) por plan.', default: false },
+  { key: FEATURES.MARKETS,           kind: 'feature', label: 'Mercados',              description: 'Vender en varios mercados (países) con su propia configuración de idiomas, precios y dominio.', default: false },
   { key: LIMITS.PRODUCTS,             kind: 'limit', label: 'Productos',            description: 'Máximo de productos publicables.',        default: null },
   { key: LIMITS.USERS,                kind: 'limit', label: 'Usuarios del panel',   description: 'Máximo de usuarios del admin.',           default: null },
   { key: LIMITS.CATEGORIES,           kind: 'limit', label: 'Categorías',           description: 'Máximo de categorías.',                   default: null },
@@ -205,6 +211,8 @@ export const ENTITLEMENTS_CATALOG: EntitlementDef[] = [
   { key: LIMITS.MAX_COLLECTION_RECORDS, kind: 'limit', label: 'Registros por colección', description: 'Máximo de registros por colección.', default: null },
   { key: LIMITS.MAX_MEDIA_MB,         kind: 'limit', label: 'Almacenamiento de medios (MB)', description: 'Tamaño máximo de la biblioteca de medios.', default: null },
   { key: LIMITS.MAX_NAV_DEPTH,        kind: 'limit', label: 'Niveles de navegación', description: 'Niveles permitidos en el menú (1 = sin subelementos).', default: null },
+  // E28 · el plan base incluye 1 idioma (comportamiento histórico). es-CO y en-US cuentan como 2.
+  { key: LIMITS.MAX_LANGUAGES,        kind: 'limit', label: 'Idiomas',               description: 'Versiones de idioma publicables (cada variante regional cuenta: es-CO y es-MX son 2).', default: 1 },
 ]
 
 export function entitlementDef(key: string): EntitlementDef | undefined {
