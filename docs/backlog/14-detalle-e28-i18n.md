@@ -1,6 +1,6 @@
 # Detalle · E28 — Internacionalización y mercados (idiomas, regiones, moneda)
 
-> **Épica:** **E28 · Internacionalización y mercados** (HU-460…468). **Diseño:** **ADR-011**. **Estado:** 🟡 en curso — HU-460 ✅ (v272) · HU-461 ✅ (v273) · HU-468 ✅ (v274) · HU-463 ✅ (v275) · HU-462 ✅ (v276) · HU-465 🟡 (v277).
+> **Épica:** **E28 · Internacionalización y mercados** (HU-460…468). **Diseño:** **ADR-011**. **Estado:** 🟡 en curso — HU-460 ✅ (v272) · HU-461 ✅ (v273) · HU-468 ✅ (v274) · HU-463 ✅ (v275) · HU-462 ✅ (v276) · HU-465 🟡 (v277) · HU-464 ✅ (v278, sin IA).
 > **Absorbe:** HU-114a → HU-463 · HU-114b → HU-462 · HU-114c → HU-464 (E2).
 > **Construye sobre:** listas de precio (HU-407), multi-dominio (HU-279), schema de bloques del Constructor, correos idempotentes (HU-162), entitlements (ADR-002), middleware con tenant + CSP (v270), IA (HU-118).
 >
@@ -78,7 +78,7 @@
 
 > Como editor, quiero traducir el contenido idioma por idioma y ver qué falta, para gestionar los idiomas sin tocar datos crudos.
 
-**Talla:** M · **Módulo:** admin (alternar idioma en los formularios de producto, categoría, página, blog y bloques; vista lado a lado con el idioma por defecto; tablero de completitud por idioma y tipo de contenido; importar/exportar CSV de traducciones; "traducir con IA" como borrador, HU-118). **Estado:** 🔲
+**Talla:** M · **Módulo:** admin (alternar idioma en los formularios de producto, categoría, página, blog y bloques; vista lado a lado con el idioma por defecto; tablero de completitud por idioma y tipo de contenido; importar/exportar CSV de traducciones; "traducir con IA" como borrador, HU-118). **Estado:** ✅ en código (v278) salvo AC-4: admin **Contenido → Traducciones** (sección `contenido`): selector de idioma (idiomas publicados sin el por defecto; si hay uno solo, lleva a Idiomas y mercados), **tarjetas de completitud por tipo** (productos, categorías, blog, páginas y **bloques del Constructor**, incluidos sus ítems), lista con estado Traducido/Parcial/Sin traducir, búsqueda y filtro de pendientes, **editor lado a lado** (original de solo lectura + traducción; slug traducido), **exportar/importar CSV** por idioma y tipo o todo (columnas por nombre, BOM, protección contra fórmulas, fusión parcial en bloques, filas inválidas reportadas) y **auditoría** (`translation.save/import/export`). Capa `translation-workspace.ts` con estado/cobertura puros. *Decisiones:* el editor es un espacio central (enlaces desde cada formulario quedan para después); la completitud solo cuenta campos con texto original y no cuenta el slug. *Pendiente:* AC-4 "traducir con IA" como borrador espera HU-118 (no hay proveedor de IA de texto en la plataforma).
 
 | # | Escenario | Resultado |
 |---|-----------|-----------|

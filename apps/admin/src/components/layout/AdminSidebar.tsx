@@ -129,6 +129,8 @@ const NAV: NavNode[] = [
       // HU-353 · "Colecciones" se filtra en runtime según `collections` (flag/entitlement).
       { kind: 'leaf', href: '/colecciones', icon: <Icon name="list" />, label: 'Colecciones', section: 'contenido' },
       { kind: 'leaf', href: '/blog',       icon: <Icon name="blog" />,       label: 'Blog',       section: 'blog' },
+      // E28 · HU-464 · editor de traducciones (la página explica si hay un solo idioma).
+      { kind: 'leaf', href: '/traducciones', icon: <Icon name="domain" />, label: 'Traducciones', section: 'contenido' },
       { kind: 'leaf', href: '/newsletter', icon: <Icon name="newsletter" />, label: 'Newsletter', section: 'newsletter' },
     ],
   },
