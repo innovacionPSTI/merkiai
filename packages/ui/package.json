@@ -12,7 +12,7 @@
     "react-dom": "^18"
   },
   "devDependencies": {
-    "typescript": "^5.4.0",
+    "typescript": "^7.0.2",
     "@types/react": "^18",
     "tailwindcss": "^3.4.0"
   },
