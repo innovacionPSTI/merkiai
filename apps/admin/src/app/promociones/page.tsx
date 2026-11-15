@@ -5,6 +5,7 @@ import { listPromotions } from '@merkiai/database'
 import { requireAdminDb } from '@/lib/admin-context'
 import { userCanAccess } from '@/lib/roles'
 import PromotionsManager from './PromotionsManager'
+import { getAdminTx } from '@/lib/ui-locale'
 
 export const metadata: Metadata = { title: 'Promociones' }
 export const dynamic = 'force-dynamic'
@@ -15,6 +16,7 @@ export const dynamic = 'force-dynamic'
  * en el servidor (checkout). Gated por la sección "cupones".
  */
 export default async function PromocionesPage() {
+  const tx = await getAdminTx()
   const { adminUser, db } = await requireAdminDb()
   if (!userCanAccess(adminUser, 'cupones')) redirect('/no-autorizado')
 
@@ -26,7 +28,7 @@ export default async function PromocionesPage() {
   return (
     <div className="space-y-6">
       <PageHeader
-        title="Promociones"
+        title={tx("Promociones")}
         description="Descuentos automáticos: por monto de carrito, por categoría o BOGO. Se aplican en el checkout."
       />
       <PromotionsManager initial={promotions} categories={categories.data ?? []} />

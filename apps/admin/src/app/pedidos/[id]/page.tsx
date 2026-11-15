@@ -9,6 +9,7 @@ import ReconcileBoldButton from './ReconcileBoldButton'
 import PaymentStatusValidator from './PaymentStatusValidator'
 import ReturnsManager from './ReturnsManager'
 import { formatMoney, formatAddress, formatPhone } from '@merkiai/i18n'
+import { T } from '@merkiai/ui'
 
 export const metadata: Metadata = { title: 'Detalle de pedido' }
 
@@ -43,7 +44,7 @@ export default async function PedidoDetailPage({ params }: { params: Promise<{ i
     <div>
       <div className="flex items-center gap-4 mb-8">
         <Link href="/pedidos" className="text-brand-primary/50 hover:text-brand-primary transition-colors font-brand text-sm">
-          ← Pedidos
+          <T>← Pedidos</T>
         </Link>
         <h1 className="font-display text-brand-primary text-3xl">{order.order_number}</h1>
         <span className="font-brand text-xs font-semibold bg-brand-cream rounded-full px-3 py-1 text-brand-primary">
@@ -56,7 +57,7 @@ export default async function PedidoDetailPage({ params }: { params: Promise<{ i
         <div className="lg:col-span-2 space-y-5">
           {/* Timeline */}
           <div className="bg-white rounded-2xl p-6 shadow-sm">
-            <h2 className="font-brand font-semibold text-brand-primary mb-4">Estado del pedido</h2>
+            <h2 className="font-brand font-semibold text-brand-primary mb-4"><T>Estado del pedido</T></h2>
             <div className="flex items-center gap-2">
               {TIMELINE_STEPS.map((step, i) => {
                 const done = i <= currentStep
@@ -83,7 +84,7 @@ export default async function PedidoDetailPage({ params }: { params: Promise<{ i
 
           {/* Productos */}
           <div className="bg-white rounded-2xl p-6 shadow-sm">
-            <h2 className="font-brand font-semibold text-brand-primary mb-4">Productos</h2>
+            <h2 className="font-brand font-semibold text-brand-primary mb-4"><T>Productos</T></h2>
             <div className="space-y-3">
               {(order.items as any[]).map((item, i) => (
                 <div key={i} className="flex items-center justify-between py-2 border-b border-gray-50 last:border-0">
@@ -96,20 +97,20 @@ export default async function PedidoDetailPage({ params }: { params: Promise<{ i
               ))}
             </div>
             <div className="mt-4 pt-3 border-t border-gray-100 space-y-2 text-sm font-brand">
-              <div className="flex justify-between"><span className="text-brand-primary/50">Subtotal</span><span>{fmt(order.subtotal)}</span></div>
-              <div className="flex justify-between"><span className="text-brand-primary/50">Envío</span><span>{fmt(order.shipping_cost)}</span></div>
-              {order.discount > 0 && <div className="flex justify-between"><span className="text-green-600">Descuento</span><span className="text-green-600">-{fmt(order.discount)}</span></div>}
-              <div className="flex justify-between font-bold text-brand-primary"><span>Total</span><span>{fmt(order.total)}</span></div>
+              <div className="flex justify-between"><span className="text-brand-primary/50"><T>Subtotal</T></span><span>{fmt(order.subtotal)}</span></div>
+              <div className="flex justify-between"><span className="text-brand-primary/50"><T>Envío</T></span><span>{fmt(order.shipping_cost)}</span></div>
+              {order.discount > 0 && <div className="flex justify-between"><span className="text-green-600"><T>Descuento</T></span><span className="text-green-600">-{fmt(order.discount)}</span></div>}
+              <div className="flex justify-between font-bold text-brand-primary"><span><T>Total</T></span><span>{fmt(order.total)}</span></div>
             </div>
           </div>
 
           {/* Envío Skydropx */}
           {order.tracking_number && (
             <div className="bg-white rounded-2xl p-6 shadow-sm">
-              <h2 className="font-brand font-semibold text-brand-primary mb-4">Estado de envío</h2>
+              <h2 className="font-brand font-semibold text-brand-primary mb-4"><T>Estado de envío</T></h2>
               <div className="space-y-2 font-brand text-sm">
-                <div className="flex justify-between"><span className="text-brand-primary/50">Transportadora</span><span className="capitalize">{order.carrier_name}</span></div>
-                <div className="flex justify-between"><span className="text-brand-primary/50">Tracking</span><span className="font-mono">{order.tracking_number}</span></div>
+                <div className="flex justify-between"><span className="text-brand-primary/50"><T>Transportadora</T></span><span className="capitalize">{order.carrier_name}</span></div>
+                <div className="flex justify-between"><span className="text-brand-primary/50"><T>Tracking</T></span><span className="font-mono">{order.tracking_number}</span></div>
               </div>
               {order.label_url && (
                 <a
@@ -118,7 +119,7 @@ export default async function PedidoDetailPage({ params }: { params: Promise<{ i
                   rel="noopener noreferrer"
                   className="inline-block mt-4 border border-brand-primary text-brand-primary rounded-full px-4 py-2 font-brand text-sm hover:bg-brand-primary hover:text-brand-cream transition-colors"
                 >
-                  🖨 Descargar guía PDF
+                  <T>🖨 Descargar guía PDF</T>
                 </a>
               )}
             </div>
@@ -129,7 +130,7 @@ export default async function PedidoDetailPage({ params }: { params: Promise<{ i
         <div className="space-y-5">
           {/* Cliente */}
           <div className="bg-white rounded-2xl p-5 shadow-sm">
-            <h3 className="font-brand font-semibold text-brand-primary mb-3">Cliente</h3>
+            <h3 className="font-brand font-semibold text-brand-primary mb-3"><T>Cliente</T></h3>
             <div className="space-y-1.5 font-brand text-sm">
               <p className="font-semibold text-brand-primary">{order.customer_name}</p>
               <p className="text-brand-primary/60">{order.customer_email}</p>
@@ -139,7 +140,7 @@ export default async function PedidoDetailPage({ params }: { params: Promise<{ i
 
           {/* Dirección */}
           <div className="bg-white rounded-2xl p-5 shadow-sm">
-            <h3 className="font-brand font-semibold text-brand-primary mb-3">Dirección de envío</h3>
+            <h3 className="font-brand font-semibold text-brand-primary mb-3"><T>Dirección de envío</T></h3>
             <div className="font-brand text-sm text-brand-primary/70 space-y-1">
               {(() => {
                 const addr = order.shipping_addr as any
@@ -156,14 +157,14 @@ export default async function PedidoDetailPage({ params }: { params: Promise<{ i
 
           {/* Pago */}
           <div className="bg-white rounded-2xl p-5 shadow-sm">
-            <h3 className="font-brand font-semibold text-brand-primary mb-3">Pago</h3>
+            <h3 className="font-brand font-semibold text-brand-primary mb-3"><T>Pago</T></h3>
             <div className="font-brand text-sm space-y-1.5">
               <div className="flex justify-between">
-                <span className="text-brand-primary/50">Método</span>
+                <span className="text-brand-primary/50"><T>Método</T></span>
                 <span className="text-brand-primary capitalize">{order.payment_method ?? '—'}</span>
               </div>
               <div className="flex justify-between">
-                <span className="text-brand-primary/50">Estado</span>
+                <span className="text-brand-primary/50"><T>Estado</T></span>
                 <span className={`font-semibold ${order.payment_status === 'approved' ? 'text-green-600' : 'text-yellow-600'}`}>
                   {order.payment_status}
                 </span>

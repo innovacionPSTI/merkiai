@@ -77,7 +77,7 @@ export default async function BlogPage({
                       <img src={featured.cover_image} alt={featured.title} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
                     ) : (
                       <div className="w-full h-full flex items-center justify-center">
-                        <span className="font-display text-brand-primary/10 text-6xl">VPS</span>
+                        <span className="font-display text-brand-primary/10 text-6xl">{(featured.title ?? '·').slice(0, 1).toUpperCase()}</span>
                       </div>
                     )}
                   </div>
@@ -116,7 +116,7 @@ export default async function BlogPage({
                         <img src={post.cover_image} alt={post.title} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
                       ) : (
                         <div className="w-full h-full flex items-center justify-center">
-                          <span className="font-display text-brand-primary/10 text-4xl">VPS</span>
+                          <span className="font-display text-brand-primary/10 text-4xl">{(post.title ?? '·').slice(0, 1).toUpperCase()}</span>
                         </div>
                       )}
                     </div>

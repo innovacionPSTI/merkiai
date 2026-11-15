@@ -70,7 +70,7 @@ export async function GET() {
     status: 200,
     headers: {
       'Content-Type': 'application/json',
-      'Content-Disposition': `attachment; filename="vps-content-${new Date().toISOString().slice(0, 10)}.json"`,
+      'Content-Disposition': `attachment; filename="contenido-sitio-${new Date().toISOString().slice(0, 10)}.json"`,
     },
   })
 }

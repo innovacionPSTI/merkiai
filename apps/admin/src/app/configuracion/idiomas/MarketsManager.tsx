@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation'
 import { ConfirmDialog } from '@merkiai/ui'
 import { saveMarketAction, deleteMarketAction } from './actions'
 import { T } from '@merkiai/ui'
+import { useTx } from '@merkiai/ui'
 
 interface MarketView {
   id: number
@@ -39,6 +40,7 @@ function toDraft(m: MarketView): Draft {
 }
 
 export default function MarketsManager({ markets, locales, priceLists, rules, usedLanguages }: Props) {
+  const tx = useTx()
   const router = useRouter()
   const [pending, start] = useTransition()
   const [editing, setEditing] = useState<Draft | null>(null)
@@ -153,11 +155,11 @@ export default function MarketsManager({ markets, locales, priceLists, rules, us
       </div>
 
       {editing && (
-        <section className="rounded-2xl border border-brand-primary/30 bg-white p-5 space-y-4" aria-label="Editar mercado">
+        <section className="rounded-2xl border border-brand-primary/30 bg-white p-5 space-y-4" aria-label={tx("Editar mercado")}>
           <h2 className="font-brand text-sm font-semibold text-brand-primary">{editing.id || editing.virtual ? `Editar ${editing.name || 'mercado'}` : 'Nuevo mercado'}</h2>
           <div className="grid gap-4 md:grid-cols-2">
             <label className="block font-brand text-sm text-brand-primary"><T>Nombre</T>
-              <input className={`${input} mt-1 w-full`} value={editing.name} onChange={(e) => setEditing({ ...editing, name: e.target.value })} placeholder="México" />
+              <input className={`${input} mt-1 w-full`} value={editing.name} onChange={(e) => setEditing({ ...editing, name: e.target.value })} placeholder={tx("México")} />
             </label>
             <label className="block font-brand text-sm text-brand-primary"><T>Países (código de 2 letras)</T>
               <input className={`${input} mt-1 w-full`} value={editing.countriesText} onChange={(e) => setEditing({ ...editing, countriesText: e.target.value })} placeholder="MX" />
@@ -213,7 +215,7 @@ export default function MarketsManager({ markets, locales, priceLists, rules, us
 
       <ConfirmDialog
         open={toDelete !== null}
-        title="Eliminar mercado"
+        title={tx("Eliminar mercado")}
         message={toDelete ? `¿Eliminar el mercado "${toDelete.name}"? Esta acción no se puede deshacer.` : ''}
         danger confirmLabel="Eliminar" busy={pending}
         onConfirm={() => { if (toDelete) remove(toDelete) }}

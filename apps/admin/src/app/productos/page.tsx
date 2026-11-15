@@ -9,6 +9,8 @@ import { getStoreConfig } from '@merkiai/database'
 import { getAdminUser } from '@/lib/auth'
 import { getAdminDb } from '@/lib/admin-db'
 import { userCanManageData } from '@/lib/roles'
+import { T } from '@merkiai/ui'
+import { getAdminTx } from '@/lib/ui-locale'
 
 export const metadata: Metadata = { title: 'Productos' }
 export const dynamic = 'force-dynamic'
@@ -18,6 +20,7 @@ export default async function ProductosPage({
 }: {
   searchParams: Promise<Record<string, string | undefined>>
 }) {
+  const tx = await getAdminTx()
   const sp = await searchParams
   const q = sp.q?.trim() ?? ''
   const stockFilter = sp.stock === 'bajo'
@@ -52,7 +55,7 @@ export default async function ProductosPage({
     <div>
       <div className="mb-8">
         <PageHeader
-          title="Productos"
+          title={tx("Productos")}
           description="Administra el catálogo de productos de tu tienda."
           action={
             <div className="flex flex-wrap items-center gap-2 sm:gap-3">
@@ -63,7 +66,7 @@ export default async function ProductosPage({
                     href="/api/admin/products/export"
                     className="border border-brand-primary/20 text-brand-primary rounded-full px-5 py-2 font-brand text-sm hover:bg-brand-cream transition-colors inline-flex items-center gap-2"
                   >
-                    <Icon name="external" size={16} /> Exportar CSV
+                    <Icon name="external" size={16} /> <T>Exportar CSV</T>
                   </a>
                   <ImportProductsModal />
                 </>
@@ -72,7 +75,7 @@ export default async function ProductosPage({
                 href="/productos/nuevo"
                 className="bg-brand-primary text-brand-cream rounded-full px-5 py-2 font-brand text-sm hover:bg-brand-dark transition-colors inline-flex items-center gap-2"
               >
-                <Icon name="plus" size={16} /> Nuevo producto
+                <Icon name="plus" size={16} /> <T>Nuevo producto</T>
               </Link>
             </div>
           }
@@ -90,7 +93,7 @@ export default async function ProductosPage({
                 : 'border border-brand-primary/20 text-brand-primary hover:bg-brand-cream'
             }`}
           >
-            <Icon name="alert" size={15} /> Stock bajo
+            <Icon name="alert" size={15} /> <T>Stock bajo</T>
           </Link>
         </div>
 

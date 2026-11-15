@@ -4,6 +4,7 @@ import { useState, useTransition } from 'react'
 import type { StoreConfig, TrustBadge } from '@merkiai/database'
 import ImageUpload from '@/components/ImageUpload'
 import { T } from '@merkiai/ui'
+import { useTx } from '@merkiai/ui'
 
 interface Props {
   initialConfig: StoreConfig | null
@@ -14,6 +15,7 @@ interface Props {
 }
 
 export default function StoreConfigForm({ initialConfig, editorialInConstructor }: Props) {
+  const tx = useTx()
   const [logoUrl, setLogoUrl]           = useState(initialConfig?.logo_url         ?? '')
   const [faviconUrl, setFaviconUrl]     = useState(initialConfig?.favicon_url       ?? '')
   const [whatsapp, setWhatsapp]         = useState(initialConfig?.whatsapp_number   ?? '')
@@ -133,7 +135,7 @@ export default function StoreConfigForm({ initialConfig, editorialInConstructor 
       setStatus('saved')
       startTransition(() => { setTimeout(() => setStatus('idle'), 3000) })
     } catch {
-      setErrorMsg('Error de red al guardar')
+      setErrorMsg(tx("Error de red al guardar"))
       setStatus('error')
     }
   }
@@ -224,7 +226,7 @@ export default function StoreConfigForm({ initialConfig, editorialInConstructor 
             type="text"
             value={storeName}
             onChange={(e) => setStoreName(e.target.value)}
-            placeholder="Nombre de la tienda"
+            placeholder={tx("Nombre de la tienda")}
             className="w-64 border border-gray-200 rounded-xl px-4 py-2.5 font-brand text-sm focus:outline-none focus:border-brand-primary"
           />
         </div>
@@ -260,7 +262,7 @@ export default function StoreConfigForm({ initialConfig, editorialInConstructor 
           <textarea
             value={storeDescription}
             onChange={(e) => setStoreDescription(e.target.value)}
-            placeholder="Bienvenido a nuestra tienda. Explora productos de calidad y realiza tu pedido de forma segura."
+            placeholder={tx("Bienvenido a nuestra tienda. Explora productos de calidad y realiza tu pedido de forma segura.")}
             rows={3}
             maxLength={300}
             className="w-full border border-gray-200 rounded-xl px-4 py-2.5 font-brand text-sm focus:outline-none focus:border-brand-primary resize-none"
@@ -283,7 +285,7 @@ export default function StoreConfigForm({ initialConfig, editorialInConstructor 
             type="text"
             value={seoKeywords}
             onChange={(e) => setSeoKeywords(e.target.value)}
-            placeholder="tienda online, ecommerce, envíos"
+            placeholder={tx("tienda online, ecommerce, envíos")}
             className="w-full border border-gray-200 rounded-xl px-4 py-2.5 font-brand text-sm focus:outline-none focus:border-brand-primary"
           />
         </div>
@@ -611,7 +613,7 @@ export default function StoreConfigForm({ initialConfig, editorialInConstructor 
               <button
                 type="button"
                 onClick={() => removeBadge(i)}
-                aria-label="Eliminar badge"
+                aria-label={tx("Eliminar badge")}
                 className="text-brand-primary/30 hover:text-red-500 transition-colors text-lg leading-none px-1"
               >
                 ×
@@ -627,7 +629,7 @@ export default function StoreConfigForm({ initialConfig, editorialInConstructor 
             value={newBadgeText}
             onChange={(e) => setNewBadgeText(e.target.value)}
             onKeyDown={(e) => e.key === 'Enter' && (e.preventDefault(), addBadge())}
-            placeholder="ej: ✓ Calidad garantizada"
+            placeholder={tx("ej: ✓ Calidad garantizada")}
             className="flex-1 border border-gray-200 rounded-xl px-3 py-2 font-brand text-sm focus:outline-none focus:border-brand-primary"
           />
           <button

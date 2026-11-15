@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation'
 import { ResourceList, ResourceItem, ResourceAction, EnvBadge, StatusBadge, WizardModal, Icon, type WizardStep } from '@merkiai/ui'
 import type { MaskedInstance, PublicProviderDef } from '@/lib/mask-instance'
 import { T } from '@merkiai/ui'
+import { useTx } from '@merkiai/ui'
 
 interface Props {
   kind: 'payment' | 'shipping' | 'email'
@@ -138,6 +139,7 @@ function WebhookUrl({ provider, base }: { provider: string; base?: string | null
 }
 
 export default function IntegrationInstancesForm({ kind, apiBase, addLabel, emptyText, instances, providers, storeBaseUrl, showEnv = true, showWebhook = false, builtin, onAfterActivate }: Props) {
+  const tx = useTx()
   const router = useRouter()
   const defaultEnv: Env = showEnv ? 'test' : 'production'
   const [busy, setBusy] = useState(false)
@@ -361,8 +363,8 @@ export default function IntegrationInstancesForm({ kind, apiBase, addLabel, empt
               {builtin.active && <StatusBadge tone="success"><T>Activo</T></StatusBadge>}
             </>}
             actions={<>
-              {builtin.onEdit && <ResourceAction icon="edit" label="Editar" onClick={builtin.onEdit} disabled={busy} />}
-              {!builtin.active && <ResourceAction icon="check" label="Activar" tone="primary" onClick={builtin.onActivate} disabled={busy} />}
+              {builtin.onEdit && <ResourceAction icon="edit" label={tx("Editar")} onClick={builtin.onEdit} disabled={busy} />}
+              {!builtin.active && <ResourceAction icon="check" label={tx("Activar")} tone="primary" onClick={builtin.onActivate} disabled={busy} />}
             </>}
           />
         )}
@@ -379,9 +381,9 @@ export default function IntegrationInstancesForm({ kind, apiBase, addLabel, empt
             </>}
             actions={<>
               <ResourceAction icon="refresh" label={verifying === inst.id ? 'Verificando…' : 'Verificar'} onClick={() => verify(inst)} disabled={verifying !== null || busy} />
-              <ResourceAction icon="edit" label="Editar" onClick={() => setDraft(editDraft(inst))} disabled={busy} />
-              {!carrierIsActive(inst) && <ResourceAction icon="check" label="Activar" tone="primary" onClick={() => activate(inst.id)} disabled={busy} />}
-              <ResourceAction icon="trash" label="Quitar" tone="danger" onClick={() => remove(inst)} disabled={busy} />
+              <ResourceAction icon="edit" label={tx("Editar")} onClick={() => setDraft(editDraft(inst))} disabled={busy} />
+              {!carrierIsActive(inst) && <ResourceAction icon="check" label={tx("Activar")} tone="primary" onClick={() => activate(inst.id)} disabled={busy} />}
+              <ResourceAction icon="trash" label={tx("Quitar")} tone="danger" onClick={() => remove(inst)} disabled={busy} />
             </>}
           />
         ))}

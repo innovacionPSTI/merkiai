@@ -93,7 +93,7 @@ const en = {
       manual_body: 'When you confirm, your order will be recorded as pending payment. The store team will contact you to arrange and validate the payment before shipping.',
       widget_hint: 'The {gateway} payment will open when you confirm. Your data is protected with SSL.',
       processing: 'Processing…', confirm: 'Place order', summary: 'Summary', remove: 'Remove', have_coupon: 'Have a coupon?',
-      apply: 'Apply', gift_card_placeholder: 'Gift card code', gift_card_valid: 'Valid gift card — balance {amount}',
+      apply: 'Apply', coupon_placeholder: 'CODE', gift_card_placeholder: 'Gift card code', gift_card_valid: 'Valid gift card — balance {amount}',
       use_credit: 'Use my store credit ({amount})', subtotal: 'Subtotal', discount: 'Discount ({code})', shipping: 'Shipping',
       free: 'Free', calculating: 'Calculating…', credit: 'Gift card / credit', total: 'Total',
       coupon_invalid: 'Invalid coupon', coupon_error: 'Error applying the coupon', gift_card_invalid: 'Invalid gift card or no balance.',

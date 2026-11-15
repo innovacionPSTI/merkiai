@@ -4,6 +4,7 @@ import { PageHeader } from '@merkiai/ui'
 import { requireAdminDb } from '@/lib/admin-context'
 import { userCanAccess } from '@/lib/roles'
 import ReportesClient from './ReportesClient'
+import { getAdminTx } from '@/lib/ui-locale'
 
 export const metadata: Metadata = { title: 'Reportes' }
 export const dynamic = 'force-dynamic'
@@ -13,12 +14,13 @@ export const dynamic = 'force-dynamic'
  * métricas y la exportación se resuelven en `/api/admin/reports/sales`.
  */
 export default async function ReportesPage() {
+  const tx = await getAdminTx()
   const { adminUser } = await requireAdminDb()
   if (!userCanAccess(adminUser, 'pedidos')) redirect('/no-autorizado')
 
   return (
     <div className="space-y-6">
-      <PageHeader title="Reportes de ventas" description="Ingresos, pedidos, ticket promedio y top productos por período." />
+      <PageHeader title={tx("Reportes de ventas")} description="Ingresos, pedidos, ticket promedio y top productos por período." />
       <ReportesClient />
     </div>
   )

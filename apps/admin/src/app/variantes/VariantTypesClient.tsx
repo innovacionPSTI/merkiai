@@ -3,6 +3,8 @@
 import { useState } from 'react'
 import { PageHeader, Icon } from '@merkiai/ui'
 import type { VariantType } from '@merkiai/database'
+import { T } from '@merkiai/ui'
+import { useTx } from '@merkiai/ui'
 
 interface Props {
   variantTypes: VariantType[]
@@ -21,6 +23,7 @@ interface FormState {
 const EMPTY_FORM: FormState = { name: '', values: '', display_type: 'pill', active: true, swatch_hex: {} }
 
 export default function VariantTypesClient({ variantTypes: initial }: Props) {
+  const tx = useTx()
   const [items, setItems] = useState<VariantType[]>(initial)
   const [editing, setEditing] = useState<VariantType | null>(null)
   const [isNew, setIsNew] = useState(false)
@@ -60,8 +63,8 @@ export default function VariantTypesClient({ variantTypes: initial }: Props) {
 
   async function handleSave() {
     const values = parseValues(form.values)
-    if (!form.name.trim()) { setError('El nombre es requerido'); return }
-    if (values.length === 0) { setError('Agrega al menos un valor'); return }
+    if (!form.name.trim()) { setError(tx("El nombre es requerido")); return }
+    if (values.length === 0) { setError(tx("Agrega al menos un valor")); return }
 
     setSaving(true)
     setError('')
@@ -131,14 +134,14 @@ export default function VariantTypesClient({ variantTypes: initial }: Props) {
     <div className="space-y-6">
       {/* Header */}
       <PageHeader
-        title="Tipos de variante"
+        title={tx("Tipos de variante")}
         description="Plantillas globales reutilizables que se asignan a los productos para generar combinaciones."
         action={
           <button
             onClick={openNew}
             className="font-brand text-sm bg-brand-primary text-brand-cream px-4 py-2 rounded-xl hover:bg-brand-dark transition-colors inline-flex items-center gap-2"
           >
-            <Icon name="plus" size={16} /> Nuevo tipo
+            <Icon name="plus" size={16} /> <T>Nuevo tipo</T>
           </button>
         }
       />
@@ -147,7 +150,7 @@ export default function VariantTypesClient({ variantTypes: initial }: Props) {
       {items.length === 0 ? (
         <div className="bg-white rounded-2xl p-12 text-center shadow-sm">
           <p className="font-brand text-brand-primary/40 text-sm">
-            No hay tipos de variante. Crea uno para empezar.
+            <T>No hay tipos de variante. Crea uno para empezar.</T>
           </p>
         </div>
       ) : (
@@ -155,10 +158,10 @@ export default function VariantTypesClient({ variantTypes: initial }: Props) {
           <table className="w-full min-w-[640px]">
             <thead>
               <tr className="border-b border-gray-100">
-                <th className="text-left font-brand text-xs text-brand-primary/40 px-6 py-3">Nombre</th>
-                <th className="text-left font-brand text-xs text-brand-primary/40 px-6 py-3">Valores</th>
-                <th className="text-left font-brand text-xs text-brand-primary/40 px-6 py-3">Tipo</th>
-                <th className="text-left font-brand text-xs text-brand-primary/40 px-6 py-3">Estado</th>
+                <th className="text-left font-brand text-xs text-brand-primary/40 px-6 py-3"><T>Nombre</T></th>
+                <th className="text-left font-brand text-xs text-brand-primary/40 px-6 py-3"><T>Valores</T></th>
+                <th className="text-left font-brand text-xs text-brand-primary/40 px-6 py-3"><T>Tipo</T></th>
+                <th className="text-left font-brand text-xs text-brand-primary/40 px-6 py-3"><T>Estado</T></th>
                 <th className="px-6 py-3" />
               </tr>
             </thead>
@@ -207,13 +210,13 @@ export default function VariantTypesClient({ variantTypes: initial }: Props) {
                         onClick={() => openEdit(vt)}
                         className="font-brand text-xs text-brand-primary/50 hover:text-brand-primary transition-colors"
                       >
-                        Editar
+                        <T>Editar</T>
                       </button>
                       <button
                         onClick={() => handleDelete(vt)}
                         className="font-brand text-xs text-red-400 hover:text-red-600 transition-colors"
                       >
-                        Eliminar
+                        <T>Eliminar</T>
                       </button>
                     </div>
                   </td>
@@ -239,20 +242,20 @@ export default function VariantTypesClient({ variantTypes: initial }: Props) {
             <div className="space-y-4">
               <div>
                 <label className="font-brand text-xs text-brand-primary/50 block mb-1">
-                  Nombre del tipo *
+                  <T>Nombre del tipo *</T>
                 </label>
                 <input
                   type="text"
                   value={form.name}
                   onChange={(e) => setForm((f) => ({ ...f, name: e.target.value }))}
-                  placeholder="ej: Color, Talla, Material, Acabado"
+                  placeholder={tx("ej: Color, Talla, Material, Acabado")}
                   className="w-full border border-gray-200 rounded-xl px-4 py-2.5 font-brand text-sm text-brand-primary focus:outline-none focus:border-brand-primary"
                 />
               </div>
 
               <div>
                 <label className="font-brand text-xs text-brand-primary/50 block mb-1">
-                  Valores * <span className="text-brand-primary/30">(uno por línea)</span>
+                  <T>Valores *</T> <span className="text-brand-primary/30">(uno por línea)</span>
                 </label>
                 <textarea
                   rows={5}
@@ -274,7 +277,7 @@ export default function VariantTypesClient({ variantTypes: initial }: Props) {
                 {/* HU-264 · color por valor cuando es swatch */}
                 {form.display_type === 'swatch' && parseValues(form.values).length > 0 && (
                   <div className="mt-3 space-y-1.5">
-                    <p className="font-brand text-xs text-brand-primary/40">Color de cada valor (opcional)</p>
+                    <p className="font-brand text-xs text-brand-primary/40"><T>Color de cada valor (opcional)</T></p>
                     {parseValues(form.values).map((v) => (
                       <div key={v} className="flex items-center gap-2">
                         <input
@@ -294,7 +297,7 @@ export default function VariantTypesClient({ variantTypes: initial }: Props) {
 
               <div>
                 <label className="font-brand text-xs text-brand-primary/50 block mb-1">
-                  Visualización en tienda
+                  <T>Visualización en tienda</T>
                 </label>
                 <div className="flex gap-3">
                   {(['pill', 'swatch'] as DisplayType[]).map((dt) => (
@@ -322,7 +325,7 @@ export default function VariantTypesClient({ variantTypes: initial }: Props) {
                   onChange={(e) => setForm((f) => ({ ...f, active: e.target.checked }))}
                   className="w-4 h-4 accent-brand-primary"
                 />
-                <span className="font-brand text-sm text-brand-primary">Activo</span>
+                <span className="font-brand text-sm text-brand-primary"><T>Activo</T></span>
               </label>
             </div>
 
@@ -332,7 +335,7 @@ export default function VariantTypesClient({ variantTypes: initial }: Props) {
                 disabled={saving}
                 className="flex-1 font-brand text-sm border border-gray-200 text-brand-primary px-4 py-2.5 rounded-xl hover:bg-gray-50 transition-colors disabled:opacity-50"
               >
-                Cancelar
+                <T>Cancelar</T>
               </button>
               <button
                 onClick={handleSave}

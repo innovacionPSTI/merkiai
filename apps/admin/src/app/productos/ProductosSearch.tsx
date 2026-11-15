@@ -2,12 +2,14 @@
 
 import { useRouter, usePathname, useSearchParams } from 'next/navigation'
 import { useRef, useTransition } from 'react'
+import { useTx } from '@merkiai/ui'
 
 interface Props {
   defaultQ: string
 }
 
 export default function ProductosSearch({ defaultQ }: Props) {
+  const tx = useTx()
   const router = useRouter()
   const pathname = usePathname()
   const searchParams = useSearchParams()
@@ -34,7 +36,7 @@ export default function ProductosSearch({ defaultQ }: Props) {
       type="search"
       defaultValue={defaultQ}
       onChange={(e) => handleChange(e.target.value)}
-      placeholder="Buscar producto..."
+      placeholder={tx("Buscar producto...")}
       className="font-brand text-sm border border-gray-200 rounded-full px-4 py-2 w-64 focus:outline-none focus:border-brand-primary"
     />
   )

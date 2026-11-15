@@ -3,6 +3,8 @@
 import { useState } from 'react'
 import { Icon } from '@merkiai/ui'
 import { formatMoney, formatDateTime } from '@merkiai/i18n'
+import { T } from '@merkiai/ui'
+import { useTx } from '@merkiai/ui'
 
 interface SegmentRules { min_orders?: number; min_total?: number; within_days?: number }
 interface Segment { id: number; name: string; type: 'manual' | 'rules'; rules: SegmentRules; member_count?: number }
@@ -58,6 +60,7 @@ export default function VipManager({
 
 // ── Segmentos ─────────────────────────────────────────────────────────────────
 function Segmentos({ initial }: { initial: Segment[] }) {
+  const tx = useTx()
   const [rows, setRows] = useState<Segment[]>(initial)
   const [name, setName] = useState('')
   const [type, setType] = useState<'manual' | 'rules'>('manual')
@@ -88,12 +91,12 @@ function Segmentos({ initial }: { initial: Segment[] }) {
     <div className="space-y-5">
       <form onSubmit={create} className="bg-white rounded-2xl p-5 shadow-sm flex flex-wrap items-end gap-3">
         <label className="block flex-1 min-w-[200px]">
-          <span className="font-brand text-xs text-brand-primary/50">Nombre del segmento</span>
-          <input value={name} onChange={(e) => setName(e.target.value)} required placeholder="Clientes VIP"
+          <span className="font-brand text-xs text-brand-primary/50"><T>Nombre del segmento</T></span>
+          <input value={name} onChange={(e) => setName(e.target.value)} required placeholder={tx("Clientes VIP")}
             className="mt-1 w-full rounded-lg border border-brand-primary/15 px-3 py-2 font-brand text-sm focus:border-brand-primary focus:outline-none" />
         </label>
         <label className="block">
-          <span className="font-brand text-xs text-brand-primary/50">Tipo</span>
+          <span className="font-brand text-xs text-brand-primary/50"><T>Tipo</T></span>
           <select value={type} onChange={(e) => setType(e.target.value as 'manual' | 'rules')}
             className="mt-1 rounded-lg border border-brand-primary/15 px-3 py-2 font-brand text-sm focus:border-brand-primary focus:outline-none">
             <option value="manual">Manual</option>
@@ -102,13 +105,13 @@ function Segmentos({ initial }: { initial: Segment[] }) {
         </label>
         <button type="submit" disabled={busy}
           className="bg-brand-primary text-brand-cream rounded-full px-5 py-2 font-brand text-sm hover:bg-brand-dark disabled:opacity-50 inline-flex items-center gap-2">
-          <Icon name="plus" size={16} /> Crear
+          <Icon name="plus" size={16} /> <T>Crear</T>
         </button>
         {error && <p className="font-brand text-sm text-red-600 w-full">{error}</p>}
       </form>
 
       <div className="space-y-3">
-        {rows.length === 0 && <p className="font-brand text-brand-primary/40 text-center py-8">Aún no tienes segmentos.</p>}
+        {rows.length === 0 && <p className="font-brand text-brand-primary/40 text-center py-8"><T>Aún no tienes segmentos.</T></p>}
         {rows.map((s) => (
           <div key={s.id} className="bg-white rounded-2xl shadow-sm">
             <div className="flex items-center gap-3 px-5 py-4">
@@ -123,7 +126,7 @@ function Segmentos({ initial }: { initial: Segment[] }) {
                 {open === s.id ? 'Cerrar' : 'Gestionar'}
               </button>
               <button onClick={() => remove(s.id)} className="font-brand text-xs text-red-600 border border-red-200 rounded-full px-3 py-1 hover:bg-red-50">
-                Eliminar
+                <T>Eliminar</T>
               </button>
             </div>
             {open === s.id && <SegmentDetail segment={s} onCount={(n) => setRows((r) => r.map((x) => x.id === s.id ? { ...x, member_count: n } : x))} />}
@@ -135,6 +138,7 @@ function Segmentos({ initial }: { initial: Segment[] }) {
 }
 
 function SegmentDetail({ segment, onCount }: { segment: Segment; onCount: (n: number) => void }) {
+  const tx = useTx()
   const [rules, setRules] = useState<SegmentRules>(segment.rules ?? {})
   const [members, setMembers] = useState<Array<{ customer_id: string; name: string | null; email: string }>>([])
   const [loaded, setLoaded] = useState(false)
@@ -156,7 +160,7 @@ function SegmentDetail({ segment, onCount }: { segment: Segment; onCount: (n: nu
     setMsg(res.ok ? 'Reglas guardadas.' : 'Error al guardar.')
   }
   async function recalc() {
-    setMsg('Recalculando…')
+    setMsg(tx("Recalculando…"))
     const res = await fetch(`/api/admin/segments/${segment.id}/recalc`, { method: 'POST' })
     const d = await res.json()
     if (res.ok) { setMsg(`${d.count} miembro(s).`); load() } else setMsg(d.error ?? 'Error')
@@ -180,29 +184,29 @@ function SegmentDetail({ segment, onCount }: { segment: Segment; onCount: (n: nu
     <div className="border-t border-gray-100 px-5 py-4 space-y-4">
       {segment.type === 'rules' ? (
         <div className="space-y-3">
-          <p className="font-brand text-sm font-semibold text-brand-primary">Reglas sobre el histórico de compras</p>
+          <p className="font-brand text-sm font-semibold text-brand-primary"><T>Reglas sobre el histórico de compras</T></p>
           <div className="grid gap-3 sm:grid-cols-3">
-            <label className="block"><span className="font-brand text-xs text-brand-primary/50">Mín. pedidos</span>
+            <label className="block"><span className="font-brand text-xs text-brand-primary/50"><T>Mín. pedidos</T></span>
               <input type="number" min={0} value={n(rules.min_orders)} onChange={(e) => setRules((r) => ({ ...r, min_orders: e.target.value === '' ? undefined : Number(e.target.value) }))}
                 className="mt-1 w-full rounded-lg border border-brand-primary/15 px-3 py-2 font-brand text-sm" /></label>
-            <label className="block"><span className="font-brand text-xs text-brand-primary/50">Gasto total mín.</span>
+            <label className="block"><span className="font-brand text-xs text-brand-primary/50"><T>Gasto total mín.</T></span>
               <input type="number" min={0} value={n(rules.min_total)} onChange={(e) => setRules((r) => ({ ...r, min_total: e.target.value === '' ? undefined : Number(e.target.value) }))}
                 className="mt-1 w-full rounded-lg border border-brand-primary/15 px-3 py-2 font-brand text-sm" /></label>
-            <label className="block"><span className="font-brand text-xs text-brand-primary/50">Última compra ≤ (días)</span>
+            <label className="block"><span className="font-brand text-xs text-brand-primary/50"><T>Última compra ≤ (días)</T></span>
               <input type="number" min={0} value={n(rules.within_days)} onChange={(e) => setRules((r) => ({ ...r, within_days: e.target.value === '' ? undefined : Number(e.target.value) }))}
                 className="mt-1 w-full rounded-lg border border-brand-primary/15 px-3 py-2 font-brand text-sm" /></label>
           </div>
           <div className="flex gap-2">
-            <button onClick={saveRules} className="font-brand text-xs bg-brand-primary/10 text-brand-primary rounded-full px-4 py-2 hover:bg-brand-primary/20">Guardar reglas</button>
-            <button onClick={recalc} className="font-brand text-xs bg-brand-primary text-brand-cream rounded-full px-4 py-2 hover:bg-brand-dark">Recalcular miembros</button>
+            <button onClick={saveRules} className="font-brand text-xs bg-brand-primary/10 text-brand-primary rounded-full px-4 py-2 hover:bg-brand-primary/20"><T>Guardar reglas</T></button>
+            <button onClick={recalc} className="font-brand text-xs bg-brand-primary text-brand-cream rounded-full px-4 py-2 hover:bg-brand-dark"><T>Recalcular miembros</T></button>
           </div>
         </div>
       ) : (
         <form onSubmit={addMember} className="flex flex-wrap items-end gap-2">
-          <label className="block flex-1 min-w-[200px]"><span className="font-brand text-xs text-brand-primary/50">Agregar cliente por email</span>
+          <label className="block flex-1 min-w-[200px]"><span className="font-brand text-xs text-brand-primary/50"><T>Agregar cliente por email</T></span>
             <input type="email" value={email} onChange={(e) => setEmail(e.target.value)} required placeholder="cliente@correo.com"
               className="mt-1 w-full rounded-lg border border-brand-primary/15 px-3 py-2 font-brand text-sm" /></label>
-          <button type="submit" className="font-brand text-xs bg-brand-primary text-brand-cream rounded-full px-4 py-2 hover:bg-brand-dark">Agregar</button>
+          <button type="submit" className="font-brand text-xs bg-brand-primary text-brand-cream rounded-full px-4 py-2 hover:bg-brand-dark"><T>Agregar</T></button>
         </form>
       )}
 
@@ -210,12 +214,12 @@ function SegmentDetail({ segment, onCount }: { segment: Segment; onCount: (n: nu
 
       <div>
         <p className="font-brand text-xs text-brand-primary/50 mb-2">Miembros ({members.length})</p>
-        {members.length === 0 ? <p className="font-brand text-xs text-brand-primary/40">Sin miembros.</p> : (
+        {members.length === 0 ? <p className="font-brand text-xs text-brand-primary/40"><T>Sin miembros.</T></p> : (
           <ul className="divide-y divide-gray-50">
             {members.map((m) => (
               <li key={m.customer_id} className="flex items-center justify-between py-2">
                 <span className="font-brand text-sm text-brand-primary">{m.name || m.email} <span className="text-brand-primary/40">· {m.email}</span></span>
-                <button onClick={() => removeMember(m.customer_id)} className="font-brand text-xs text-red-600 hover:underline">Quitar</button>
+                <button onClick={() => removeMember(m.customer_id)} className="font-brand text-xs text-red-600 hover:underline"><T>Quitar</T></button>
               </li>
             ))}
           </ul>
@@ -295,27 +299,27 @@ function Campanas({ initial, segments, products, categories }: { initial: Campai
   return (
     <div className="space-y-5">
       <form onSubmit={create} className="bg-white rounded-2xl p-5 shadow-sm space-y-3">
-        <p className="font-brand text-sm font-semibold text-brand-primary">Nueva campaña de acceso anticipado</p>
+        <p className="font-brand text-sm font-semibold text-brand-primary"><T>Nueva campaña de acceso anticipado</T></p>
         <div className="grid gap-3 sm:grid-cols-2">
-          <label className="block"><span className="font-brand text-xs text-brand-primary/50">Nombre</span>
+          <label className="block"><span className="font-brand text-xs text-brand-primary/50"><T>Nombre</T></span>
             <input value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} required
               className="mt-1 w-full rounded-lg border border-brand-primary/15 px-3 py-2 font-brand text-sm" /></label>
-          <label className="block"><span className="font-brand text-xs text-brand-primary/50">Segmento (audiencia)</span>
+          <label className="block"><span className="font-brand text-xs text-brand-primary/50"><T>Segmento (audiencia)</T></span>
             <select value={form.segment_id} onChange={(e) => setForm({ ...form, segment_id: e.target.value })}
               className="mt-1 w-full rounded-lg border border-brand-primary/15 px-3 py-2 font-brand text-sm">
               <option value="">— Elige un segmento —</option>
               {segments.map((s) => <option key={s.id} value={s.id}>{s.name}</option>)}
             </select></label>
-          <label className="block"><span className="font-brand text-xs text-brand-primary/50">Inicio</span>
+          <label className="block"><span className="font-brand text-xs text-brand-primary/50"><T>Inicio</T></span>
             <input type="datetime-local" value={form.starts_at} onChange={(e) => setForm({ ...form, starts_at: e.target.value })} required
               className="mt-1 w-full rounded-lg border border-brand-primary/15 px-3 py-2 font-brand text-sm" /></label>
-          <label className="block"><span className="font-brand text-xs text-brand-primary/50">Fin</span>
+          <label className="block"><span className="font-brand text-xs text-brand-primary/50"><T>Fin</T></span>
             <input type="datetime-local" value={form.ends_at} onChange={(e) => setForm({ ...form, ends_at: e.target.value })} required
               className="mt-1 w-full rounded-lg border border-brand-primary/15 px-3 py-2 font-brand text-sm" /></label>
-          <label className="block"><span className="font-brand text-xs text-brand-primary/50">Descuento % (opcional)</span>
+          <label className="block"><span className="font-brand text-xs text-brand-primary/50"><T>Descuento % (opcional)</T></span>
             <input type="number" min={0} max={100} value={form.offer_percent} onChange={(e) => setForm({ ...form, offer_percent: e.target.value })}
               className="mt-1 w-full rounded-lg border border-brand-primary/15 px-3 py-2 font-brand text-sm" /></label>
-          <label className="block"><span className="font-brand text-xs text-brand-primary/50">Cupo de unidades (opcional)</span>
+          <label className="block"><span className="font-brand text-xs text-brand-primary/50"><T>Cupo de unidades (opcional)</T></span>
             <input type="number" min={0} value={form.quota} onChange={(e) => setForm({ ...form, quota: e.target.value })}
               className="mt-1 w-full rounded-lg border border-brand-primary/15 px-3 py-2 font-brand text-sm" /></label>
           {multi(form.product_ids, (v) => setForm({ ...form, product_ids: v }), products, 'Productos del alcance')}
@@ -323,13 +327,13 @@ function Campanas({ initial, segments, products, categories }: { initial: Campai
         </div>
         <button type="submit" disabled={busy}
           className="bg-brand-primary text-brand-cream rounded-full px-5 py-2 font-brand text-sm hover:bg-brand-dark disabled:opacity-50 inline-flex items-center gap-2">
-          <Icon name="plus" size={16} /> Crear campaña
+          <Icon name="plus" size={16} /> <T>Crear campaña</T>
         </button>
         {error && <p className="font-brand text-sm text-red-600">{error}</p>}
       </form>
 
       <div className="space-y-3">
-        {rows.length === 0 && <p className="font-brand text-brand-primary/40 text-center py-8">Aún no tienes campañas.</p>}
+        {rows.length === 0 && <p className="font-brand text-brand-primary/40 text-center py-8"><T>Aún no tienes campañas.</T></p>}
         {rows.map((c) => {
           const eff = effectiveStatus(c)
           const pct = (n: number) => `${Math.round(n * 100)}%`
@@ -349,22 +353,22 @@ function Campanas({ initial, segments, products, categories }: { initial: Campai
                   {reportFor === c.id ? 'Ocultar reporte' : 'Reporte'}
                 </button>
                 {c.segment_id != null && c.status !== 'cancelled' && (
-                  <button onClick={() => notify(c.id)} className="font-brand text-xs text-brand-primary border border-brand-primary/20 rounded-full px-3 py-1 hover:bg-brand-cream">Avisar</button>
+                  <button onClick={() => notify(c.id)} className="font-brand text-xs text-brand-primary border border-brand-primary/20 rounded-full px-3 py-1 hover:bg-brand-cream"><T>Avisar</T></button>
                 )}
                 {c.status !== 'cancelled' && (
                   <>
                     {c.status === 'paused'
-                      ? <button onClick={() => setStatus(c.id, 'scheduled')} className="font-brand text-xs text-brand-primary border border-brand-primary/20 rounded-full px-3 py-1 hover:bg-brand-cream">Reanudar</button>
-                      : <button onClick={() => setStatus(c.id, 'paused')} className="font-brand text-xs text-brand-primary border border-brand-primary/20 rounded-full px-3 py-1 hover:bg-brand-cream">Pausar</button>}
-                    <button onClick={() => setStatus(c.id, 'cancelled')} className="font-brand text-xs text-orange-600 border border-orange-200 rounded-full px-3 py-1 hover:bg-orange-50">Cancelar</button>
+                      ? <button onClick={() => setStatus(c.id, 'scheduled')} className="font-brand text-xs text-brand-primary border border-brand-primary/20 rounded-full px-3 py-1 hover:bg-brand-cream"><T>Reanudar</T></button>
+                      : <button onClick={() => setStatus(c.id, 'paused')} className="font-brand text-xs text-brand-primary border border-brand-primary/20 rounded-full px-3 py-1 hover:bg-brand-cream"><T>Pausar</T></button>}
+                    <button onClick={() => setStatus(c.id, 'cancelled')} className="font-brand text-xs text-orange-600 border border-orange-200 rounded-full px-3 py-1 hover:bg-orange-50"><T>Cancelar</T></button>
                   </>
                 )}
-                <button onClick={() => remove(c.id)} className="font-brand text-xs text-red-600 border border-red-200 rounded-full px-3 py-1 hover:bg-red-50">Eliminar</button>
+                <button onClick={() => remove(c.id)} className="font-brand text-xs text-red-600 border border-red-200 rounded-full px-3 py-1 hover:bg-red-50"><T>Eliminar</T></button>
                 {notifyMsg[c.id] && <span className="font-brand text-xs text-brand-primary/60 w-full">{notifyMsg[c.id]}</span>}
               </div>
               {reportFor === c.id && (
                 <div className="border-t border-gray-100 px-5 py-4">
-                  {!report ? <p className="font-brand text-xs text-brand-primary/50">Cargando reporte…</p> : (
+                  {!report ? <p className="font-brand text-xs text-brand-primary/50"><T>Cargando reporte…</T></p> : (
                     <div className="grid grid-cols-2 sm:grid-cols-5 gap-3">
                       {[
                         ['Miembros', String(report.members)],
@@ -380,7 +384,7 @@ function Campanas({ initial, segments, products, categories }: { initial: Campai
                       ))}
                     </div>
                   )}
-                  <p className="font-brand text-[11px] text-brand-primary/40 mt-2">Pedidos de miembros del segmento con pago aprobado dentro de la ventana.</p>
+                  <p className="font-brand text-[11px] text-brand-primary/40 mt-2"><T>Pedidos de miembros del segmento con pago aprobado dentro de la ventana.</T></p>
                 </div>
               )}
             </div>

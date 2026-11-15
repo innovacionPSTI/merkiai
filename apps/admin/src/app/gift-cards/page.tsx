@@ -6,6 +6,7 @@ import { requireAdminDb } from '@/lib/admin-context'
 import { userCanAccess } from '@/lib/roles'
 import GiftCardsManager from './GiftCardsManager'
 import { formatMoney } from '@merkiai/i18n'
+import { getAdminTx } from '@/lib/ui-locale'
 
 const money = (n: number) => formatMoney(n)
 
@@ -18,6 +19,7 @@ export const dynamic = 'force-dynamic'
  * Gated por la sección "cupones".
  */
 export default async function GiftCardsPage() {
+  const tx = await getAdminTx()
   const { adminUser, db } = await requireAdminDb()
   if (!userCanAccess(adminUser, 'cupones')) redirect('/no-autorizado')
   const [giftCards, recon] = await Promise.all([listGiftCards(db), getStoreValueReconciliation(db)])
@@ -25,7 +27,7 @@ export default async function GiftCardsPage() {
   return (
     <div className="space-y-6">
       <PageHeader
-        title="Gift cards y saldo a favor"
+        title={tx("Gift cards y saldo a favor")}
         description="Emite gift cards con saldo y gestiona el saldo a favor (store credit) de tus clientes."
       />
 

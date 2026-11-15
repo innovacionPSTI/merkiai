@@ -867,7 +867,7 @@ export default function CheckoutClient({ initialEmail = '', defaultAddress = nul
                         value={couponCode}
                         onChange={(e) => { setCouponCode(e.target.value.toUpperCase()); setCouponError('') }}
                         onKeyDown={(e) => e.key === 'Enter' && applyCoupon()}
-                        placeholder="VPS20"
+                        placeholder={t('coupon_placeholder')}
                         className="flex-1 border border-gray-200 rounded-xl px-3 py-2 font-brand text-sm uppercase tracking-wider focus:outline-none focus:border-brand-primary"
                       />
                       <button

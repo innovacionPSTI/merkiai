@@ -5,6 +5,7 @@ import type { ShippingConfig } from '@merkiai/database'
 import { SearchableSelect, DEPARTMENTS, getCitiesForDepartment } from '@merkiai/ui'
 import { formatMoney } from '@merkiai/i18n'
 import { T } from '@merkiai/ui'
+import { useTx } from '@merkiai/ui'
 
 interface Props {
   initialConfig: ShippingConfig | null
@@ -25,6 +26,7 @@ function Toggle({ enabled, onChange }: { enabled: boolean; onChange: (v: boolean
  * tarifa fija se gestionan arriba, en "Métodos de envío".
  */
 export default function ShippingConfigForm({ initialConfig }: Props) {
+  const tx = useTx()
   // ── Envío gratis ──────────────────────────────────────────────────────────
   const [freeShippingEnabled, setFreeShippingEnabled] = useState(initialConfig?.free_shipping_enabled ?? true)
   const [freeShippingMin, setFreeShippingMin] = useState(String(initialConfig?.free_shipping_min_amount ?? 100000))
@@ -78,7 +80,7 @@ export default function ShippingConfigForm({ initialConfig }: Props) {
       if (!res.ok) { setErrorMsg(data.error ?? 'Error desconocido'); setStatus('error'); return }
       setStatus('saved')
       startTransition(() => { setTimeout(() => setStatus('idle'), 3000) })
-    } catch { setErrorMsg('Error de red al guardar'); setStatus('error') }
+    } catch { setErrorMsg(tx("Error de red al guardar")); setStatus('error') }
   }
 
   const feeFixedN = feeMode === 'fixed' ? Math.max(0, Number(feeFixed) || 0) : 0
@@ -156,7 +158,7 @@ export default function ShippingConfigForm({ initialConfig }: Props) {
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
           <div>
             <label className="font-brand text-xs font-semibold text-brand-primary block mb-1"><T>Nombre / Empresa *</T></label>
-            <input type="text" value={originName} onChange={(e) => setOriginName(e.target.value)} placeholder="Nombre del remitente / empresa"
+            <input type="text" value={originName} onChange={(e) => setOriginName(e.target.value)} placeholder={tx("Nombre del remitente / empresa")}
               className="w-full border border-gray-200 rounded-xl px-4 py-2.5 font-brand text-sm focus:outline-none focus:border-brand-primary" />
           </div>
           <div>
@@ -167,24 +169,24 @@ export default function ShippingConfigForm({ initialConfig }: Props) {
         </div>
         <div>
           <label className="font-brand text-xs font-semibold text-brand-primary block mb-1"><T>Dirección (calle y número) *</T></label>
-          <input type="text" value={originStreet} onChange={(e) => setOriginStreet(e.target.value)} placeholder="Calle 10 # 43-57"
+          <input type="text" value={originStreet} onChange={(e) => setOriginStreet(e.target.value)} placeholder={tx("Calle y número")}
             className="w-full border border-gray-200 rounded-xl px-4 py-2.5 font-brand text-sm focus:outline-none focus:border-brand-primary" />
         </div>
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
           <div>
             <label className="font-brand text-xs font-semibold text-brand-primary block mb-1"><T>Barrio</T></label>
-            <input type="text" value={originNeighborhood} onChange={(e) => setOriginNeighborhood(e.target.value)} placeholder="Barrio / sector"
+            <input type="text" value={originNeighborhood} onChange={(e) => setOriginNeighborhood(e.target.value)} placeholder={tx("Barrio / sector")}
               className="w-full border border-gray-200 rounded-xl px-4 py-2.5 font-brand text-sm focus:outline-none focus:border-brand-primary" />
           </div>
-          <SearchableSelect label="Ciudad *" value={originCity} options={getCitiesForDepartment(originDepartment)}
+          <SearchableSelect label={tx("Ciudad *")} value={originCity} options={getCitiesForDepartment(originDepartment)}
             placeholder={originDepartment ? 'Selecciona ciudad' : 'Primero elige departamento'} disabled={!originDepartment} onChange={setOriginCity} />
         </div>
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-          <SearchableSelect label="Departamento *" value={originDepartment} options={DEPARTMENTS}
-            placeholder="Selecciona departamento" onChange={(dept) => { setOriginDepartment(dept); setOriginCity('') }} />
+          <SearchableSelect label={tx("Departamento *")} value={originDepartment} options={DEPARTMENTS}
+            placeholder={tx("Selecciona departamento")} onChange={(dept) => { setOriginDepartment(dept); setOriginCity('') }} />
           <div>
             <label className="font-brand text-xs font-semibold text-brand-primary block mb-1"><T>Código postal</T> <span className="font-normal text-brand-primary/40">(opcional)</span></label>
-            <input type="text" value={originPostalCode} onChange={(e) => setOriginPostalCode(e.target.value.replace(/\D/g, '').slice(0, 6))} placeholder="6 dígitos" maxLength={6} inputMode="numeric"
+            <input type="text" value={originPostalCode} onChange={(e) => setOriginPostalCode(e.target.value.replace(/\D/g, '').slice(0, 6))} placeholder={tx("6 dígitos")} maxLength={6} inputMode="numeric"
               className="w-full border border-gray-200 rounded-xl px-4 py-2.5 font-brand text-sm focus:outline-none focus:border-brand-primary" />
           </div>
         </div>

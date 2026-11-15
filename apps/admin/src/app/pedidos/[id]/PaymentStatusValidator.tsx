@@ -2,6 +2,7 @@
 
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
+import { T } from '@merkiai/ui'
 
 /**
  * Validación manual del pago por el administrador (HU-096).
@@ -36,7 +37,7 @@ export default function PaymentStatusValidator({ orderId }: { orderId: number })
 
   return (
     <div className="mt-3 pt-3 border-t border-brand-primary/10">
-      <p className="font-brand text-xs text-brand-primary/50 mb-2">Validación manual del pago</p>
+      <p className="font-brand text-xs text-brand-primary/50 mb-2"><T>Validación manual del pago</T></p>
       <div className="flex gap-2">
         <button
           type="button"

@@ -4,6 +4,8 @@ import { useState } from 'react'
 import type { Coupon } from '@merkiai/database'
 import CsvImportModal from '@/components/CsvImportModal'
 import { formatMoney, formatDate } from '@merkiai/i18n'
+import { T } from '@merkiai/ui'
+import { useTx } from '@merkiai/ui'
 
 const fmt = (n: number) =>
   formatMoney(n)
@@ -32,6 +34,7 @@ interface Props {
 }
 
 export default function CuponesClient({ initialCoupons }: Props) {
+  const tx = useTx()
   const [coupons, setCoupons] = useState<Coupon[]>(initialCoupons)
   const [form, setForm] = useState<Partial<Coupon>>(EMPTY)
   const [editingId, setEditingId] = useState<number | null>(null)
@@ -73,7 +76,7 @@ export default function CuponesClient({ initialCoupons }: Props) {
         setCoupons((prev) => [data.coupon, ...prev])
       }
       setShowForm(false)
-    } catch { setError('Error de red') }
+    } catch { setError(tx("Error de red")) }
     finally { setSaving(false) }
   }
 
@@ -104,7 +107,7 @@ export default function CuponesClient({ initialCoupons }: Props) {
       {/* Toolbar */}
       <div className="flex justify-end items-center gap-3">
         <a href="/api/admin/coupons/export" className="border border-brand-primary/20 text-brand-primary rounded-full px-5 py-2 font-brand text-sm hover:bg-brand-cream transition-colors">
-          Exportar CSV
+          <T>Exportar CSV</T>
         </a>
         <CsvImportModal
           endpoint="/api/admin/coupons/import"
@@ -117,7 +120,7 @@ export default function CuponesClient({ initialCoupons }: Props) {
           onClick={openNew}
           className="bg-brand-primary text-brand-cream rounded-full px-5 py-2 font-brand text-sm hover:bg-brand-dark transition-colors"
         >
-          + Nuevo cupón
+          <T>+ Nuevo cupón</T>
         </button>
       </div>
 
@@ -131,7 +134,7 @@ export default function CuponesClient({ initialCoupons }: Props) {
 
             <div className="grid grid-cols-2 gap-4">
               <div className="col-span-2">
-                <label className="font-brand text-xs font-semibold text-brand-primary block mb-1">Código</label>
+                <label className="font-brand text-xs font-semibold text-brand-primary block mb-1"><T>Código</T></label>
                 <input
                   value={form.code ?? ''}
                   onChange={(e) => setForm((f) => ({ ...f, code: e.target.value.toUpperCase() }))}
@@ -141,7 +144,7 @@ export default function CuponesClient({ initialCoupons }: Props) {
               </div>
 
               <div>
-                <label className="font-brand text-xs font-semibold text-brand-primary block mb-1">Tipo</label>
+                <label className="font-brand text-xs font-semibold text-brand-primary block mb-1"><T>Tipo</T></label>
                 <select
                   value={form.type ?? 'percentage'}
                   onChange={(e) => setForm((f) => ({ ...f, type: e.target.value as 'percentage' | 'fixed' }))}
@@ -167,7 +170,7 @@ export default function CuponesClient({ initialCoupons }: Props) {
               </div>
 
               <div>
-                <label className="font-brand text-xs font-semibold text-brand-primary block mb-1">Mínimo de pedido ($)</label>
+                <label className="font-brand text-xs font-semibold text-brand-primary block mb-1"><T>Mínimo de pedido ($)</T></label>
                 <input
                   type="number"
                   min={0}
@@ -178,11 +181,11 @@ export default function CuponesClient({ initialCoupons }: Props) {
               </div>
 
               <div>
-                <label className="font-brand text-xs font-semibold text-brand-primary block mb-1">Usos máximos</label>
+                <label className="font-brand text-xs font-semibold text-brand-primary block mb-1"><T>Usos máximos</T></label>
                 <input
                   type="number"
                   min={1}
-                  placeholder="Ilimitados"
+                  placeholder={tx("Ilimitados")}
                   value={form.max_uses ?? ''}
                   onChange={(e) => setForm((f) => ({ ...f, max_uses: e.target.value ? Number(e.target.value) : null }))}
                   className="w-full border border-gray-200 rounded-xl px-4 py-2.5 font-brand text-sm focus:outline-none focus:border-brand-primary"
@@ -190,7 +193,7 @@ export default function CuponesClient({ initialCoupons }: Props) {
               </div>
 
               <div className="col-span-2">
-                <label className="font-brand text-xs font-semibold text-brand-primary block mb-1">Fecha de expiración</label>
+                <label className="font-brand text-xs font-semibold text-brand-primary block mb-1"><T>Fecha de expiración</T></label>
                 <input
                   type="date"
                   value={form.expires_at ?? ''}
@@ -213,7 +216,7 @@ export default function CuponesClient({ initialCoupons }: Props) {
                     form.active ? 'translate-x-4' : 'translate-x-0.5'
                   }`} />
                 </button>
-                <span className="font-brand text-sm text-brand-primary">Activo</span>
+                <span className="font-brand text-sm text-brand-primary"><T>Activo</T></span>
               </div>
             </div>
 
@@ -231,7 +234,7 @@ export default function CuponesClient({ initialCoupons }: Props) {
                 onClick={() => setShowForm(false)}
                 className="px-5 py-2.5 font-brand text-sm text-brand-primary/50 hover:text-brand-primary transition-colors"
               >
-                Cancelar
+                <T>Cancelar</T>
               </button>
             </div>
           </div>
@@ -242,7 +245,7 @@ export default function CuponesClient({ initialCoupons }: Props) {
       <div className="bg-white rounded-2xl shadow-sm overflow-hidden overflow-x-auto">
         {coupons.length === 0 ? (
           <div className="p-12 text-center">
-            <p className="font-brand text-brand-primary/40 text-sm">No hay cupones creados aún</p>
+            <p className="font-brand text-brand-primary/40 text-sm"><T>No hay cupones creados aún</T></p>
           </div>
         ) : (
           <table className="w-full min-w-[640px]">
@@ -293,13 +296,13 @@ export default function CuponesClient({ initialCoupons }: Props) {
                           onClick={() => openEdit(c)}
                           className="font-brand text-xs text-brand-primary/40 hover:text-brand-primary transition-colors"
                         >
-                          Editar
+                          <T>Editar</T>
                         </button>
                         <button
                           onClick={() => handleDelete(c.id)}
                           className="font-brand text-xs text-red-400 hover:text-red-600 transition-colors"
                         >
-                          Eliminar
+                          <T>Eliminar</T>
                         </button>
                       </div>
                     </td>

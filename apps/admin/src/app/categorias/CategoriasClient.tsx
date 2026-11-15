@@ -4,10 +4,13 @@ import { useState, useRef } from 'react'
 import { PageHeader, Icon } from '@merkiai/ui'
 import CategoryFormModal, { type SavedCategory } from './CategoryFormModal'
 import CsvImportModal from '@/components/CsvImportModal'
+import { T } from '@merkiai/ui'
+import { useTx } from '@merkiai/ui'
 
 type Category = SavedCategory
 
 export default function CategoriasClient({ categories: initial }: { categories: Category[] }) {
+  const tx = useTx()
   const [categories, setCategories] = useState<Category[]>(
     [...initial].sort((a, b) => a.order_index - b.order_index)
   )
@@ -97,12 +100,12 @@ export default function CategoriasClient({ categories: initial }: { categories: 
 
       <div className="space-y-6">
         <PageHeader
-          title="Categorías"
+          title={tx("Categorías")}
           description={`${categories.length} categorías · Arrastra para reordenar.`}
           action={
             <div className="flex items-center gap-3">
               <a href="/api/admin/categories/export" className="border border-brand-primary/20 text-brand-primary rounded-xl px-4 py-2 font-brand text-sm hover:bg-brand-cream transition-colors inline-flex items-center gap-2">
-                <Icon name="external" size={16} /> Exportar CSV
+                <Icon name="external" size={16} /> <T>Exportar CSV</T>
               </a>
               <CsvImportModal
                 endpoint="/api/admin/categories/import"
@@ -113,7 +116,7 @@ export default function CategoriasClient({ categories: initial }: { categories: 
                 onClick={() => setModal({ open: true })}
                 className="font-brand text-sm bg-brand-primary text-brand-cream px-4 py-2 rounded-xl hover:bg-brand-dark transition-colors inline-flex items-center gap-2"
               >
-                <Icon name="plus" size={16} /> Nueva categoría
+                <Icon name="plus" size={16} /> <T>Nueva categoría</T>
               </button>
             </div>
           }
@@ -122,12 +125,12 @@ export default function CategoriasClient({ categories: initial }: { categories: 
         <div className="bg-white rounded-2xl shadow-sm overflow-hidden overflow-x-auto">
           {categories.length === 0 ? (
             <div className="px-6 py-16 text-center">
-              <p className="font-brand text-sm text-brand-primary/30 mb-3">No hay categorías.</p>
+              <p className="font-brand text-sm text-brand-primary/30 mb-3"><T>No hay categorías.</T></p>
               <button
                 onClick={() => setModal({ open: true })}
                 className="font-brand text-sm text-brand-primary underline"
               >
-                Crear la primera →
+                <T>Crear la primera →</T>
               </button>
             </div>
           ) : (
@@ -135,11 +138,11 @@ export default function CategoriasClient({ categories: initial }: { categories: 
               <thead>
                 <tr className="border-b border-gray-100">
                   <th className="w-8 px-4 py-4" />
-                  <th className="font-brand text-xs text-brand-primary/40 text-left px-4 py-4 uppercase tracking-wide">Imagen</th>
-                  <th className="font-brand text-xs text-brand-primary/40 text-left px-4 py-4 uppercase tracking-wide">Nombre</th>
-                  <th className="font-brand text-xs text-brand-primary/40 text-left px-4 py-4 uppercase tracking-wide hidden sm:table-cell">Slug</th>
-                  <th className="font-brand text-xs text-brand-primary/40 text-left px-4 py-4 uppercase tracking-wide hidden md:table-cell">Descripción</th>
-                  <th className="font-brand text-xs text-brand-primary/40 text-left px-4 py-4 uppercase tracking-wide">Estado</th>
+                  <th className="font-brand text-xs text-brand-primary/40 text-left px-4 py-4 uppercase tracking-wide"><T>Imagen</T></th>
+                  <th className="font-brand text-xs text-brand-primary/40 text-left px-4 py-4 uppercase tracking-wide"><T>Nombre</T></th>
+                  <th className="font-brand text-xs text-brand-primary/40 text-left px-4 py-4 uppercase tracking-wide hidden sm:table-cell"><T>Slug</T></th>
+                  <th className="font-brand text-xs text-brand-primary/40 text-left px-4 py-4 uppercase tracking-wide hidden md:table-cell"><T>Descripción</T></th>
+                  <th className="font-brand text-xs text-brand-primary/40 text-left px-4 py-4 uppercase tracking-wide"><T>Estado</T></th>
                   <th className="px-4 py-4" />
                 </tr>
               </thead>
@@ -214,7 +217,7 @@ export default function CategoriasClient({ categories: initial }: { categories: 
                         onClick={() => setModal({ open: true, category: cat })}
                         className="font-brand text-xs text-brand-primary/40 hover:text-brand-primary transition-colors px-3 py-1 rounded-lg hover:bg-brand-cream"
                       >
-                        Editar
+                        <T>Editar</T>
                       </button>
                     </td>
                   </tr>

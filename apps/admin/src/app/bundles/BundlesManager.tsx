@@ -3,6 +3,7 @@
 import { useState } from 'react'
 import { Icon } from '@merkiai/ui'
 import { formatMoney } from '@merkiai/i18n'
+import { T } from '@merkiai/ui'
 
 interface Comp { variant_id: number; qty: number }
 interface Bundle { id: number; name: string; slug: string; price: number; active: boolean; components: Comp[] }
@@ -51,17 +52,17 @@ export default function BundlesManager({ initial, variants }: { initial: Bundle[
   return (
     <div className="space-y-5">
       <form onSubmit={create} className="bg-white rounded-2xl p-5 shadow-sm space-y-3">
-        <p className="font-brand text-sm font-semibold text-brand-primary">Nuevo bundle</p>
+        <p className="font-brand text-sm font-semibold text-brand-primary"><T>Nuevo bundle</T></p>
         <div className="grid gap-3 sm:grid-cols-2">
-          <label className="block"><span className="font-brand text-xs text-brand-primary/50">Nombre</span>
+          <label className="block"><span className="font-brand text-xs text-brand-primary/50"><T>Nombre</T></span>
             <input value={name} onChange={(e) => setName(e.target.value)} required
               className="mt-1 w-full rounded-lg border border-brand-primary/15 px-3 py-2 font-brand text-sm" /></label>
-          <label className="block"><span className="font-brand text-xs text-brand-primary/50">Precio del bundle</span>
+          <label className="block"><span className="font-brand text-xs text-brand-primary/50"><T>Precio del bundle</T></span>
             <input type="number" min={0} value={price} onChange={(e) => setPrice(e.target.value)} required
               className="mt-1 w-full rounded-lg border border-brand-primary/15 px-3 py-2 font-brand text-sm" /></label>
         </div>
         <div className="space-y-2">
-          <span className="font-brand text-xs text-brand-primary/50">Componentes</span>
+          <span className="font-brand text-xs text-brand-primary/50"><T>Componentes</T></span>
           {comps.map((c, i) => (
             <div key={i} className="flex gap-2">
               <select value={c.variant_id} onChange={(e) => setComp(i, { variant_id: Number(e.target.value) })}
@@ -74,17 +75,17 @@ export default function BundlesManager({ initial, variants }: { initial: Bundle[
             </div>
           ))}
           <button type="button" onClick={() => setComps((c) => [...c, { variant_id: variants[0]?.id ?? 0, qty: 1 }])}
-            className="font-brand text-xs text-brand-primary hover:underline">+ Agregar componente</button>
+            className="font-brand text-xs text-brand-primary hover:underline"><T>+ Agregar componente</T></button>
         </div>
         <button type="submit" disabled={busy}
           className="bg-brand-primary text-brand-cream rounded-full px-5 py-2 font-brand text-sm hover:bg-brand-dark disabled:opacity-50 inline-flex items-center gap-2">
-          <Icon name="plus" size={16} /> Crear bundle
+          <Icon name="plus" size={16} /> <T>Crear bundle</T>
         </button>
         {error && <p className="font-brand text-sm text-red-600">{error}</p>}
       </form>
 
       <div className="space-y-3">
-        {rows.length === 0 && <p className="font-brand text-brand-primary/40 text-center py-8">Sin bundles.</p>}
+        {rows.length === 0 && <p className="font-brand text-brand-primary/40 text-center py-8"><T>Sin bundles.</T></p>}
         {rows.map((b) => (
           <div key={b.id} className="bg-white rounded-2xl shadow-sm px-5 py-4 flex flex-wrap items-center gap-3">
             <div className="flex-1 min-w-[200px]">
@@ -94,7 +95,7 @@ export default function BundlesManager({ initial, variants }: { initial: Bundle[
             <button onClick={() => toggle(b)} className={`font-brand text-xs rounded-full px-2 py-1 ${b.active ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-500'}`}>
               {b.active ? 'Activo' : 'Inactivo'}
             </button>
-            <button onClick={() => remove(b)} className="font-brand text-xs text-red-600 border border-red-200 rounded-full px-3 py-1 hover:bg-red-50">Eliminar</button>
+            <button onClick={() => remove(b)} className="font-brand text-xs text-red-600 border border-red-200 rounded-full px-3 py-1 hover:bg-red-50"><T>Eliminar</T></button>
           </div>
         ))}
       </div>

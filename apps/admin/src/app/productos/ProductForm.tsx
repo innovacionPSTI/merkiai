@@ -7,6 +7,8 @@ import { Icon } from '@merkiai/ui'
 import type { VariantType } from '@merkiai/database'
 import { useDragReorder } from '@/lib/useDragReorder'
 import { formatNumber } from '@merkiai/i18n'
+import { T } from '@merkiai/ui'
+import { useTx } from '@merkiai/ui'
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
 
@@ -105,6 +107,7 @@ function parseExistingVariants(product: any): Variant[] {
 // ── Componente principal ──────────────────────────────────────────────────────
 
 export default function ProductForm({ product, categories, variantTypes }: Props) {
+  const tx = useTx()
   const router = useRouter()
   const isEdit = !!product?.id
 
@@ -237,12 +240,12 @@ export default function ProductForm({ product, categories, variantTypes }: Props
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
-    if (!form.name.trim()) { setError('El nombre del producto es obligatorio'); return }
-    if (!form.slug.trim()) { setError('El slug es obligatorio'); return }
-    if (uploadsInProgress > 0) { setError('Espera a que termine de subir la imagen'); return }
-    if (visibleVariants.length === 0) { setError('Debes agregar al menos una variante'); return }
+    if (!form.name.trim()) { setError(tx("El nombre del producto es obligatorio")); return }
+    if (!form.slug.trim()) { setError(tx("El slug es obligatorio")); return }
+    if (uploadsInProgress > 0) { setError(tx("Espera a que termine de subir la imagen")); return }
+    if (visibleVariants.length === 0) { setError(tx("Debes agregar al menos una variante")); return }
     const pricesMissing = visibleVariants.some((v) => !v.price || Number(v.price) <= 0)
-    if (pricesMissing) { setError('Todas las variantes deben tener un precio mayor a 0'); return }
+    if (pricesMissing) { setError(tx("Todas las variantes deben tener un precio mayor a 0")); return }
 
     setSaving(true)
     setError('')
@@ -323,7 +326,7 @@ export default function ProductForm({ product, categories, variantTypes }: Props
             onClick={() => router.push('/productos')}
             className="font-brand text-sm text-brand-primary/50 hover:text-brand-primary mb-2 flex items-center gap-1"
           >
-            <Icon name="chevron-left" size={14} /> Volver a productos
+            <Icon name="chevron-left" size={14} /> <T>Volver a productos</T>
           </button>
           <h1 className="font-display text-brand-primary text-2xl">
             {isEdit ? `Editar: ${product.name}` : 'Nuevo producto'}
@@ -337,7 +340,7 @@ export default function ProductForm({ product, categories, variantTypes }: Props
               disabled={saving}
               className="font-brand text-sm text-red-500 border border-red-200 px-4 py-2 rounded-xl hover:bg-red-50 transition-colors"
             >
-              Eliminar
+              <T>Eliminar</T>
             </button>
           )}
           <button
@@ -358,22 +361,22 @@ export default function ProductForm({ product, categories, variantTypes }: Props
 
           {/* Información general */}
           <section className="bg-white rounded-2xl p-6 shadow-sm space-y-4">
-            <h2 className="font-brand font-semibold text-brand-primary">Información general</h2>
+            <h2 className="font-brand font-semibold text-brand-primary"><T>Información general</T></h2>
 
             <div>
-              <label className="font-brand text-xs text-brand-primary/50 block mb-1">Nombre del producto *</label>
+              <label className="font-brand text-xs text-brand-primary/50 block mb-1"><T>Nombre del producto *</T></label>
               <input
                 type="text"
                 required
                 value={form.name}
                 onChange={(e) => setForm((f) => ({ ...f, name: e.target.value }))}
                 className="w-full border border-gray-200 rounded-xl px-4 py-2.5 font-brand text-sm text-brand-primary focus:outline-none focus:border-brand-primary"
-                placeholder="Nombre del producto"
+                placeholder={tx("Nombre del producto")}
               />
             </div>
 
             <div>
-              <label className="font-brand text-xs text-brand-primary/50 block mb-1">Slug *</label>
+              <label className="font-brand text-xs text-brand-primary/50 block mb-1"><T>Slug *</T></label>
               <input
                 type="text"
                 required
@@ -385,13 +388,13 @@ export default function ProductForm({ product, categories, variantTypes }: Props
             </div>
 
             <div>
-              <label className="font-brand text-xs text-brand-primary/50 block mb-1">Descripción</label>
+              <label className="font-brand text-xs text-brand-primary/50 block mb-1"><T>Descripción</T></label>
               <textarea
                 rows={4}
                 value={form.description}
                 onChange={(e) => setForm((f) => ({ ...f, description: e.target.value }))}
                 className="w-full border border-gray-200 rounded-xl px-4 py-2.5 font-brand text-sm text-brand-primary focus:outline-none focus:border-brand-primary resize-none"
-                placeholder="Descripción del producto..."
+                placeholder={tx("Descripción del producto...")}
               />
             </div>
           </section>
@@ -400,9 +403,9 @@ export default function ProductForm({ product, categories, variantTypes }: Props
           <section className="bg-white rounded-2xl p-6 shadow-sm space-y-4">
             <div className="flex items-center justify-between">
               <div>
-                <h2 className="font-brand font-semibold text-brand-primary">Tipos de variante</h2>
+                <h2 className="font-brand font-semibold text-brand-primary"><T>Tipos de variante</T></h2>
                 <p className="font-brand text-xs text-brand-primary/40 mt-0.5">
-                  Selecciona los atributos que diferencian las variantes de este producto.
+                  <T>Selecciona los atributos que diferencian las variantes de este producto.</T>
                 </p>
               </div>
               <a
@@ -410,13 +413,13 @@ export default function ProductForm({ product, categories, variantTypes }: Props
                 target="_blank"
                 className="font-brand text-xs text-brand-primary/50 hover:text-brand-primary transition-colors inline-flex items-center gap-1"
               >
-                Gestionar tipos <Icon name="external" size={12} />
+                <T>Gestionar tipos</T> <Icon name="external" size={12} />
               </a>
             </div>
 
             {variantTypes.length === 0 ? (
               <p className="font-brand text-sm text-brand-primary/40 text-center py-4">
-                No hay tipos de variante. <a href="/variantes" className="text-brand-primary underline">Crea uno primero.</a>
+                <T>No hay tipos de variante.</T> <a href="/variantes" className="text-brand-primary underline"><T>Crea uno primero.</T></a>
               </p>
             ) : (
               <>
@@ -452,13 +455,13 @@ export default function ProductForm({ product, categories, variantTypes }: Props
                       onClick={generateMatrix}
                       className="w-full font-brand text-sm bg-brand-cream text-brand-primary border-2 border-dashed border-brand-primary/30 px-4 py-3 rounded-xl hover:bg-brand-primary/5 hover:border-brand-primary/60 transition-all inline-flex items-center justify-center gap-2"
                     >
-                      <Icon name="refresh" size={15} /> Generar combinaciones automáticamente
+                      <Icon name="refresh" size={15} /> <T>Generar combinaciones automáticamente</T>
                       <span className="ml-2 text-xs text-brand-primary/40">
                         ({selectedTypes.reduce((acc, t) => acc * t.values.length, 1)} combinaciones)
                       </span>
                     </button>
                     <p className="font-brand text-xs text-brand-primary/30 mt-1.5 text-center">
-                      Genera todas las combinaciones posibles. Puedes ajustar precio y stock individualmente.
+                      <T>Genera todas las combinaciones posibles. Puedes ajustar precio y stock individualmente.</T>
                     </p>
                   </div>
                 )}
@@ -470,8 +473,8 @@ export default function ProductForm({ product, categories, variantTypes }: Props
           <section className="bg-white rounded-2xl p-6 shadow-sm space-y-4">
             <div className="flex items-center justify-between">
               <h2 className="font-brand font-semibold text-brand-primary">
-                Imágenes
-                <span className="ml-2 text-xs text-brand-primary/40 font-normal">Arrastra para reordenar · la primera es la principal</span>
+                <T>Imágenes</T>
+                <span className="ml-2 text-xs text-brand-primary/40 font-normal"><T>Arrastra para reordenar · la primera es la principal</T></span>
               </h2>
               {form.images.length < 4 && (
                 <button
@@ -479,7 +482,7 @@ export default function ProductForm({ product, categories, variantTypes }: Props
                   onClick={() => setForm((f) => ({ ...f, images: [...f.images, ''] }))}
                   className="font-brand text-xs text-brand-primary border border-brand-primary/20 px-3 py-1.5 rounded-lg hover:bg-brand-cream transition-colors"
                 >
-                  + Agregar imagen
+                  <T>+ Agregar imagen</T>
                 </button>
               )}
             </div>
@@ -497,12 +500,12 @@ export default function ProductForm({ product, categories, variantTypes }: Props
                   <div
                     {...imgDnd.handleProps(idx)}
                     className="absolute top-1 left-1 z-10 cursor-grab active:cursor-grabbing rounded-md bg-white/85 p-1 text-slate-400 hover:text-slate-700 shadow-sm"
-                    title="Arrastra para reordenar"
-                    aria-label="Arrastrar imagen para reordenar"
+                    title={tx("Arrastra para reordenar")}
+                    aria-label={tx("Arrastrar imagen para reordenar")}
                   ><Icon name="grid" size={14} /></div>
                   {idx === 0 && (
                     <span className="absolute bottom-1 left-1 z-10 rounded-full bg-brand-primary/90 text-brand-cream text-[10px] font-medium px-2 py-0.5">
-                      Principal
+                      <T>Principal</T>
                     </span>
                   )}
                   <ImageUpload
@@ -522,7 +525,7 @@ export default function ProductForm({ product, categories, variantTypes }: Props
                       type="button"
                       onClick={() => setForm((f) => ({ ...f, images: f.images.filter((_, i) => i !== idx) }))}
                       className="absolute top-6 right-1 font-brand text-xs text-red-400 hover:text-red-600"
-                      title="Quitar imagen" aria-label="Quitar imagen"
+                      title={tx("Quitar imagen")} aria-label={tx("Quitar imagen")}
                     >
                       <Icon name="close" size={14} />
                     </button>
@@ -552,14 +555,14 @@ export default function ProductForm({ product, categories, variantTypes }: Props
                   onClick={addManualVariant}
                   className="font-brand text-xs text-brand-primary border border-brand-primary/20 px-3 py-1.5 rounded-lg hover:bg-brand-cream transition-colors shrink-0"
                 >
-                  + Agregar variante
+                  <T>+ Agregar variante</T>
                 </button>
               )}
             </div>
 
             {visibleVariants.length === 0 ? (
               <p className="font-brand text-sm text-brand-primary/30 text-center py-6">
-                Usa "Generar combinaciones" o agrega una variante manualmente.
+                <T>Usa "Generar combinaciones" o agrega una variante manualmente.</T>
               </p>
             ) : (
               <div className="space-y-3">
@@ -588,26 +591,26 @@ export default function ProductForm({ product, categories, variantTypes }: Props
                               ))}
                             </div>
                           ) : (
-                            <span className="font-brand text-sm font-semibold text-brand-primary">Variante única</span>
+                            <span className="font-brand text-sm font-semibold text-brand-primary"><T>Variante única</T></span>
                           )}
                         </div>
 
                         <div className="flex items-center gap-3 shrink-0">
-                          <label className="flex items-center gap-1.5 cursor-pointer" title="Si se desactiva, esta variante no se puede comprar">
+                          <label className="flex items-center gap-1.5 cursor-pointer" title={tx("Si se desactiva, esta variante no se puede comprar")}>
                             <input
                               type="checkbox"
                               checked={variant.active}
                               onChange={(e) => updateVariant(idx, 'active', e.target.checked)}
                               className="w-3.5 h-3.5 accent-brand-primary"
                             />
-                            <span className="font-brand text-xs text-brand-primary/50">A la venta</span>
+                            <span className="font-brand text-xs text-brand-primary/50"><T>A la venta</T></span>
                           </label>
                           {visibleVariants.length > 1 && (
                             <button
                               type="button"
                               onClick={() => removeVariant(idx)}
                               className="font-brand text-xs text-red-400 hover:text-red-600 transition-colors"
-                              title="Eliminar variante" aria-label="Eliminar variante"
+                              title={tx("Eliminar variante")} aria-label={tx("Eliminar variante")}
                             >
                               <Icon name="trash" size={14} />
                             </button>
@@ -619,7 +622,7 @@ export default function ProductForm({ product, categories, variantTypes }: Props
                       <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
                         {/* Precio */}
                         <div>
-                          <label className="font-brand text-[10px] text-brand-primary/50 block mb-1">Precio de venta *</label>
+                          <label className="font-brand text-[10px] text-brand-primary/50 block mb-1"><T>Precio de venta *</T></label>
                           <div className="relative">
                             <span className="absolute left-2.5 top-1/2 -translate-y-1/2 font-brand text-xs text-brand-primary/30">$</span>
                             <input
@@ -639,7 +642,7 @@ export default function ProductForm({ product, categories, variantTypes }: Props
 
                         {/* HU-261 · Precio antes (oferta) */}
                         <div>
-                          <label className="font-brand text-[10px] text-brand-primary/50 block mb-1">Precio normal (opcional)</label>
+                          <label className="font-brand text-[10px] text-brand-primary/50 block mb-1"><T>Precio normal (opcional)</T></label>
                           <div className="relative">
                             <span className="absolute left-2.5 top-1/2 -translate-y-1/2 font-brand text-xs text-brand-primary/30">$</span>
                             <input
@@ -649,14 +652,14 @@ export default function ProductForm({ product, categories, variantTypes }: Props
                               onChange={(e) => updateVariant(idx, 'compare_at_price', e.target.value)}
                               className="w-full pl-6 pr-2 py-1.5 border border-gray-200 rounded-lg font-brand text-xs text-brand-primary/60 focus:outline-none focus:border-brand-primary"
                               placeholder="0"
-                              title="Precio antes del descuento. Se muestra tachado si es mayor al de venta."
+                              title={tx("Precio antes del descuento. Se muestra tachado si es mayor al de venta.")}
                             />
                           </div>
                         </div>
 
                         {/* Stock */}
                         <div>
-                          <label className="font-brand text-[10px] text-brand-primary/50 block mb-1">Stock (unidades)</label>
+                          <label className="font-brand text-[10px] text-brand-primary/50 block mb-1"><T>Stock (unidades)</T></label>
                           <input
                             type="number"
                             min={0}
@@ -669,12 +672,12 @@ export default function ProductForm({ product, categories, variantTypes }: Props
 
                         {/* SKU */}
                         <div>
-                          <label className="font-brand text-[10px] text-brand-primary/50 block mb-1">SKU (código interno)</label>
+                          <label className="font-brand text-[10px] text-brand-primary/50 block mb-1"><T>SKU (código interno)</T></label>
                           <input
                             type="text"
                             value={variant.sku}
                             onChange={(e) => updateVariant(idx, 'sku', e.target.value)}
-                            placeholder="Opcional"
+                            placeholder={tx("Opcional")}
                             className="w-full border border-gray-200 rounded-lg px-2 py-1.5 font-brand text-xs text-brand-primary focus:outline-none focus:border-brand-primary"
                           />
                         </div>
@@ -683,7 +686,7 @@ export default function ProductForm({ product, categories, variantTypes }: Props
                       {/* HU-262 · Imagen propia de la variante (solo con tipos) */}
                       {selectedTypes.length > 0 && (
                         <div>
-                          <label className="font-brand text-[10px] text-brand-primary/50 block mb-1">Imagen de la variante (opcional)</label>
+                          <label className="font-brand text-[10px] text-brand-primary/50 block mb-1"><T>Imagen de la variante (opcional)</T></label>
                           <div className="max-w-[12rem]">
                             <ImageUpload
                               value={variant.image_url}
@@ -695,7 +698,7 @@ export default function ProductForm({ product, categories, variantTypes }: Props
                             />
                           </div>
                           <p className="font-brand text-[10px] text-brand-primary/30 mt-1">
-                            Se muestra al elegir esta variante (p. ej. su color).
+                            <T>Se muestra al elegir esta variante (p. ej. su color).</T>
                           </p>
                         </div>
                       )}
@@ -712,7 +715,7 @@ export default function ProductForm({ product, categories, variantTypes }: Props
                         {showDims && (
                           <div className="mt-2">
                             <p className="font-brand text-[10px] text-brand-primary/30 mb-2">
-                              Peso y medidas del paquete. Se usan para calcular el costo de envío.
+                              <T>Peso y medidas del paquete. Se usan para calcular el costo de envío.</T>
                             </p>
                             <div className="grid grid-cols-4 gap-2">
                               {[
@@ -747,9 +750,9 @@ export default function ProductForm({ product, categories, variantTypes }: Props
 
           {/* SEO */}
           <section className="bg-white rounded-2xl p-6 shadow-sm space-y-4">
-            <h2 className="font-brand font-semibold text-brand-primary">SEO</h2>
+            <h2 className="font-brand font-semibold text-brand-primary"><T>SEO</T></h2>
             <div>
-              <label className="font-brand text-xs text-brand-primary/50 block mb-1">Título SEO</label>
+              <label className="font-brand text-xs text-brand-primary/50 block mb-1"><T>Título SEO</T></label>
               <input
                 type="text"
                 value={form.seo_title}
@@ -761,13 +764,13 @@ export default function ProductForm({ product, categories, variantTypes }: Props
               <p className="font-brand text-xs text-brand-primary/30 mt-1">{form.seo_title.length}/60</p>
             </div>
             <div>
-              <label className="font-brand text-xs text-brand-primary/50 block mb-1">Meta descripción</label>
+              <label className="font-brand text-xs text-brand-primary/50 block mb-1"><T>Meta descripción</T></label>
               <textarea
                 rows={2}
                 value={form.seo_desc}
                 onChange={(e) => setForm((f) => ({ ...f, seo_desc: e.target.value }))}
                 className="w-full border border-gray-200 rounded-xl px-4 py-2.5 font-brand text-sm text-brand-primary focus:outline-none focus:border-brand-primary resize-none"
-                placeholder="Descripción corta para motores de búsqueda..."
+                placeholder={tx("Descripción corta para motores de búsqueda...")}
                 maxLength={160}
               />
               <p className="font-brand text-xs text-brand-primary/30 mt-1">{form.seo_desc.length}/160</p>
@@ -778,10 +781,10 @@ export default function ProductForm({ product, categories, variantTypes }: Props
         {/* ── Columna lateral ── */}
         <div className="space-y-6">
           <section className="bg-white rounded-2xl p-6 shadow-sm space-y-4">
-            <h2 className="font-brand font-semibold text-brand-primary">Publicación</h2>
+            <h2 className="font-brand font-semibold text-brand-primary"><T>Publicación</T></h2>
 
             <div>
-              <label className="font-brand text-xs text-brand-primary/50 block mb-1">Categoría</label>
+              <label className="font-brand text-xs text-brand-primary/50 block mb-1"><T>Categoría</T></label>
               <select
                 value={form.category_id}
                 onChange={(e) => setForm((f) => ({ ...f, category_id: e.target.value }))}
@@ -801,7 +804,7 @@ export default function ProductForm({ product, categories, variantTypes }: Props
                 onChange={(e) => setForm((f) => ({ ...f, active: e.target.checked }))}
                 className="w-4 h-4 accent-brand-primary"
               />
-              <span className="font-brand text-sm text-brand-primary">Producto activo</span>
+              <span className="font-brand text-sm text-brand-primary"><T>Producto activo</T></span>
             </label>
 
             <label className="flex items-center gap-3 cursor-pointer">
@@ -811,7 +814,7 @@ export default function ProductForm({ product, categories, variantTypes }: Props
                 onChange={(e) => setForm((f) => ({ ...f, featured: e.target.checked }))}
                 className="w-4 h-4 accent-brand-primary"
               />
-              <span className="font-brand text-sm text-brand-primary">Destacar en home</span>
+              <span className="font-brand text-sm text-brand-primary"><T>Destacar en home</T></span>
             </label>
 
             <label className="flex items-start gap-3 cursor-pointer">
@@ -822,7 +825,7 @@ export default function ProductForm({ product, categories, variantTypes }: Props
                 className="w-4 h-4 mt-0.5 accent-brand-primary"
               />
               <span>
-                <span className="font-brand text-sm text-brand-primary block">Permitir vender sin stock (bajo pedido)</span>
+                <span className="font-brand text-sm text-brand-primary block"><T>Permitir vender sin stock (bajo pedido)</T></span>
                 <span className="font-brand text-xs text-brand-primary/50">Si se activa, se puede comprar aunque no haya existencias; el stock puede quedar negativo.</span>
               </span>
             </label>
@@ -831,7 +834,7 @@ export default function ProductForm({ product, categories, variantTypes }: Props
           {/* Resumen de tipos elegidos */}
           {selectedTypes.length > 0 && (
             <section className="bg-brand-cream/50 rounded-2xl p-5 space-y-3">
-              <h3 className="font-brand text-xs font-semibold text-brand-primary">Tipos seleccionados</h3>
+              <h3 className="font-brand text-xs font-semibold text-brand-primary"><T>Tipos seleccionados</T></h3>
               {selectedTypes.map((t) => (
                 <div key={t.id} className="space-y-1">
                   <p className="font-brand text-xs text-brand-primary font-semibold">{t.name}</p>

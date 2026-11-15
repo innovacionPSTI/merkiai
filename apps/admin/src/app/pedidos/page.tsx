@@ -6,6 +6,8 @@ import { PageHeader, Pagination } from '@merkiai/ui'
 import PickupModal from '@/components/pedidos/PickupModal'
 import PedidosSearch from './PedidosSearch'
 import { formatMoney, formatDate } from '@merkiai/i18n'
+import { T } from '@merkiai/ui'
+import { getAdminTx } from '@/lib/ui-locale'
 
 export const metadata: Metadata = { title: 'Pedidos' }
 export const dynamic = 'force-dynamic'
@@ -27,6 +29,7 @@ export default async function PedidosAdminPage({
   // Next.js 15/16: searchParams es un Promise
   searchParams: Promise<Record<string, string | undefined>>
 }) {
+  const tx = await getAdminTx()
   const sp = await searchParams
   const status  = sp.status as OrderStatus | undefined
   const q       = sp.q?.trim() ?? ''
@@ -80,7 +83,7 @@ export default async function PedidosAdminPage({
     <div>
       <div className="mb-6">
         <PageHeader
-          title="Pedidos"
+          title={tx("Pedidos")}
           description="Gestiona y da seguimiento a los pedidos de tu tienda."
           action={<PickupModal shippedOrders={(shippedOrders ?? []) as unknown as Parameters<typeof PickupModal>[0]['shippedOrders']} />}
         />
@@ -160,7 +163,7 @@ export default async function PedidosAdminPage({
                         href={`/pedidos/${order.id}`}
                         className="font-brand text-xs text-brand-primary border border-brand-primary/20 rounded-full px-3 py-1 hover:bg-brand-primary hover:text-brand-cream transition-colors"
                       >
-                        Ver
+                        <T>Ver</T>
                       </Link>
                     </td>
                   </tr>

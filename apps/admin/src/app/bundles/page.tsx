@@ -5,6 +5,7 @@ import { listBundles } from '@merkiai/database'
 import { requireAdminDb } from '@/lib/admin-context'
 import { userCanAccess } from '@/lib/roles'
 import BundlesManager from './BundlesManager'
+import { getAdminTx } from '@/lib/ui-locale'
 
 export const metadata: Metadata = { title: 'Bundles' }
 export const dynamic = 'force-dynamic'
@@ -15,6 +16,7 @@ export const dynamic = 'force-dynamic'
  * es la Fase 2. Gated por la sección "productos".
  */
 export default async function BundlesPage() {
+  const tx = await getAdminTx()
   const { adminUser, db } = await requireAdminDb()
   if (!userCanAccess(adminUser, 'productos')) redirect('/no-autorizado')
 
@@ -30,7 +32,7 @@ export default async function BundlesPage() {
   return (
     <div className="space-y-6">
       <PageHeader
-        title="Bundles / kits"
+        title={tx("Bundles / kits")}
         description="Vende varios productos como un paquete con precio propio. El stock se descuenta por componente al comprar (próximamente en la tienda)."
       />
       <BundlesManager initial={bundles} variants={variants} />

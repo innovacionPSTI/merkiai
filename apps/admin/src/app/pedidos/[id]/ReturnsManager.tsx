@@ -4,6 +4,8 @@ import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import type { OrderReturn } from '@merkiai/database'
 import { formatDate } from '@merkiai/i18n'
+import { T } from '@merkiai/ui'
+import { useTx } from '@merkiai/ui'
 
 const STATUS: Record<string, { label: string; cls: string }> = {
   requested: { label: 'Solicitada', cls: 'bg-amber-100 text-amber-700' },
@@ -26,6 +28,7 @@ export default function ReturnsManager({
   canStart: boolean
   initialReturns: OrderReturn[]
 }) {
+  const tx = useTx()
   const router = useRouter()
   const [showForm, setShowForm] = useState(false)
   const [reason, setReason] = useState('')
@@ -63,31 +66,31 @@ export default function ReturnsManager({
   return (
     <div className="bg-white rounded-2xl p-6 shadow-sm">
       <div className="flex items-center justify-between mb-3">
-        <h2 className="font-display text-brand-primary text-lg">Devoluciones</h2>
+        <h2 className="font-display text-brand-primary text-lg"><T>Devoluciones</T></h2>
         {canStart && !showForm && (
           <button onClick={() => setShowForm(true)}
             className="font-brand text-sm border border-brand-primary text-brand-primary rounded-full px-4 py-1.5 hover:bg-brand-primary hover:text-brand-cream transition-colors">
-            Registrar devolución
+            <T>Registrar devolución</T>
           </button>
         )}
       </div>
 
       {!canStart && initialReturns.length === 0 && (
         <p className="font-brand text-sm text-brand-primary/40">
-          Las devoluciones se habilitan cuando el pago está aprobado o el pedido fue entregado.
+          <T>Las devoluciones se habilitan cuando el pago está aprobado o el pedido fue entregado.</T>
         </p>
       )}
 
       {showForm && (
         <form onSubmit={create} className="border border-brand-primary/10 rounded-xl p-4 mb-4 space-y-3">
           <div>
-            <label className="font-brand text-xs text-brand-primary/50 block mb-1">Motivo</label>
+            <label className="font-brand text-xs text-brand-primary/50 block mb-1"><T>Motivo</T></label>
             <input value={reason} onChange={(e) => setReason(e.target.value)} maxLength={500}
-              placeholder="Ej: producto defectuoso"
+              placeholder={tx("Ej: producto defectuoso")}
               className="w-full border border-gray-200 rounded-xl px-3 py-2 font-brand text-sm focus:outline-none focus:border-brand-primary" />
           </div>
           <div>
-            <label className="font-brand text-xs text-brand-primary/50 block mb-1">Nota interna (opcional)</label>
+            <label className="font-brand text-xs text-brand-primary/50 block mb-1"><T>Nota interna (opcional)</T></label>
             <textarea value={note} onChange={(e) => setNote(e.target.value)} rows={2}
               className="w-full border border-gray-200 rounded-xl px-3 py-2 font-brand text-sm focus:outline-none focus:border-brand-primary resize-none" />
           </div>
@@ -98,7 +101,7 @@ export default function ReturnsManager({
             </button>
             <button type="button" onClick={() => setShowForm(false)}
               className="font-brand text-sm border border-gray-200 text-brand-primary rounded-full px-4 py-2 hover:bg-gray-50">
-              Cancelar
+              <T>Cancelar</T>
             </button>
           </div>
         </form>
@@ -107,7 +110,7 @@ export default function ReturnsManager({
       {error && <p className="font-brand text-sm text-red-500 mb-3">{error}</p>}
 
       {initialReturns.length === 0 ? (
-        canStart && <p className="font-brand text-sm text-brand-primary/40">Sin devoluciones registradas.</p>
+        canStart && <p className="font-brand text-sm text-brand-primary/40"><T>Sin devoluciones registradas.</T></p>
       ) : (
         <ul className="space-y-3">
           {initialReturns.map((r) => (
@@ -120,7 +123,7 @@ export default function ReturnsManager({
               </div>
               {r.reason && <p className="font-brand text-sm text-brand-primary mt-2">{r.reason}</p>}
               {r.note && <p className="font-brand text-xs text-brand-primary/50 mt-1">{r.note}</p>}
-              {r.restocked && <p className="font-brand text-xs text-green-600 mt-1">Stock repuesto</p>}
+              {r.restocked && <p className="font-brand text-xs text-green-600 mt-1"><T>Stock repuesto</T></p>}
               {r.status === 'requested' && (
                 <ReturnActions busy={busy} onApprove={(restock) => resolve(r.id, 'approved', restock)} onReject={() => resolve(r.id, 'rejected', false)} />
               )}
@@ -138,15 +141,15 @@ function ReturnActions({ busy, onApprove, onReject }: { busy: boolean; onApprove
     <div className="flex items-center gap-3 mt-3 pt-3 border-t border-brand-primary/5">
       <label className="font-brand text-xs text-brand-primary/60 inline-flex items-center gap-1.5">
         <input type="checkbox" checked={restock} onChange={(e) => setRestock(e.target.checked)} />
-        Reponer stock
+        <T>Reponer stock</T>
       </label>
       <button disabled={busy} onClick={() => onApprove(restock)}
         className="font-brand text-xs bg-green-600 text-white rounded-full px-4 py-1.5 hover:bg-green-700 transition-colors disabled:opacity-50">
-        Aprobar
+        <T>Aprobar</T>
       </button>
       <button disabled={busy} onClick={onReject}
         className="font-brand text-xs border border-red-300 text-red-600 rounded-full px-4 py-1.5 hover:bg-red-50 transition-colors disabled:opacity-50">
-        Rechazar
+        <T>Rechazar</T>
       </button>
     </div>
   )

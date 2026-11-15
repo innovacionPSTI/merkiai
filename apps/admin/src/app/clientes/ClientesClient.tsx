@@ -5,6 +5,8 @@ import Link from 'next/link'
 import { PageHeader } from '@merkiai/ui'
 import CsvImportModal from '@/components/CsvImportModal'
 import { formatMoney, formatDate as i18nFormatDate } from '@merkiai/i18n'
+import { T } from '@merkiai/ui'
+import { useTx } from '@merkiai/ui'
 
 export type ClientType = 'con_cuenta' | 'sin_cuenta'
 
@@ -24,6 +26,7 @@ interface Props {
 }
 
 export default function ClientesClient({ clients }: Props) {
+  const tx = useTx()
   const [search, setSearch] = useState('')
   const [filter, setFilter] = useState<'todos' | ClientType>('todos')
 
@@ -61,7 +64,7 @@ export default function ClientesClient({ clients }: Props) {
     <div className="space-y-6">
       {/* Header */}
       <PageHeader
-        title="Clientes"
+        title={tx("Clientes")}
         description={`${total} clientes en total.`}
         action={
           <CsvImportModal
@@ -76,20 +79,20 @@ export default function ClientesClient({ clients }: Props) {
       {/* Contadores */}
       <div className="grid grid-cols-3 gap-4">
         <div className="bg-white rounded-2xl p-5 shadow-sm">
-          <p className="font-brand text-xs text-brand-primary/40 uppercase tracking-wide mb-1">Total</p>
+          <p className="font-brand text-xs text-brand-primary/40 uppercase tracking-wide mb-1"><T>Total</T></p>
           <p className="font-brand font-bold text-brand-primary text-3xl">{total}</p>
         </div>
         <div className="bg-white rounded-2xl p-5 shadow-sm">
           <div className="flex items-center gap-2 mb-1">
             <span className="w-2 h-2 rounded-full bg-green-500" />
-            <p className="font-brand text-xs text-brand-primary/40 uppercase tracking-wide">Con cuenta</p>
+            <p className="font-brand text-xs text-brand-primary/40 uppercase tracking-wide"><T>Con cuenta</T></p>
           </div>
           <p className="font-brand font-bold text-brand-primary text-3xl">{conCuenta}</p>
         </div>
         <div className="bg-white rounded-2xl p-5 shadow-sm">
           <div className="flex items-center gap-2 mb-1">
             <span className="w-2 h-2 rounded-full bg-gray-400" />
-            <p className="font-brand text-xs text-brand-primary/40 uppercase tracking-wide">Sin cuenta</p>
+            <p className="font-brand text-xs text-brand-primary/40 uppercase tracking-wide"><T>Sin cuenta</T></p>
           </div>
           <p className="font-brand font-bold text-brand-primary text-3xl">{sinCuenta}</p>
         </div>
@@ -99,7 +102,7 @@ export default function ClientesClient({ clients }: Props) {
       <div className="flex flex-col sm:flex-row gap-3">
         <input
           type="text"
-          placeholder="Buscar por nombre, email o teléfono..."
+          placeholder={tx("Buscar por nombre, email o teléfono...")}
           value={search}
           onChange={(e) => setSearch(e.target.value)}
           className="flex-1 border border-gray-200 rounded-xl px-4 py-2.5 font-brand text-sm focus:outline-none focus:border-brand-primary"
@@ -127,22 +130,22 @@ export default function ClientesClient({ clients }: Props) {
           <thead>
             <tr className="border-b border-gray-100">
               <th className="font-brand text-xs text-brand-primary/40 text-left px-6 py-4 uppercase tracking-wide">
-                Cliente
+                <T>Cliente</T>
               </th>
               <th className="font-brand text-xs text-brand-primary/40 text-left px-6 py-4 uppercase tracking-wide">
-                Tipo
+                <T>Tipo</T>
               </th>
               <th className="font-brand text-xs text-brand-primary/40 text-left px-6 py-4 uppercase tracking-wide">
-                Pedidos
+                <T>Pedidos</T>
               </th>
               <th className="font-brand text-xs text-brand-primary/40 text-left px-6 py-4 uppercase tracking-wide">
-                Total gastado
+                <T>Total gastado</T>
               </th>
               <th className="font-brand text-xs text-brand-primary/40 text-left px-6 py-4 uppercase tracking-wide">
-                Último pedido
+                <T>Último pedido</T>
               </th>
               <th className="font-brand text-xs text-brand-primary/40 text-left px-6 py-4 uppercase tracking-wide">
-                Registrado
+                <T>Registrado</T>
               </th>
             </tr>
           </thead>
@@ -171,12 +174,12 @@ export default function ClientesClient({ clients }: Props) {
                     {c.type === 'con_cuenta' ? (
                       <span className="inline-flex items-center gap-1.5 font-brand text-xs font-semibold px-2.5 py-1 rounded-full bg-green-100 text-green-700">
                         <span className="w-1.5 h-1.5 rounded-full bg-green-500" />
-                        Con cuenta
+                        <T>Con cuenta</T>
                       </span>
                     ) : (
                       <span className="inline-flex items-center gap-1.5 font-brand text-xs font-semibold px-2.5 py-1 rounded-full bg-gray-100 text-gray-500">
                         <span className="w-1.5 h-1.5 rounded-full bg-gray-400" />
-                        Sin cuenta
+                        <T>Sin cuenta</T>
                       </span>
                     )}
                   </td>

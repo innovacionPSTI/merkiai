@@ -9,6 +9,7 @@ import {
   setPrimaryDomainAction, removeDomainAction, domainProvisionAction,
 } from './actions'
 import { T } from '@merkiai/ui'
+import { useTx } from '@merkiai/ui'
 
 const STATUS: Record<string, { label: string; tone: BadgeTone }> = {
   pending:  { label: 'Pendiente de verificar', tone: 'warn' },
@@ -33,6 +34,7 @@ function DnsRow({ label, value }: { label: string; value: string }) {
 }
 
 export default function DominioClient({ domains }: { domains: AdminCustomDomain[] }) {
+  const tx = useTx()
   const router = useRouter()
   const [busy, startTransition] = useTransition()
   const [newDomain, setNewDomain] = useState('')
@@ -101,10 +103,10 @@ export default function DominioClient({ domains }: { domains: AdminCustomDomain[
                 </>}
                 actions={<>
                   <ResourceAction icon="list" label={openId === d.id ? 'Ocultar DNS' : 'Ver DNS'} onClick={() => toggleDns(d.id)} disabled={busy} />
-                  {d.status === 'pending' && <ResourceAction icon="refresh" label="Verificar" tone="primary" onClick={() => run(() => verifyDomainAction(d.id))} disabled={busy} />}
-                  {d.status === 'verified' && <ResourceAction icon="check" label="Activar" tone="primary" onClick={() => run(() => activateDomainAction(d.id))} disabled={busy} />}
-                  {d.status !== 'pending' && !d.isPrimary && <ResourceAction icon="check" label="Hacer principal" onClick={() => run(() => setPrimaryDomainAction(d.id))} disabled={busy} />}
-                  <ResourceAction icon="trash" label="Quitar" tone="danger" onClick={() => run(() => removeDomainAction(d.id))} disabled={busy} />
+                  {d.status === 'pending' && <ResourceAction icon="refresh" label={tx("Verificar")} tone="primary" onClick={() => run(() => verifyDomainAction(d.id))} disabled={busy} />}
+                  {d.status === 'verified' && <ResourceAction icon="check" label={tx("Activar")} tone="primary" onClick={() => run(() => activateDomainAction(d.id))} disabled={busy} />}
+                  {d.status !== 'pending' && !d.isPrimary && <ResourceAction icon="check" label={tx("Hacer principal")} onClick={() => run(() => setPrimaryDomainAction(d.id))} disabled={busy} />}
+                  <ResourceAction icon="trash" label={tx("Quitar")} tone="danger" onClick={() => run(() => removeDomainAction(d.id))} disabled={busy} />
                 </>}
               />
               {openId === d.id && (

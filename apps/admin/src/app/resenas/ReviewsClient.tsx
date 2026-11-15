@@ -3,6 +3,8 @@
 import { useState } from 'react'
 import { PageHeader, Icon, StatusBadge, type BadgeTone } from '@merkiai/ui'
 import type { ProductReview } from '@merkiai/database'
+import { T } from '@merkiai/ui'
+import { useTx } from '@merkiai/ui'
 
 const TABS: { key: 'pending' | 'approved' | 'rejected'; label: string }[] = [
   { key: 'pending', label: 'Pendientes' },
@@ -24,6 +26,7 @@ function Stars({ n }: { n: number }) {
 }
 
 export default function ReviewsClient({ initial, productNames }: { initial: ProductReview[]; productNames: Record<number, string> }) {
+  const tx = useTx()
   const [reviews, setReviews] = useState(initial)
   const [tab, setTab] = useState<'pending' | 'approved' | 'rejected'>('pending')
   const [busy, setBusy] = useState<number | null>(null)
@@ -55,7 +58,7 @@ export default function ReviewsClient({ initial, productNames }: { initial: Prod
 
   return (
     <div className="space-y-6">
-      <PageHeader title="Reseñas" description="Modera las reseñas de productos antes de publicarlas." />
+      <PageHeader title={tx("Reseñas")} description="Modera las reseñas de productos antes de publicarlas." />
 
       <div className="flex gap-2">
         {TABS.map((t) => (
@@ -90,13 +93,13 @@ export default function ReviewsClient({ initial, productNames }: { initial: Prod
                 <div className="flex items-center gap-2 shrink-0">
                   {r.status !== 'approved' && (
                     <button onClick={() => setStatus(r.id, 'approved')} disabled={busy === r.id}
-                      className="font-brand text-xs bg-green-600 text-white rounded-lg px-3 py-1.5 hover:bg-green-700 disabled:opacity-50">Aprobar</button>
+                      className="font-brand text-xs bg-green-600 text-white rounded-lg px-3 py-1.5 hover:bg-green-700 disabled:opacity-50"><T>Aprobar</T></button>
                   )}
                   {r.status !== 'rejected' && (
                     <button onClick={() => setStatus(r.id, 'rejected')} disabled={busy === r.id}
-                      className="font-brand text-xs border border-gray-300 text-brand-primary rounded-lg px-3 py-1.5 hover:bg-gray-50 disabled:opacity-50">Rechazar</button>
+                      className="font-brand text-xs border border-gray-300 text-brand-primary rounded-lg px-3 py-1.5 hover:bg-gray-50 disabled:opacity-50"><T>Rechazar</T></button>
                   )}
-                  <button onClick={() => remove(r.id)} disabled={busy === r.id} title="Eliminar" aria-label="Eliminar"
+                  <button onClick={() => remove(r.id)} disabled={busy === r.id} title={tx("Eliminar")} aria-label={tx("Eliminar")}
                     className="text-brand-primary/40 hover:text-red-600"><Icon name="trash" size={16} /></button>
                 </div>
               </div>

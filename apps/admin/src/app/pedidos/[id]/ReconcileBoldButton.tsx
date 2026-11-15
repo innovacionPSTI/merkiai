@@ -2,6 +2,7 @@
 
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
+import { useTx } from '@merkiai/ui'
 
 /**
  * Botón "Verificar pago" — reconcilia manualmente un pago pendiente contra la API
@@ -11,6 +12,7 @@ import { useRouter } from 'next/navigation'
 const LABEL: Record<'bold' | 'tucompra', string> = { bold: 'Bold', tucompra: 'Tu Compra' }
 
 export default function ReconcileBoldButton({ orderId, provider = 'bold' }: { orderId: number; provider?: 'bold' | 'tucompra' }) {
+  const tx = useTx()
   const router = useRouter()
   const [loading, setLoading] = useState(false)
   const [msg, setMsg] = useState<string | null>(null)
@@ -23,10 +25,10 @@ export default function ReconcileBoldButton({ orderId, provider = 'bold' }: { or
       const data = await res.json()
       if (!res.ok) throw new Error(data.error ?? 'Error')
       if (data.status === 'approved') {
-        setMsg('✓ Pago confirmado')
+        setMsg(tx("✓ Pago confirmado"))
         router.refresh()
       } else if (data.status === 'rejected') {
-        setMsg('Pago rechazado')
+        setMsg(tx("Pago rechazado"))
         router.refresh()
       } else {
         setMsg(`Aún sin confirmación de ${LABEL[provider]}`)

@@ -1,6 +1,8 @@
 'use client'
 
 import { useState, useRef } from 'react'
+import { T } from '@merkiai/ui'
+import { useTx } from '@merkiai/ui'
 
 interface Props {
   orderId: number
@@ -8,6 +10,7 @@ interface Props {
 }
 
 export default function OrderNotes({ orderId, initialNotes }: Props) {
+  const tx = useTx()
   const [notes, setNotes] = useState(initialNotes ?? '')
   const [saved, setSaved] = useState<boolean | null>(null)
   const [saving, setSaving] = useState(false)
@@ -40,18 +43,18 @@ export default function OrderNotes({ orderId, initialNotes }: Props) {
   return (
     <div className="bg-white rounded-2xl p-5 shadow-sm space-y-3">
       <div className="flex items-center justify-between">
-        <h3 className="font-brand font-semibold text-brand-primary">Notas internas</h3>
+        <h3 className="font-brand font-semibold text-brand-primary"><T>Notas internas</T></h3>
         {saved === true && (
-          <span className="font-brand text-xs text-green-600">✓ Guardado</span>
+          <span className="font-brand text-xs text-green-600"><T>✓ Guardado</T></span>
         )}
         {saved === false && (
-          <span className="font-brand text-xs text-red-500">Error al guardar</span>
+          <span className="font-brand text-xs text-red-500"><T>Error al guardar</T></span>
         )}
       </div>
       <textarea
         value={notes}
         onChange={(e) => { setNotes(e.target.value); setSaved(null) }}
-        placeholder="Notas del equipo (no visibles al cliente)…"
+        placeholder={tx("Notas del equipo (no visibles al cliente)…")}
         rows={4}
         className="w-full border border-gray-200 rounded-xl px-3 py-2.5 font-brand text-sm text-brand-primary focus:outline-none focus:border-brand-primary resize-none placeholder:text-brand-primary/30"
       />

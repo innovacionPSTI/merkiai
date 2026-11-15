@@ -97,7 +97,7 @@ const es = {
       manual_body: 'Al confirmar, tu pedido quedará registrado como pendiente de pago. El equipo de la tienda te contactará para coordinar y validar el pago antes de despacharlo.',
       widget_hint: 'El pago con {gateway} se abrirá al confirmar. Datos protegidos con SSL.',
       processing: 'Procesando…', confirm: 'Confirmar pedido', summary: 'Resumen', remove: 'Quitar', have_coupon: '¿Tienes un cupón?',
-      apply: 'Aplicar', gift_card_placeholder: 'Código de gift card', gift_card_valid: 'Gift card válida — saldo {amount}',
+      apply: 'Aplicar', coupon_placeholder: 'CÓDIGO', gift_card_placeholder: 'Código de gift card', gift_card_valid: 'Gift card válida — saldo {amount}',
       use_credit: 'Usar mi saldo a favor ({amount})', subtotal: 'Subtotal', discount: 'Descuento ({code})', shipping: 'Envío',
       free: 'Gratis', calculating: 'Calculando…', credit: 'Gift card / saldo', total: 'Total',
       coupon_invalid: 'Cupón inválido', coupon_error: 'Error aplicando el cupón', gift_card_invalid: 'Gift card inválida o sin saldo.',

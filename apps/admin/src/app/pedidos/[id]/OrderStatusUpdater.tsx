@@ -2,6 +2,7 @@
 
 import { useState, useRef } from 'react'
 import { useRouter } from 'next/navigation'
+import { T } from '@merkiai/ui'
 
 const STATUSES = [
   { value: 'pending',    label: 'Pendiente' },
@@ -67,8 +68,8 @@ export default function OrderStatusUpdater({ orderId, currentStatus }: Props) {
       >
         {loading ? 'Guardando…' : 'Actualizar estado'}
       </button>
-      {saved === true  && <span className="font-brand text-xs text-green-600">✓ Actualizado</span>}
-      {saved === false && <span className="font-brand text-xs text-red-500">Error al guardar</span>}
+      {saved === true  && <span className="font-brand text-xs text-green-600"><T>✓ Actualizado</T></span>}
+      {saved === false && <span className="font-brand text-xs text-red-500"><T>Error al guardar</T></span>}
     </div>
   )
 }

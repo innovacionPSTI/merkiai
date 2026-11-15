@@ -2,6 +2,8 @@
 
 import { useState, useEffect } from 'react'
 import ImageUpload from '@/components/ImageUpload'
+import { T } from '@merkiai/ui'
+import { useTx } from '@merkiai/ui'
 
 /** Categoría recibida como prop (id es opcional al crear) */
 interface CategoryInput {
@@ -49,6 +51,7 @@ function toSlug(str: string) {
 }
 
 export default function CategoryFormModal({ category, categories = [], onClose, onDelete }: Props) {
+  const tx = useTx()
   const isEdit = !!category?.id
   // Ensure returned data is typed as SavedCategory (id always present from API)
 
@@ -77,8 +80,8 @@ export default function CategoryFormModal({ category, categories = [], onClose, 
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
-    if (!form.name.trim()) { setError('El nombre es requerido'); return }
-    if (uploadsInProgress > 0) { setError('Espera a que termine de subir la imagen'); return }
+    if (!form.name.trim()) { setError(tx("El nombre es requerido")); return }
+    if (uploadsInProgress > 0) { setError(tx("Espera a que termine de subir la imagen")); return }
     setSaving(true)
     setError('')
 
@@ -142,60 +145,60 @@ export default function CategoryFormModal({ category, categories = [], onClose, 
           {/* Imagen */}
           <div>
             <label className="font-brand text-xs text-brand-primary/50 block mb-2">
-              Imagen de portada <span className="text-brand-primary/30">(opcional)</span>
+              <T>Imagen de portada</T> <span className="text-brand-primary/30">(opcional)</span>
             </label>
             <ImageUpload
               value={form.image_url}
               onChange={(url) => setForm((f) => ({ ...f, image_url: url }))}
               onUploadStateChange={handleUploadStateChange}
               bucket="banners"
-              label="Imagen de categoría"
+              label={tx("Imagen de categoría")}
               sizeClass="aspect-video"
             />
           </div>
 
           {/* Nombre */}
           <div>
-            <label className="font-brand text-xs text-brand-primary/50 block mb-1">Nombre *</label>
+            <label className="font-brand text-xs text-brand-primary/50 block mb-1"><T>Nombre *</T></label>
             <input
               type="text"
               required
               value={form.name}
               onChange={(e) => setForm((f) => ({ ...f, name: e.target.value }))}
               className="w-full border border-gray-200 rounded-xl px-4 py-2.5 font-brand text-sm text-brand-primary focus:outline-none focus:border-brand-primary"
-              placeholder="ej: Café de especialidad"
+              placeholder={tx("ej: Novedades")}
             />
           </div>
 
           {/* Slug */}
           <div>
-            <label className="font-brand text-xs text-brand-primary/50 block mb-1">Slug *</label>
+            <label className="font-brand text-xs text-brand-primary/50 block mb-1"><T>Slug *</T></label>
             <input
               type="text"
               required
               value={form.slug}
               onChange={(e) => { setSlugTouched(true); setForm((f) => ({ ...f, slug: toSlug(e.target.value) })) }}
               className="w-full border border-gray-200 rounded-xl px-4 py-2.5 font-brand text-sm text-brand-primary/60 focus:outline-none focus:border-brand-primary"
-              placeholder="cafe-especialidad"
+              placeholder="novedades"
             />
             <p className="font-brand text-xs text-brand-primary/30 mt-1">URL: /shop?categoria={form.slug}</p>
           </div>
 
           {/* Descripción */}
           <div>
-            <label className="font-brand text-xs text-brand-primary/50 block mb-1">Descripción</label>
+            <label className="font-brand text-xs text-brand-primary/50 block mb-1"><T>Descripción</T></label>
             <textarea
               rows={3}
               value={form.description}
               onChange={(e) => setForm((f) => ({ ...f, description: e.target.value }))}
               className="w-full border border-gray-200 rounded-xl px-4 py-2.5 font-brand text-sm text-brand-primary focus:outline-none focus:border-brand-primary resize-none"
-              placeholder="Descripción opcional..."
+              placeholder={tx("Descripción opcional...")}
             />
           </div>
 
           {/* HU-263 · Categoría madre (jerarquía) */}
           <div>
-            <label className="font-brand text-xs text-brand-primary/50 block mb-1">Categoría madre <span className="text-brand-primary/30">(opcional)</span></label>
+            <label className="font-brand text-xs text-brand-primary/50 block mb-1"><T>Categoría madre</T> <span className="text-brand-primary/30">(opcional)</span></label>
             <select
               value={form.parent_id}
               onChange={(e) => setForm((f) => ({ ...f, parent_id: e.target.value }))}
@@ -210,23 +213,23 @@ export default function CategoryFormModal({ category, categories = [], onClose, 
 
           {/* HU-263 · SEO */}
           <div>
-            <label className="font-brand text-xs text-brand-primary/50 block mb-1">Meta título (SEO) <span className="text-brand-primary/30">(opcional)</span></label>
+            <label className="font-brand text-xs text-brand-primary/50 block mb-1"><T>Meta título (SEO)</T> <span className="text-brand-primary/30">(opcional)</span></label>
             <input
               type="text"
               value={form.meta_title}
               onChange={(e) => setForm((f) => ({ ...f, meta_title: e.target.value }))}
               className="w-full border border-gray-200 rounded-xl px-4 py-2.5 font-brand text-sm text-brand-primary focus:outline-none focus:border-brand-primary"
-              placeholder="Título para buscadores"
+              placeholder={tx("Título para buscadores")}
             />
           </div>
           <div>
-            <label className="font-brand text-xs text-brand-primary/50 block mb-1">Meta descripción (SEO) <span className="text-brand-primary/30">(opcional)</span></label>
+            <label className="font-brand text-xs text-brand-primary/50 block mb-1"><T>Meta descripción (SEO)</T> <span className="text-brand-primary/30">(opcional)</span></label>
             <textarea
               rows={2}
               value={form.meta_description}
               onChange={(e) => setForm((f) => ({ ...f, meta_description: e.target.value }))}
               className="w-full border border-gray-200 rounded-xl px-4 py-2.5 font-brand text-sm text-brand-primary focus:outline-none focus:border-brand-primary resize-none"
-              placeholder="Descripción para buscadores"
+              placeholder={tx("Descripción para buscadores")}
             />
           </div>
 
@@ -238,7 +241,7 @@ export default function CategoryFormModal({ category, categories = [], onClose, 
               onChange={(e) => setForm((f) => ({ ...f, active: e.target.checked }))}
               className="w-4 h-4 accent-brand-primary"
             />
-            <span className="font-brand text-sm text-brand-primary">Categoría activa</span>
+            <span className="font-brand text-sm text-brand-primary"><T>Categoría activa</T></span>
           </label>
 
           {error && (
@@ -253,7 +256,7 @@ export default function CategoryFormModal({ category, categories = [], onClose, 
                 disabled={saving}
                 className="font-brand text-sm text-red-500 hover:bg-red-50 px-4 py-2 rounded-xl transition-colors"
               >
-                Eliminar
+                <T>Eliminar</T>
               </button>
             )}
             <div className="flex-1" />
@@ -262,7 +265,7 @@ export default function CategoryFormModal({ category, categories = [], onClose, 
               onClick={() => onClose()}
               className="font-brand text-sm text-brand-primary/50 hover:text-brand-primary px-4 py-2 rounded-xl transition-colors"
             >
-              Cancelar
+              <T>Cancelar</T>
             </button>
             <button
               type="submit"

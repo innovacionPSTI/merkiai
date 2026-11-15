@@ -3,6 +3,7 @@
 import { useState, useTransition } from 'react'
 import { formatNumber } from '@merkiai/i18n'
 import { T } from '@merkiai/ui'
+import { useTx } from '@merkiai/ui'
 
 interface Props {
   initialTerms: string | null
@@ -17,6 +18,7 @@ const TAB_LABELS: Record<Tab, string> = {
 }
 
 export default function LegalConfigForm({ initialTerms, initialPrivacy }: Props) {
+  const tx = useTx()
   const [activeTab, setActiveTab] = useState<Tab>('terms')
   const [terms, setTerms] = useState(initialTerms ?? '')
   const [privacy, setPrivacy] = useState(initialPrivacy ?? '')
@@ -47,7 +49,7 @@ export default function LegalConfigForm({ initialTerms, initialPrivacy }: Props)
         setTimeout(() => setStatus('idle'), 3000)
       })
     } catch {
-      setErrorMsg('Error de red al guardar')
+      setErrorMsg(tx("Error de red al guardar"))
       setStatus('error')
     }
   }

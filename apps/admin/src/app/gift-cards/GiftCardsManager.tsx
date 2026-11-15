@@ -3,12 +3,15 @@
 import { useState } from 'react'
 import { Icon } from '@merkiai/ui'
 import { formatMoney } from '@merkiai/i18n'
+import { T } from '@merkiai/ui'
+import { useTx } from '@merkiai/ui'
 
 interface GiftCard { id: number; code: string; initial_balance: number; balance: number; active: boolean; note: string | null; expires_at: string | null }
 
 const money = (n: number) => formatMoney(n)
 
 export default function GiftCardsManager({ initial }: { initial: GiftCard[] }) {
+  const tx = useTx()
   const [cards, setCards] = useState<GiftCard[]>(initial)
   const [amount, setAmount] = useState('')
   const [note, setNote] = useState('')
@@ -63,15 +66,15 @@ export default function GiftCardsManager({ initial }: { initial: GiftCard[] }) {
     <div className="space-y-6">
       {/* Emitir gift card */}
       <form onSubmit={issue} className="bg-white rounded-2xl p-5 shadow-sm flex flex-wrap items-end gap-3">
-        <label className="block"><span className="font-brand text-xs text-brand-primary/50">Monto de la gift card</span>
+        <label className="block"><span className="font-brand text-xs text-brand-primary/50"><T>Monto de la gift card</T></span>
           <input type="number" min={1} value={amount} onChange={(e) => setAmount(e.target.value)} required
             className="mt-1 w-40 rounded-lg border border-brand-primary/15 px-3 py-2 font-brand text-sm" /></label>
-        <label className="block flex-1 min-w-[200px]"><span className="font-brand text-xs text-brand-primary/50">Nota (opcional)</span>
+        <label className="block flex-1 min-w-[200px]"><span className="font-brand text-xs text-brand-primary/50"><T>Nota (opcional)</T></span>
           <input value={note} onChange={(e) => setNote(e.target.value)}
             className="mt-1 w-full rounded-lg border border-brand-primary/15 px-3 py-2 font-brand text-sm" /></label>
         <button type="submit" disabled={busy}
           className="bg-brand-primary text-brand-cream rounded-full px-5 py-2 font-brand text-sm hover:bg-brand-dark disabled:opacity-50 inline-flex items-center gap-2">
-          <Icon name="plus" size={16} /> Emitir
+          <Icon name="plus" size={16} /> <T>Emitir</T>
         </button>
         {error && <p className="font-brand text-sm text-red-600 w-full">{error}</p>}
       </form>
@@ -80,15 +83,15 @@ export default function GiftCardsManager({ initial }: { initial: GiftCard[] }) {
         <table className="w-full min-w-[640px] text-sm">
           <thead>
             <tr className="bg-gray-50 text-left font-brand text-xs text-brand-primary/50">
-              <th className="px-4 py-3">Código</th>
-              <th className="px-4 py-3">Saldo</th>
-              <th className="px-4 py-3">Emitida</th>
-              <th className="px-4 py-3">Estado</th>
+              <th className="px-4 py-3"><T>Código</T></th>
+              <th className="px-4 py-3"><T>Saldo</T></th>
+              <th className="px-4 py-3"><T>Emitida</T></th>
+              <th className="px-4 py-3"><T>Estado</T></th>
             </tr>
           </thead>
           <tbody>
             {cards.length === 0 ? (
-              <tr><td colSpan={4} className="px-4 py-10 text-center font-brand text-brand-primary/40">Sin gift cards.</td></tr>
+              <tr><td colSpan={4} className="px-4 py-10 text-center font-brand text-brand-primary/40"><T>Sin gift cards.</T></td></tr>
             ) : cards.map((c) => (
               <tr key={c.id} className="border-t border-gray-100">
                 <td className="px-4 py-3 font-mono text-brand-primary">{c.code}</td>
@@ -107,22 +110,22 @@ export default function GiftCardsManager({ initial }: { initial: GiftCard[] }) {
 
       {/* Saldo a favor */}
       <div className="bg-white rounded-2xl p-5 shadow-sm space-y-3">
-        <h2 className="font-display text-brand-primary text-lg">Saldo a favor (store credit)</h2>
+        <h2 className="font-display text-brand-primary text-lg"><T>Saldo a favor (store credit)</T></h2>
         <div className="flex flex-wrap items-end gap-2">
-          <label className="block flex-1 min-w-[220px]"><span className="font-brand text-xs text-brand-primary/50">Email del cliente</span>
+          <label className="block flex-1 min-w-[220px]"><span className="font-brand text-xs text-brand-primary/50"><T>Email del cliente</T></span>
             <input type="email" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="cliente@correo.com"
               className="mt-1 w-full rounded-lg border border-brand-primary/15 px-3 py-2 font-brand text-sm" /></label>
-          <button onClick={lookup} type="button" className="font-brand text-sm border border-brand-primary/20 text-brand-primary rounded-full px-4 py-2 hover:bg-brand-cream">Ver saldo</button>
+          <button onClick={lookup} type="button" className="font-brand text-sm border border-brand-primary/20 text-brand-primary rounded-full px-4 py-2 hover:bg-brand-cream"><T>Ver saldo</T></button>
         </div>
-        {credit && <p className="font-brand text-sm text-brand-primary">Saldo de <strong>{credit.email}</strong>: <strong>{money(credit.balance)}</strong></p>}
+        {credit && <p className="font-brand text-sm text-brand-primary"><T>Saldo de</T> <strong>{credit.email}</strong>: <strong>{money(credit.balance)}</strong></p>}
         <form onSubmit={adjust} className="flex flex-wrap items-end gap-2">
-          <label className="block"><span className="font-brand text-xs text-brand-primary/50">Ajuste (+ abona / − descuenta)</span>
+          <label className="block"><span className="font-brand text-xs text-brand-primary/50"><T>Ajuste (+ abona / − descuenta)</T></span>
             <input type="number" value={delta} onChange={(e) => setDelta(e.target.value)} required
               className="mt-1 w-40 rounded-lg border border-brand-primary/15 px-3 py-2 font-brand text-sm" /></label>
-          <label className="block flex-1 min-w-[180px]"><span className="font-brand text-xs text-brand-primary/50">Motivo</span>
-            <input value={reason} onChange={(e) => setReason(e.target.value)} placeholder="ajuste manual"
+          <label className="block flex-1 min-w-[180px]"><span className="font-brand text-xs text-brand-primary/50"><T>Motivo</T></span>
+            <input value={reason} onChange={(e) => setReason(e.target.value)} placeholder={tx("ajuste manual")}
               className="mt-1 w-full rounded-lg border border-brand-primary/15 px-3 py-2 font-brand text-sm" /></label>
-          <button type="submit" className="font-brand text-sm bg-brand-primary text-brand-cream rounded-full px-4 py-2 hover:bg-brand-dark">Aplicar</button>
+          <button type="submit" className="font-brand text-sm bg-brand-primary text-brand-cream rounded-full px-4 py-2 hover:bg-brand-dark"><T>Aplicar</T></button>
         </form>
         {creditMsg && <p className="font-brand text-xs text-brand-primary/60">{creditMsg}</p>}
       </div>

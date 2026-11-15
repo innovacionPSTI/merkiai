@@ -10,6 +10,8 @@ import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { Icon } from '@merkiai/ui'
 import { formatMoney } from '@merkiai/i18n'
+import { T } from '@merkiai/ui'
+import { useTx } from '@merkiai/ui'
 
 interface Category { id: number; name: string }
 interface Props { products: any[]; categories: Category[]; emptyQ?: string; lowStockThreshold?: number }
@@ -18,6 +20,7 @@ const fmt = (n: number) =>
   formatMoney(n)
 
 export default function ProductsTable({ products, categories, emptyQ, lowStockThreshold = 5 }: Props) {
+  const tx = useTx()
   const router = useRouter()
   const [selected, setSelected] = useState<Set<number>>(new Set())
   const [busy, setBusy] = useState(false)
@@ -57,7 +60,7 @@ export default function ProductsTable({ products, categories, emptyQ, lowStockTh
       <div className="font-brand text-brand-primary/40 text-center py-12">
         {emptyQ
           ? `Sin resultados para "${emptyQ}"`
-          : <><span>No hay productos. </span><Link href="/productos/nuevo" className="underline">Crear el primero →</Link></>}
+          : <><span><T>No hay productos.</T> </span><Link href="/productos/nuevo" className="underline"><T>Crear el primero →</T></Link></>}
       </div>
     )
   }
@@ -69,7 +72,7 @@ export default function ProductsTable({ products, categories, emptyQ, lowStockTh
         <thead>
           <tr className="bg-gray-50">
             <th className="px-4 py-3 pl-6 w-10">
-              <input type="checkbox" checked={allChecked} onChange={toggleAll} className="w-4 h-4 accent-brand-primary" aria-label="Seleccionar todos" />
+              <input type="checkbox" checked={allChecked} onChange={toggleAll} className="w-4 h-4 accent-brand-primary" aria-label={tx("Seleccionar todos")} />
             </th>
             {['Imagen', 'Nombre', 'Categoría', 'Variantes', 'Precio', 'Stock', 'Estado', 'Acciones'].map((h) => (
               <th key={h} className="font-brand text-xs font-semibold text-brand-primary/50 text-left px-4 py-3 last:pr-6">{h}</th>
@@ -110,8 +113,8 @@ export default function ProductsTable({ products, categories, emptyQ, lowStockTh
                   <div className="flex items-center gap-1.5">
                     <span className={`font-brand text-xs font-semibold rounded-full px-2 py-1 ${totalStock > lowStockThreshold ? 'bg-green-100 text-green-700' : totalStock > 0 ? 'bg-yellow-100 text-yellow-700' : 'bg-red-100 text-red-700'}`}>{totalStock}u</span>
                     {low && (
-                      <span className="font-brand text-xs font-semibold rounded-full px-2 py-1 bg-orange-100 text-orange-700 inline-flex items-center gap-1" title="Al menos una variante en stock bajo">
-                        <Icon name="alert" size={12} /> Bajo
+                      <span className="font-brand text-xs font-semibold rounded-full px-2 py-1 bg-orange-100 text-orange-700 inline-flex items-center gap-1" title={tx("Al menos una variante en stock bajo")}>
+                        <Icon name="alert" size={12} /> <T>Bajo</T>
                       </span>
                     )}
                   </div>
@@ -120,7 +123,7 @@ export default function ProductsTable({ products, categories, emptyQ, lowStockTh
                   <span className={`font-brand text-xs rounded-full px-2 py-1 ${product.active ? 'bg-green-100 text-green-600' : 'bg-gray-100 text-gray-500'}`}>{product.active ? 'Publicado' : 'Borrador'}</span>
                 </td>
                 <td className="px-4 py-3 pr-6">
-                  <Link href={`/productos/${product.id}`} className="font-brand text-xs text-brand-primary border border-brand-primary/20 rounded-full px-3 py-1 hover:bg-brand-primary hover:text-brand-cream transition-colors">Editar</Link>
+                  <Link href={`/productos/${product.id}`} className="font-brand text-xs text-brand-primary border border-brand-primary/20 rounded-full px-3 py-1 hover:bg-brand-primary hover:text-brand-cream transition-colors"><T>Editar</T></Link>
                 </td>
               </tr>
             )
@@ -134,19 +137,19 @@ export default function ProductsTable({ products, categories, emptyQ, lowStockTh
         <div className="sticky bottom-4 mt-3 mx-4 z-10">
           <div className="bg-brand-primary text-brand-cream rounded-2xl shadow-lg px-4 py-3 flex flex-wrap items-center gap-2">
             <span className="font-brand text-sm font-semibold mr-1">{selected.size} seleccionado(s)</span>
-            <button onClick={() => run('activate')} disabled={busy} className="font-brand text-xs bg-white/15 hover:bg-white/25 rounded-lg px-3 py-1.5 disabled:opacity-50">Publicar</button>
-            <button onClick={() => run('deactivate')} disabled={busy} className="font-brand text-xs bg-white/15 hover:bg-white/25 rounded-lg px-3 py-1.5 disabled:opacity-50">Despublicar</button>
-            <button onClick={() => run('feature')} disabled={busy} className="font-brand text-xs bg-white/15 hover:bg-white/25 rounded-lg px-3 py-1.5 disabled:opacity-50">Destacar</button>
-            <button onClick={() => run('unfeature')} disabled={busy} className="font-brand text-xs bg-white/15 hover:bg-white/25 rounded-lg px-3 py-1.5 disabled:opacity-50">Quitar destacado</button>
+            <button onClick={() => run('activate')} disabled={busy} className="font-brand text-xs bg-white/15 hover:bg-white/25 rounded-lg px-3 py-1.5 disabled:opacity-50"><T>Publicar</T></button>
+            <button onClick={() => run('deactivate')} disabled={busy} className="font-brand text-xs bg-white/15 hover:bg-white/25 rounded-lg px-3 py-1.5 disabled:opacity-50"><T>Despublicar</T></button>
+            <button onClick={() => run('feature')} disabled={busy} className="font-brand text-xs bg-white/15 hover:bg-white/25 rounded-lg px-3 py-1.5 disabled:opacity-50"><T>Destacar</T></button>
+            <button onClick={() => run('unfeature')} disabled={busy} className="font-brand text-xs bg-white/15 hover:bg-white/25 rounded-lg px-3 py-1.5 disabled:opacity-50"><T>Quitar destacado</T></button>
 
             {/* Cambiar categoría */}
             <div className="relative">
               <button onClick={() => setCatPicker((v) => !v)} disabled={busy} className="font-brand text-xs bg-white/15 hover:bg-white/25 rounded-lg px-3 py-1.5 disabled:opacity-50 inline-flex items-center gap-1">
-                Categoría <Icon name="chevron-right" size={12} className="rotate-90" />
+                <T>Categoría</T> <Icon name="chevron-right" size={12} className="rotate-90" />
               </button>
               {catPicker && (
                 <div className="absolute bottom-full mb-2 left-0 w-52 max-h-56 overflow-y-auto bg-white text-brand-primary rounded-xl shadow-xl p-1">
-                  <button onClick={() => run('set_category', { category_id: null })} className="w-full text-left font-brand text-xs px-3 py-2 rounded-lg hover:bg-gray-100">Sin categoría</button>
+                  <button onClick={() => run('set_category', { category_id: null })} className="w-full text-left font-brand text-xs px-3 py-2 rounded-lg hover:bg-gray-100"><T>Sin categoría</T></button>
                   {categories.map((c) => (
                     <button key={c.id} onClick={() => run('set_category', { category_id: c.id })} className="w-full text-left font-brand text-xs px-3 py-2 rounded-lg hover:bg-gray-100">{c.name}</button>
                   ))}
@@ -155,10 +158,10 @@ export default function ProductsTable({ products, categories, emptyQ, lowStockTh
             </div>
 
             <button onClick={() => run('delete')} disabled={busy} className="font-brand text-xs bg-red-500/90 hover:bg-red-500 rounded-lg px-3 py-1.5 disabled:opacity-50 inline-flex items-center gap-1">
-              <Icon name="trash" size={13} /> Eliminar
+              <Icon name="trash" size={13} /> <T>Eliminar</T>
             </button>
 
-            <button onClick={() => setSelected(new Set())} className="font-brand text-xs ml-auto underline opacity-80 hover:opacity-100">Deseleccionar</button>
+            <button onClick={() => setSelected(new Set())} className="font-brand text-xs ml-auto underline opacity-80 hover:opacity-100"><T>Deseleccionar</T></button>
             {error && <span className="font-brand text-xs text-red-200 w-full">{error}</span>}
           </div>
         </div>

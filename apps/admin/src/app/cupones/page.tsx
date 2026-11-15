@@ -6,11 +6,13 @@ import { getAdminUser } from '@/lib/auth'
 import { getAdminDb } from '@/lib/admin-db'
 import { userCanAccess } from '@/lib/roles'
 import CuponesClient from './CuponesClient'
+import { getAdminTx } from '@/lib/ui-locale'
 
 export const metadata: Metadata = { title: 'Cupones' }
 export const dynamic = 'force-dynamic'
 
 export default async function CuponesPage() {
+  const tx = await getAdminTx()
   const adminUser = await getAdminUser()
   if (!adminUser || !userCanAccess(adminUser, 'cupones')) {
     redirect('/no-autorizado')
@@ -21,7 +23,7 @@ export default async function CuponesPage() {
   return (
     <div>
       <div className="mb-8">
-        <PageHeader title="Cupones" description="Crea y administra los códigos de descuento de tu tienda." />
+        <PageHeader title={tx("Cupones")} description="Crea y administra los códigos de descuento de tu tienda." />
       </div>
       <CuponesClient initialCoupons={coupons} />
     </div>

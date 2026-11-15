@@ -2,6 +2,8 @@
 
 import { useCallback, useEffect, useState } from 'react'
 import { formatMoney } from '@merkiai/i18n'
+import { T } from '@merkiai/ui'
+import { useTx } from '@merkiai/ui'
 
 interface SalesReport {
   from: string; to: string; revenue: number; orders: number; avgTicket: number
@@ -18,6 +20,7 @@ function isoDaysAgo(n: number): string {
 }
 
 export default function ReportesClient() {
+  const tx = useTx()
   const [from, setFrom] = useState(isoDaysAgo(29))
   const [to, setTo] = useState(isoDaysAgo(0))
   const [report, setReport] = useState<SalesReport | null>(null)
@@ -32,7 +35,7 @@ export default function ReportesClient() {
       if (!res.ok) { setError(data.error ?? 'No se pudo cargar el reporte'); setReport(null); return }
       setReport(data)
     } catch {
-      setError('No se pudo cargar el reporte'); setReport(null)
+      setError(tx("No se pudo cargar el reporte")); setReport(null)
     } finally { setLoading(false) }
   }, [from, to])
 
@@ -54,12 +57,12 @@ export default function ReportesClient() {
       {/* Rango + acciones */}
       <div className="flex flex-wrap items-end gap-3">
         <div>
-          <label className="font-brand text-xs text-brand-primary/50 block mb-1">Desde</label>
+          <label className="font-brand text-xs text-brand-primary/50 block mb-1"><T>Desde</T></label>
           <input type="date" value={from} max={to} onChange={(e) => setFrom(e.target.value)}
             className="border border-gray-200 rounded-xl px-3 py-2 font-brand text-sm text-brand-primary focus:outline-none focus:border-brand-primary" />
         </div>
         <div>
-          <label className="font-brand text-xs text-brand-primary/50 block mb-1">Hasta</label>
+          <label className="font-brand text-xs text-brand-primary/50 block mb-1"><T>Hasta</T></label>
           <input type="date" value={to} min={from} onChange={(e) => setTo(e.target.value)}
             className="border border-gray-200 rounded-xl px-3 py-2 font-brand text-sm text-brand-primary focus:outline-none focus:border-brand-primary" />
         </div>
@@ -69,7 +72,7 @@ export default function ReportesClient() {
         </button>
         <button onClick={exportCsv} disabled={!report || report.orders === 0}
           className="font-brand text-sm border border-brand-primary text-brand-primary rounded-full px-5 py-2.5 hover:bg-brand-primary hover:text-brand-cream transition-colors disabled:opacity-40">
-          Exportar CSV
+          <T>Exportar CSV</T>
         </button>
       </div>
 
@@ -78,22 +81,22 @@ export default function ReportesClient() {
       {report && (
         <>
           <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-            <Metric label="Ingresos" value={COP.format(report.revenue)} />
-            <Metric label="Pedidos" value={String(report.orders)} />
-            <Metric label="Ticket promedio" value={COP.format(report.avgTicket)} />
-            <Metric label="Días con ventas" value={String(report.byDay.length)} />
+            <Metric label={tx("Ingresos")} value={COP.format(report.revenue)} />
+            <Metric label={tx("Pedidos")} value={String(report.orders)} />
+            <Metric label={tx("Ticket promedio")} value={COP.format(report.avgTicket)} />
+            <Metric label={tx("Días con ventas")} value={String(report.byDay.length)} />
           </div>
 
           <div className="bg-white rounded-2xl p-5 shadow-sm">
-            <h2 className="font-display text-brand-primary text-lg mb-3">Top productos del período</h2>
+            <h2 className="font-display text-brand-primary text-lg mb-3"><T>Top productos del período</T></h2>
             {report.topProducts.length === 0 ? (
-              <p className="font-brand text-sm text-brand-primary/40">Sin ventas en el rango seleccionado.</p>
+              <p className="font-brand text-sm text-brand-primary/40"><T>Sin ventas en el rango seleccionado.</T></p>
             ) : (
               <div className="overflow-x-auto">
               <table className="w-full min-w-[520px] font-brand text-sm">
                 <thead>
                   <tr className="text-brand-primary/50 text-left border-b border-brand-primary/10">
-                    <th className="py-2">Producto</th><th className="py-2 text-right">Unidades</th><th className="py-2 text-right">Ingresos</th>
+                    <th className="py-2"><T>Producto</T></th><th className="py-2 text-right"><T>Unidades</T></th><th className="py-2 text-right"><T>Ingresos</T></th>
                   </tr>
                 </thead>
                 <tbody>

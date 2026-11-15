@@ -3,6 +3,7 @@ import { notFound } from 'next/navigation'
 import Link from 'next/link'
 import type { Metadata } from 'next'
 import { formatMoney, formatDate } from '@merkiai/i18n'
+import { T } from '@merkiai/ui'
 
 export const dynamic = 'force-dynamic'
 
@@ -72,7 +73,7 @@ export default async function ClienteDetailPage({
           href="/clientes"
           className="text-brand-primary/50 hover:text-brand-primary transition-colors font-brand text-sm"
         >
-          ← Clientes
+          <T>← Clientes</T>
         </Link>
         <div>
           <h1 className="font-display text-brand-primary text-3xl leading-tight">
@@ -82,11 +83,11 @@ export default async function ClienteDetailPage({
         </div>
         {customer ? (
           <span className="ml-auto font-brand text-xs font-semibold bg-green-100 text-green-700 rounded-full px-3 py-1">
-            Con cuenta
+            <T>Con cuenta</T>
           </span>
         ) : (
           <span className="ml-auto font-brand text-xs font-semibold bg-gray-100 text-gray-500 rounded-full px-3 py-1">
-            Invitado
+            <T>Invitado</T>
           </span>
         )}
       </div>
@@ -96,21 +97,21 @@ export default async function ClienteDetailPage({
         <div className="space-y-5">
           {/* Datos de contacto */}
           <div className="bg-white rounded-2xl p-5 shadow-sm">
-            <h3 className="font-brand font-semibold text-brand-primary mb-3">Contacto</h3>
+            <h3 className="font-brand font-semibold text-brand-primary mb-3"><T>Contacto</T></h3>
             <div className="space-y-2 font-brand text-sm">
               <div>
-                <p className="text-brand-primary/40 text-xs uppercase tracking-wide">Email</p>
+                <p className="text-brand-primary/40 text-xs uppercase tracking-wide"><T>Email</T></p>
                 <p className="text-brand-primary">{email}</p>
               </div>
               {customer?.phone && (
                 <div>
-                  <p className="text-brand-primary/40 text-xs uppercase tracking-wide">Teléfono</p>
+                  <p className="text-brand-primary/40 text-xs uppercase tracking-wide"><T>Teléfono</T></p>
                   <p className="text-brand-primary">{customer.phone}</p>
                 </div>
               )}
               {customer?.created_at && (
                 <div>
-                  <p className="text-brand-primary/40 text-xs uppercase tracking-wide">Registrado</p>
+                  <p className="text-brand-primary/40 text-xs uppercase tracking-wide"><T>Registrado</T></p>
                   <p className="text-brand-primary">{fmtDate(customer.created_at)}</p>
                 </div>
               )}
@@ -119,19 +120,19 @@ export default async function ClienteDetailPage({
 
           {/* Estadísticas */}
           <div className="bg-white rounded-2xl p-5 shadow-sm">
-            <h3 className="font-brand font-semibold text-brand-primary mb-3">Resumen</h3>
+            <h3 className="font-brand font-semibold text-brand-primary mb-3"><T>Resumen</T></h3>
             <div className="space-y-3">
               <div className="flex justify-between items-center">
-                <span className="font-brand text-sm text-brand-primary/60">Pedidos</span>
+                <span className="font-brand text-sm text-brand-primary/60"><T>Pedidos</T></span>
                 <span className="font-brand font-bold text-brand-primary text-lg">{totalOrders}</span>
               </div>
               <div className="flex justify-between items-center">
-                <span className="font-brand text-sm text-brand-primary/60">Total gastado</span>
+                <span className="font-brand text-sm text-brand-primary/60"><T>Total gastado</T></span>
                 <span className="font-brand font-bold text-brand-primary">{fmt(totalSpent)}</span>
               </div>
               {totalOrders > 0 && (
                 <div className="flex justify-between items-center">
-                  <span className="font-brand text-sm text-brand-primary/60">Ticket promedio</span>
+                  <span className="font-brand text-sm text-brand-primary/60"><T>Ticket promedio</T></span>
                   <span className="font-brand text-brand-primary">{fmt(Math.round(totalSpent / totalOrders))}</span>
                 </div>
               )}
@@ -150,7 +151,7 @@ export default async function ClienteDetailPage({
 
             {!orders?.length ? (
               <div className="py-12 text-center font-brand text-brand-primary/40">
-                Sin pedidos registrados
+                <T>Sin pedidos registrados</T>
               </div>
             ) : (
               <table className="w-full">
@@ -196,7 +197,7 @@ export default async function ClienteDetailPage({
                             href={`/pedidos/${order.id}`}
                             className="font-brand text-xs text-brand-primary border border-brand-primary/20 rounded-full px-3 py-1 hover:bg-brand-primary hover:text-brand-cream transition-colors"
                           >
-                            Ver
+                            <T>Ver</T>
                           </Link>
                         </td>
                       </tr>

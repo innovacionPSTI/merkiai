@@ -54,9 +54,9 @@ export default function PresetImport() {
       {payload && (
         <form action={action} style={{ display: 'grid', gap: 10 }}>
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 8 }}>
-            <input style={input} name="key" placeholder="key (p.ej. cafe-boutique)" required />
+            <input style={input} name="key" placeholder="key (p.ej. moda-boutique)" required />
             <input style={input} name="name" placeholder="Nombre visible" required />
-            <input style={input} name="niche" placeholder="nicho (p.ej. cafe)" required />
+            <input style={input} name="niche" placeholder="nicho (p.ej. moda)" required />
           </div>
           {/* Campos tomados del payload (mismo contrato que savePreset) */}
           <input type="hidden" name="theme" value={JSON.stringify(payload.theme ?? {})} />

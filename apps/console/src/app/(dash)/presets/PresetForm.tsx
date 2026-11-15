@@ -65,9 +65,9 @@ export default function PresetForm() {
     <form action={action} style={{ display: 'grid', gap: 14, maxWidth: 760 }}>
       {/* Datos básicos */}
       <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8 }}>
-        <label><span style={lbl}>Key (identificador)</span><input style={{ ...input, width: '100%' }} name="key" placeholder="cafe-basico" required /></label>
-        <label><span style={lbl}>Nombre visible</span><input style={{ ...input, width: '100%' }} name="name" placeholder="Café básico" required /></label>
-        <label><span style={lbl}>Nicho</span><input style={{ ...input, width: '100%' }} name="niche" placeholder="cafe" required /></label>
+        <label><span style={lbl}>Key (identificador)</span><input style={{ ...input, width: '100%' }} name="key" placeholder="moda-basico" required /></label>
+        <label><span style={lbl}>Nombre visible</span><input style={{ ...input, width: '100%' }} name="name" placeholder="Moda básico" required /></label>
+        <label><span style={lbl}>Nicho</span><input style={{ ...input, width: '100%' }} name="niche" placeholder="moda" required /></label>
         <label><span style={lbl}>Template (layout)</span><input style={{ ...input, width: '100%' }} name="template" defaultValue="default" /></label>
         <label style={{ gridColumn: '1 / span 2' }}><span style={lbl}>Descripción</span><textarea style={{ ...input, width: '100%', minHeight: 44 }} name="description" placeholder="Para qué sirve este preset" /></label>
         <label style={{ gridColumn: '1 / span 2' }}><span style={lbl}>Miniatura (URL de imagen)</span><input style={{ ...input, width: '100%' }} name="thumbnail_url" placeholder="https://… (opcional; si falta, la galería usa un placeholder)" /></label>

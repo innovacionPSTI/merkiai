@@ -6,6 +6,7 @@ import { Icon, contrastRatio, contrastLevel, type ContrastLevel } from '@merkiai
 import { listTemplates } from '@merkiai/database/blocks'
 import type { Theme } from '@merkiai/database'
 import { T } from '@merkiai/ui'
+import { useTx } from '@merkiai/ui'
 
 // HU-121 · opciones de layout de la plantilla (del registro de templates).
 const LAYOUT_OPTIONS = listTemplates().map((t) => ({
@@ -247,6 +248,7 @@ function ThemeCard({
   onDelete: (id: number) => void
   isPending: boolean
 }) {
+  const tx = useTx()
   const canDelete = !theme.is_active && !theme.is_default
 
   return (
@@ -307,7 +309,7 @@ function ThemeCard({
         <a
           href={`/api/admin/themes/${theme.id}/export`}
           className="py-1.5 px-2 text-xs font-medium text-gray-600 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors inline-flex items-center"
-          title="Exportar plantilla (.json)"
+          title={tx("Exportar plantilla (.json)")}
           aria-label={`Exportar plantilla ${theme.name}`}
         >
           <Icon name="external" size={14} />
@@ -326,7 +328,7 @@ function ThemeCard({
             onClick={() => onDelete(theme.id)}
             disabled={isPending}
             className="p-1.5 text-red-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors"
-            title="Eliminar tema"
+            title={tx("Eliminar tema")}
             aria-label={`Eliminar tema ${theme.name}`}
           >
             <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24" aria-hidden="true">
@@ -355,6 +357,7 @@ function ThemeModal({
   onClose: () => void
   isSaving: boolean
 }) {
+  const tx = useTx()
   function update<K extends keyof ThemeFormData>(key: K, value: ThemeFormData[K]) {
     setForm({ ...form, [key]: value })
   }
@@ -379,7 +382,7 @@ function ThemeModal({
           <h2 id={titleId} className="font-semibold text-gray-900">
             {editing ? 'Editar tema' : 'Nuevo tema'}
           </h2>
-          <button onClick={onClose} className="text-gray-400 hover:text-gray-600" aria-label="Cerrar">
+          <button onClick={onClose} className="text-gray-400 hover:text-gray-600" aria-label={tx("Cerrar")}>
             <svg className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24" aria-hidden="true">
               <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
             </svg>
@@ -397,7 +400,7 @@ function ThemeModal({
                 type="text"
                 value={form.name}
                 onChange={(e) => update('name', e.target.value)}
-                placeholder="Ej: Temporada Navideña"
+                placeholder={tx("Ej: Temporada Navideña")}
                 className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brand-primary/30"
               />
             </div>

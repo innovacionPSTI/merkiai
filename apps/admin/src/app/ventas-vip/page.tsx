@@ -6,6 +6,7 @@ import { requireAdminDb } from '@/lib/admin-context'
 import { getTenantEntitlements, resolveFeature, FEATURES } from '@/lib/entitlements'
 import { userCanAccess } from '@/lib/roles'
 import VipManager from './VipManager'
+import { getAdminTx } from '@/lib/ui-locale'
 
 export const metadata: Metadata = { title: 'Ventas VIP' }
 export const dynamic = 'force-dynamic'
@@ -18,6 +19,7 @@ export const dynamic = 'force-dynamic'
  * no frontera de seguridad; la RLS sí aísla los datos por tenant).
  */
 export default async function VentasVipPage() {
+  const tx = await getAdminTx()
   const { adminUser, db } = await requireAdminDb()
   if (!userCanAccess(adminUser, 'ventas_vip')) redirect('/no-autorizado')
 
@@ -35,7 +37,7 @@ export default async function VentasVipPage() {
   return (
     <div className="space-y-6">
       <PageHeader
-        title="Ventas VIP"
+        title={tx("Ventas VIP")}
         description="Segmenta a tus clientes y abre ventas exclusivas por tiempo limitado (acceso anticipado)."
       />
       <VipManager
