@@ -102,7 +102,7 @@ export default function ItemsEditor({ sectionId, sectionType, published = false,
       })
     }
     const ok = res.ok
-    const text = ok ? (published && it.enabled ? 'Guardado en borrador ✓' : 'Guardado ✓') : `Error: ${(await res.json().catch(() => ({}))).error ?? ''}`
+    const text = ok ? (published && it.enabled ? tx("Guardado en borrador ✓") : tx("Guardado ✓")) : `Error: ${(await res.json().catch(() => ({}))).error ?? ''}`
     setMsg((m) => ({ ...m, [it.id]: text }))
     if (ok) await load()
   }
@@ -113,7 +113,7 @@ export default function ItemsEditor({ sectionId, sectionType, published = false,
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ resource: 'items', id: it.id, action }),
     })
-    setMsg((m) => ({ ...m, [it.id]: res.ok ? (action === 'publish' ? 'Publicado ✓' : 'Descartado') : 'Error' }))
+    setMsg((m) => ({ ...m, [it.id]: res.ok ? (action === 'publish' ? tx("Publicado ✓") : tx("Descartado")) : tx("Error") }))
     if (res.ok) await load()
   }
 
@@ -173,18 +173,18 @@ export default function ItemsEditor({ sectionId, sectionType, published = false,
     <div className="space-y-3">
       <div className="flex items-center justify-between">
         <h4 className="flex items-center gap-1.5 text-[11px] font-semibold uppercase tracking-wide text-slate-500">
-          <Icon name="list" size={13} /> Contenido · {label}
+          <Icon name="list" size={13} /> <T>Contenido ·</T> {label}
           {items.length > 0 && <span className="rounded-full bg-slate-100 px-1.5 text-[10px] font-medium text-slate-500">{items.length}</span>}
         </h4>
         <button onClick={addItem} className="flex items-center gap-1 rounded-lg border border-slate-300 px-3 py-1 text-xs font-medium text-slate-700 hover:bg-slate-50">
-          <Icon name="plus" size={13} /> Agregar {labelOne.toLowerCase()}
+          <Icon name="plus" size={13} /> <T>Agregar</T> {labelOne.toLowerCase()}
         </button>
       </div>
 
       {loading ? (
         <p className="text-sm text-slate-400"><T>Cargando…</T></p>
       ) : items.length === 0 ? (
-        <p className="text-sm text-slate-400">Sin {label.toLowerCase()}. Agrega el primero.</p>
+        <p className="text-sm text-slate-400"><T>Sin</T> {label.toLowerCase()}<T>. Agrega el primero.</T></p>
       ) : (
         <ul className="space-y-3">
           {items.map((it, i) => {
@@ -221,7 +221,7 @@ export default function ItemsEditor({ sectionId, sectionType, published = false,
                 <span className="text-xs font-semibold text-slate-600">{labelOne} #{i + 1}</span>
                 <div className="ml-auto flex items-center gap-2">
                   <button onClick={() => toggle(it)} className={`rounded-full px-2.5 py-0.5 text-[11px] font-medium ${it.enabled ? 'bg-green-100 text-green-700' : 'bg-slate-200 text-slate-500'}`}>
-                    {it.enabled ? 'Visible' : 'Oculto'}
+                    {it.enabled ? tx("Visible") : tx("Oculto")}
                   </button>
                   <button onClick={() => duplicate(it)} className="text-slate-400 hover:text-slate-700" title={tx("Duplicar")} aria-label={tx("Duplicar ítem")}><Icon name="grid" size={14} /></button>
                   <button onClick={() => remove(it)} className="text-slate-400 hover:text-red-600" title={tx("Eliminar")} aria-label={tx("Eliminar ítem")}><Icon name="trash" size={14} /></button>
@@ -244,7 +244,7 @@ export default function ItemsEditor({ sectionId, sectionType, published = false,
 
               <div className="flex flex-wrap items-center gap-3 px-3 pb-3">
                 <button onClick={() => saveItem(it)} className="rounded-lg bg-indigo-600 px-3 py-1.5 text-xs font-medium text-white hover:bg-indigo-700">
-                  {published && it.enabled ? 'Guardar borrador' : 'Guardar'}
+                  {published && it.enabled ? tx("Guardar borrador") : tx("Guardar")}
                 </button>
                 {itemDraft(it) && (
                   <>

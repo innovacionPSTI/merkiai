@@ -9,7 +9,8 @@
  * El público nunca ve el borrador; solo la vista previa (is_admin) lo fusiona.
  * Acotado por rol + RLS del tenant (getAdminDb).
  */
-import { NextRequest, NextResponse } from 'next/server'
+import { NextRequest } from 'next/server'
+import { NextResponse } from '@/lib/api-response'
 import { getAdminUser } from '@/lib/auth'
 import { getAdminDb } from '@/lib/admin-db'
 import { userCanAccess } from '@/lib/roles'

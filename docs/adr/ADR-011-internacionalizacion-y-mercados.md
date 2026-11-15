@@ -38,7 +38,7 @@ Un **mercado** tiene uno o varios locales (p. ej. *Estados Unidos* = `en-US` + `
 - Espacios de nombres por app (`web.*`, `admin.*`, `console.*`, `email.*`, `common.*`) para cargar solo lo necesario.
 - **Guard de CI** (`pnpm i18n:check`), igual a `env:check`: claves usadas sin traducción en el idioma base fallan; las faltantes en otros idiomas generan un reporte de cobertura, no un error.
 - Extracción **progresiva**: el texto en español escrito en el código sigue funcionando mientras se migra pantalla por pantalla.
-- **Cola larga del panel y la consola (HU-466):** frases con **clave = texto original en español** (estilo gettext) — `<T>Guardar cambios</T>` en JSX y `useTx()`/`getAdminTx()` para atributos y servidor — con un diccionario por idioma (`phrases/admin.en.ts`). Evita inventar cientos de claves para etiquetas internas; el guard mide su cobertura. Tienda, checkout, correos y navegación mantienen claves semánticas.
+- **Cola larga del panel y la consola (HU-466):** frases con **clave = texto original en español** (estilo gettext) — `<T>Guardar cambios</T>` en JSX y `useTx()`/`getAdminTx()` para atributos y servidor — con un diccionario por idioma (`phrases/admin.en.ts`). Evita inventar cientos de claves para etiquetas internas; el guard mide su cobertura. Los mensajes de API y server actions se traducen en la respuesta (`localizeMessages`), con entradas de patrón (`"Documento {0} creado."`) para textos armados en runtime. Tienda, checkout, correos y navegación mantienen claves semánticas.
 
 ### 2.3 Contenido de la tienda (capa b)
 

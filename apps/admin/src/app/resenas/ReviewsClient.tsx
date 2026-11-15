@@ -71,7 +71,7 @@ export default function ReviewsClient({ initial, productNames }: { initial: Prod
 
       {list.length === 0 ? (
         <div className="bg-white rounded-2xl p-12 text-center shadow-sm">
-          <p className="font-brand text-sm text-brand-primary/40">Sin reseñas {TABS.find((t) => t.key === tab)?.label.toLowerCase()}.</p>
+          <p className="font-brand text-sm text-brand-primary/40"><T>Sin reseñas</T> {TABS.find((t) => t.key === tab)?.label.toLowerCase()}.</p>
         </div>
       ) : (
         <ul className="space-y-3">

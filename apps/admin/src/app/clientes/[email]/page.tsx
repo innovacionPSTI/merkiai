@@ -145,7 +145,7 @@ export default async function ClienteDetailPage({
           <div className="bg-white rounded-2xl shadow-sm overflow-hidden">
             <div className="px-6 py-4 border-b border-gray-100">
               <h2 className="font-brand font-semibold text-brand-primary">
-                Pedidos {totalOrders > 0 && <span className="text-brand-primary/40 font-normal">({totalOrders})</span>}
+                <T>Pedidos</T> {totalOrders > 0 && <span className="text-brand-primary/40 font-normal">({totalOrders})</span>}
               </h2>
             </div>
 

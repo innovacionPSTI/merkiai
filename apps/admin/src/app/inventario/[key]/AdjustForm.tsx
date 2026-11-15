@@ -29,7 +29,7 @@ export default function AdjustForm({ itemId, uoms }: { itemId: number; uoms: Arr
       })
       if (!res.ok) throw new Error((await res.json().catch(() => ({})))?.error ?? 'No se pudo ajustar')
       setQty(''); setReason(''); router.refresh()
-    } catch (e) { setError(e instanceof Error ? e.message : 'Error') } finally { setBusy(false) }
+    } catch (e) { setError(e instanceof Error ? e.message : tx("Error")) } finally { setBusy(false) }
   }
 
   return (
@@ -57,7 +57,7 @@ export default function AdjustForm({ itemId, uoms }: { itemId: number; uoms: Arr
         <span className="font-brand text-xs font-semibold text-brand-primary block mb-1"><T>Motivo</T></span>
         <input value={reason} onChange={(e) => setReason(e.target.value)} placeholder={tx("Ej. conteo físico, saldo inicial")} className="w-full border border-gray-200 rounded-xl px-3 py-2 font-brand text-sm" />
       </label>
-      <button onClick={submit} disabled={busy} className="rounded-full bg-brand-primary text-brand-cream px-5 py-2 font-brand text-sm font-medium hover:bg-brand-dark disabled:opacity-50">{busy ? 'Aplicando…' : 'Aplicar ajuste'}</button>
+      <button onClick={submit} disabled={busy} className="rounded-full bg-brand-primary text-brand-cream px-5 py-2 font-brand text-sm font-medium hover:bg-brand-dark disabled:opacity-50">{busy ? tx("Aplicando…") : tx("Aplicar ajuste")}</button>
       {error && <p className="font-brand text-sm text-red-600 w-full">{error}</p>}
     </div>
   )

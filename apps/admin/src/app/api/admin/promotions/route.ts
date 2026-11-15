@@ -1,4 +1,5 @@
-import { NextRequest, NextResponse } from 'next/server'
+import { NextRequest } from 'next/server'
+import { NextResponse } from '@/lib/api-response'
 import { listPromotions, createPromotion } from '@merkiai/database'
 import type { PromotionType } from '@merkiai/database'
 import { getAdminUser } from '@/lib/auth'

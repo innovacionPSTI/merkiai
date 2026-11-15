@@ -23,7 +23,7 @@ export default async function EstadoDeCuentaPage({ params }: { params: Promise<{
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div>
           <Link href="/cartera/contrapartes" className="font-brand text-xs text-brand-primary/60 hover:underline print:hidden"><T>← Clientes y aliados</T></Link>
-          <h1 className="font-display text-2xl text-brand-primary">Estado de cuenta · {party.name ?? party.email}</h1>
+          <h1 className="font-display text-2xl text-brand-primary"><T>Estado de cuenta ·</T> {party.name ?? party.email}</h1>
           <p className="font-brand text-sm text-brand-primary/70">
             {[party.document_id, party.email, party.phone].filter(Boolean).join(' · ')} · al {new Date().toISOString().slice(0, 10)}
             {party.credit_limit != null && ` · cupo ${money(party.credit_limit)}`}

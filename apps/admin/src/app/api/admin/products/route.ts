@@ -1,5 +1,6 @@
 import type { Database } from '@merkiai/database'
-import { NextRequest, NextResponse } from 'next/server'
+import { NextRequest } from 'next/server'
+import { NextResponse } from '@/lib/api-response'
 import { getTenantEntitlements, enforceLimit, EntitlementError, LIMITS } from '@/lib/entitlements'
 import { getAdminUser } from '@/lib/auth'
 import { getAdminDb } from '@/lib/admin-db'

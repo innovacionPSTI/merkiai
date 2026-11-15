@@ -58,7 +58,7 @@ export default function PlantillasGallery({ options }: { options: OnboardingOpti
     return (
       <div className="bg-white rounded-2xl p-6 shadow-sm">
         <p className="font-brand text-sm text-brand-primary/60">
-          No hay plantillas disponibles para tu plan ({options.plan}). Pide a tu administrador que publique presets para este plan.
+          <T>No hay plantillas disponibles para tu plan (</T>{options.plan}). Pide a tu administrador que publique presets para este plan.
         </p>
       </div>
     )
@@ -111,9 +111,9 @@ export default function PlantillasGallery({ options }: { options: OnboardingOpti
                   type="submit"
                   disabled={pending}
                   className="w-full rounded-xl bg-brand-primary text-white px-4 py-2 font-brand text-sm disabled:opacity-50"
-                  onClick={(e) => { if (!confirm(`¿Aplicar la plantilla «${p.name}» a tu tienda? No se duplica lo que ya tengas.`)) e.preventDefault() }}
+                  onClick={(e) => { if (!confirm(tx("¿Aplicar la plantilla «{pName}» a tu tienda? No se duplica lo que ya tengas.", { pName: p.name }))) e.preventDefault() }}
                 >
-                  {pending ? 'Aplicando…' : 'Aplicar a mi tienda'}
+                  {pending ? tx("Aplicando…") : tx("Aplicar a mi tienda")}
                 </button>
               </form>
             </div>

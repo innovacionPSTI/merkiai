@@ -3,6 +3,7 @@
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { T } from '@merkiai/ui'
+import { useTx } from '@merkiai/ui'
 
 /**
  * Validación manual del pago por el administrador (HU-096).
@@ -10,6 +11,7 @@ import { T } from '@merkiai/ui'
  * Rechazar  → payment_status='rejected'.
  */
 export default function PaymentStatusValidator({ orderId }: { orderId: number }) {
+  const tx = useTx()
   const router = useRouter()
   const [loading, setLoading] = useState<'approved' | 'rejected' | null>(null)
   const [error, setError] = useState<string | null>(null)
@@ -29,7 +31,7 @@ export default function PaymentStatusValidator({ orderId }: { orderId: number })
       }
       router.refresh()
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Error')
+      setError(err instanceof Error ? err.message : tx("Error"))
     } finally {
       setLoading(null)
     }
@@ -45,7 +47,7 @@ export default function PaymentStatusValidator({ orderId }: { orderId: number })
           disabled={loading !== null}
           className="flex-1 bg-green-600 text-white rounded-xl py-2 font-brand text-sm font-medium hover:bg-green-700 transition-colors disabled:opacity-50"
         >
-          {loading === 'approved' ? 'Confirmando…' : 'Confirmar pago'}
+          {loading === 'approved' ? tx("Confirmando…") : tx("Confirmar pago")}
         </button>
         <button
           type="button"
@@ -53,7 +55,7 @@ export default function PaymentStatusValidator({ orderId }: { orderId: number })
           disabled={loading !== null}
           className="flex-1 border border-red-300 text-red-600 rounded-xl py-2 font-brand text-sm font-medium hover:bg-red-50 transition-colors disabled:opacity-50"
         >
-          {loading === 'rejected' ? 'Rechazando…' : 'Rechazar pago'}
+          {loading === 'rejected' ? tx("Rechazando…") : tx("Rechazar pago")}
         </button>
       </div>
       {error && <p className="font-brand text-xs text-red-600 mt-1.5 text-center">{error}</p>}

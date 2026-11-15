@@ -40,7 +40,7 @@ export default function ProductsTable({ products, categories, emptyQ, lowStockTh
 
   async function run(action: string, extra: Record<string, unknown> = {}) {
     if (selected.size === 0) return
-    if (action === 'delete' && !confirm(`¿Eliminar ${selected.size} producto(s)? Esta acción no se puede deshacer.`)) return
+    if (action === 'delete' && !confirm(tx("¿Eliminar {selectedCount} producto(s)? Esta acción no se puede deshacer.", { selectedCount: selected.size }))) return
     setBusy(true); setError('')
     try {
       const res = await fetch('/api/admin/products/batch', {
@@ -59,7 +59,7 @@ export default function ProductsTable({ products, categories, emptyQ, lowStockTh
     return (
       <div className="font-brand text-brand-primary/40 text-center py-12">
         {emptyQ
-          ? `Sin resultados para "${emptyQ}"`
+          ? tx("Sin resultados para \"{emptyQ}\"", { emptyQ })
           : <><span><T>No hay productos.</T> </span><Link href="/productos/nuevo" className="underline"><T>Crear el primero →</T></Link></>}
       </div>
     )
@@ -120,7 +120,7 @@ export default function ProductsTable({ products, categories, emptyQ, lowStockTh
                   </div>
                 </td>
                 <td className="px-4 py-3">
-                  <span className={`font-brand text-xs rounded-full px-2 py-1 ${product.active ? 'bg-green-100 text-green-600' : 'bg-gray-100 text-gray-500'}`}>{product.active ? 'Publicado' : 'Borrador'}</span>
+                  <span className={`font-brand text-xs rounded-full px-2 py-1 ${product.active ? 'bg-green-100 text-green-600' : 'bg-gray-100 text-gray-500'}`}>{product.active ? tx("Publicado") : tx("Borrador")}</span>
                 </td>
                 <td className="px-4 py-3 pr-6">
                   <Link href={`/productos/${product.id}`} className="font-brand text-xs text-brand-primary border border-brand-primary/20 rounded-full px-3 py-1 hover:bg-brand-primary hover:text-brand-cream transition-colors"><T>Editar</T></Link>

@@ -136,7 +136,7 @@ export default function CategoryFormModal({ category, categories = [], onClose, 
       <div className="relative bg-white rounded-2xl shadow-xl w-full max-w-md p-6 space-y-5 overflow-y-auto max-h-[90vh]">
         <div className="flex items-center justify-between">
           <h2 className="font-display text-brand-primary text-xl">
-            {isEdit ? 'Editar categoría' : 'Nueva categoría'}
+            {isEdit ? tx("Editar categoría") : tx("Nueva categoría")}
           </h2>
           <button onClick={() => onClose()} className="text-brand-primary/30 hover:text-brand-primary text-xl leading-none">×</button>
         </div>
@@ -272,7 +272,7 @@ export default function CategoryFormModal({ category, categories = [], onClose, 
               disabled={saving || uploadsInProgress > 0}
               className="font-brand text-sm bg-brand-primary text-brand-cream px-5 py-2 rounded-xl hover:bg-brand-dark transition-colors disabled:opacity-50"
             >
-              {saving ? 'Guardando...' : uploadsInProgress > 0 ? 'Subiendo...' : isEdit ? 'Guardar cambios' : 'Crear categoría'}
+              {saving ? 'Guardando...' : uploadsInProgress > 0 ? 'Subiendo...' : isEdit ? tx("Guardar cambios") : tx("Crear categoría")}
             </button>
           </div>
         </form>

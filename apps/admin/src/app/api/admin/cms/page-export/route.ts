@@ -2,7 +2,8 @@
  * GET /api/admin/cms/page-export?page_key=... — HU-255
  * Descarga una página completa (secciones + ítems) como paquete JSON versionado.
  */
-import { NextRequest, NextResponse } from 'next/server'
+import { NextRequest } from 'next/server'
+import { NextResponse } from '@/lib/api-response'
 import { getAdminUser } from '@/lib/auth'
 import { getAdminDb } from '@/lib/admin-db'
 import { userCanAccess } from '@/lib/roles'

@@ -127,7 +127,7 @@ export default function ImportProductsModal() {
                       className="w-full border-2 border-dashed border-gray-200 rounded-xl py-6 font-brand text-sm text-brand-primary/50 hover:border-brand-primary/40 hover:bg-gray-50 transition-colors flex flex-col items-center gap-2"
                     >
                       <Icon name="catalog" size={24} className="text-brand-primary/40" />
-                      {fileName ? <span className="text-brand-primary">{fileName}</span> : 'Selecciona un archivo CSV'}
+                      {fileName ? <span className="text-brand-primary">{fileName}</span> : tx("Selecciona un archivo CSV")}
                     </button>
                   </div>
 
@@ -166,7 +166,7 @@ export default function ImportProductsModal() {
 
                   {preview.parseErrors.length > 0 && (
                     <ul className="text-xs font-brand text-red-500 bg-red-50 rounded-lg p-3 space-y-0.5 max-h-28 overflow-y-auto">
-                      {preview.parseErrors.map((e, i) => <li key={i}>Fila {e.row}: {e.message}</li>)}
+                      {preview.parseErrors.map((e, i) => <li key={i}><T>Fila</T> {e.row}: {e.message}</li>)}
                     </ul>
                   )}
                   {preview.skipped.length > 0 && (
@@ -203,7 +203,7 @@ export default function ImportProductsModal() {
                 onClick={close}
                 className="flex-1 font-brand text-sm border border-gray-200 text-brand-primary px-4 py-2.5 rounded-xl hover:bg-gray-50 transition-colors"
               >
-                {result ? 'Cerrar' : 'Cancelar'}
+                {result ? tx("Cerrar") : tx("Cancelar")}
               </button>
               {!result && (
                 <button
@@ -211,7 +211,7 @@ export default function ImportProductsModal() {
                   disabled={busy || !preview || (preview.toCreate + preview.toUpdate) === 0}
                   className="flex-1 font-brand text-sm bg-brand-primary text-brand-cream px-4 py-2.5 rounded-xl hover:bg-brand-dark transition-colors disabled:opacity-50"
                 >
-                  {busy ? 'Importando…' : preview ? `Importar ${preview.toCreate + preview.toUpdate}` : 'Importar'}
+                  {busy ? tx("Importando…") : preview ? `Importar ${preview.toCreate + preview.toUpdate}` : tx("Importar")}
                 </button>
               )}
             </div>

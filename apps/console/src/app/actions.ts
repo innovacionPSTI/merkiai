@@ -1,5 +1,6 @@
 'use server'
 
+import { localizeForPanel } from '@/lib/server-i18n'
 import { revalidatePath } from 'next/cache'
 import { requirePlatformOperator } from '@/lib/platform-auth'
 import { platformDb } from '@/lib/platform-db'
@@ -28,7 +29,7 @@ export interface CreateTenantState {
  * Firma compatible con `useActionState`: devuelve estado para que la UI muestre
  * error/éxito/warnings (antes tragaba el error en silencio).
  */
-export async function createTenant(
+async function createTenant__impl(
   _prev: CreateTenantState,
   formData: FormData,
 ): Promise<CreateTenantState> {
@@ -99,7 +100,7 @@ export interface TenantActionState {
  * Envía una invitación de Team al email indicado. Requiere que el tenant tenga
  * `stack_team_id` (Team ya creado). Gated por `platform:operate`.
  */
-export async function inviteTenantOwner(
+async function inviteTenantOwner__impl(
   _prev: TenantActionState,
   formData: FormData,
 ): Promise<TenantActionState> {
@@ -164,7 +165,7 @@ export async function inviteTenantOwner(
  * de prueba / no aprovisionadas. Confirmación por coincidencia de subdominio.
  * Gated por `platform:operate`.
  */
-export async function deleteTenant(
+async function deleteTenant__impl(
   _prev: TenantActionState,
   formData: FormData,
 ): Promise<TenantActionState> {
@@ -207,7 +208,7 @@ export async function deleteTenant(
 }
 
 /** Suspende / reactiva un tenant (consola). */
-export async function setTenantStatus(formData: FormData) {
+async function setTenantStatus__impl(formData: FormData) {
   await requirePlatformOperator()
   const id = String(formData.get('id') ?? '')
   const status = String(formData.get('status') ?? '')
@@ -217,7 +218,7 @@ export async function setTenantStatus(formData: FormData) {
 }
 
 /** Crea o edita un plan del catálogo (HU-173). Gated por `platform:operate`. */
-export async function savePlan(formData: FormData) {
+async function savePlan__impl(formData: FormData) {
   await requirePlatformOperator()
 
   // HU-239 v2: features/limits vienen como campos por-clave del catálogo
@@ -262,7 +263,7 @@ export async function savePlan(formData: FormData) {
 }
 
 /** Elimina un plan (HU-239 v2). No borra si algún tenant lo usa. Gated. */
-export async function deletePlan(formData: FormData) {
+async function deletePlan__impl(formData: FormData) {
   await requirePlatformOperator()
   const key = String(formData.get('key') ?? '').trim()
   if (!key) return
@@ -277,7 +278,7 @@ export async function deletePlan(formData: FormData) {
 export interface PresetActionState { ok: boolean; error?: string; message?: string }
 
 /** Crea o edita un Preset de nicho (HU-233). Gated por `platform:operate`. */
-export async function savePreset(
+async function savePreset__impl(
   _prev: PresetActionState,
   formData: FormData,
 ): Promise<PresetActionState> {
@@ -309,7 +310,7 @@ export async function savePreset(
 }
 
 /** Elimina un Preset (HU-233). Gated. Acción simple (form de la fila). */
-export async function deletePreset(formData: FormData) {
+async function deletePreset__impl(formData: FormData) {
   await requirePlatformOperator()
   const key = String(formData.get('key') ?? '').trim()
   if (!key) return
@@ -318,7 +319,7 @@ export async function deletePreset(formData: FormData) {
 }
 
 /** Asigna un plan existente a un tenant (HU-173). Gated. */
-export async function setTenantPlan(formData: FormData) {
+async function setTenantPlan__impl(formData: FormData) {
   await requirePlatformOperator()
   const id = String(formData.get('id') ?? '')
   const plan = String(formData.get('plan') ?? '').trim().toLowerCase()
@@ -339,7 +340,7 @@ export interface InfraActionState { ok: boolean; error?: string; message?: strin
  * Crea o actualiza la config de infra de un tenant dedicado (HU-361 · ADR-007).
  * Gated por `platform:operate`. Solo config NO secreta (los secretos → vault, HU-362).
  */
-export async function saveTenantInfraConfig(
+async function saveTenantInfraConfig__impl(
   _prev: InfraActionState,
   formData: FormData,
 ): Promise<InfraActionState> {
@@ -362,7 +363,7 @@ export async function saveTenantInfraConfig(
 }
 
 /** Elimina la config de infra de un tenant. Gated. Acción simple (form de la fila). */
-export async function deleteTenantInfraConfig(formData: FormData) {
+async function deleteTenantInfraConfig__impl(formData: FormData) {
   await requirePlatformOperator()
   const tenantId = String(formData.get('tenant_id') ?? '').trim()
   if (!tenantId) return
@@ -375,7 +376,7 @@ export async function deleteTenantInfraConfig(formData: FormData) {
  * Cifra cada valor provisto por AWS KMS y guarda SOLO la referencia en
  * `tenant_infra_config`. Campos vacíos = sin cambios. Gated por `platform:operate`.
  */
-export async function saveTenantInfraSecrets(
+async function saveTenantInfraSecrets__impl(
   _prev: InfraActionState,
   formData: FormData,
 ): Promise<InfraActionState> {
@@ -419,7 +420,7 @@ export async function saveTenantInfraSecrets(
 export interface PagosActionState { ok: boolean; error?: string; message?: string }
 
 /** Tarifa por plan (% + fijo) de Merkiai Pagos. */
-export async function savePlanFeeTerms(_prev: PagosActionState, formData: FormData): Promise<PagosActionState> {
+async function savePlanFeeTerms__impl(_prev: PagosActionState, formData: FormData): Promise<PagosActionState> {
   await requirePlatformOperator()
   const { parsePlanFeeForm, upsertPlanFeeTerms } = await import('@/lib/merkiai-pagos')
   const parsed = parsePlanFeeForm(formData)
@@ -434,7 +435,7 @@ export async function savePlanFeeTerms(_prev: PagosActionState, formData: FormDa
 }
 
 /** Alta/edición de la cuenta Merkiai Pagos de un tenant. La contraseña va al vault. */
-export async function saveMerkiaiAccount(_prev: PagosActionState, formData: FormData): Promise<PagosActionState> {
+async function saveMerkiaiAccount__impl(_prev: PagosActionState, formData: FormData): Promise<PagosActionState> {
   await requirePlatformOperator()
   const { parseAccountForm, getAccount, upsertAccount, environmentFromPassword } = await import('@/lib/merkiai-pagos')
   const db = platformDb()
@@ -466,7 +467,7 @@ export async function saveMerkiaiAccount(_prev: PagosActionState, formData: Form
 // ─── Dominios propios · Cloudflare for SaaS (HU-431) ──────────────────────────
 
 /** Guarda/rota el token de la API de Cloudflare en el vault; solo la ref queda en BD. */
-export async function saveHostingToken(_prev: PagosActionState, formData: FormData): Promise<PagosActionState> {
+async function saveHostingToken__impl(_prev: PagosActionState, formData: FormData): Promise<PagosActionState> {
   await requirePlatformOperator()
   const token = String(formData.get('token') ?? '').trim()
   if (token.length < 20) return { ok: false, error: 'Pega el token completo de la API de Cloudflare.' }
@@ -482,4 +483,51 @@ export async function saveHostingToken(_prev: PagosActionState, formData: FormDa
   }
   revalidatePath('/infraestructura')
   return { ok: true, message: 'Token guardado y cifrado.' }
+}
+
+// HU-466 F6 · los mensajes de cada acción vuelven en el idioma del panel.
+export async function createTenant(...args: Parameters<typeof createTenant__impl>): ReturnType<typeof createTenant__impl> {
+  return localizeForPanel(await createTenant__impl(...args))
+}
+export async function inviteTenantOwner(...args: Parameters<typeof inviteTenantOwner__impl>): ReturnType<typeof inviteTenantOwner__impl> {
+  return localizeForPanel(await inviteTenantOwner__impl(...args))
+}
+export async function deleteTenant(...args: Parameters<typeof deleteTenant__impl>): ReturnType<typeof deleteTenant__impl> {
+  return localizeForPanel(await deleteTenant__impl(...args))
+}
+export async function setTenantStatus(...args: Parameters<typeof setTenantStatus__impl>): ReturnType<typeof setTenantStatus__impl> {
+  return localizeForPanel(await setTenantStatus__impl(...args))
+}
+export async function savePlan(...args: Parameters<typeof savePlan__impl>): ReturnType<typeof savePlan__impl> {
+  return localizeForPanel(await savePlan__impl(...args))
+}
+export async function deletePlan(...args: Parameters<typeof deletePlan__impl>): ReturnType<typeof deletePlan__impl> {
+  return localizeForPanel(await deletePlan__impl(...args))
+}
+export async function savePreset(...args: Parameters<typeof savePreset__impl>): ReturnType<typeof savePreset__impl> {
+  return localizeForPanel(await savePreset__impl(...args))
+}
+export async function deletePreset(...args: Parameters<typeof deletePreset__impl>): ReturnType<typeof deletePreset__impl> {
+  return localizeForPanel(await deletePreset__impl(...args))
+}
+export async function setTenantPlan(...args: Parameters<typeof setTenantPlan__impl>): ReturnType<typeof setTenantPlan__impl> {
+  return localizeForPanel(await setTenantPlan__impl(...args))
+}
+export async function saveTenantInfraConfig(...args: Parameters<typeof saveTenantInfraConfig__impl>): ReturnType<typeof saveTenantInfraConfig__impl> {
+  return localizeForPanel(await saveTenantInfraConfig__impl(...args))
+}
+export async function deleteTenantInfraConfig(...args: Parameters<typeof deleteTenantInfraConfig__impl>): ReturnType<typeof deleteTenantInfraConfig__impl> {
+  return localizeForPanel(await deleteTenantInfraConfig__impl(...args))
+}
+export async function saveTenantInfraSecrets(...args: Parameters<typeof saveTenantInfraSecrets__impl>): ReturnType<typeof saveTenantInfraSecrets__impl> {
+  return localizeForPanel(await saveTenantInfraSecrets__impl(...args))
+}
+export async function savePlanFeeTerms(...args: Parameters<typeof savePlanFeeTerms__impl>): ReturnType<typeof savePlanFeeTerms__impl> {
+  return localizeForPanel(await savePlanFeeTerms__impl(...args))
+}
+export async function saveMerkiaiAccount(...args: Parameters<typeof saveMerkiaiAccount__impl>): ReturnType<typeof saveMerkiaiAccount__impl> {
+  return localizeForPanel(await saveMerkiaiAccount__impl(...args))
+}
+export async function saveHostingToken(...args: Parameters<typeof saveHostingToken__impl>): ReturnType<typeof saveHostingToken__impl> {
+  return localizeForPanel(await saveHostingToken__impl(...args))
 }

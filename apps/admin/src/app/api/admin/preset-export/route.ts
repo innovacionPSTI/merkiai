@@ -4,7 +4,7 @@
  * modelo de inventario) como un PresetPayload re-aplicable, descargable en JSON.
  * El operador lo importa luego como preset en la consola (HU-233).
  */
-import { NextResponse } from 'next/server'
+import { NextResponse } from '@/lib/api-response'
 import { getAdminUser } from '@/lib/auth'
 import { getAdminDb } from '@/lib/admin-db'
 import { userCanAccess } from '@/lib/roles'

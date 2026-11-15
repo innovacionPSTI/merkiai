@@ -3,7 +3,8 @@
  * Completa una orden: consume componentes y crea el terminado con costo del lote.
  * Idempotente (op_key). Tenant-scoped + gated por `inventory`.
  */
-import { NextRequest, NextResponse } from 'next/server'
+import { NextRequest } from 'next/server'
+import { NextResponse } from '@/lib/api-response'
 import { getAdminUser } from '@/lib/auth'
 import { getAdminDb } from '@/lib/admin-db'
 import { completeProductionOrder, listUoms, listStockItems } from '@merkiai/database'

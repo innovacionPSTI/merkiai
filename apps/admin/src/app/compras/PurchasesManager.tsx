@@ -38,7 +38,7 @@ export default function PurchasesManager({ initial, suppliers, items, uoms }: { 
       const res = await fetch('/api/admin/inventory/suppliers', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ name: newSupplier.trim() }) })
       if (!res.ok) throw new Error((await res.json().catch(() => ({})))?.error ?? 'No se pudo crear')
       setNewSupplier(''); router.refresh()
-    } catch (e) { setError(e instanceof Error ? e.message : 'Error') } finally { setBusy(false) }
+    } catch (e) { setError(e instanceof Error ? e.message : tx("Error")) } finally { setBusy(false) }
   }
 
   async function createPurchase() {
@@ -55,7 +55,7 @@ export default function PurchasesManager({ initial, suppliers, items, uoms }: { 
       })
       if (!res.ok) throw new Error((await res.json().catch(() => ({})))?.error ?? 'No se pudo crear')
       setReference(''); setLines([{ stock_item_id: '', qty: '', uom_id: '', unit_cost: '' }]); router.refresh()
-    } catch (e) { setError(e instanceof Error ? e.message : 'Error') } finally { setBusy(false) }
+    } catch (e) { setError(e instanceof Error ? e.message : tx("Error")) } finally { setBusy(false) }
   }
 
   async function receive(id: number) {
@@ -64,7 +64,7 @@ export default function PurchasesManager({ initial, suppliers, items, uoms }: { 
       const res = await fetch(`/api/admin/inventory/purchases/${id}/receive`, { method: 'POST' })
       if (!res.ok) throw new Error((await res.json().catch(() => ({})))?.error ?? 'No se pudo recibir')
       router.refresh()
-    } catch (e) { setError(e instanceof Error ? e.message : 'Error') } finally { setBusy(false) }
+    } catch (e) { setError(e instanceof Error ? e.message : tx("Error")) } finally { setBusy(false) }
   }
 
   return (
@@ -113,7 +113,7 @@ export default function PurchasesManager({ initial, suppliers, items, uoms }: { 
           ))}
           <button onClick={() => setLines((ls) => [...ls, { stock_item_id: '', qty: '', uom_id: '', unit_cost: '' }])} className="font-brand text-sm text-brand-primary underline"><T>+ Línea</T></button>
         </div>
-        <button onClick={createPurchase} disabled={busy} className="rounded-full bg-brand-primary text-brand-cream px-5 py-2 font-brand text-sm font-medium hover:bg-brand-dark disabled:opacity-50">{busy ? 'Guardando…' : 'Crear compra'}</button>
+        <button onClick={createPurchase} disabled={busy} className="rounded-full bg-brand-primary text-brand-cream px-5 py-2 font-brand text-sm font-medium hover:bg-brand-dark disabled:opacity-50">{busy ? tx("Guardando…") : tx("Crear compra")}</button>
         {error && <p className="font-brand text-sm text-red-600">{error}</p>}
       </div>
 

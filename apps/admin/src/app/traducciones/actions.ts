@@ -4,6 +4,7 @@
  * Acciones del editor de traducciones (E28 · HU-464). Guardan con el cliente RLS
  * del tenant y dejan rastro en la auditoría (AC-5).
  */
+import { localizeForPanel } from '@/lib/server-i18n'
 import { revalidatePath } from 'next/cache'
 import {
   saveWorkspaceTranslation, csvToTranslationRows, groupCsvRows, logAudit, type WorkspaceType,
@@ -14,7 +15,7 @@ export type TrResult = { ok: true; message: string } | { ok: false; error: strin
 
 const TYPES = new Set<WorkspaceType>(['product', 'category', 'blog_post', 'page', 'section', 'item'])
 
-export async function saveTranslationAction(type: WorkspaceType, id: string, locale: string, values: Record<string, string>): Promise<TrResult> {
+async function saveTranslationAction__impl(type: WorkspaceType, id: string, locale: string, values: Record<string, string>): Promise<TrResult> {
   try {
     const ctx = await requireTranslations()
     if (!TYPES.has(type)) return { ok: false, error: 'Tipo de contenido inválido.' }
@@ -33,7 +34,7 @@ export async function saveTranslationAction(type: WorkspaceType, id: string, loc
 }
 
 /** AC-3 · importa un CSV exportado (y traducido fuera) para un idioma. */
-export async function importTranslationsAction(locale: string, csvText: string): Promise<TrResult> {
+async function importTranslationsAction__impl(locale: string, csvText: string): Promise<TrResult> {
   try {
     const ctx = await requireTranslations()
     if (!ctx.locales.includes(locale)) return { ok: false, error: 'Ese idioma no está publicado en tu tienda.' }
@@ -57,4 +58,12 @@ export async function importTranslationsAction(locale: string, csvText: string):
     if (e && typeof e === 'object' && 'digest' in e) throw e
     return { ok: false, error: e instanceof Error ? e.message : 'No se pudo importar.' }
   }
+}
+
+// HU-466 F6 · los mensajes de cada acción vuelven en el idioma del panel.
+export async function saveTranslationAction(...args: Parameters<typeof saveTranslationAction__impl>): ReturnType<typeof saveTranslationAction__impl> {
+  return localizeForPanel(await saveTranslationAction__impl(...args))
+}
+export async function importTranslationsAction(...args: Parameters<typeof importTranslationsAction__impl>): ReturnType<typeof importTranslationsAction__impl> {
+  return localizeForPanel(await importTranslationsAction__impl(...args))
 }

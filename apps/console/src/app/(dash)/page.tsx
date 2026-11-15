@@ -92,7 +92,7 @@ export default async function TenantsPage() {
                       <input type="hidden" name="id" value={t.id} />
                       <input type="hidden" name="status" value={t.status === 'active' ? 'suspended' : 'active'} />
                       <button type="submit" className="mk-btn-ghost mk-btn-sm">
-                        {t.status === 'active' ? 'Suspender' : 'Reactivar'}
+                        {t.status === 'active' ? tx("Suspender") : tx("Reactivar")}
                       </button>
                     </form>
                   </td>

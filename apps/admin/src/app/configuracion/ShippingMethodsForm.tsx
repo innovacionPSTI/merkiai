@@ -16,6 +16,7 @@ import IntegrationInstancesForm from './IntegrationInstancesForm'
 import type { MaskedInstance, PublicProviderDef } from '@/lib/mask-instance'
 import { formatMoney } from '@merkiai/i18n'
 import { T } from '@merkiai/ui'
+import { useTx } from '@merkiai/ui'
 
 interface Props {
   provider: 'fixed' | 'skydropx'
@@ -29,6 +30,7 @@ const fmt = (n: number) =>
   formatMoney(n)
 
 export default function ShippingMethodsForm({ provider, fixedRate, instances, providers, storeBaseUrl }: Props) {
+  const tx = useTx()
   const router = useRouter()
   const [editing, setEditing] = useState(false)
   const [rate, setRate] = useState(String(fixedRate))
@@ -46,14 +48,14 @@ export default function ShippingMethodsForm({ provider, fixedRate, instances, pr
   async function activateFixed() {
     setBusy(true); setErr('')
     try { await patchShipping({ provider: 'fixed' }); router.refresh() }
-    catch (e) { setErr(e instanceof Error ? e.message : 'Error') }
+    catch (e) { setErr(e instanceof Error ? e.message : tx("Error")) }
     finally { setBusy(false) }
   }
 
   async function saveRate() {
     setBusy(true); setErr('')
     try { await patchShipping({ fixed_rate: Number(rate) }); setEditing(false); router.refresh() }
-    catch (e) { setErr(e instanceof Error ? e.message : 'Error') }
+    catch (e) { setErr(e instanceof Error ? e.message : tx("Error")) }
     finally { setBusy(false) }
   }
 
@@ -92,7 +94,7 @@ export default function ShippingMethodsForm({ provider, fixedRate, instances, pr
               className="w-48 border border-brand-primary/20 rounded-xl px-4 py-2.5 font-brand text-sm focus:outline-none focus:border-brand-primary" />
             <button type="button" onClick={saveRate} disabled={busy}
               className="bg-brand-primary text-brand-cream rounded-full px-5 py-2 font-brand text-sm hover:bg-brand-dark transition-colors disabled:opacity-50">
-              {busy ? 'Guardando…' : 'Guardar monto'}
+              {busy ? tx("Guardando…") : tx("Guardar monto")}
             </button>
             <button type="button" onClick={() => { setRate(String(fixedRate)); setEditing(false) }} className="font-brand text-sm text-brand-primary/60 hover:text-brand-primary"><T>Cancelar</T></button>
           </div>

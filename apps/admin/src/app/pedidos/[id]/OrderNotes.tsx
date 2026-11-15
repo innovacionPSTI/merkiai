@@ -64,7 +64,7 @@ export default function OrderNotes({ orderId, initialNotes }: Props) {
           disabled={saving}
           className="font-brand text-sm bg-brand-primary text-brand-cream rounded-full px-4 py-1.5 hover:bg-brand-dark transition-colors disabled:opacity-50"
         >
-          {saving ? 'Guardando…' : 'Guardar nota'}
+          {saving ? tx("Guardando…") : tx("Guardar nota")}
         </button>
       )}
     </div>

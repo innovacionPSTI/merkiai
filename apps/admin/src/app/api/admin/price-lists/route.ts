@@ -4,7 +4,8 @@
  * POST → crea una lista (key, name, ámbito, prioridad).
  * Tenant-scoped + gated por `price_lists`.
  */
-import { NextRequest, NextResponse } from 'next/server'
+import { NextRequest } from 'next/server'
+import { NextResponse } from '@/lib/api-response'
 import { getAdminUser } from '@/lib/auth'
 import { getAdminDb } from '@/lib/admin-db'
 import { listPriceLists, createPriceList, isPriceScopeType } from '@merkiai/database'

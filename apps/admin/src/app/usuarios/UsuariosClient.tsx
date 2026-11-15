@@ -47,17 +47,17 @@ export default function UsuariosClient({ users: initialUsers, currentUserEmail }
       setUsers((prev) => [data, ...prev.filter((u) => u.email !== data.email)])
 
       const emailNote = data.inviteEmailSent
-        ? 'Se envió un correo para que establezca su contraseña.'
-        : 'No se pudo enviar el correo. Indícale que use "¿Olvidaste tu contraseña?" en el admin.'
+        ? tx("Se envió un correo para que establezca su contraseña.")
+        : tx("No se pudo enviar el correo. Indícale que use \"¿Olvidaste tu contraseña?\" en el admin.")
 
       setInviteMsg({
         ok: true,
-        text: `Usuario ${invite.email} agregado con rol Miembro. ${emailNote} Asígnale un rol para que pueda ingresar.`,
+        text: tx("Usuario {email} agregado con rol Miembro. {emailNote} Asígnale un rol para que pueda ingresar.", { email: invite.email, emailNote }),
       })
       setInvite({ email: '', full_name: '' })
       setShowInvite(false)
     } catch (e: unknown) {
-      const msg = e instanceof Error ? e.message : 'Error desconocido'
+      const msg = e instanceof Error ? e.message : tx("Error desconocido")
       setInviteMsg({ ok: false, text: msg })
     } finally {
       setInviteLoading(false)
@@ -84,7 +84,7 @@ export default function UsuariosClient({ users: initialUsers, currentUserEmail }
   }
 
   async function handleRevoke(email: string) {
-    if (!confirm(`¿Eliminar el acceso de ${email}? El usuario no podrá ingresar al admin.`)) return
+    if (!confirm(tx("¿Eliminar el acceso de {email}? El usuario no podrá ingresar al admin.", { email }))) return
     setRevoking(email)
     try {
       const res = await fetch('/api/admin/usuarios', {
@@ -196,7 +196,7 @@ export default function UsuariosClient({ users: initialUsers, currentUserEmail }
                   disabled={inviteLoading || !invite.email}
                   className="flex-1 bg-brand-primary text-brand-cream rounded-full py-2.5 font-brand text-sm hover:bg-brand-dark transition-colors disabled:opacity-50"
                 >
-                  {inviteLoading ? 'Enviando invitación...' : 'Invitar usuario'}
+                  {inviteLoading ? tx("Enviando invitación...") : tx("Invitar usuario")}
                 </button>
                 <button
                   onClick={() => { setShowInvite(false); setInviteMsg(null) }}
@@ -297,7 +297,7 @@ export default function UsuariosClient({ users: initialUsers, currentUserEmail }
                           disabled={revoking === u.email}
                           className="font-brand text-xs text-red-400 hover:text-red-600 transition-colors px-3 py-1 rounded-lg hover:bg-red-50 disabled:opacity-50"
                         >
-                          {revoking === u.email ? '...' : 'Eliminar acceso'}
+                          {revoking === u.email ? '...' : tx("Eliminar acceso")}
                         </button>
                       )}
                     </td>

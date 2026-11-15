@@ -63,7 +63,7 @@ export default async function OperacionesPage() {
                   <a href={`/inventario/${a.key}`} className="text-brand-primary underline">{a.name}</a>
                   <span className="text-brand-primary/50">{a.kind === 'out_of_stock' ? 'agotado' : 'bajo mínimo'}</span>
                 </span>
-                <span className="font-brand text-sm tabular-nums text-brand-primary/60">{num(a.available)} / mín {num(a.reorder_point)}</span>
+                <span className="font-brand text-sm tabular-nums text-brand-primary/60">{num(a.available)} <T>/ mín</T> {num(a.reorder_point)}</span>
               </li>
             ))}
           </ul>
@@ -80,10 +80,10 @@ export default async function OperacionesPage() {
                 <span className="flex items-center gap-2 font-brand text-sm">
                   <span className={`inline-block w-2 h-2 rounded-full ${a.severity === 'critical' ? 'bg-red-500' : 'bg-amber-400'}`} />
                   <a href={`/inventario/${a.key}`} className="text-brand-primary underline">{a.name}</a>
-                  <span className="text-brand-primary/50">· {a.location_id != null ? (locName.get(a.location_id) ?? `#${a.location_id}`) : 'Sin ubicación'}</span>
+                  <span className="text-brand-primary/50">· {a.location_id != null ? (locName.get(a.location_id) ?? `#${a.location_id}`) : tx("Sin ubicación")}</span>
                   <span className="text-brand-primary/50">{a.kind === 'out_of_stock' ? 'agotado' : 'bajo mínimo'}</span>
                 </span>
-                <span className="font-brand text-sm tabular-nums text-brand-primary/60">{num(a.available)} / mín {num(a.reorder_point)}</span>
+                <span className="font-brand text-sm tabular-nums text-brand-primary/60">{num(a.available)} <T>/ mín</T> {num(a.reorder_point)}</span>
               </li>
             ))}
           </ul>

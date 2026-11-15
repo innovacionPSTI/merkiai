@@ -2,7 +2,8 @@
  * GET /api/admin/themes/[id]/export — HU-129
  * Descarga la plantilla (tema) como paquete JSON versionado y portable.
  */
-import { NextRequest, NextResponse } from 'next/server'
+import { NextRequest } from 'next/server'
+import { NextResponse } from '@/lib/api-response'
 import { getAdminUser } from '@/lib/auth'
 import { getAdminDb } from '@/lib/admin-db'
 import { buildTemplatePackage, type Theme } from '@merkiai/database'

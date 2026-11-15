@@ -10,7 +10,8 @@
  * fail-closed). service-role legítimo aquí (autorizado por el control plane;
  * toca varias tablas antes de que exista el dueño).
  */
-import { NextRequest, NextResponse } from 'next/server'
+import { NextRequest } from 'next/server'
+import { NextResponse } from '@/lib/api-response'
 import {
   createServerClient,
   seedTenantConfig,

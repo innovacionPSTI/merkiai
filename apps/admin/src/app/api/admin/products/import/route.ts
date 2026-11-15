@@ -1,6 +1,7 @@
 import type { Database } from '@merkiai/database'
 import { parseProductsCsv, PRODUCT_IMPORT_TEMPLATE } from '@merkiai/database'
-import { NextRequest, NextResponse } from 'next/server'
+import { NextRequest } from 'next/server'
+import { NextResponse } from '@/lib/api-response'
 import { getTenantEntitlements, resolveLimit, LIMITS } from '@/lib/entitlements'
 import { logAudit } from '@merkiai/database'
 import { getAdminUser } from '@/lib/auth'

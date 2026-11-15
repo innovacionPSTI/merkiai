@@ -2,6 +2,7 @@
 
 import { useRef, useState } from 'react'
 import { T } from '@merkiai/ui'
+import { useTx } from '@merkiai/ui'
 
 type ImportResult = {
   success: boolean
@@ -9,6 +10,7 @@ type ImportResult = {
 }
 
 export default function DataTransferWidget() {
+  const tx = useTx()
   const fileRef = useRef<HTMLInputElement>(null)
   const [importing, setImporting] = useState(false)
   const [result, setResult] = useState<ImportResult | null>(null)
@@ -35,7 +37,7 @@ export default function DataTransferWidget() {
         setError((json as { error?: string }).error ?? 'Error al importar')
       }
     } catch (e: unknown) {
-      setError(e instanceof Error ? e.message : 'Archivo inválido o error al procesar')
+      setError(e instanceof Error ? e.message : tx("Archivo inválido o error al procesar"))
     } finally {
       setImporting(false)
       if (fileRef.current) fileRef.current.value = ''
@@ -60,7 +62,7 @@ export default function DataTransferWidget() {
           disabled={importing}
           className="px-4 py-2 rounded-xl border border-gray-200 text-sm font-brand font-semibold text-brand-primary hover:bg-gray-50 transition-colors disabled:opacity-50"
         >
-          {importing ? 'Importando…' : '↑ Importar contenido'}
+          {importing ? tx("Importando…") : tx("↑ Importar contenido")}
         </button>
         <input
           ref={fileRef}

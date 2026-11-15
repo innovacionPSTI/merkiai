@@ -2,10 +2,12 @@
 
 import { useState } from 'react'
 import { T } from '@merkiai/ui'
+import { useTx } from '@merkiai/ui'
 
 interface Tpl { type: string; label: string; vars: string[]; subject: string; body: string; enabled: boolean; customized: boolean }
 
 export default function EmailTemplatesEditor({ initial }: { initial: Tpl[] }) {
+  const tx = useTx()
   const [rows, setRows] = useState<Tpl[]>(initial)
   const [open, setOpen] = useState<string | null>(null)
   const [saving, setSaving] = useState<string | null>(null)
@@ -28,7 +30,7 @@ export default function EmailTemplatesEditor({ initial }: { initial: Tpl[] }) {
       body: JSON.stringify({ type: t.type, subject: t.subject, body: t.body, send: true }),
     })
     const d = await res.json()
-    setMsg((m) => ({ ...m, [t.type]: res.ok ? `Prueba enviada a ${d.to}` : (d.error ?? 'Error') }))
+    setMsg((m) => ({ ...m, [t.type]: res.ok ? tx("Prueba enviada a {to}", { to: d.to }) : (d.error ?? 'Error') }))
   }
 
   function patch(type: string, p: Partial<Tpl>) {
@@ -61,11 +63,11 @@ export default function EmailTemplatesEditor({ initial }: { initial: Tpl[] }) {
             </div>
             <label className="flex items-center gap-2">
               <input type="checkbox" checked={t.enabled} onChange={(e) => patch(t.type, { enabled: e.target.checked })} className="w-4 h-4 accent-brand-primary" />
-              <span className="font-brand text-xs text-brand-primary/60">{t.enabled ? 'Activa' : 'Silenciada'}</span>
+              <span className="font-brand text-xs text-brand-primary/60">{t.enabled ? tx("Activa") : tx("Silenciada")}</span>
             </label>
             <button onClick={() => setOpen(open === t.type ? null : t.type)}
               className="font-brand text-xs text-brand-primary border border-brand-primary/20 rounded-full px-3 py-1 hover:bg-brand-cream">
-              {open === t.type ? 'Cerrar' : 'Editar'}
+              {open === t.type ? tx("Cerrar") : tx("Editar")}
             </button>
           </div>
           {open === t.type && (
@@ -81,12 +83,12 @@ export default function EmailTemplatesEditor({ initial }: { initial: Tpl[] }) {
                   className="mt-1 w-full rounded-lg border border-brand-primary/15 px-3 py-2 font-brand text-sm" />
               </label>
               <p className="font-brand text-[11px] text-brand-primary/40">
-                Variables: {t.vars.map((v) => `{{${v}}}`).join('  ')}
+                <T>Variables:</T> {t.vars.map((v) => `{{${v}}}`).join('  ')}
               </p>
               <div className="flex flex-wrap items-center gap-3">
                 <button onClick={() => save(t)} disabled={saving === t.type}
                   className="bg-brand-primary text-brand-cream rounded-full px-5 py-2 font-brand text-sm hover:bg-brand-dark disabled:opacity-50">
-                  {saving === t.type ? 'Guardando…' : 'Guardar'}
+                  {saving === t.type ? tx("Guardando…") : tx("Guardar")}
                 </button>
                 <button onClick={() => doPreview(t)} type="button"
                   className="font-brand text-sm border border-brand-primary/20 text-brand-primary rounded-full px-4 py-2 hover:bg-brand-cream"><T>Vista previa</T></button>

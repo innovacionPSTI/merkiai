@@ -8,10 +8,12 @@ import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { formatDateTime } from '@merkiai/i18n'
 import { T } from '@merkiai/ui'
+import { useTx } from '@merkiai/ui'
 
 interface Row { id: number; from: string; to: string; qty: number; shipped_at: string | null }
 
 export default function TransferInbox({ transfers }: { transfers: Row[] }) {
+  const tx = useTx()
   const router = useRouter()
   const [busy, setBusy] = useState<number | null>(null)
   const [error, setError] = useState<string | null>(null)
@@ -24,7 +26,7 @@ export default function TransferInbox({ transfers }: { transfers: Row[] }) {
       })
       if (!res.ok) throw new Error((await res.json().catch(() => ({})))?.error ?? 'No se pudo')
       router.refresh()
-    } catch (e) { setError(e instanceof Error ? e.message : 'Error') } finally { setBusy(null) }
+    } catch (e) { setError(e instanceof Error ? e.message : tx("Error")) } finally { setBusy(null) }
   }
 
   if (!transfers.length) return null

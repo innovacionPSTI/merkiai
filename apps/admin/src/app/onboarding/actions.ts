@@ -1,5 +1,6 @@
 'use server'
 
+import { localizeForPanel } from '@/lib/server-i18n'
 import { revalidatePath } from 'next/cache'
 import { getAdminUser } from '@/lib/auth'
 import { userCanAccess } from '@/lib/roles'
@@ -12,7 +13,7 @@ export interface OnboardingActionState {
 }
 
 /** Aplica el preset elegido a la tienda (HU-236). Gated por rol + plan. */
-export async function applyPresetAction(
+async function applyPresetAction__impl(
   _prev: OnboardingActionState,
   formData: FormData,
 ): Promise<OnboardingActionState> {
@@ -37,7 +38,7 @@ export async function applyPresetAction(
 }
 
 /** HU-236 v2: marca el onboarding como completado u omitido, o lo reabre. */
-export async function setOnboardingDoneAction(formData: FormData): Promise<void> {
+async function setOnboardingDoneAction__impl(formData: FormData): Promise<void> {
   const adminUser = await getAdminUser()
   if (!adminUser || !userCanAccess(adminUser, 'configuracion')) return
 
@@ -48,4 +49,12 @@ export async function setOnboardingDoneAction(formData: FormData): Promise<void>
 
   revalidatePath('/onboarding')
   revalidatePath('/')
+}
+
+// HU-466 F6 · los mensajes de cada acción vuelven en el idioma del panel.
+export async function applyPresetAction(...args: Parameters<typeof applyPresetAction__impl>): ReturnType<typeof applyPresetAction__impl> {
+  return localizeForPanel(await applyPresetAction__impl(...args))
+}
+export async function setOnboardingDoneAction(...args: Parameters<typeof setOnboardingDoneAction__impl>): ReturnType<typeof setOnboardingDoneAction__impl> {
+  return localizeForPanel(await setOnboardingDoneAction__impl(...args))
 }

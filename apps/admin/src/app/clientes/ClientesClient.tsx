@@ -65,7 +65,7 @@ export default function ClientesClient({ clients }: Props) {
       {/* Header */}
       <PageHeader
         title={tx("Clientes")}
-        description={`${total} clientes en total.`}
+        description={tx("{total} clientes en total.", { total })}
         action={
           <CsvImportModal
             endpoint="/api/admin/customers/import"
@@ -118,7 +118,7 @@ export default function ClientesClient({ clients }: Props) {
                   : 'bg-white text-brand-primary/60 border border-gray-200 hover:border-brand-primary/30'
               }`}
             >
-              {f === 'todos' ? 'Todos' : f === 'con_cuenta' ? 'Con cuenta' : 'Sin cuenta'}
+              {f === 'todos' ? tx("Todos") : f === 'con_cuenta' ? tx("Con cuenta") : tx("Sin cuenta")}
             </button>
           ))}
         </div>
@@ -212,8 +212,8 @@ export default function ClientesClient({ clients }: Props) {
                   className="px-6 py-16 text-center font-brand text-sm text-brand-primary/30"
                 >
                   {search || filter !== 'todos'
-                    ? 'No hay clientes que coincidan con el filtro.'
-                    : 'Aún no hay clientes registrados.'}
+                    ? tx("No hay clientes que coincidan con el filtro.")
+                    : tx("Aún no hay clientes registrados.")}
                 </td>
               </tr>
             )}
@@ -223,7 +223,7 @@ export default function ClientesClient({ clients }: Props) {
 
       {filtered.length > 0 && (
         <p className="font-brand text-xs text-brand-primary/30 text-right">
-          Mostrando {filtered.length} de {total} clientes
+          <T>Mostrando</T> {filtered.length} de {total} <T>clientes</T>
         </p>
       )}
     </div>

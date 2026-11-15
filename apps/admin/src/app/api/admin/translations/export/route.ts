@@ -1,4 +1,5 @@
-import { NextRequest, NextResponse } from 'next/server'
+import { NextRequest } from 'next/server'
+import { NextResponse } from '@/lib/api-response'
 import { listEntityTranslationItems, listBlockTranslationItems, translationsToCsv, logAudit, type TranslatableEntity } from '@merkiai/database'
 import { requireTranslations } from '@/lib/translations'
 

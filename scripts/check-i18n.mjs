@@ -96,9 +96,9 @@ for (const name of readdirSync(join(I18N, 'phrases'))) {
   if (m) phraseDicts[m[1]] = loadTs(join(I18N, 'phrases', name)).default
 }
 const phraseUses = new Set()
-const T_RE = /<T(?:\s[^>]*)?>([^<{}]+)<\/T>|\btx\(\s*'([^']+)'|\btx\(\s*"([^"]+)"/g
+const T_RE = /<T(?:\s[^>]*)?>([^<{}]+)<\/T>|\btx\(\s*'([^']+)'|\btx\(\s*"((?:[^"\\]|\\.)+)"/g
 for (const file of dirs.flatMap((d) => walk(join(ROOT, d)))) {
-  for (const m of readFileSync(file, 'utf8').matchAll(T_RE)) phraseUses.add((m[1] ?? m[2] ?? m[3]).replace(/\s+/g, ' ').trim())
+  for (const m of readFileSync(file, 'utf8').matchAll(T_RE)) phraseUses.add((m[1] ?? m[2] ?? m[3]).replace(/\\"/g, '"').replace(/\s+/g, ' ').trim())
 }
 
 // Cobertura

@@ -13,8 +13,9 @@ const wide: React.CSSProperties = { ...input, width: '100%', marginRight: 0, box
 const grid: React.CSSProperties = { display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: 12 }
 
 function Submit({ text }: { text: string }) {
+  const tx = useTx()
   const { pending } = useFormStatus()
-  return <button type="submit" style={{ ...btn, opacity: pending ? 0.6 : 1 }} disabled={pending}>{pending ? 'Guardando…' : text}</button>
+  return <button type="submit" style={{ ...btn, opacity: pending ? 0.6 : 1 }} disabled={pending}>{pending ? tx("Guardando…") : text}</button>
 }
 function Feedback({ s }: { s: PagosActionState }) {
   if (s.error) return <p role="alert" style={{ color: '#B42318', fontSize: 13, margin: '8px 0 0' }}>{s.error}</p>
@@ -67,8 +68,8 @@ export function AccountForm({ tenants, d = {} }: { tenants: { id: string; name: 
         </div>
         <div><label style={label}><T>Id de tienda PayZen</T></label><input name="shop_id" defaultValue={d.shopId ?? ''} inputMode="numeric" placeholder="12345678" style={wide} /></div>
         <div>
-          <label style={label}>Contraseña REST {d.hasPassword ? <span style={{ color: 'var(--ui-success)' }}><T>● configurada</T></span> : <span><T>○ pendiente</T></span>}</label>
-          <input name="password" type="password" autoComplete="new-password" placeholder={d.hasPassword ? 'Dejar vacío para no cambiar' : 'testpassword_… / prodpassword_…'} style={wide} />
+          <label style={label}><T>Contraseña REST</T> {d.hasPassword ? <span style={{ color: 'var(--ui-success)' }}><T>● configurada</T></span> : <span><T>○ pendiente</T></span>}</label>
+          <input name="password" type="password" autoComplete="new-password" placeholder={d.hasPassword ? tx("Dejar vacío para no cambiar") : 'testpassword_… / prodpassword_…'} style={wide} />
         </div>
         <div>
           <label style={label}><T>Estado</T></label>
@@ -81,7 +82,7 @@ export function AccountForm({ tenants, d = {} }: { tenants: { id: string; name: 
         <div><label style={label}>% propio (opcional)</label><input name="fee_pct_override" defaultValue={d.pctOverride ?? ''} placeholder={tx("Usa el del plan")} inputMode="decimal" style={wide} /></div>
         <div><label style={label}>Fijo propio COP (opcional)</label><input name="fee_fixed_override" defaultValue={d.fixedOverridePesos ?? ''} placeholder={tx("Usa el del plan")} inputMode="numeric" style={wide} /></div>
       </div>
-      <div style={{ marginTop: 12 }}><Submit text={editing ? 'Guardar cambios' : 'Agregar tienda'} /></div>
+      <div style={{ marginTop: 12 }}><Submit text={editing ? tx("Guardar cambios") : tx("Agregar tienda")} /></div>
       <Feedback s={s} />
     </form>
   )

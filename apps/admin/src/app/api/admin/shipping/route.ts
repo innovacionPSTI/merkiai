@@ -8,7 +8,8 @@
  * so they are never exposed in the UI after saving.
  */
 
-import { NextRequest, NextResponse } from 'next/server'
+import { NextRequest } from 'next/server'
+import { NextResponse } from '@/lib/api-response'
 import { getShippingConfig, updateShippingConfig } from '@merkiai/database'
 import type { UpdateShippingConfigInput } from '@merkiai/database'
 import { getAdminUser } from '@/lib/auth'

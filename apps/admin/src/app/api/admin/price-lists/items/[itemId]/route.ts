@@ -2,7 +2,7 @@
  * /api/admin/price-lists/items/[itemId] — E24 · HU-407 (DELETE)
  * Elimina un precio de lista. Tenant-scoped + gated por `price_lists`.
  */
-import { NextResponse } from 'next/server'
+import { NextResponse } from '@/lib/api-response'
 import { getAdminUser } from '@/lib/auth'
 import { getAdminDb } from '@/lib/admin-db'
 import { deletePriceListItem } from '@merkiai/database'

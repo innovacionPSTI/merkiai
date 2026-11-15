@@ -2,7 +2,8 @@
  * /api/admin/inventory/production — E24 · HU-405
  * Crea órdenes de producción (borrador). Tenant-scoped + gated por `inventory`.
  */
-import { NextRequest, NextResponse } from 'next/server'
+import { NextRequest } from 'next/server'
+import { NextResponse } from '@/lib/api-response'
 import { getAdminUser } from '@/lib/auth'
 import { getAdminDb } from '@/lib/admin-db'
 import { createProductionOrder } from '@merkiai/database'

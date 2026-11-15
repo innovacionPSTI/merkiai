@@ -64,7 +64,7 @@ export default async function MerkiaiPagosPage() {
         </p>
       </PanelCard>
 
-      <PanelCard title={`Tiendas con Merkiai Pagos (${accounts.length}) · comisiones del mes: ${formatMoney(monthFees, 'COP')}`}>
+      <PanelCard title={tx("Tiendas con Merkiai Pagos ({accountsCount}) · comisiones del mes: {fees}", { accountsCount: accounts.length, fees: formatMoney(monthFees, 'COP') })}>
         {accounts.length === 0 ? (
           <EmptyState icon={<Icon name="tenant" size={28} />} title={tx("Ninguna tienda usa Merkiai Pagos")} description="Agrega la primera con el formulario de arriba." />
         ) : (
@@ -75,12 +75,12 @@ export default async function MerkiaiPagosPage() {
                   <div style={{ display: 'flex', gap: 10, alignItems: 'center' }}>
                     <strong style={{ fontSize: 15 }}>{a.tenantName}</strong>
                     <StatusBadge tone={STATUS[a.status].tone}>{STATUS[a.status].label}</StatusBadge>
-                    <StatusBadge tone={a.environment === 'production' ? 'success' : 'warn'}>{a.environment === 'production' ? 'Producción' : 'Pruebas'}</StatusBadge>
+                    <StatusBadge tone={a.environment === 'production' ? 'success' : 'warn'}>{a.environment === 'production' ? tx("Producción") : tx("Pruebas")}</StatusBadge>
                   </div>
                   <span style={{ fontSize: 13, color: 'var(--ui-muted)' }}>
-                    Tarifa: {pct(a.terms.pct)}{a.terms.fixedCents ? ` + ${formatMoney(a.terms.fixedCents, 'COP')}` : ''}
+                    <T>Tarifa:</T> {pct(a.terms.pct)}{a.terms.fixedCents ? ` + ${formatMoney(a.terms.fixedCents, 'COP')}` : ''}
                     {a.feePctOverride != null || a.feeFixedCentsOverride != null ? ' (propia)' : ` (plan ${a.plan})`}
-                    {' · '}Este mes: {a.month.sales} ventas · {formatMoney(a.month.amountCents, 'COP')} · comisión {formatMoney(a.month.feeCents, 'COP')}
+                    {' · '}<T>Este mes:</T> {a.month.sales} <T>ventas ·</T> {formatMoney(a.month.amountCents, 'COP')} <T>· comisión</T> {formatMoney(a.month.feeCents, 'COP')}
                   </span>
                 </div>
                 <AccountForm

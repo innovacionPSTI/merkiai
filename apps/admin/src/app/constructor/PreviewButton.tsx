@@ -3,9 +3,11 @@
 import { useState } from 'react'
 import { Icon } from '@merkiai/ui'
 import { getPreviewUrlAction } from './preview-action'
+import { useTx } from '@merkiai/ui'
 
 /** Botón "Vista previa": abre la tienda en modo borrador en una pestaña nueva (HU-128). */
 export default function PreviewButton({ path = '/' }: { path?: string }) {
+  const tx = useTx()
   const [loading, setLoading] = useState(false)
   const [err, setErr] = useState('')
 
@@ -25,7 +27,7 @@ export default function PreviewButton({ path = '/' }: { path?: string }) {
         disabled={loading}
         className="font-brand text-sm border border-brand-primary text-brand-primary rounded-xl px-4 py-2 hover:bg-brand-primary hover:text-brand-cream transition-colors inline-flex items-center gap-2 disabled:opacity-50"
       >
-        <Icon name="external" size={16} /> {loading ? 'Generando…' : 'Vista previa'}
+        <Icon name="external" size={16} /> {loading ? tx("Generando…") : tx("Vista previa")}
       </button>
     </div>
   )

@@ -168,7 +168,7 @@ export default function PresetForm() {
       <input type="hidden" name="sample_categories" value={catsJson} />
       <input type="hidden" name="sample_products" value={prodsJson} />
 
-      <button type="submit" disabled={pending} style={btn}>{pending ? 'Guardando…' : 'Guardar preset'}</button>
+      <button type="submit" disabled={pending} style={btn}>{pending ? tx("Guardando…") : tx("Guardar preset")}</button>
       {state.error && <p style={{ color: 'var(--ui-danger)', fontSize: 13, margin: 0 }}>{state.error}</p>}
       {state.ok && state.message && <p style={{ color: 'var(--ui-success)', fontSize: 13, margin: 0 }}>{state.message}</p>}
     </form>

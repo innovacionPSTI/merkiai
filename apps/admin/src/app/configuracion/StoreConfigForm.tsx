@@ -147,7 +147,7 @@ export default function StoreConfigForm({ initialConfig, editorialInConstructor 
       {editorialInConstructor && (
         <div className="rounded-2xl border border-indigo-100 bg-indigo-50/60 px-5 py-4">
           <p className="font-brand text-sm text-brand-primary">
-            <T>La</T> <strong><T>marca, redes, navegación y pie de página</T></strong> ahora se editan en el{' '}
+            <T>La</T> <strong><T>marca, redes, navegación y pie de página</T></strong> <T>ahora se editan en el</T>{' '}
             <a href="/constructor" className="underline font-semibold hover:text-indigo-700"><T>Constructor → Ajustes de sitio</T></a><T>. Aquí quedan solo los ajustes operativos.</T>
           </p>
         </div>
@@ -188,7 +188,7 @@ export default function StoreConfigForm({ initialConfig, editorialInConstructor 
         </div>
         {faviconUrl && (
           <p className="font-brand text-xs text-brand-primary/40 mt-2">
-            Vista previa del favicon:{' '}
+            <T>Vista previa del favicon:</T>{' '}
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img src={faviconUrl} alt="favicon" className="inline-block w-6 h-6 align-middle rounded" />
           </p>
@@ -399,7 +399,7 @@ export default function StoreConfigForm({ initialConfig, editorialInConstructor 
           </button>
           <div>
             <p className={`font-brand text-sm font-semibold ${maintenanceMode ? 'text-red-600' : 'text-brand-primary'}`}>
-              Modo mantenimiento
+              <T>Modo mantenimiento</T>
               {maintenanceMode && (
                 <span className="ml-2 text-xs font-normal bg-red-100 text-red-600 px-2 py-0.5 rounded-full"><T>Activo</T></span>
               )}
@@ -440,7 +440,7 @@ export default function StoreConfigForm({ initialConfig, editorialInConstructor 
         <div>
           <h2 className="font-display text-brand-primary text-lg mb-0.5"><T>Barra de navegación</T></h2>
           <p className="font-brand text-xs text-brand-primary/40">
-            Los ítems del menú se configuran desde{' '}
+            <T>Los ítems del menú se configuran desde</T>{' '}
             <a href="/nav" className="underline hover:text-brand-primary"><T>Navegación</T></a><T>. Aquí puedes mostrar u ocultar el carrito y el botón de acceso.</T>
           </p>
         </div>
@@ -650,7 +650,7 @@ export default function StoreConfigForm({ initialConfig, editorialInConstructor 
           disabled={status === 'saving'}
           className="bg-brand-primary text-brand-cream rounded-xl px-6 py-2.5 font-brand text-sm hover:bg-brand-dark transition-colors disabled:opacity-50"
         >
-          {status === 'saving' ? 'Guardando...' : 'Guardar cambios'}
+          {status === 'saving' ? 'Guardando...' : tx("Guardar cambios")}
         </button>
 
         {status === 'saved' && (

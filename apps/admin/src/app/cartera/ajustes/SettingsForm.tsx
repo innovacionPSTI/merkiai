@@ -4,6 +4,7 @@ import { useState, useTransition } from 'react'
 import { useRouter } from 'next/navigation'
 import { saveSettingsAction } from '../actions'
 import { T } from '@merkiai/ui'
+import { useTx } from '@merkiai/ui'
 
 type Modality = 'credit_sale' | 'special_order' | 'layaway' | 'consignment'
 type Ev = 'on_document' | 'on_payment' | 'on_delivery' | 'on_settlement' | 'none'
@@ -20,6 +21,7 @@ const EV_LABEL: Record<Ev, string> = { on_document: 'Al crear el documento', on_
 const input = 'rounded-xl border border-brand-primary/20 px-3 py-2 font-brand text-sm focus:border-brand-primary focus:outline-none'
 
 export default function SettingsForm({ settings, consignmentEnabled }: { settings: Settings; consignmentEnabled: boolean }) {
+  const tx = useTx()
   const router = useRouter()
   const [pending, start] = useTransition()
   const [s, setS] = useState(settings)
@@ -71,7 +73,7 @@ export default function SettingsForm({ settings, consignmentEnabled }: { setting
         const r = await saveSettingsAction(s)
         setMsg(r.ok ? { ok: true, text: r.message ?? 'Guardado.' } : { ok: false, text: r.error })
         if (r.ok) router.refresh()
-      })} className="rounded-full bg-brand-primary px-6 py-2.5 font-brand text-sm text-white disabled:opacity-60">{pending ? 'Guardando…' : 'Guardar ajustes'}</button>
+      })} className="rounded-full bg-brand-primary px-6 py-2.5 font-brand text-sm text-white disabled:opacity-60">{pending ? tx("Guardando…") : tx("Guardar ajustes")}</button>
     </div>
   )
 }

@@ -228,7 +228,7 @@ export default function ContenidoClient({
       setNavItems((prev) => prev.map((n) => (n.id === id ? { ...n, ...data } : n)))
       return data
     } catch (e: unknown) {
-      setError(e instanceof Error ? e.message : 'Error al guardar nav')
+      setError(e instanceof Error ? e.message : tx("Error al guardar nav"))
     }
   }
 
@@ -250,7 +250,7 @@ export default function ContenidoClient({
       })
       setNavItems((prev) => prev.map((n) => (n.id === navId ? { ...n, ...data } : n)))
     } catch (e: unknown) {
-      setError(e instanceof Error ? e.message : 'Error al vincular nav')
+      setError(e instanceof Error ? e.message : tx("Error al vincular nav"))
     }
   }
 
@@ -280,7 +280,7 @@ export default function ContenidoClient({
       setNewNavItem({ label: '', href: '', page_key: '', parent_id: '' })
       setShowNewNav(false)
     } catch (e: unknown) {
-      setError(e instanceof Error ? e.message : 'Error al crear elemento de nav')
+      setError(e instanceof Error ? e.message : tx("Error al crear elemento de nav"))
     } finally {
       setCreatingNav(false)
     }
@@ -295,7 +295,7 @@ export default function ContenidoClient({
       setNavItems((prev) => prev.filter((n) => n.id !== id && n.parent_id !== id))
       if (expandedNavId === id) setExpandedNavId(null)
     } catch (e: unknown) {
-      setError(e instanceof Error ? e.message : 'Error al eliminar nav')
+      setError(e instanceof Error ? e.message : tx("Error al eliminar nav"))
     }
   }
 
@@ -314,7 +314,7 @@ export default function ContenidoClient({
       setNewPage({ key: '', label: '', slug: '', page_type: 'custom' })
       setShowNewPage(false)
     } catch (e: unknown) {
-      setError(e instanceof Error ? e.message : 'Error al crear página')
+      setError(e instanceof Error ? e.message : tx("Error al crear página"))
     } finally {
       setCreatingPage(false)
     }
@@ -334,7 +334,7 @@ export default function ContenidoClient({
         }
       }
     } catch (e: unknown) {
-      setError(e instanceof Error ? e.message : 'Error al guardar')
+      setError(e instanceof Error ? e.message : tx("Error al guardar"))
     }
   }
 
@@ -347,7 +347,7 @@ export default function ContenidoClient({
       setSections((prev) => prev.filter((s) => s.page_key !== key))
       if (selectedPageKey === key) setSelectedPageKey(pages.find((p) => p.key !== key)?.key ?? null)
     } catch (e: unknown) {
-      setError(e instanceof Error ? e.message : 'Error al eliminar')
+      setError(e instanceof Error ? e.message : tx("Error al eliminar"))
     }
   }
 
@@ -372,7 +372,7 @@ export default function ContenidoClient({
       setShowNewSection(false)
       setExpandedSection(data.id)
     } catch (e: unknown) {
-      setError(e instanceof Error ? e.message : 'Error al crear sección')
+      setError(e instanceof Error ? e.message : tx("Error al crear sección"))
     } finally {
       setAddingSection(false)
     }
@@ -384,7 +384,7 @@ export default function ContenidoClient({
       const data = await apiSection('PATCH', { id, ...fields })
       setSections((prev) => prev.map((s) => (s.id === id ? { ...s, ...data } : s)))
     } catch (e: unknown) {
-      setError(e instanceof Error ? e.message : 'Error al guardar sección')
+      setError(e instanceof Error ? e.message : tx("Error al guardar sección"))
     }
   }
 
@@ -397,7 +397,7 @@ export default function ContenidoClient({
       setItems((prev) => prev.filter((i) => i.section_id !== id))
       if (expandedSection === id) setExpandedSection(null)
     } catch (e: unknown) {
-      setError(e instanceof Error ? e.message : 'Error al eliminar sección')
+      setError(e instanceof Error ? e.message : tx("Error al eliminar sección"))
     }
   }
 
@@ -431,7 +431,7 @@ export default function ContenidoClient({
       setNewItem({ item_type: itemType, icon: '', title: '', description: '' })
       setShowNewItem(null)
     } catch (e: unknown) {
-      setError(e instanceof Error ? e.message : 'Error al crear ítem')
+      setError(e instanceof Error ? e.message : tx("Error al crear ítem"))
     }
   }
 
@@ -441,7 +441,7 @@ export default function ContenidoClient({
       const data = await apiItem('PATCH', { id, ...fields })
       setItems((prev) => prev.map((i) => (i.id === id ? { ...i, ...data } : i)))
     } catch (e: unknown) {
-      setError(e instanceof Error ? e.message : 'Error al guardar ítem')
+      setError(e instanceof Error ? e.message : tx("Error al guardar ítem"))
     }
   }
 
@@ -451,7 +451,7 @@ export default function ContenidoClient({
       await apiItem('DELETE', undefined, `?id=${id}`)
       setItems((prev) => prev.filter((i) => i.id !== id))
     } catch (e: unknown) {
-      setError(e instanceof Error ? e.message : 'Error al eliminar ítem')
+      setError(e instanceof Error ? e.message : tx("Error al eliminar ítem"))
     }
   }
 
@@ -576,7 +576,7 @@ export default function ContenidoClient({
                           Ruta (href)
                           {linkedPage && (
                             <span className="ml-1 text-brand-primary/30 font-normal">
-                              vinculada a /{linkedPage.slug}
+                              <T>vinculada a /</T>{linkedPage.slug}
                             </span>
                           )}
                         </label>
@@ -681,10 +681,10 @@ export default function ContenidoClient({
                               </div>
                               <div>
                                 <label className="font-brand text-xs font-semibold text-brand-primary/50 block mb-1">
-                                  Ruta
+                                  <T>Ruta</T>
                                   {childPage && (
                                     <span className="ml-1 text-brand-primary/30 font-normal">
-                                      vinculada a /{childPage.slug}
+                                      <T>vinculada a /</T>{childPage.slug}
                                     </span>
                                   )}
                                 </label>
@@ -796,7 +796,7 @@ export default function ContenidoClient({
                   disabled={creatingNav || !newNavItem.label}
                   className="flex-1 bg-brand-primary text-brand-cream rounded-lg py-1.5 font-brand text-xs hover:bg-brand-dark transition-colors disabled:opacity-40"
                 >
-                  {creatingNav ? 'Creando…' : 'Crear'}
+                  {creatingNav ? tx("Creando…") : tx("Crear")}
                 </button>
                 <button
                   onClick={() => setShowNewNav(false)}
@@ -855,8 +855,8 @@ export default function ContenidoClient({
                   value={newPage[field]}
                   onChange={(e) => setNewPage((prev) => ({ ...prev, [field]: e.target.value }))}
                   placeholder={
-                    field === 'key' ? 'Clave única (ej: servicios)' :
-                    field === 'label' ? 'Nombre visible' : 'URL slug (ej: servicios)'
+                    field === 'key' ? tx("Clave única (ej: servicios)") :
+                    field === 'label' ? tx("Nombre visible") : tx("URL slug (ej: servicios)")
                   }
                   className="w-full border border-gray-200 rounded-lg px-2 py-1.5 font-brand text-xs focus:outline-none focus:border-brand-primary"
                 />
@@ -876,7 +876,7 @@ export default function ContenidoClient({
                   disabled={creatingPage || !newPage.key || !newPage.label || !newPage.slug}
                   className="flex-1 bg-brand-primary text-brand-cream rounded-lg py-1.5 font-brand text-xs hover:bg-brand-dark transition-colors disabled:opacity-40"
                 >
-                  {creatingPage ? 'Creando…' : 'Crear'}
+                  {creatingPage ? tx("Creando…") : tx("Crear")}
                 </button>
                 <button onClick={() => setShowNewPage(false)} className="font-brand text-xs text-brand-primary/40 hover:text-brand-primary" title={tx("Cancelar")}>
                   <Icon name="close" size={14} />
@@ -954,8 +954,8 @@ export default function ContenidoClient({
                 const linkedNavs = navItems.filter((n) => n.page_key === selectedPage.key)
                 return linkedNavs.length > 0 ? (
                   <p className="font-brand text-xs text-brand-primary/40 bg-brand-primary/5 rounded-lg px-3 py-2">
-                    <Icon name="external" size={12} className="inline align-[-1px] mr-1" />Nav vinculado: {linkedNavs.map((n) => `"${n.label}" → ${n.href ?? '(sin ruta)'}`).join(', ')}
-                    {' · '}Cambia el slug arriba para actualizar la ruta automáticamente.
+                    <Icon name="external" size={12} className="inline align-[-1px] mr-1" /><T>Nav vinculado:</T> {linkedNavs.map((n) => `"${n.label}" → ${n.href ?? '(sin ruta)'}`).join(', ')}
+                    {' · '}<T>Cambia el slug arriba para actualizar la ruta automáticamente.</T>
                   </p>
                 ) : null
               })()}
@@ -1012,7 +1012,7 @@ export default function ContenidoClient({
             <div className="space-y-4">
               <div className="flex items-center justify-between">
                 <h3 className="font-brand text-sm font-semibold text-brand-primary">
-                  Secciones ({pageSections.length})
+                  <T>Secciones (</T>{pageSections.length})
                 </h3>
                 <button
                   onClick={() => setShowNewSection(true)}
@@ -1049,7 +1049,7 @@ export default function ContenidoClient({
                       disabled={addingSection}
                       className="bg-brand-primary text-brand-cream rounded-full px-5 py-2 font-brand text-sm hover:bg-brand-dark transition-colors disabled:opacity-40"
                     >
-                      {addingSection ? 'Creando…' : 'Crear sección'}
+                      {addingSection ? tx("Creando…") : tx("Crear sección")}
                     </button>
                     <button onClick={() => setShowNewSection(false)} className="font-brand text-sm text-brand-primary/40 hover:text-brand-primary">
                       <T>Cancelar</T>
@@ -1159,12 +1159,12 @@ export default function ContenidoClient({
                         {hasItems && (
                           <div className="mt-2 space-y-3">
                             <p className="font-brand text-xs font-semibold text-brand-primary/50">
-                              {section.section_type === 'cards'        ? 'Tarjetas'
-                               : section.section_type === 'faq'        ? 'Preguntas'
-                               : section.section_type === 'hero'       ? 'Slides del carrusel'
-                               : section.section_type === 'services'   ? 'Ítems de servicio'
-                               : section.section_type === 'testimonials' ? 'Testimonios'
-                               : 'Ítems'}
+                              {section.section_type === 'cards'        ? tx("Tarjetas")
+                               : section.section_type === 'faq'        ? tx("Preguntas")
+                               : section.section_type === 'hero'       ? tx("Slides del carrusel")
+                               : section.section_type === 'services'   ? tx("Ítems de servicio")
+                               : section.section_type === 'testimonials' ? tx("Testimonios")
+                               : tx("Ítems")}
                             </p>
                             <div className="space-y-2">
                               {sectionItems.map((item) => {
@@ -1473,7 +1473,7 @@ export default function ContenidoClient({
                                 }}
                                 className="font-brand text-xs text-brand-primary/50 hover:text-brand-primary transition-colors"
                               >
-                                + Agregar {
+                                <T>+ Agregar</T> {
                                   section.section_type === 'cards'        ? 'tarjeta'
                                   : section.section_type === 'faq'        ? 'pregunta'
                                   : section.section_type === 'hero'       ? 'slide'

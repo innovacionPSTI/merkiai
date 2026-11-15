@@ -6,11 +6,13 @@ import { requireCartera, money, PAYMENT_STATUS_LABEL, PAYMENT_STATUS_STYLE, DELI
 import PaymentForm from '../PaymentForm'
 import DocumentActions from './DocumentActions'
 import { T } from '@merkiai/ui'
+import { getAdminTx } from '@/lib/ui-locale'
 
 export const metadata: Metadata = { title: 'Documento · Cartera' }
 export const dynamic = 'force-dynamic'
 
 export default async function DocumentoPage({ params }: { params: Promise<{ id: string }> }) {
+  const tx = await getAdminTx()
   const { db, tenantId } = await requireCartera()
   const { id } = await params
   const detail = await getReceivableDetail(db, Number(id)).catch(() => null)
@@ -28,9 +30,9 @@ export default async function DocumentoPage({ params }: { params: Promise<{ id: 
           <Link href="/cartera" className="font-brand text-xs text-brand-primary/60 hover:underline"><T>← Cartera</T></Link>
           <h1 className="font-display text-2xl text-brand-primary">{doc.number} · {MODALITY_LABEL[doc.modality]}</h1>
           <p className="font-brand text-sm text-brand-primary/70">
-            {party ? <Link href={`/cartera/contrapartes/${party.id}`} className="underline">{party.name ?? party.email}</Link> : '—'} · creado {doc.created_at.slice(0, 10)}
+            {party ? <Link href={`/cartera/contrapartes/${party.id}`} className="underline">{party.name ?? party.email}</Link> : '—'} <T>· creado</T> {doc.created_at.slice(0, 10)}
             {doc.due_date && ` · vence ${doc.due_date}`}
-            {doc.reservation_expires_at && ` · apartado hasta ${doc.reservation_expires_at.slice(0, 10)}`}
+            {doc.reservation_expires_at && ' · ' + tx("apartado hasta {date}", { date: doc.reservation_expires_at.slice(0, 10) })}
           </p>
         </div>
         <div className="flex gap-2">
@@ -87,7 +89,7 @@ export default async function DocumentoPage({ params }: { params: Promise<{ id: 
                 <tr key={i.seq} className="border-t border-gray-50">
                   <td className="py-1.5">{i.seq}</td><td className="py-1.5">{i.due_date}</td>
                   <td className="py-1.5 text-right">{money(i.amount)}</td><td className="py-1.5 text-right">{money(i.paid)}</td><td className="py-1.5 text-right">{money(i.pending)}</td>
-                  <td className="py-1.5">{i.pending === 0 ? <span className="text-green-700"><T>Pagada</T></span> : i.overdue ? <span className="text-red-600"><T>Vencida</T></span> : 'Pendiente'}</td>
+                  <td className="py-1.5">{i.pending === 0 ? <span className="text-green-700"><T>Pagada</T></span> : i.overdue ? <span className="text-red-600"><T>Vencida</T></span> : tx("Pendiente")}</td>
                 </tr>
               ))}
             </tbody>
@@ -119,7 +121,7 @@ export default async function DocumentoPage({ params }: { params: Promise<{ id: 
             </tbody>
           </table>
         )}
-        {doc.notes && <p className="mt-3 font-brand text-xs text-brand-primary/60">Notas: {doc.notes}</p>}
+        {doc.notes && <p className="mt-3 font-brand text-xs text-brand-primary/60"><T>Notas:</T> {doc.notes}</p>}
       </section>
     </div>
   )

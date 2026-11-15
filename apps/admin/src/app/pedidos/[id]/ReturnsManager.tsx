@@ -97,7 +97,7 @@ export default function ReturnsManager({
           <div className="flex gap-2">
             <button type="submit" disabled={busy}
               className="font-brand text-sm bg-brand-primary text-brand-cream rounded-full px-4 py-2 hover:bg-brand-dark transition-colors disabled:opacity-50">
-              {busy ? 'Guardando…' : 'Registrar'}
+              {busy ? tx("Guardando…") : tx("Registrar")}
             </button>
             <button type="button" onClick={() => setShowForm(false)}
               className="font-brand text-sm border border-gray-200 text-brand-primary rounded-full px-4 py-2 hover:bg-gray-50">

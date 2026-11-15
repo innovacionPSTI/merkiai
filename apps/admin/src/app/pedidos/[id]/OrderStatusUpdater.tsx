@@ -3,6 +3,7 @@
 import { useState, useRef } from 'react'
 import { useRouter } from 'next/navigation'
 import { T } from '@merkiai/ui'
+import { useTx } from '@merkiai/ui'
 
 const STATUSES = [
   { value: 'pending',    label: 'Pendiente' },
@@ -19,6 +20,7 @@ interface Props {
 }
 
 export default function OrderStatusUpdater({ orderId, currentStatus }: Props) {
+  const tx = useTx()
   const router = useRouter()
   const [status, setStatus]   = useState(currentStatus)
   const [loading, setLoading] = useState(false)
@@ -66,7 +68,7 @@ export default function OrderStatusUpdater({ orderId, currentStatus }: Props) {
         disabled={loading || status === currentStatus}
         className="bg-brand-primary text-brand-cream rounded-full px-4 py-2 font-brand text-sm hover:bg-brand-dark transition-colors disabled:opacity-40"
       >
-        {loading ? 'Guardando…' : 'Actualizar estado'}
+        {loading ? tx("Guardando…") : tx("Actualizar estado")}
       </button>
       {saved === true  && <span className="font-brand text-xs text-green-600"><T>✓ Actualizado</T></span>}
       {saved === false && <span className="font-brand text-xs text-red-500"><T>Error al guardar</T></span>}

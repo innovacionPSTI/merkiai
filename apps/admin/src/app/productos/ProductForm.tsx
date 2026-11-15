@@ -284,7 +284,7 @@ export default function ProductForm({ product, categories, variantTypes }: Props
       const msg = data.error ?? 'Error al guardar'
       setError(
         msg.toLowerCase().includes('slug') || msg.toLowerCase().includes('duplicate')
-          ? `El slug "${form.slug}" ya está en uso. Cámbialo manualmente.`
+          ? tx("El slug \"{slug}\" ya está en uso. Cámbialo manualmente.", { slug: form.slug })
           : msg
       )
       setSaving(false)
@@ -329,7 +329,7 @@ export default function ProductForm({ product, categories, variantTypes }: Props
             <Icon name="chevron-left" size={14} /> <T>Volver a productos</T>
           </button>
           <h1 className="font-display text-brand-primary text-2xl">
-            {isEdit ? `Editar: ${product.name}` : 'Nuevo producto'}
+            {isEdit ? `Editar: ${product.name}` : tx("Nuevo producto")}
           </h1>
         </div>
         <div className="flex gap-3">
@@ -348,7 +348,7 @@ export default function ProductForm({ product, categories, variantTypes }: Props
             disabled={saving || uploadsInProgress > 0}
             className="font-brand text-sm bg-brand-primary text-brand-cream px-5 py-2 rounded-xl hover:bg-brand-dark transition-colors disabled:opacity-50"
           >
-            {saving ? 'Guardando...' : uploadsInProgress > 0 ? 'Subiendo imagen...' : isEdit ? 'Guardar cambios' : 'Crear producto'}
+            {saving ? 'Guardando...' : uploadsInProgress > 0 ? tx("Subiendo imagen...") : isEdit ? tx("Guardar cambios") : tx("Crear producto")}
           </button>
         </div>
       </div>
@@ -384,7 +384,7 @@ export default function ProductForm({ product, categories, variantTypes }: Props
                 onChange={(e) => { setSlugTouched(true); setForm((f) => ({ ...f, slug: toSlug(e.target.value) })) }}
                 className="w-full border border-gray-200 rounded-xl px-4 py-2.5 font-brand text-sm text-brand-primary/60 focus:outline-none focus:border-brand-primary"
               />
-              <p className="font-brand text-xs text-brand-primary/30 mt-1">URL: /shop/{form.slug}</p>
+              <p className="font-brand text-xs text-brand-primary/30 mt-1"><T>URL: /shop/</T>{form.slug}</p>
             </div>
 
             <div>
@@ -517,7 +517,7 @@ export default function ProductForm({ product, categories, variantTypes }: Props
                     })}
                     onUploadStateChange={handleUploadStateChange}
                     bucket="products"
-                    label={idx === 0 ? 'Imagen principal' : `Imagen ${idx + 1}`}
+                    label={idx === 0 ? tx("Imagen principal") : `Imagen ${idx + 1}`}
                     sizeClass="aspect-square"
                   />
                   {idx > 0 && (
@@ -540,13 +540,13 @@ export default function ProductForm({ product, categories, variantTypes }: Props
             <div className="flex items-center justify-between">
               <div>
                 <h2 className="font-brand font-semibold text-brand-primary">
-                  {selectedTypes.length > 0 ? 'Variantes' : 'Precio e inventario'}
+                  {selectedTypes.length > 0 ? tx("Variantes") : tx("Precio e inventario")}
                   <span className="ml-2 text-xs text-brand-primary/40 font-normal">({visibleVariants.length})</span>
                 </h2>
                 <p className="font-brand text-xs text-brand-primary/40 mt-0.5">
                   {selectedTypes.length > 0
-                    ? 'Define precio, stock e imagen para cada combinación.'
-                    : 'Este producto se vende sin variaciones. Define su precio y stock.'}
+                    ? tx("Define precio, stock e imagen para cada combinación.")
+                    : tx("Este producto se vende sin variaciones. Define su precio y stock.")}
                 </p>
               </div>
               {selectedTypes.length > 0 && (
@@ -710,7 +710,7 @@ export default function ProductForm({ product, categories, variantTypes }: Props
                           onClick={() => setShowDims((v) => !v)}
                           className="font-brand text-[11px] text-brand-primary/50 hover:text-brand-primary transition-colors"
                         >
-                          {showDims ? '− Ocultar' : '+ Mostrar'} dimensiones de envío
+                          {showDims ? '− Ocultar' : tx("+ Mostrar")} <T>dimensiones de envío</T>
                         </button>
                         {showDims && (
                           <div className="mt-2">
@@ -848,7 +848,7 @@ export default function ProductForm({ product, categories, variantTypes }: Props
                 </div>
               ))}
               <p className="font-brand text-[11px] text-brand-primary/40">
-                Total: {selectedTypes.reduce((acc, t) => acc * t.values.length, 1)} combinaciones posibles
+                <T>Total:</T> {selectedTypes.reduce((acc, t) => acc * t.values.length, 1)} <T>combinaciones posibles</T>
               </p>
             </section>
           )}

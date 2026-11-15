@@ -5,6 +5,7 @@ import { useFormStatus } from 'react-dom'
 import { saveTenantInfraSecrets, type InfraActionState } from '../../actions'
 import { input, btn } from '@/lib/styles'
 import { T } from '@merkiai/ui'
+import { useTx } from '@merkiai/ui'
 
 const initialState: InfraActionState = { ok: false }
 
@@ -13,10 +14,11 @@ const field: React.CSSProperties = { marginBottom: 10 }
 const wide: React.CSSProperties = { ...input, width: '100%', marginRight: 0, boxSizing: 'border-box' }
 
 function SubmitButton() {
+  const tx = useTx()
   const { pending } = useFormStatus()
   return (
     <button type="submit" style={{ ...btn, opacity: pending ? 0.6 : 1 }} disabled={pending}>
-      {pending ? 'Cifrando…' : 'Guardar secretos'}
+      {pending ? tx("Cifrando…") : tx("Guardar secretos")}
     </button>
   )
 }
@@ -42,6 +44,7 @@ export default function InfraSecretsForm({
   tenantId: string
   state: { hasAnon: boolean; hasService: boolean; hasJwt: boolean }
 }) {
+  const tx = useTx()
   const [state, formAction] = useActionState(saveTenantInfraSecrets, initialState)
 
   return (
@@ -53,7 +56,7 @@ export default function InfraSecretsForm({
           <T>Anon / publishable key</T> <SetTag set={current.hasAnon} />
         </label>
         <input id={`anon-${tenantId}`} name="anon_key" type="password" style={wide} autoComplete="new-password"
-          placeholder={current.hasAnon ? 'Dejar vacío para no cambiar' : 'sb_publishable_…'} />
+          placeholder={current.hasAnon ? tx("Dejar vacío para no cambiar") : 'sb_publishable_…'} />
       </div>
 
       <div style={field}>
@@ -61,7 +64,7 @@ export default function InfraSecretsForm({
           <T>Service role key</T> <SetTag set={current.hasService} />
         </label>
         <input id={`svc-${tenantId}`} name="service_key" type="password" style={wide} autoComplete="new-password"
-          placeholder={current.hasService ? 'Dejar vacío para no cambiar' : 'eyJ…'} />
+          placeholder={current.hasService ? tx("Dejar vacío para no cambiar") : 'eyJ…'} />
       </div>
 
       <div style={field}>
@@ -69,7 +72,7 @@ export default function InfraSecretsForm({
           <T>JWT secret</T> <SetTag set={current.hasJwt} />
         </label>
         <input id={`jwt-${tenantId}`} name="jwt_secret" type="password" style={wide} autoComplete="new-password"
-          placeholder={current.hasJwt ? 'Dejar vacío para no cambiar' : 'Legacy JWT secret de su BD'} />
+          placeholder={current.hasJwt ? tx("Dejar vacío para no cambiar") : tx("Legacy JWT secret de su BD")} />
       </div>
 
       <SubmitButton />

@@ -4,7 +4,7 @@
  * en el libro para las variantes enlazadas a un `stock_item`. Idempotente.
  * Tenant-scoped + gated por `inventory` + rol de datos.
  */
-import { NextResponse } from 'next/server'
+import { NextResponse } from '@/lib/api-response'
 import { getAdminUser } from '@/lib/auth'
 import { getAdminDb } from '@/lib/admin-db'
 import { backfillOpeningStock, logAudit } from '@merkiai/database'

@@ -104,7 +104,7 @@ export default function ShippingConfigForm({ initialConfig }: Props) {
             <label className="font-brand text-xs font-semibold text-brand-primary block mb-1"><T>Monto mínimo (COP)</T></label>
             <input type="number" min={0} step={1000} value={freeShippingMin} onChange={(e) => setFreeShippingMin(e.target.value)}
               className="w-48 border border-gray-200 rounded-xl px-4 py-2.5 font-brand text-sm focus:outline-none focus:border-brand-primary" />
-            <p className="font-brand text-xs text-brand-primary/40 mt-1">Pedidos de {fmt(Number(freeShippingMin) || 0)} o más tendrán envío gratis.</p>
+            <p className="font-brand text-xs text-brand-primary/40 mt-1"><T>Pedidos de</T> {fmt(Number(freeShippingMin) || 0)} <T>o más tendrán envío gratis.</T></p>
           </div>
         )}
       </div>
@@ -144,7 +144,7 @@ export default function ShippingConfigForm({ initialConfig }: Props) {
 
         {(feeFixedN > 0 || feePercentN > 0) && (
           <p className="font-brand text-xs text-brand-primary/50">
-            Ejemplo: una tarifa de {fmt(exampleBase)} se mostraría como <strong>{fmt(exampleTotal)}</strong>.
+            Ejemplo: una tarifa de {fmt(exampleBase)} <T>se mostraría como</T> <strong>{fmt(exampleTotal)}</strong>.
           </p>
         )}
       </div>
@@ -179,7 +179,7 @@ export default function ShippingConfigForm({ initialConfig }: Props) {
               className="w-full border border-gray-200 rounded-xl px-4 py-2.5 font-brand text-sm focus:outline-none focus:border-brand-primary" />
           </div>
           <SearchableSelect label={tx("Ciudad *")} value={originCity} options={getCitiesForDepartment(originDepartment)}
-            placeholder={originDepartment ? 'Selecciona ciudad' : 'Primero elige departamento'} disabled={!originDepartment} onChange={setOriginCity} />
+            placeholder={originDepartment ? tx("Selecciona ciudad") : tx("Primero elige departamento")} disabled={!originDepartment} onChange={setOriginCity} />
         </div>
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
           <SearchableSelect label={tx("Departamento *")} value={originDepartment} options={DEPARTMENTS}
@@ -201,7 +201,7 @@ export default function ShippingConfigForm({ initialConfig }: Props) {
       <div className="flex items-center gap-4 pt-2">
         <button onClick={handleSave} disabled={status === 'saving'}
           className="bg-brand-primary text-brand-cream rounded-full px-6 py-2.5 font-brand text-sm hover:bg-brand-dark transition-colors disabled:opacity-50 disabled:cursor-not-allowed">
-          {status === 'saving' ? 'Guardando...' : 'Guardar ajustes'}
+          {status === 'saving' ? 'Guardando...' : tx("Guardar ajustes")}
         </button>
         {status === 'saved' && <span className="font-brand text-sm text-green-600"><T>Guardado ✓</T></span>}
         {status === 'error' && <span className="font-brand text-sm text-red-600">{errorMsg}</span>}

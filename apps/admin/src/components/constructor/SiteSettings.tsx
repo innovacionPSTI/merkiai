@@ -34,7 +34,7 @@ export default function SiteSettings({ initial, onClose }: { initial: SiteConfig
     const res = await fetch('/api/admin/config', {
       method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(fields),
     })
-    setMsg(res.ok ? 'Guardado ✓' : 'No se pudo guardar')
+    setMsg(res.ok ? tx("Guardado ✓") : tx("No se pudo guardar"))
   }
   const toggle = (k: keyof SiteConfig) => (e: React.ChangeEvent<HTMLInputElement>) => save({ [k]: e.target.checked } as Partial<SiteConfig>)
 

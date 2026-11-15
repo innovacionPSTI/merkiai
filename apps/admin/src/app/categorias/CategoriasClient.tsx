@@ -101,7 +101,7 @@ export default function CategoriasClient({ categories: initial }: { categories: 
       <div className="space-y-6">
         <PageHeader
           title={tx("Categorías")}
-          description={`${categories.length} categorías · Arrastra para reordenar.`}
+          description={tx("{categoriesCount} categorías · Arrastra para reordenar.", { categoriesCount: categories.length })}
           action={
             <div className="flex items-center gap-3">
               <a href="/api/admin/categories/export" className="border border-brand-primary/20 text-brand-primary rounded-xl px-4 py-2 font-brand text-sm hover:bg-brand-cream transition-colors inline-flex items-center gap-2">
@@ -207,7 +207,7 @@ export default function CategoriasClient({ categories: initial }: { categories: 
                     {/* Estado */}
                     <td className="px-4 py-3">
                       <span className={`font-brand text-xs font-semibold px-2 py-1 rounded-full ${cat.active ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-500'}`}>
-                        {cat.active ? 'Activa' : 'Inactiva'}
+                        {cat.active ? tx("Activa") : tx("Inactiva")}
                       </span>
                     </td>
 

@@ -5,6 +5,7 @@
  * (y `consignment` para consignación) y operan con el cliente RLS del tenant.
  * Devuelven `{ ok, error? }` con mensajes listos para el comerciante.
  */
+import { localizeForPanel } from '@/lib/server-i18n'
 import { revalidatePath } from 'next/cache'
 import {
   createReceivableDocument, registerPayment, deliverLines, reportConsignmentSale, returnConsignment,
@@ -41,7 +42,7 @@ async function run(fn: (ctx: Awaited<ReturnType<typeof requireCartera>>) => Prom
   }
 }
 
-export async function createDocumentAction(input: CreateDocumentInput): Promise<ActionResult> {
+async function createDocumentAction__impl(input: CreateDocumentInput): Promise<ActionResult> {
   return run(async ({ db, tenantId, adminUser, consignmentEnabled }) => {
     if (!isModality(input.modality)) return { ok: false, error: 'Modalidad inválida.' }
     if (input.modality === 'consignment' && !consignmentEnabled) return { ok: false, error: 'La consignación no está habilitada en tu plan.' }
@@ -50,7 +51,7 @@ export async function createDocumentAction(input: CreateDocumentInput): Promise<
   }, ['/cartera'], { action: 'receivable.create', entity: 'receivable_document', metadata: { modality: input.modality, party_id: input.party_id } })
 }
 
-export async function registerPaymentAction(input: { party_id: string; amount: number; method: ReceivablePaymentMethod; reference?: string; note?: string; document_id?: number | null; line_id?: number | null; op_key: string }): Promise<ActionResult> {
+async function registerPaymentAction__impl(input: { party_id: string; amount: number; method: ReceivablePaymentMethod; reference?: string; note?: string; document_id?: number | null; line_id?: number | null; op_key: string }): Promise<ActionResult> {
   return run(async ({ db, tenantId, adminUser }) => {
     if (!(input.amount > 0)) return { ok: false, error: 'El abono debe ser mayor a cero.' }
     const r = await registerPayment(db, tenantId, { ...input, created_by: adminUser.displayName ?? null })
@@ -59,7 +60,7 @@ export async function registerPaymentAction(input: { party_id: string; amount: n
   }, ['/cartera', '/cartera/contrapartes'], { action: 'receivable.payment', entity: 'receivable_document', entityId: input.document_id ?? null, metadata: { party_id: input.party_id, amount: input.amount, method: input.method } })
 }
 
-export async function deliverAction(documentId: number, items: Array<{ line_id: number; qty: number }>, locationId?: number | null): Promise<ActionResult> {
+async function deliverAction__impl(documentId: number, items: Array<{ line_id: number; qty: number }>, locationId?: number | null): Promise<ActionResult> {
   return run(async ({ db, tenantId }) => {
     await deliverLines(db, tenantId, documentId, items, { location_id: locationId ?? null })
     return { ok: true, message: 'Entrega registrada.' }
@@ -67,13 +68,13 @@ export async function deliverAction(documentId: number, items: Array<{ line_id: 
 }
 
 /** Precios sugeridos por ítem (variante enlazada + lista de precios del canal, si se elige). */
-export async function suggestPricesAction(stockItemIds: number[], priceListId: number | null): Promise<Record<number, number>> {
+async function suggestPricesAction__impl(stockItemIds: number[], priceListId: number | null): Promise<Record<number, number>> {
   const { db } = await requireCartera()
   return suggestLinePrices(db, stockItemIds.filter((n) => Number.isFinite(n)), priceListId).catch(() => ({}))
 }
 
 /** Envía el estado de cuenta por correo a la contraparte (proveedor de correo de la tienda). */
-export async function sendStatementAction(partyId: string): Promise<ActionResult> {
+async function sendStatementAction__impl(partyId: string): Promise<ActionResult> {
   return run(async ({ db, tenantId }) => {
     const st = await getStatement(db, partyId)
     if (!st.party?.email) return { ok: false, error: 'Esta contraparte no tiene correo registrado.' }
@@ -95,7 +96,7 @@ export async function sendStatementAction(partyId: string): Promise<ActionResult
 }
 
 /** Enlace público firmado para que el cliente pague el saldo con la pasarela de la tienda (HU-455). */
-export async function paymentLinkAction(documentId: number): Promise<ActionResult> {
+async function paymentLinkAction__impl(documentId: number): Promise<ActionResult> {
   return run(async ({ tenantId }) => {
     const secret = process.env.INTERNAL_API_SECRET
     if (!secret) return { ok: false, error: 'El entorno no tiene configurado el secreto interno.' }
@@ -106,35 +107,35 @@ export async function paymentLinkAction(documentId: number): Promise<ActionResul
   }, [])
 }
 
-export async function productionAction(documentId: number, lineId: number): Promise<ActionResult> {
+async function productionAction__impl(documentId: number, lineId: number): Promise<ActionResult> {
   return run(async ({ db, tenantId }) => {
     const r = await createProductionForLine(db, tenantId, documentId, lineId)
     return { ok: true, id: r.productionOrderId, message: 'Orden de producción creada (la ves en Producción).' }
   }, ['/cartera', '/produccion'])
 }
 
-export async function reportSaleAction(documentId: number, lineId: number, qty: number): Promise<ActionResult> {
+async function reportSaleAction__impl(documentId: number, lineId: number, qty: number): Promise<ActionResult> {
   return run(async ({ db, tenantId }) => {
     await reportConsignmentSale(db, tenantId, documentId, lineId, qty)
     return { ok: true, message: 'Venta del aliado registrada.' }
   })
 }
 
-export async function returnConsignmentAction(documentId: number, lineId: number, qty: number, toLocationId: number): Promise<ActionResult> {
+async function returnConsignmentAction__impl(documentId: number, lineId: number, qty: number, toLocationId: number): Promise<ActionResult> {
   return run(async ({ db, tenantId }) => {
     await returnConsignment(db, tenantId, documentId, lineId, qty, toLocationId)
     return { ok: true, message: 'Devolución registrada y descontada del saldo.' }
   }, ['/cartera'], { action: 'receivable.consignment_return', entity: 'receivable_document', entityId: documentId, metadata: { lineId, qty } })
 }
 
-export async function voidAction(documentId: number, refund: 'store_credit' | 'refund', note: string): Promise<ActionResult> {
+async function voidAction__impl(documentId: number, refund: 'store_credit' | 'refund', note: string): Promise<ActionResult> {
   return run(async ({ db, tenantId, adminUser }) => {
     await voidDocument(db, tenantId, documentId, { refund, note: note || 'Anulado', created_by: adminUser.displayName ?? null })
     return { ok: true, message: 'Documento anulado.' }
   }, ['/cartera'], { action: 'receivable.void', entity: 'receivable_document', entityId: documentId, metadata: { refund, note } })
 }
 
-export async function writeOffAction(documentId: number, note: string): Promise<ActionResult> {
+async function writeOffAction__impl(documentId: number, note: string): Promise<ActionResult> {
   return run(async ({ db, tenantId, adminUser }) => {
     if (!note.trim()) return { ok: false, error: 'Explica por qué se castiga la deuda.' }
     await writeOffDocument(db, tenantId, documentId, note, adminUser.displayName ?? null)
@@ -142,7 +143,7 @@ export async function writeOffAction(documentId: number, note: string): Promise<
   }, ['/cartera'], { action: 'receivable.write_off', entity: 'receivable_document', entityId: documentId, metadata: { note } })
 }
 
-export async function adjustAction(documentId: number, delta: number, note: string): Promise<ActionResult> {
+async function adjustAction__impl(documentId: number, delta: number, note: string): Promise<ActionResult> {
   return run(async ({ db, tenantId, adminUser }) => {
     if (!delta) return { ok: false, error: 'El ajuste no puede ser cero.' }
     await adjustDocument(db, tenantId, documentId, Math.round(delta), note, adminUser.displayName ?? null)
@@ -150,14 +151,14 @@ export async function adjustAction(documentId: number, delta: number, note: stri
   }, ['/cartera'], { action: 'receivable.adjust', entity: 'receivable_document', entityId: documentId, metadata: { delta, note } })
 }
 
-export async function createPartyAction(input: { name: string; email?: string; phone?: string; party_role: 'customer' | 'consignee'; credit_limit?: number | null; default_terms_days?: number | null; document_id?: string; document_type?: string }): Promise<ActionResult> {
+async function createPartyAction__impl(input: { name: string; email?: string; phone?: string; party_role: 'customer' | 'consignee'; credit_limit?: number | null; default_terms_days?: number | null; document_id?: string; document_type?: string }): Promise<ActionResult> {
   return run(async ({ db, tenantId }) => {
     const p = await createParty(db, tenantId, input)
     return { ok: true, id: p.id, message: `${p.name} creado.` }
   }, ['/cartera/contrapartes', '/cartera/nuevo'])
 }
 
-export async function updatePartyAction(id: string, patch: { credit_limit?: number | null; default_terms_days?: number | null; party_role?: 'customer' | 'consignee' }): Promise<ActionResult> {
+async function updatePartyAction__impl(id: string, patch: { credit_limit?: number | null; default_terms_days?: number | null; party_role?: 'customer' | 'consignee' }): Promise<ActionResult> {
   return run(async ({ db }) => {
     await savePartyCredit(db, id, patch)
     return { ok: true, message: 'Condiciones actualizadas.' }
@@ -165,7 +166,7 @@ export async function updatePartyAction(id: string, patch: { credit_limit?: numb
 }
 
 /** Crea la ubicación de consignación del aliado (stock que tiene en su poder). */
-export async function createConsigneeLocationAction(partyId: string, name: string): Promise<ActionResult> {
+async function createConsigneeLocationAction__impl(partyId: string, name: string): Promise<ActionResult> {
   return run(async ({ db, tenantId, consignmentEnabled }) => {
     if (!consignmentEnabled) return { ok: false, error: 'La consignación no está habilitada en tu plan.' }
     const loc = await createLocation(db, { tenant_id: tenantId, code: `CONS-${partyId.slice(0, 8)}`, name: name.trim() || 'Aliado', kind: 'consignment' })
@@ -175,9 +176,59 @@ export async function createConsigneeLocationAction(partyId: string, name: strin
   }, ['/cartera/contrapartes', '/cartera/nuevo'])
 }
 
-export async function saveSettingsAction(s: Partial<ReceivablesSettings>): Promise<ActionResult> {
+async function saveSettingsAction__impl(s: Partial<ReceivablesSettings>): Promise<ActionResult> {
   return run(async ({ db, tenantId }) => {
     await saveReceivablesSettings(db, tenantId, s)
     return { ok: true, message: 'Ajustes guardados.' }
   }, ['/cartera/ajustes'], { action: 'receivable.settings', entity: 'receivables_settings', metadata: s as Record<string, unknown> })
+}
+
+// HU-466 F6 · los mensajes de cada acción vuelven en el idioma del panel.
+export async function createDocumentAction(...args: Parameters<typeof createDocumentAction__impl>): ReturnType<typeof createDocumentAction__impl> {
+  return localizeForPanel(await createDocumentAction__impl(...args))
+}
+export async function registerPaymentAction(...args: Parameters<typeof registerPaymentAction__impl>): ReturnType<typeof registerPaymentAction__impl> {
+  return localizeForPanel(await registerPaymentAction__impl(...args))
+}
+export async function deliverAction(...args: Parameters<typeof deliverAction__impl>): ReturnType<typeof deliverAction__impl> {
+  return localizeForPanel(await deliverAction__impl(...args))
+}
+export async function suggestPricesAction(...args: Parameters<typeof suggestPricesAction__impl>): ReturnType<typeof suggestPricesAction__impl> {
+  return localizeForPanel(await suggestPricesAction__impl(...args))
+}
+export async function sendStatementAction(...args: Parameters<typeof sendStatementAction__impl>): ReturnType<typeof sendStatementAction__impl> {
+  return localizeForPanel(await sendStatementAction__impl(...args))
+}
+export async function paymentLinkAction(...args: Parameters<typeof paymentLinkAction__impl>): ReturnType<typeof paymentLinkAction__impl> {
+  return localizeForPanel(await paymentLinkAction__impl(...args))
+}
+export async function productionAction(...args: Parameters<typeof productionAction__impl>): ReturnType<typeof productionAction__impl> {
+  return localizeForPanel(await productionAction__impl(...args))
+}
+export async function reportSaleAction(...args: Parameters<typeof reportSaleAction__impl>): ReturnType<typeof reportSaleAction__impl> {
+  return localizeForPanel(await reportSaleAction__impl(...args))
+}
+export async function returnConsignmentAction(...args: Parameters<typeof returnConsignmentAction__impl>): ReturnType<typeof returnConsignmentAction__impl> {
+  return localizeForPanel(await returnConsignmentAction__impl(...args))
+}
+export async function voidAction(...args: Parameters<typeof voidAction__impl>): ReturnType<typeof voidAction__impl> {
+  return localizeForPanel(await voidAction__impl(...args))
+}
+export async function writeOffAction(...args: Parameters<typeof writeOffAction__impl>): ReturnType<typeof writeOffAction__impl> {
+  return localizeForPanel(await writeOffAction__impl(...args))
+}
+export async function adjustAction(...args: Parameters<typeof adjustAction__impl>): ReturnType<typeof adjustAction__impl> {
+  return localizeForPanel(await adjustAction__impl(...args))
+}
+export async function createPartyAction(...args: Parameters<typeof createPartyAction__impl>): ReturnType<typeof createPartyAction__impl> {
+  return localizeForPanel(await createPartyAction__impl(...args))
+}
+export async function updatePartyAction(...args: Parameters<typeof updatePartyAction__impl>): ReturnType<typeof updatePartyAction__impl> {
+  return localizeForPanel(await updatePartyAction__impl(...args))
+}
+export async function createConsigneeLocationAction(...args: Parameters<typeof createConsigneeLocationAction__impl>): ReturnType<typeof createConsigneeLocationAction__impl> {
+  return localizeForPanel(await createConsigneeLocationAction__impl(...args))
+}
+export async function saveSettingsAction(...args: Parameters<typeof saveSettingsAction__impl>): ReturnType<typeof saveSettingsAction__impl> {
+  return localizeForPanel(await saveSettingsAction__impl(...args))
 }

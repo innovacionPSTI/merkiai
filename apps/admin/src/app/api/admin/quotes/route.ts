@@ -4,7 +4,8 @@
  * POST → crea una cotización (cabecera + líneas); genera el número.
  * Tenant-scoped + gated por `quotes`.
  */
-import { NextRequest, NextResponse } from 'next/server'
+import { NextRequest } from 'next/server'
+import { NextResponse } from '@/lib/api-response'
 import { getAdminUser } from '@/lib/auth'
 import { getAdminDb } from '@/lib/admin-db'
 import { listQuotes, createQuote, isQuoteStatus } from '@merkiai/database'

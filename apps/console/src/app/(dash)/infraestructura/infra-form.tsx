@@ -32,10 +32,11 @@ const field: React.CSSProperties = { marginBottom: 12 }
 const wide: React.CSSProperties = { ...input, width: '100%', marginRight: 0, boxSizing: 'border-box' }
 
 function SubmitButton({ editing }: { editing: boolean }) {
+  const tx = useTx()
   const { pending } = useFormStatus()
   return (
     <button type="submit" style={{ ...btn, opacity: pending ? 0.6 : 1 }} disabled={pending}>
-      {pending ? 'Guardando…' : editing ? 'Guardar cambios' : 'Agregar tenant'}
+      {pending ? tx("Guardando…") : editing ? tx("Guardar cambios") : tx("Agregar tenant")}
     </button>
   )
 }

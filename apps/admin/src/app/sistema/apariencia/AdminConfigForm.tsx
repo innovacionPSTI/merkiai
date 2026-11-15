@@ -4,6 +4,7 @@ import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import type { AdminConfig } from '@merkiai/database'
 import { T } from '@merkiai/ui'
+import { useTx } from '@merkiai/ui'
 
 interface Props {
   initialConfig: AdminConfig
@@ -29,6 +30,7 @@ const SIDEBAR_PRESETS = [
 ]
 
 export default function AdminConfigForm({ initialConfig }: Props) {
+  const tx = useTx()
   const router = useRouter()
   const [accentColor, setAccentColor]   = useState(initialConfig.accent_color)
   const [sidebarColor, setSidebarColor] = useState(initialConfig.sidebar_color)
@@ -50,7 +52,7 @@ export default function AdminConfigForm({ initialConfig }: Props) {
       setSaved(true)
       router.refresh()
     } catch (e) {
-      setError(e instanceof Error ? e.message : 'Error al guardar')
+      setError(e instanceof Error ? e.message : tx("Error al guardar"))
     } finally {
       setSaving(false)
     }
@@ -163,7 +165,7 @@ export default function AdminConfigForm({ initialConfig }: Props) {
           disabled={saving}
           className="font-brand text-sm font-semibold bg-brand-primary text-white px-5 py-2.5 rounded-xl hover:bg-brand-dark transition-colors disabled:opacity-50"
         >
-          {saving ? 'Guardando…' : 'Guardar cambios'}
+          {saving ? tx("Guardando…") : tx("Guardar cambios")}
         </button>
         {saved && (
           <p className="font-brand text-sm text-emerald-600">

@@ -5,7 +5,8 @@
  * tenant vía RLS (getAdminDb). Gated por el entitlement `colecciones` (HU-359) y
  * el límite `max_colecciones` (fail-open si no hay control-plane).
  */
-import { NextRequest, NextResponse } from 'next/server'
+import { NextRequest } from 'next/server'
+import { NextResponse } from '@/lib/api-response'
 import { getAdminUser } from '@/lib/auth'
 import { getAdminDb } from '@/lib/admin-db'
 import {

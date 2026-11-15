@@ -44,10 +44,10 @@ export default async function InfraestructuraPage() {
 
       <PanelCard title={tx("Dominios propios de las tiendas")}>
         <p style={{ margin: '0 0 12px', fontSize: 13, color: 'var(--ui-muted)' }}>
-          <T>Proveedor activo:</T> <strong>{hosting.provider === 'cloudflare' ? 'Cloudflare for SaaS' : 'Vercel (por proyecto)'}</strong>
+          <T>Proveedor activo:</T> <strong>{hosting.provider === 'cloudflare' ? tx("Cloudflare for SaaS") : tx("Vercel (por proyecto)")}</strong>
           {hosting.provider === 'cloudflare' && (
-            <> · Zona: {hosting.zone ? 'configurada' : <strong style={{ color: '#B42318' }}><T>falta HOSTING_ZONE_ID</T></strong>}
-            {' '}· Destino CNAME para los comerciantes: {hosting.target ? <code>{hosting.target}</code> : <strong style={{ color: '#B42318' }}><T>falta HOSTING_CNAME_TARGET</T></strong>}</>
+            <> <T>· Zona:</T> {hosting.zone ? 'configurada' : <strong style={{ color: '#B42318' }}><T>falta HOSTING_ZONE_ID</T></strong>}
+            {' '}<T>· Destino CNAME para los comerciantes:</T> {hosting.target ? <code>{hosting.target}</code> : <strong style={{ color: '#B42318' }}><T>falta HOSTING_CNAME_TARGET</T></strong>}</>
           )}
         </p>
         <HostingTokenForm configured={Boolean(tokenRef)} />
@@ -67,7 +67,7 @@ export default async function InfraestructuraPage() {
         </p>
       </PanelCard>
 
-      <PanelCard title={`Tenants configurados (${configs.length})`}>
+      <PanelCard title={tx("Tenants configurados ({configsCount})", { configsCount: configs.length })}>
         {configs.length === 0 ? (
           <EmptyState
             icon={<Icon name="tenant" size={28} />}

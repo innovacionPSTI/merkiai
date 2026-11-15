@@ -4,7 +4,8 @@
  * Crea ítems de inventario (`stock_items`). Acotado por tenant vía RLS
  * (getAdminDb). Gated por el entitlement `inventory` (fail-open sin control-plane).
  */
-import { NextRequest, NextResponse } from 'next/server'
+import { NextRequest } from 'next/server'
+import { NextResponse } from '@/lib/api-response'
 import { getAdminUser } from '@/lib/auth'
 import { getAdminDb } from '@/lib/admin-db'
 import { createStockItem, listStockItems } from '@merkiai/database'

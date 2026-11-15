@@ -30,7 +30,7 @@ export default function NewsletterClient({ initialSubscribers }: Props) {
     if (!subject.trim() || !body.trim()) return
 
     const confirmed = window.confirm(
-      `¿Enviar este correo a ${activeCount} suscriptor${activeCount !== 1 ? 'es' : ''} activo${activeCount !== 1 ? 's' : ''}?`,
+      tx('{count, plural, one {¿Enviar este correo a # suscriptor activo?} other {¿Enviar este correo a # suscriptores activos?}}', { count: activeCount }),
     )
     if (!confirmed) return
 
@@ -107,7 +107,7 @@ export default function NewsletterClient({ initialSubscribers }: Props) {
                 : 'text-brand-primary/50 hover:text-brand-primary'
             }`}
           >
-            {t === 'suscriptores' ? 'Suscriptores' : 'Enviar campaña'}
+            {t === 'suscriptores' ? tx("Suscriptores") : tx("Enviar campaña")}
           </button>
         ))}
       </div>
@@ -117,7 +117,7 @@ export default function NewsletterClient({ initialSubscribers }: Props) {
         <div className="bg-white rounded-2xl shadow-sm border border-brand-primary/5 overflow-hidden">
           <div className="flex items-center justify-between px-6 py-4 border-b border-brand-primary/5">
             <p className="font-brand text-sm text-brand-primary/60">
-              {subscribers.length} suscriptor{subscribers.length !== 1 ? 'es' : ''}
+              {subscribers.length} <T>suscriptor</T>{subscribers.length !== 1 ? 'es' : ''}
             </p>
             <button
               onClick={handleExportCSV}
@@ -159,7 +159,7 @@ export default function NewsletterClient({ initialSubscribers }: Props) {
                             ? 'bg-green-100 text-green-700'
                             : 'bg-gray-100 text-gray-500'
                         }`}>
-                          {s.active ? 'Activo' : 'Inactivo'}
+                          {s.active ? tx("Activo") : tx("Inactivo")}
                         </span>
                       </td>
                     </tr>
@@ -177,8 +177,7 @@ export default function NewsletterClient({ initialSubscribers }: Props) {
           <div className="mb-6">
             <h2 className="font-brand font-semibold text-brand-primary mb-1"><T>Nueva campaña</T></h2>
             <p className="font-brand text-sm text-brand-primary/50">
-              <T>Se enviará a</T> <strong>{activeCount}</strong> suscriptor{activeCount !== 1 ? 'es' : ''} activo{activeCount !== 1 ? 's' : ''}.
-              Puedes usar <strong><T>**negrita**</T></strong> y <em><T>*cursiva*</T></em>.
+              {tx('{count, plural, one {Se enviará a # suscriptor activo.} other {Se enviará a # suscriptores activos.}}', { count: activeCount })} <T>Puedes usar</T> <strong><T>**negrita**</T></strong> y <em><T>*cursiva*</T></em>.
             </p>
           </div>
 

@@ -187,6 +187,7 @@ function ThemePreview({ form }: { form: ThemeFormData }) {
 
 /** Verificación de contraste WCAG (HU-247/248) de los pares clave del tema. */
 function ContrastCheck({ form }: { form: ThemeFormData }) {
+  const tx = useTx()
   const pairs: { label: string; fg: string; bg: string }[] = [
     { label: 'Texto sobre fondo', fg: form.color_text, bg: form.color_cream },
     { label: 'Marca sobre fondo', fg: form.color_primary, bg: form.color_cream },
@@ -210,7 +211,7 @@ function ContrastCheck({ form }: { form: ThemeFormData }) {
         <span className="text-xs font-medium text-gray-700"><T>Verificación de contraste</T></span>
         <span className={`text-xs font-semibold px-2 py-0.5 rounded-full inline-flex items-center gap-1 ${failing ? 'bg-red-100 text-red-600' : 'bg-green-100 text-green-700'}`}>
           <Icon name={failing ? 'alert' : 'check'} size={13} />
-          {failing ? `${failing} con problemas` : 'Todo correcto'}
+          {failing ? `${failing} con problemas` : tx("Todo correcto")}
         </span>
       </div>
       <ul className="space-y-2">
@@ -310,7 +311,7 @@ function ThemeCard({
           href={`/api/admin/themes/${theme.id}/export`}
           className="py-1.5 px-2 text-xs font-medium text-gray-600 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors inline-flex items-center"
           title={tx("Exportar plantilla (.json)")}
-          aria-label={`Exportar plantilla ${theme.name}`}
+          aria-label={tx("Exportar plantilla {themeName}", { themeName: theme.name })}
         >
           <Icon name="external" size={14} />
         </a>
@@ -329,7 +330,7 @@ function ThemeCard({
             disabled={isPending}
             className="p-1.5 text-red-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors"
             title={tx("Eliminar tema")}
-            aria-label={`Eliminar tema ${theme.name}`}
+            aria-label={tx("Eliminar tema {themeName}", { themeName: theme.name })}
           >
             <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24" aria-hidden="true">
               <path strokeLinecap="round" strokeLinejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
@@ -380,7 +381,7 @@ function ThemeModal({
         {/* Header */}
         <div className="flex items-center justify-between px-6 py-4 border-b border-gray-100 sticky top-0 bg-white rounded-t-2xl">
           <h2 id={titleId} className="font-semibold text-gray-900">
-            {editing ? 'Editar tema' : 'Nuevo tema'}
+            {editing ? tx("Editar tema") : tx("Nuevo tema")}
           </h2>
           <button onClick={onClose} className="text-gray-400 hover:text-gray-600" aria-label={tx("Cerrar")}>
             <svg className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24" aria-hidden="true">
@@ -558,7 +559,7 @@ function ThemeModal({
             disabled={isSaving || !form.name.trim()}
             className="px-5 py-2 text-sm font-medium text-white bg-brand-primary rounded-lg hover:bg-brand-dark transition-colors disabled:opacity-50"
           >
-            {isSaving ? 'Guardando…' : editing ? 'Guardar cambios' : 'Crear tema'}
+            {isSaving ? tx("Guardando…") : editing ? tx("Guardar cambios") : tx("Crear tema")}
           </button>
         </div>
       </div>
@@ -569,6 +570,7 @@ function ThemeModal({
 // ── Componente principal ──────────────────────────────────────────────────────
 
 export default function TemasClient({ initialThemes }: { initialThemes: Theme[] }) {
+  const tx = useTx()
   const router = useRouter()
   const [isPending, startTransition] = useTransition()
 
@@ -637,7 +639,7 @@ export default function TemasClient({ initialThemes }: { initialThemes: Theme[] 
       closeModal()
       startTransition(() => router.refresh())
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Error desconocido')
+      setError(err instanceof Error ? err.message : tx("Error desconocido"))
     } finally {
       setIsSaving(false)
     }
@@ -673,7 +675,7 @@ export default function TemasClient({ initialThemes }: { initialThemes: Theme[] 
       setThemes((prev) => [...prev, theme])
       startTransition(() => router.refresh())
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Archivo de plantilla inválido')
+      setError(err instanceof Error ? err.message : tx("Archivo de plantilla inválido"))
     }
   }
 
@@ -695,7 +697,7 @@ export default function TemasClient({ initialThemes }: { initialThemes: Theme[] 
       {/* Barra de acción */}
       <div className="flex items-center justify-between mb-6">
         <div className="text-sm text-gray-500">
-          {themes.length} tema{themes.length !== 1 ? 's' : ''} configurado{themes.length !== 1 ? 's' : ''}
+          {tx('{count, plural, one {# tema configurado} other {# temas configurados}}', { count: themes.length })}
         </div>
         <div className="flex items-center gap-2">
           <label className="flex items-center gap-2 border border-gray-200 text-gray-700 rounded-xl px-4 py-2 text-sm font-medium hover:bg-gray-50 transition-colors cursor-pointer">

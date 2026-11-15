@@ -125,7 +125,7 @@ export default function ConstructorClient({
       if (!res.ok) throw new Error((await res.json().catch(() => ({})))?.error ?? 'No se pudo aplicar')
       setBlueprintMsg('Estructura aplicada ✓ Recargando…')
       setTimeout(() => window.location.reload(), 700)
-    } catch (e) { setBlueprintMsg(e instanceof Error ? e.message : 'Error') } finally { setBlueprintBusy(false) }
+    } catch (e) { setBlueprintMsg(e instanceof Error ? e.message : tx("Error")) } finally { setBlueprintBusy(false) }
   }
   const askConfirm = (o: NonNullable<typeof confirmState>) => setConfirmState(o)
   const askPrompt = (o: NonNullable<typeof promptState>) => setPromptState(o)
@@ -204,7 +204,7 @@ export default function ConstructorClient({
     }
     setPageList((ps) => [...ps, { key, label, slug, page_type: type, enabled: false }])
     setExpanded(null); setPageKey(key); setNewPage(null)
-    setTplMsg(seedTypes.length ? 'Página creada con estructura de arranque (borrador) ✓' : 'Página creada en blanco (borrador) ✓')
+    setTplMsg(seedTypes.length ? tx("Página creada con estructura de arranque (borrador) ✓") : tx("Página creada en blanco (borrador) ✓"))
   }
 
   // HU-350/364 · duplicar la página actual (modal de marca; export → import).
@@ -217,7 +217,7 @@ export default function ConstructorClient({
         { key: 'label', label: 'Nombre de la copia', required: true, defaultValue: `${current?.label ?? pageKey} (copia)` },
         { key: 'slug', label: 'Slug (URL)', required: true, help: 'a-z, 0-9 y guiones' },
       ],
-      validate: (v) => pageList.some((p) => p.key === (slugify(v.slug) || slugify(v.label))) ? 'Ya existe una página con esa clave.' : null,
+      validate: (v) => pageList.some((p) => p.key === (slugify(v.slug) || slugify(v.label))) ? tx("Ya existe una página con esa clave.") : null,
       onSubmit: (v) => { setPromptState(null); void doDuplicate(v.label.trim(), v.slug.trim()) },
     })
   }
@@ -250,7 +250,7 @@ export default function ConstructorClient({
     })
     if (!res.ok) { setTplMsg((await res.json().catch(() => ({}))).error || 'No se pudo actualizar el estado'); return }
     setPageList((ps) => ps.map((p) => (p.key === pageKey ? { ...p, enabled } : p)))
-    setTplMsg(enabled ? 'Página publicada ✓' : 'Página pasada a borrador ✓')
+    setTplMsg(enabled ? tx("Página publicada ✓") : tx("Página pasada a borrador ✓"))
     bump()
   }
   // HU-368 · metadatos de página editables en el Constructor (tipo/SEO/footer/slug).
@@ -333,7 +333,7 @@ export default function ConstructorClient({
   function remove(s: SectionRow) {
     askConfirm({
       title: 'Eliminar bloque',
-      message: `¿Eliminar el bloque "${getBlockSchema(s.section_type)?.label ?? s.section_type}"? Esta acción no se puede deshacer.`,
+      message: tx("¿Eliminar el bloque \"{section_type}\"? Esta acción no se puede deshacer.", { section_type: getBlockSchema(s.section_type)?.label ?? s.section_type }),
       danger: true, confirmLabel: 'Eliminar',
       onConfirm: () => { setConfirmState(null); void doRemove(s) },
     })
@@ -368,7 +368,7 @@ export default function ConstructorClient({
         : fetch(api, { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ id: s.id, order_index: i }) }),
       ).filter(Boolean),
     )
-    setTplMsg(`Bloque movido a la posición ${to + 1} de ${next.length} ✓`) // HU-258 · anuncio a11y
+    setTplMsg(tx("Bloque movido a la posición {to} de {nextCount} ✓", { to: to + 1, nextCount: next.length })) // HU-258 · anuncio a11y
     await load(pageKey)
   }
 
@@ -383,7 +383,7 @@ export default function ConstructorClient({
         { key: 'label', label: 'Nombre visible', required: true },
         { key: 'slug', label: 'Slug (URL)', required: true, help: 'a-z, 0-9 y guiones' },
       ],
-      validate: (v) => pageList.some((p) => p.key === slugify(v.slug)) ? 'Ya existe una página con esa clave.' : null,
+      validate: (v) => pageList.some((p) => p.key === slugify(v.slug)) ? tx("Ya existe una página con esa clave.") : null,
       onSubmit: (v) => { setPromptState(null); void doImportPage(pkg, v.label.trim(), v.slug.trim()) },
     })
   }
@@ -478,7 +478,7 @@ export default function ConstructorClient({
     bump()
   }
   const setPageAccent = (accent: string | null) =>
-    setPageStyleProp('accent', accent, accent ? 'Acento de la página actualizado ✓' : 'Acento de la página quitado ✓')
+    setPageStyleProp('accent', accent, accent ? tx("Acento de la página actualizado ✓") : tx("Acento de la página quitado ✓"))
 
   async function changeTemplate(next: string) {
     setTemplate(next); setTplMsg('')
@@ -487,7 +487,7 @@ export default function ConstructorClient({
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ template: next }),
     })
-    setTplMsg(res.ok ? 'Plantilla actualizada ✓' : 'No se pudo actualizar la plantilla')
+    setTplMsg(res.ok ? tx("Plantilla actualizada ✓") : tx("No se pudo actualizar la plantilla"))
   }
 
   // HU-220: aplica el layout del template a la página home — crea los bloques
@@ -495,7 +495,7 @@ export default function ConstructorClient({
   function applyTemplate() {
     askConfirm({
       title: 'Aplicar plantilla',
-      message: `¿Aplicar la plantilla "${activeTpl?.label ?? template}" a esta página? Se crearán los bloques faltantes y se reordenarán según la plantilla. No se borra contenido.`,
+      message: tx("¿Aplicar la plantilla \"{template}\" a esta página? Se crearán los bloques faltantes y se reordenarán según la plantilla. No se borra contenido.", { template: activeTpl?.label ?? template }),
       confirmLabel: 'Aplicar',
       onConfirm: () => { setConfirmState(null); void doApplyTemplate() },
     })
@@ -655,7 +655,7 @@ export default function ConstructorClient({
                             onClick={() => selectPage(p.key)}
                             className={`w-full flex items-center gap-2 px-2 py-2 rounded-lg text-left text-sm ${p.key === pageKey ? 'bg-indigo-50 text-indigo-700' : 'hover:bg-slate-50 text-slate-700'}`}
                           >
-                            <span className={`w-2 h-2 rounded-full flex-shrink-0 ${p.enabled === false ? 'bg-amber-400' : 'bg-green-400'}`} title={p.enabled === false ? 'Borrador' : 'Publicada'} />
+                            <span className={`w-2 h-2 rounded-full flex-shrink-0 ${p.enabled === false ? 'bg-amber-400' : 'bg-green-400'}`} title={p.enabled === false ? tx("Borrador") : tx("Publicada")} />
                             <span className="flex-1 truncate">{p.label}</span>
                             <span className="text-[10px] px-1.5 py-0.5 rounded bg-slate-100 text-slate-500">{PAGE_TYPE_DISPLAY[p.page_type ?? 'custom'] ?? p.page_type}</span>
                           </button>
@@ -676,7 +676,7 @@ export default function ConstructorClient({
                 <span className="flex items-center gap-2">
                   <span className={`inline-flex items-center gap-1 rounded-full px-2 py-1 text-[11px] font-medium ${published ? 'bg-green-100 text-green-700' : 'bg-amber-100 text-amber-700'}`}>
                     <span className={`w-1.5 h-1.5 rounded-full ${published ? 'bg-green-500' : 'bg-amber-500'}`} />
-                    {published ? 'Publicada' : 'Borrador'}
+                    {published ? tx("Publicada") : tx("Borrador")}
                   </span>
                   {published
                     ? <button onClick={unpublishPage} className="rounded-lg border border-slate-300 px-3 py-2 text-sm text-slate-700 hover:bg-slate-50"><T>Pasar a borrador</T></button>
@@ -778,7 +778,7 @@ export default function ConstructorClient({
                           (contenido previo), se muestra "Separar" para no dejarlo atrapado (AC-4). */}
                       {myRow ? (
                         <div className="flex items-center gap-1">
-                          <span className="rounded-full bg-indigo-50 text-indigo-600 text-[10px] font-semibold px-2 py-0.5" title={tx("Este bloque está en una fila de columnas")}>Fila · {rowCells.length} col</span>
+                          <span className="rounded-full bg-indigo-50 text-indigo-600 text-[10px] font-semibold px-2 py-0.5" title={tx("Este bloque está en una fila de columnas")}><T>Fila ·</T> {rowCells.length} <T>col</T></span>
                           {features.layoutAdvanced && isFirstCell && presetOpts.length > 0 && (
                             <select value={rlayout(s) ?? presetOpts[0]} onChange={(e) => setRowLayout(s, e.target.value)} className="rounded-lg border border-slate-300 px-1.5 py-1 text-[11px]" title={tx("Proporciones de la fila")} aria-label={tx("Proporciones de la fila")}>
                               {presetOpts.map((p) => <option key={p} value={p}>{p.replace(/,/g, ' · ')}</option>)}
@@ -795,22 +795,22 @@ export default function ConstructorClient({
                         <button
                           onClick={() => toggleSectionVisibility(s, 'hideMobile')}
                           className={`rounded-lg border px-2 py-1 text-[11px] ${sSettings(s).hideMobile ? 'border-amber-300 bg-amber-50 text-amber-700' : 'border-slate-200 text-slate-500 hover:bg-slate-50'}`}
-                          title={sSettings(s).hideMobile ? 'Oculto en móvil — clic para mostrar' : 'Ocultar en móvil'}
+                          title={sSettings(s).hideMobile ? tx("Oculto en móvil — clic para mostrar") : tx("Ocultar en móvil")}
                           aria-label={tx("Alternar visibilidad en móvil")} aria-pressed={!!sSettings(s).hideMobile}
-                        >Móvil {sSettings(s).hideMobile ? '⃠' : ''}</button>
+                        ><T>Móvil</T> {sSettings(s).hideMobile ? '⃠' : ''}</button>
                         <button
                           onClick={() => toggleSectionVisibility(s, 'hideDesktop')}
                           className={`rounded-lg border px-2 py-1 text-[11px] ${sSettings(s).hideDesktop ? 'border-amber-300 bg-amber-50 text-amber-700' : 'border-slate-200 text-slate-500 hover:bg-slate-50'}`}
-                          title={sSettings(s).hideDesktop ? 'Oculto en escritorio — clic para mostrar' : 'Ocultar en escritorio'}
+                          title={sSettings(s).hideDesktop ? tx("Oculto en escritorio — clic para mostrar") : tx("Ocultar en escritorio")}
                           aria-label={tx("Alternar visibilidad en escritorio")} aria-pressed={!!sSettings(s).hideDesktop}
-                        >Escritorio {sSettings(s).hideDesktop ? '⃠' : ''}</button>
+                        ><T>Escritorio</T> {sSettings(s).hideDesktop ? '⃠' : ''}</button>
                       </div>
                       )}
                       <button onClick={() => toggle(s)} className={`rounded-full px-3 py-1 text-xs font-medium ${s.enabled ? 'bg-green-100 text-green-700' : 'bg-slate-100 text-slate-500'}`}>
-                        {s.enabled ? 'Visible' : 'Oculto'}
+                        {s.enabled ? tx("Visible") : tx("Oculto")}
                       </button>
                       <button onClick={() => setExpanded(open ? null : s.id)} className="rounded-lg border border-slate-300 px-3 py-1 text-xs font-medium text-slate-700 hover:bg-slate-50">
-                        {open ? 'Cerrar' : 'Editar'}
+                        {open ? tx("Cerrar") : tx("Editar")}
                       </button>
                       {/* HU-365 AC-5 · acciones secundarias del bloque en un menú "···" */}
                       {!contentMode && (
@@ -861,7 +861,7 @@ export default function ConstructorClient({
                     className={`px-2.5 py-1 text-xs font-medium ${device === d ? 'bg-slate-800 text-white' : 'text-slate-600 hover:bg-slate-50'}`}
                     aria-pressed={device === d}
                   >
-                    {d === 'desktop' ? 'Escritorio' : d === 'tablet' ? 'Tablet' : 'Móvil'}
+                    {d === 'desktop' ? tx("Escritorio") : d === 'tablet' ? tx("Tablet") : tx("Móvil")}
                   </button>
                 ))}
               </div>
@@ -885,7 +885,7 @@ export default function ConstructorClient({
             </>
           ) : previewErr ? (
             <div className="rounded-xl border border-dashed border-amber-300 bg-amber-50 p-6 text-sm text-amber-800">
-              No se pudo generar la vista previa: {previewErr}
+              <T>No se pudo generar la vista previa:</T> {previewErr}
             </div>
           ) : (
             <p className="rounded-xl border border-dashed border-slate-300 p-6 text-sm text-slate-400"><T>Cargando vista previa…</T></p>
@@ -997,7 +997,7 @@ export default function ConstructorClient({
                   {b.description && <p className="text-xs text-slate-400 mt-0.5">{b.description}</p>}
                   <button onClick={() => applyBlueprint(b.key)} disabled={blueprintBusy}
                     className="mt-2 rounded-lg bg-brand-primary text-brand-cream px-4 py-1.5 text-sm hover:bg-brand-dark disabled:opacity-50">
-                    {blueprintBusy ? 'Aplicando…' : 'Aplicar estructura'}
+                    {blueprintBusy ? tx("Aplicando…") : tx("Aplicar estructura")}
                   </button>
                 </div>
               ))}
@@ -1031,7 +1031,7 @@ export default function ConstructorClient({
                   <div>
                     <button onClick={() => jump(p.key)}
                       className={`w-full flex items-center gap-2 px-3 py-2 rounded-lg text-left text-sm ${active ? 'bg-indigo-50 text-indigo-700' : 'hover:bg-slate-50 text-slate-700'}`}>
-                      <span className={`inline-block w-1.5 h-1.5 rounded-full ${p.enabled === false ? 'bg-amber-400' : 'bg-green-500'}`} title={p.enabled === false ? 'Borrador' : 'Publicada'} />
+                      <span className={`inline-block w-1.5 h-1.5 rounded-full ${p.enabled === false ? 'bg-amber-400' : 'bg-green-500'}`} title={p.enabled === false ? tx("Borrador") : tx("Publicada")} />
                       <span className="flex-1 min-w-0 truncate">{p.label}</span>
                       <span className="text-[10px] text-slate-400 truncate max-w-[40%]">/{p.slug}</span>
                     </button>
@@ -1161,7 +1161,7 @@ export default function ConstructorClient({
                   <input value={newPage.slug} onChange={(e) => setNewPage((n) => n && ({ ...n, slug: e.target.value }))}
                     placeholder={slugify(newPage.label) || 'mi-pagina'}
                     className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm font-mono text-xs" />
-                  <p className="text-[11px] text-slate-400 mt-0.5">Se usará /{slugify(newPage.slug) || slugify(newPage.label) || 'mi-pagina'}. Nace como borrador.</p>
+                  <p className="text-[11px] text-slate-400 mt-0.5"><T>Se usará /</T>{slugify(newPage.slug) || slugify(newPage.label) || 'mi-pagina'}<T>. Nace como borrador.</T></p>
                 </div>
                 {pageList.some((p) => p.key === (slugify(newPage.slug) || slugify(newPage.label))) && newPage.label.trim() && (
                   <p className="text-xs text-red-500"><T>Ya existe una página con esa clave.</T></p>

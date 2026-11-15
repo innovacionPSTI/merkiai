@@ -49,7 +49,7 @@ export default function PriceListsManager({ lists: initialLists, products }: { l
       if (!res.ok) throw new Error((await res.json().catch(() => ({})))?.error ?? 'No se pudo crear')
       setName(''); setKey(''); setScopeType('generic'); setScopeValue(''); setPriority(0)
       await reloadLists()
-    } catch (e) { setError(e instanceof Error ? e.message : 'Error') } finally { setBusy(false) }
+    } catch (e) { setError(e instanceof Error ? e.message : tx("Error")) } finally { setBusy(false) }
   }
 
   async function toggleActive(l: PriceList) {
@@ -89,7 +89,7 @@ export default function PriceListsManager({ lists: initialLists, products }: { l
             <span className="font-brand text-xs font-semibold text-brand-primary block mb-1"><T>Prioridad</T></span>
             <input type="number" value={priority} onChange={(e) => setPriority(Number(e.target.value))} className="w-24 border border-gray-200 rounded-xl px-3 py-2 font-brand text-sm" />
           </label>
-          <button onClick={addList} disabled={busy} className="rounded-full bg-brand-primary text-brand-cream px-5 py-2 font-brand text-sm font-medium hover:bg-brand-dark disabled:opacity-50">{busy ? 'Creando…' : 'Crear lista'}</button>
+          <button onClick={addList} disabled={busy} className="rounded-full bg-brand-primary text-brand-cream px-5 py-2 font-brand text-sm font-medium hover:bg-brand-dark disabled:opacity-50">{busy ? tx("Creando…") : tx("Crear lista")}</button>
         </div>
         {error && <p className="font-brand text-sm text-red-600">{error}</p>}
       </div>
@@ -104,6 +104,7 @@ export default function PriceListsManager({ lists: initialLists, products }: { l
 }
 
 function ListCard({ list, products, onToggle }: { list: PriceList; products: ProductRef[]; onToggle: () => void }) {
+  const tx = useTx()
   const [items, setItems] = useState<Item[] | null>(null)
   const [open, setOpen] = useState(false)
   const [productId, setProductId] = useState<number | ''>('')
@@ -129,7 +130,7 @@ function ListCard({ list, products, onToggle }: { list: PriceList; products: Pro
       })
       if (!res.ok) throw new Error((await res.json().catch(() => ({})))?.error ?? 'No se pudo guardar')
       setProductId(''); setPrice(''); await loadItems()
-    } catch (e) { setErr(e instanceof Error ? e.message : 'Error') } finally { setBusy(false) }
+    } catch (e) { setErr(e instanceof Error ? e.message : tx("Error")) } finally { setBusy(false) }
   }
 
   async function removeItem(id: number) {
@@ -137,18 +138,18 @@ function ListCard({ list, products, onToggle }: { list: PriceList; products: Pro
     if (res.ok) await loadItems()
   }
 
-  const scope = list.scope_type === 'generic' ? 'Genérica' : `${SCOPE_LABEL[list.scope_type]}: ${list.scope_value ?? '—'}`
+  const scope = list.scope_type === 'generic' ? tx("Genérica") : `${SCOPE_LABEL[list.scope_type]}: ${list.scope_value ?? '—'}`
 
   return (
     <div className="bg-white rounded-2xl p-5 shadow-sm space-y-3">
       <div className="flex items-center justify-between">
         <div>
           <h3 className="font-display text-brand-primary text-lg">{list.name} {!list.active && <span className="font-brand text-xs text-red-500">(inactiva)</span>}</h3>
-          <p className="font-brand text-xs text-brand-primary/50">{scope} · prioridad {list.priority} · clave <code>{list.key}</code></p>
+          <p className="font-brand text-xs text-brand-primary/50">{scope} <T>· prioridad</T> {list.priority} <T>· clave</T> <code>{list.key}</code></p>
         </div>
         <div className="flex items-center gap-3">
-          <button onClick={onToggle} className="font-brand text-sm text-brand-primary/60 underline">{list.active ? 'Desactivar' : 'Activar'}</button>
-          <button onClick={expand} className="font-brand text-sm text-brand-primary underline">{open ? 'Ocultar precios' : 'Editar precios'}</button>
+          <button onClick={onToggle} className="font-brand text-sm text-brand-primary/60 underline">{list.active ? tx("Desactivar") : tx("Activar")}</button>
+          <button onClick={expand} className="font-brand text-sm text-brand-primary underline">{open ? tx("Ocultar precios") : tx("Editar precios")}</button>
         </div>
       </div>
 
@@ -183,7 +184,7 @@ function ListCard({ list, products, onToggle }: { list: PriceList; products: Pro
               <span className="font-brand text-xs font-semibold text-brand-primary block mb-1"><T>Precio</T></span>
               <input type="number" value={price} onChange={(e) => setPrice(e.target.value === '' ? '' : Number(e.target.value))} className="w-32 border border-gray-200 rounded-xl px-3 py-2 font-brand text-sm" />
             </label>
-            <button onClick={setItem} disabled={busy} className="rounded-full border border-brand-primary text-brand-primary px-4 py-2 font-brand text-sm hover:bg-brand-primary hover:text-brand-cream disabled:opacity-50">{busy ? '…' : 'Guardar precio'}</button>
+            <button onClick={setItem} disabled={busy} className="rounded-full border border-brand-primary text-brand-primary px-4 py-2 font-brand text-sm hover:bg-brand-primary hover:text-brand-cream disabled:opacity-50">{busy ? '…' : tx("Guardar precio")}</button>
           </div>
           {err && <p className="font-brand text-sm text-red-600">{err}</p>}
         </div>

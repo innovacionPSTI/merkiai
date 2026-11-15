@@ -70,7 +70,7 @@ export default function QuotesManager({ quotes: initial, products }: { quotes: Q
       if (!res.ok) throw new Error((await res.json().catch(() => ({})))?.error ?? 'No se pudo crear')
       setCustomer(''); setValidUntil(''); setDiscount(0); setLines([{ name: '', qty: 1, unit_price: 0 }]); setOpen(false)
       await reload()
-    } catch (e) { setError(e instanceof Error ? e.message : 'Error') } finally { setBusy(false) }
+    } catch (e) { setError(e instanceof Error ? e.message : tx("Error")) } finally { setBusy(false) }
   }
 
   async function changeStatus(id: number, status: string) {
@@ -84,14 +84,14 @@ export default function QuotesManager({ quotes: initial, products }: { quotes: Q
     setConfirmId(null); setNotice(null)
     const res = await fetch(`/api/admin/quotes/${id}/convert`, { method: 'POST' })
     const b = await res.json().catch(() => ({}))
-    if (res.ok) { setNotice({ kind: 'ok', text: `Orden creada: ${b.order_number}` }); await reload(); router.refresh() }
+    if (res.ok) { setNotice({ kind: 'ok', text: tx("Orden creada: {order_number}", { order_number: b.order_number }) }); await reload(); router.refresh() }
     else setNotice({ kind: 'err', text: b?.error ?? 'No se pudo convertir' })
   }
 
   return (
     <div className="space-y-6">
       <div className="flex justify-between items-center gap-3">
-        <button onClick={() => setOpen((o) => !o)} className="rounded-full bg-brand-primary text-brand-cream px-5 py-2 font-brand text-sm font-medium hover:bg-brand-dark">{open ? 'Cerrar' : 'Nueva cotización'}</button>
+        <button onClick={() => setOpen((o) => !o)} className="rounded-full bg-brand-primary text-brand-cream px-5 py-2 font-brand text-sm font-medium hover:bg-brand-dark">{open ? tx("Cerrar") : tx("Nueva cotización")}</button>
         {notice && <span className={`font-brand text-sm ${notice.kind === 'ok' ? 'text-green-700' : 'text-red-600'}`}>{notice.text}</span>}
       </div>
 
@@ -141,8 +141,8 @@ export default function QuotesManager({ quotes: initial, products }: { quotes: Q
               <span className="font-brand text-xs font-semibold text-brand-primary block mb-1"><T>Descuento</T></span>
               <input type="number" min={0} value={discount} onChange={(e) => setDiscount(Number(e.target.value))} className="w-28 border border-gray-200 rounded-xl px-3 py-2 font-brand text-sm" />
             </label>
-            <div className="font-brand text-sm text-brand-primary/70">Subtotal {money(subtotal)} · <strong className="text-brand-primary">Total {money(total)}</strong></div>
-            <button onClick={create} disabled={busy} className="rounded-full bg-brand-primary text-brand-cream px-5 py-2 font-brand text-sm font-medium hover:bg-brand-dark disabled:opacity-50">{busy ? 'Creando…' : 'Crear cotización'}</button>
+            <div className="font-brand text-sm text-brand-primary/70"><T>Subtotal</T> {money(subtotal)} · <strong className="text-brand-primary"><T>Total</T> {money(total)}</strong></div>
+            <button onClick={create} disabled={busy} className="rounded-full bg-brand-primary text-brand-cream px-5 py-2 font-brand text-sm font-medium hover:bg-brand-dark disabled:opacity-50">{busy ? tx("Creando…") : tx("Crear cotización")}</button>
           </div>
           {error && <p className="font-brand text-sm text-red-600">{error}</p>}
         </div>

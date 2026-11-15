@@ -84,7 +84,7 @@ export default function CsvImportModal({ endpoint, entityLabel, idLabel = 'slug'
         <div className="fixed inset-0 bg-black/30 backdrop-blur-sm flex items-center justify-center z-50 p-4" onClick={close}>
           <div className="bg-white rounded-2xl shadow-xl w-full max-w-lg max-h-[85vh] overflow-y-auto" onClick={(e) => e.stopPropagation()}>
             <div className="flex items-center justify-between px-6 py-4 border-b border-gray-100">
-              <h2 className="font-display text-brand-primary text-lg">Importar {entityLabel}</h2>
+              <h2 className="font-display text-brand-primary text-lg"><T>Importar</T> {entityLabel}</h2>
               <button onClick={close} className="text-brand-primary/40 hover:text-brand-primary" aria-label={tx("Cerrar")}><Icon name="close" size={18} /></button>
             </div>
 
@@ -99,7 +99,7 @@ export default function CsvImportModal({ endpoint, entityLabel, idLabel = 'slug'
                   <button onClick={() => fileRef.current?.click()}
                     className="w-full border-2 border-dashed border-gray-200 rounded-xl py-6 font-brand text-sm text-brand-primary/50 hover:border-brand-primary/40 hover:bg-gray-50 transition-colors flex flex-col items-center gap-2">
                     <Icon name="catalog" size={24} className="text-brand-primary/40" />
-                    {fileName ? <span className="text-brand-primary">{fileName}</span> : 'Selecciona un archivo CSV'}
+                    {fileName ? <span className="text-brand-primary">{fileName}</span> : tx("Selecciona un archivo CSV")}
                   </button>
 
                   <label className="flex items-start gap-2.5 cursor-pointer">
@@ -151,11 +151,11 @@ export default function CsvImportModal({ endpoint, entityLabel, idLabel = 'slug'
             </div>
 
             <div className="flex gap-3 px-6 py-4 border-t border-gray-100">
-              <button onClick={close} className="flex-1 font-brand text-sm border border-gray-200 text-brand-primary px-4 py-2.5 rounded-xl hover:bg-gray-50 transition-colors">{result ? 'Cerrar' : 'Cancelar'}</button>
+              <button onClick={close} className="flex-1 font-brand text-sm border border-gray-200 text-brand-primary px-4 py-2.5 rounded-xl hover:bg-gray-50 transition-colors">{result ? tx("Cerrar") : tx("Cancelar")}</button>
               {!result && (
                 <button onClick={confirm} disabled={busy || !preview || total === 0}
                   className="flex-1 font-brand text-sm bg-brand-primary text-brand-cream px-4 py-2.5 rounded-xl hover:bg-brand-dark transition-colors disabled:opacity-50">
-                  {busy ? 'Importando…' : preview ? `Importar ${total}` : 'Importar'}
+                  {busy ? tx("Importando…") : preview ? `Importar ${total}` : tx("Importar")}
                 </button>
               )}
             </div>

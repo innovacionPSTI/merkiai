@@ -5,6 +5,7 @@ import { Icon } from '@merkiai/ui'
 import { applyPresetAction, setOnboardingDoneAction, type OnboardingActionState } from './actions'
 import type { OnboardingOptions, OnboardingProgress } from '@/lib/onboarding'
 import { T } from '@merkiai/ui'
+import { useTx } from '@merkiai/ui'
 
 const initial: OnboardingActionState = { ok: false }
 
@@ -17,6 +18,7 @@ const initial: OnboardingActionState = { ok: false }
  * comerciante retome donde lo dejó.
  */
 export default function OnboardingWizard({ options, progress }: { options: OnboardingOptions; progress: OnboardingProgress }) {
+  const tx = useTx()
   const [state, action, pending] = useActionState(applyPresetAction, initial)
   const presetApplied = progress.state.presetApplied
   // Pre-selecciona el preset ya aplicado si existe (reanudar), si no el primero.
@@ -33,7 +35,7 @@ export default function OnboardingWizard({ options, progress }: { options: Onboa
     return (
       <div className="bg-white rounded-2xl p-6 shadow-sm">
         <p className="font-brand text-sm text-brand-primary/60">
-          No hay presets disponibles para tu plan ({options.plan}). Configura tu tienda desde las
+          <T>No hay presets disponibles para tu plan (</T>{options.plan}). Configura tu tienda desde las
           secciones del panel, o pide a tu administrador que publique presets para este plan.
         </p>
       </div>
@@ -67,7 +69,7 @@ export default function OnboardingWizard({ options, progress }: { options: Onboa
         {progress.finished ? (
           <div className="mt-4 flex items-center justify-between gap-3 rounded-xl bg-green-50 border border-green-200 px-4 py-3">
             <span className="font-brand text-sm text-green-800 inline-flex items-center gap-2">
-              <Icon name="check" size={16} /> {progress.state.completedAt ? 'Onboarding completado.' : 'Onboarding omitido.'} Puedes seguir ajustando tu tienda desde el panel.
+              <Icon name="check" size={16} /> {progress.state.completedAt ? tx("Onboarding completado.") : tx("Onboarding omitido.")} <T>Puedes seguir ajustando tu tienda desde el panel.</T>
             </span>
             <form action={setOnboardingDoneAction}>
               <input type="hidden" name="intent" value="reopen" />
@@ -137,7 +139,7 @@ export default function OnboardingWizard({ options, progress }: { options: Onboa
                 >
                   <input type="radio" name="inventory_model" value={m} checked={inventory === m}
                     onChange={() => setInventory(m)} className="sr-only" />
-                  <span className="font-display text-brand-primary">{m === 'single' ? 'Stock único' : 'Multi-ubicación'}</span>
+                  <span className="font-display text-brand-primary">{m === 'single' ? tx("Stock único") : tx("Multi-ubicación")}</span>
                 </label>
               ))}
             </div>
@@ -154,14 +156,13 @@ export default function OnboardingWizard({ options, progress }: { options: Onboa
       <section className="bg-white rounded-2xl p-6 shadow-sm">
         <h2 className="font-display text-brand-primary text-xl mb-1"><T>3 · Aplicar</T></h2>
         <p className="font-brand text-sm text-brand-primary/50 mb-4">
-          Se aplicará la apariencia del preset y se crearán {catCount} categoría(s) y {prodCount} producto(s) de
-          ejemplo{catCap != null || prodCap != null ? ' (ajustado a los topes de tu plan)' : ''}. No se duplica lo
+          <T>Se aplicará la apariencia del preset y se crearán</T> {catCount} <T>categoría(s) y</T> {prodCount} <T>producto(s) de ejemplo</T>{catCap != null || prodCap != null ? ' (ajustado a los topes de tu plan)' : ''}. No se duplica lo
           que ya tengas.
         </p>
         {presetApplied && (
           <p className="mb-3 font-brand text-sm text-brand-primary/60 inline-flex items-center gap-2">
             <Icon name="check" size={15} className="text-green-600" />
-            Ya aplicaste «{presetApplied}». Puedes reaplicar el mismo u otro preset; no se duplica lo que ya tengas.
+            <T>Ya aplicaste «</T>{presetApplied}». Puedes reaplicar el mismo u otro preset; no se duplica lo que ya tengas.
           </p>
         )}
         <button
@@ -169,7 +170,7 @@ export default function OnboardingWizard({ options, progress }: { options: Onboa
           disabled={pending || !selected}
           className="rounded-xl bg-brand-primary text-white px-5 py-2.5 font-brand text-sm disabled:opacity-50"
         >
-          {pending ? 'Aplicando…' : presetApplied ? 'Reaplicar preset' : 'Aplicar preset a mi tienda'}
+          {pending ? tx("Aplicando…") : presetApplied ? tx("Reaplicar preset") : tx("Aplicar preset a mi tienda")}
         </button>
         {state.error && <p className="mt-3 font-brand text-sm text-red-600">{state.error}</p>}
         {state.ok && state.message && <p className="mt-3 font-brand text-sm text-green-600">{state.message}</p>}

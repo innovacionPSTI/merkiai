@@ -39,7 +39,7 @@ export default async function SuscripcionesPage() {
           </PanelCard>
         ))}
       </div>
-      <PanelCard title={`Tenants con suscripción (${rows.length})`}>
+      <PanelCard title={tx("Tenants con suscripción ({rowsCount})", { rowsCount: rows.length })}>
         {rows.length === 0 ? (
           <EmptyState
             icon={<Icon name="tenant" size={28} />}
@@ -63,7 +63,7 @@ export default async function SuscripcionesPage() {
                     <td style={td}>{formatMoney(r.amountCents, r.currency)} / {r.interval === 'yearly' ? 'año' : 'mes'}</td>
                     <td style={td}><StatusBadge tone={STATUS[r.status].tone}>{STATUS[r.status].label}</StatusBadge></td>
                     <td style={td}>{fmtDate(r.currentPeriodEnd)}</td>
-                    <td style={td}>{r.autoRenew ? 'Sí' : r.hasPaymentMethod ? 'Tarjeta guardada, sin programar' : 'No'}</td>
+                    <td style={td}>{r.autoRenew ? tx("Sí") : r.hasPaymentMethod ? tx("Tarjeta guardada, sin programar") : tx("No")}</td>
                     <td style={td}>{r.failedAttempts || '—'}</td>
                   </tr>
                 ))}

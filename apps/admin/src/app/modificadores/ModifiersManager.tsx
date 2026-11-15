@@ -47,7 +47,7 @@ export default function ModifiersManager({ products, items, uoms }: {
       const res = await fetch(`/api/admin/inventory/modifiers?product_id=${id}`)
       if (!res.ok) throw new Error((await res.json().catch(() => ({})))?.error ?? 'No se pudo cargar')
       setGroups((await res.json()).groups ?? [])
-    } catch (e) { setError(e instanceof Error ? e.message : 'Error') } finally { setLoading(false) }
+    } catch (e) { setError(e instanceof Error ? e.message : tx("Error")) } finally { setLoading(false) }
   }
 
   function onSelectProduct(v: string) {
@@ -68,7 +68,7 @@ export default function ModifiersManager({ products, items, uoms }: {
       if (!res.ok) throw new Error((await res.json().catch(() => ({})))?.error ?? 'No se pudo crear')
       setGName(''); setGMin(0); setGMax(0); setGReq(false)
       await loadGroups(productId)
-    } catch (e) { setError(e instanceof Error ? e.message : 'Error') } finally { setGBusy(false) }
+    } catch (e) { setError(e instanceof Error ? e.message : tx("Error")) } finally { setGBusy(false) }
   }
 
   return (
@@ -105,7 +105,7 @@ export default function ModifiersManager({ products, items, uoms }: {
               <label className="flex items-center gap-2 font-brand text-sm text-brand-primary">
                 <input type="checkbox" checked={gReq} onChange={(e) => setGReq(e.target.checked)} /> <T>Obligatorio</T>
               </label>
-              <button onClick={addGroup} disabled={gBusy} className="rounded-full bg-brand-primary text-brand-cream px-5 py-2 font-brand text-sm font-medium hover:bg-brand-dark disabled:opacity-50">{gBusy ? 'Agregando…' : 'Agregar grupo'}</button>
+              <button onClick={addGroup} disabled={gBusy} className="rounded-full bg-brand-primary text-brand-cream px-5 py-2 font-brand text-sm font-medium hover:bg-brand-dark disabled:opacity-50">{gBusy ? tx("Agregando…") : tx("Agregar grupo")}</button>
             </div>
           </div>
 
@@ -125,6 +125,7 @@ function GroupCard({ group, items, uoms, itemName, uomCode, onChanged }: {
   group: Group; items: ItemRef[]; uoms: UomRef[]
   itemName: Map<number, string>; uomCode: Map<number, string>; onChanged: () => void
 }) {
+  const tx = useTx()
   const [name, setName] = useState('')
   const [price, setPrice] = useState(0)
   const [consume, setConsume] = useState<number | ''>('')
@@ -149,17 +150,17 @@ function GroupCard({ group, items, uoms, itemName, uomCode, onChanged }: {
       if (!res.ok) throw new Error((await res.json().catch(() => ({})))?.error ?? 'No se pudo crear')
       setName(''); setPrice(0); setConsume(''); setQty(''); setUomId('')
       onChanged()
-    } catch (e) { setErr(e instanceof Error ? e.message : 'Error') } finally { setBusy(false) }
+    } catch (e) { setErr(e instanceof Error ? e.message : tx("Error")) } finally { setBusy(false) }
   }
 
-  const rule = group.required ? 'Obligatorio' : 'Opcional'
+  const rule = group.required ? tx("Obligatorio") : tx("Opcional")
   const range = `${group.min_select}–${group.max_select === 0 ? '∞' : group.max_select}`
 
   return (
     <div className="bg-white rounded-2xl p-5 shadow-sm space-y-3">
       <div className="flex items-baseline justify-between">
         <h3 className="font-display text-brand-primary text-lg">{group.name}</h3>
-        <span className="font-brand text-xs text-brand-primary/50">{rule} · selecciona {range}</span>
+        <span className="font-brand text-xs text-brand-primary/50">{rule} <T>· selecciona</T> {range}</span>
       </div>
 
       <table className="w-full text-sm font-brand">
@@ -213,7 +214,7 @@ function GroupCard({ group, items, uoms, itemName, uomCode, onChanged }: {
             {uoms.map((u) => <option key={u.id} value={u.id}>{u.code}</option>)}
           </select>
         </label>
-        <button onClick={addOption} disabled={busy} className="rounded-full border border-brand-primary text-brand-primary px-4 py-2 font-brand text-sm hover:bg-brand-primary hover:text-brand-cream disabled:opacity-50">{busy ? '…' : 'Agregar opción'}</button>
+        <button onClick={addOption} disabled={busy} className="rounded-full border border-brand-primary text-brand-primary px-4 py-2 font-brand text-sm hover:bg-brand-primary hover:text-brand-cream disabled:opacity-50">{busy ? '…' : tx("Agregar opción")}</button>
       </div>
       {err && <p className="font-brand text-sm text-red-600">{err}</p>}
     </div>

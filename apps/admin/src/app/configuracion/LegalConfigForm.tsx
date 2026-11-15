@@ -104,7 +104,7 @@ export default function LegalConfigForm({ initialTerms, initialPrivacy }: Props)
 
       {/* Contador */}
       <p className="font-brand text-xs text-brand-primary/30 text-right">
-        {formatNumber(currentValue.length)} caracteres
+        {formatNumber(currentValue.length)} <T>caracteres</T>
       </p>
 
       {/* Acciones */}
@@ -115,7 +115,7 @@ export default function LegalConfigForm({ initialTerms, initialPrivacy }: Props)
           className="bg-brand-primary text-brand-cream rounded-full px-6 py-2.5 font-brand text-sm
                      hover:bg-brand-dark transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
         >
-          {status === 'saving' ? 'Guardando...' : 'Guardar contenido legal'}
+          {status === 'saving' ? 'Guardando...' : tx("Guardar contenido legal")}
         </button>
 
         {status === 'saved' && (

@@ -76,6 +76,7 @@ function PayzenForm({ session }: { session: CheckoutSession }) {
 }
 
 export default function PayzenCheckout({ cta, defaultInterval }: { cta: string; defaultInterval: 'monthly' | 'yearly' }) {
+  const tx = useTx()
   const [interval, setInterval] = useState<'monthly' | 'yearly'>(defaultInterval)
   const [session, setSession] = useState<CheckoutSession | null>(null)
   const [error, setError] = useState<string | null>(null)
@@ -105,7 +106,7 @@ export default function PayzenCheckout({ cta, defaultInterval }: { cta: string; 
         })}
         className="font-brand text-sm bg-brand-primary text-white rounded-full px-5 py-2.5 hover:bg-brand-dark disabled:opacity-60"
       >
-        {pending ? 'Preparando pago…' : cta}
+        {pending ? tx("Preparando pago…") : cta}
       </button>
       {error && <p role="alert" className="font-brand text-sm text-red-600">{error}</p>}
     </div>

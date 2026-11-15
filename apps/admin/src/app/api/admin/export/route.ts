@@ -18,7 +18,7 @@
  * Solo accesible por super_admin y admin.
  */
 import { getAdminDb } from '@/lib/admin-db'
-import { NextResponse } from 'next/server'
+import { NextResponse } from '@/lib/api-response'
 import { getAdminUser } from '@/lib/auth'
 
 async function requireAdmin() {

@@ -9,7 +9,8 @@
  * Auth: `withInternalAuth`. service-role legítimo (control plane; toca todas las
  * tablas del tenant, sin sesión de dueño).
  */
-import { NextRequest, NextResponse } from 'next/server'
+import { NextRequest } from 'next/server'
+import { NextResponse } from '@/lib/api-response'
 import { createServerClient, purgeTenantData } from '@merkiai/database'
 import { withInternalAuth } from '@/lib/internal-route'
 

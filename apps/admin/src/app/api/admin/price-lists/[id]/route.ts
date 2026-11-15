@@ -3,7 +3,8 @@
  * Edita una lista de precio (nombre, ámbito, prioridad, activa).
  * Tenant-scoped + gated por `price_lists`.
  */
-import { NextRequest, NextResponse } from 'next/server'
+import { NextRequest } from 'next/server'
+import { NextResponse } from '@/lib/api-response'
 import { getAdminUser } from '@/lib/auth'
 import { getAdminDb } from '@/lib/admin-db'
 import { updatePriceList, isPriceScopeType } from '@merkiai/database'

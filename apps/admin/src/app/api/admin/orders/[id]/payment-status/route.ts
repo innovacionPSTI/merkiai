@@ -10,7 +10,8 @@
 import { applyStockForOrder, restoreStockForOrder, resolveEmailConfig, logAudit, recordEmail, sendTemplatedEmail } from '@merkiai/database'
 import { getAdminDb } from '@/lib/admin-db'
 import type { Database } from '@merkiai/database'
-import { NextRequest, NextResponse } from 'next/server'
+import { NextRequest } from 'next/server'
+import { NextResponse } from '@/lib/api-response'
 import { getAdminUser } from '@/lib/auth'
 
 type OrderUpdate = Database['public']['Tables']['orders']['Update']

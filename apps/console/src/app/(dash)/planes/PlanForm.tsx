@@ -118,7 +118,7 @@ export default function PlanForm({ plans }: { plans: PlanRow[] }) {
           </div>
         </fieldset>
 
-        <button type="submit" style={btn}>{selectedKey ? 'Guardar cambios' : 'Crear plan'}</button>
+        <button type="submit" style={btn}>{selectedKey ? tx("Guardar cambios") : tx("Crear plan")}</button>
       </form>
 
       <p style={{ fontSize: 12, color: 'var(--ui-muted)', marginTop: 8 }}>

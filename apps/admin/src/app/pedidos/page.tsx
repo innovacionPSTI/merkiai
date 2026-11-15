@@ -98,7 +98,7 @@ export default async function PedidosAdminPage({
           href={filterHref({ status: undefined, page: undefined })}
           className={`font-brand text-sm rounded-full px-4 py-1.5 border transition-colors ${!status ? 'bg-brand-primary text-brand-cream border-brand-primary' : 'border-gray-200 text-brand-primary/60 hover:border-brand-primary'}`}
         >
-          Todos {!status && count !== null && <span className="ml-1 opacity-60">({count})</span>}
+          <T>Todos</T> {!status && count !== null && <span className="ml-1 opacity-60">({count})</span>}
         </Link>
         {Object.entries(STATUS_LABELS).map(([key, { label }]) => (
           <Link
@@ -127,7 +127,7 @@ export default async function PedidosAdminPage({
             {!orders?.length ? (
               <tr>
                 <td colSpan={7} className="font-brand text-brand-primary/40 text-center py-12">
-                  {q ? `Sin resultados para "${q}"` : 'No hay pedidos'}
+                  {q ? `Sin resultados para "${q}"` : tx("No hay pedidos")}
                 </td>
               </tr>
             ) : (

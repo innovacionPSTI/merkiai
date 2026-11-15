@@ -354,7 +354,7 @@ export default function NavClient({ initialItems }: Props) {
 
           <div>
             <label className="font-brand text-xs text-brand-primary/50 block mb-1">
-              Ítem padre{' '}
+              <T>Ítem padre</T>{' '}
               <span className="text-brand-primary/30">(dejar vacío para ítem de primer nivel)</span>
             </label>
             <select
@@ -378,7 +378,7 @@ export default function NavClient({ initialItems }: Props) {
               disabled={adding || !newLabel.trim()}
               className="bg-brand-primary text-brand-cream rounded-full px-5 py-2 font-brand text-sm hover:bg-brand-dark transition-colors disabled:opacity-40"
             >
-              {adding ? 'Agregando…' : 'Agregar'}
+              {adding ? tx("Agregando…") : tx("Agregar")}
             </button>
             <button
               type="button"
@@ -401,7 +401,7 @@ export default function NavClient({ initialItems }: Props) {
 
       <div className="border-t border-gray-100 pt-4">
         <p className="font-brand text-xs text-brand-primary/40">
-          <T>Los toggles de</T> <strong><T>Carrito</T></strong> y <strong><T>Acceso</T></strong> se configuran en{' '}
+          <T>Los toggles de</T> <strong><T>Carrito</T></strong> y <strong><T>Acceso</T></strong> <T>se configuran en</T>{' '}
           <a href="/configuracion/general" className="underline hover:text-brand-primary transition-colors">
             <T>Configuración → General</T>
           </a>

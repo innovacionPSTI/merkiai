@@ -1,5 +1,5 @@
 import { productsToCsv, logAudit, type ExportProduct } from '@merkiai/database'
-import { NextResponse } from 'next/server'
+import { NextResponse } from '@/lib/api-response'
 import { getAdminUser } from '@/lib/auth'
 import { getAdminDb } from '@/lib/admin-db'
 import { userCanManageData } from '@/lib/roles'

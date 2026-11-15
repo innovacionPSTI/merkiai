@@ -3,7 +3,8 @@
  * GET ?type=valuation|movements[&days=30] → CSV del tablero de operaciones.
  * Tenant-scoped + gated por `inventory`.
  */
-import { NextRequest, NextResponse } from 'next/server'
+import { NextRequest } from 'next/server'
+import { NextResponse } from '@/lib/api-response'
 import { getAdminUser } from '@/lib/auth'
 import { getAdminDb } from '@/lib/admin-db'
 import { inventoryValuationRows, inventoryValuationToCsv, movementsSummarySince, movementsSummaryToCsv, listMovements, listUoms, kardexToCsv, listPurchases, listSuppliers, purchasesToCsv, listProductionOrders, listStockItems, productionOrdersToCsv } from '@merkiai/database'

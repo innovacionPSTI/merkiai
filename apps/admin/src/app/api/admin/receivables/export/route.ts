@@ -3,7 +3,7 @@
  * CSV de cartera (documentos con su saldo) para el contador. Tenant-scoped (RLS)
  * y gated por la feature `receivables`.
  */
-import { NextResponse } from 'next/server'
+import { NextResponse } from '@/lib/api-response'
 import { listReceivableDocuments, receivablesToCsv } from '@merkiai/database'
 import { getAdminUser } from '@/lib/auth'
 import { getAdminDb } from '@/lib/admin-db'

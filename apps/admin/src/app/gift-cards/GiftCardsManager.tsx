@@ -99,7 +99,7 @@ export default function GiftCardsManager({ initial }: { initial: GiftCard[] }) {
                 <td className="px-4 py-3 font-brand text-brand-primary/60">{c.note ?? '—'}</td>
                 <td className="px-4 py-3">
                   <button onClick={() => toggle(c)} className={`font-brand text-xs rounded-full px-2 py-1 ${c.active ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-500'}`}>
-                    {c.active ? 'Activa' : 'Inactiva'}
+                    {c.active ? tx("Activa") : tx("Inactiva")}
                   </button>
                 </td>
               </tr>

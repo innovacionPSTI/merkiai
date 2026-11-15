@@ -4,6 +4,7 @@ import { useState } from 'react'
 import { Icon } from '@merkiai/ui'
 import { formatMoney } from '@merkiai/i18n'
 import { T } from '@merkiai/ui'
+import { useTx } from '@merkiai/ui'
 
 interface Comp { variant_id: number; qty: number }
 interface Bundle { id: number; name: string; slug: string; price: number; active: boolean; components: Comp[] }
@@ -12,6 +13,7 @@ interface Variant { id: number; label: string }
 const money = (n: number) => formatMoney(n)
 
 export default function BundlesManager({ initial, variants }: { initial: Bundle[]; variants: Variant[] }) {
+  const tx = useTx()
   const [rows, setRows] = useState<Bundle[]>(initial)
   const [name, setName] = useState('')
   const [price, setPrice] = useState('')
@@ -93,7 +95,7 @@ export default function BundlesManager({ initial, variants }: { initial: Bundle[
               <p className="font-brand text-xs text-brand-primary/40">{b.components.map((c) => `${label(c.variant_id)} ×${c.qty}`).join(' + ')}</p>
             </div>
             <button onClick={() => toggle(b)} className={`font-brand text-xs rounded-full px-2 py-1 ${b.active ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-500'}`}>
-              {b.active ? 'Activo' : 'Inactivo'}
+              {b.active ? tx("Activo") : tx("Inactivo")}
             </button>
             <button onClick={() => remove(b)} className="font-brand text-xs text-red-600 border border-red-200 rounded-full px-3 py-1 hover:bg-red-50"><T>Eliminar</T></button>
           </div>

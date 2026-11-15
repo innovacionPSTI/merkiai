@@ -83,7 +83,7 @@ export default function DocumentActions({ documentId, modality, balance, policy,
             </div>
           ))}
           {locations.length > 0 && (
-            <label className="font-brand text-xs text-brand-primary/70">Las devoluciones ingresan a{' '}
+            <label className="font-brand text-xs text-brand-primary/70"><T>Las devoluciones ingresan a</T>{' '}
               <select className={input} value={loc} onChange={(e) => setLoc(e.target.value ? Number(e.target.value) : '')}>
                 {locations.map((l) => <option key={l.id} value={l.id}>{l.name}</option>)}
               </select>
@@ -98,7 +98,7 @@ export default function DocumentActions({ documentId, modality, balance, policy,
             const r = await paymentLinkAction(documentId)
             if (r.ok && r.message) {
               await navigator.clipboard?.writeText(r.message).catch(() => undefined)
-              setMsg({ ok: true, text: `Enlace de pago copiado: ${r.message}` })
+              setMsg({ ok: true, text: tx("Enlace de pago copiado: {message}", { message: r.message }) })
             } else if (!r.ok) setMsg({ ok: false, text: r.error })
           })}><T>Enlace de pago</T></button>
         )}
@@ -121,7 +121,7 @@ export default function DocumentActions({ documentId, modality, balance, policy,
       )}
       {panel === 'void' && (
         <div className="space-y-2 rounded-xl bg-red-50 p-3 font-brand text-sm">
-          <p className="text-red-800">Se cancela el saldo pendiente{modality === 'layaway' ? ' y se libera la reserva' : ''}. ¿Qué hacemos con lo que ya pagó?</p>
+          <p className="text-red-800"><T>Se cancela el saldo pendiente</T>{modality === 'layaway' ? ' y se libera la reserva' : ''}<T>. ¿Qué hacemos con lo que ya pagó?</T></p>
           <div className="flex gap-4">
             <label className="flex items-center gap-2"><input type="radio" checked={refund === 'store_credit'} onChange={() => setRefund('store_credit')} /> <T>Dejarlo como saldo a favor</T></label>
             <label className="flex items-center gap-2"><input type="radio" checked={refund === 'refund'} onChange={() => setRefund('refund')} /> <T>Se le devolvió el dinero</T></label>

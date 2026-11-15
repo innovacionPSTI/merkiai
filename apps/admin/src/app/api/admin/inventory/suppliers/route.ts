@@ -2,7 +2,8 @@
  * /api/admin/inventory/suppliers — E24 · HU-402
  * Crea proveedores. Tenant-scoped (RLS) + gated por `inventory`.
  */
-import { NextRequest, NextResponse } from 'next/server'
+import { NextRequest } from 'next/server'
+import { NextResponse } from '@/lib/api-response'
 import { getAdminUser } from '@/lib/auth'
 import { getAdminDb } from '@/lib/admin-db'
 import { createSupplier, listSuppliers } from '@merkiai/database'

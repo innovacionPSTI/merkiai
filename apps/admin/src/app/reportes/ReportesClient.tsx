@@ -68,7 +68,7 @@ export default function ReportesClient() {
         </div>
         <button onClick={load} disabled={loading}
           className="font-brand text-sm bg-brand-primary text-brand-cream rounded-full px-5 py-2.5 hover:bg-brand-dark transition-colors disabled:opacity-50">
-          {loading ? 'Cargando…' : 'Aplicar'}
+          {loading ? tx("Cargando…") : tx("Aplicar")}
         </button>
         <button onClick={exportCsv} disabled={!report || report.orders === 0}
           className="font-brand text-sm border border-brand-primary text-brand-primary rounded-full px-5 py-2.5 hover:bg-brand-primary hover:text-brand-cream transition-colors disabled:opacity-40">

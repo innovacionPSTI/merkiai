@@ -72,7 +72,7 @@ export default async function BlogAdminPage() {
                   </td>
                   <td className="px-6 py-3">
                     <span className={`font-brand text-xs font-semibold rounded-full px-3 py-1 ${post.published ? 'bg-green-100 text-green-600' : 'bg-gray-100 text-gray-500'}`}>
-                      {post.published ? 'Publicado' : 'Borrador'}
+                      {post.published ? tx("Publicado") : tx("Borrador")}
                     </span>
                   </td>
                   <td className="px-6 py-3">

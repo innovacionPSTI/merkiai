@@ -3,7 +3,8 @@
  * PATCH { action: 'receive' | 'cancel' } → recibe en destino o cancela (reingreso
  * al origen) una transferencia en tránsito. Gated por `inventory` + `multi_location`.
  */
-import { NextRequest, NextResponse } from 'next/server'
+import { NextRequest } from 'next/server'
+import { NextResponse } from '@/lib/api-response'
 import { getAdminUser } from '@/lib/auth'
 import { getAdminDb } from '@/lib/admin-db'
 import { receiveTransfer, cancelTransfer } from '@merkiai/database'

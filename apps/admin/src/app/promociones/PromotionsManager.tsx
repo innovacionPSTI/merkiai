@@ -3,6 +3,7 @@
 import { useState } from 'react'
 import { Icon } from '@merkiai/ui'
 import { T } from '@merkiai/ui'
+import { useTx } from '@merkiai/ui'
 
 type PromoType = 'cart_percent' | 'cart_fixed' | 'category_percent' | 'bogo'
 interface Promotion {
@@ -31,6 +32,7 @@ function describe(p: Promotion, cats: Cat[]): string {
 }
 
 export default function PromotionsManager({ initial, categories }: { initial: Promotion[]; categories: Cat[] }) {
+  const tx = useTx()
   const [rows, setRows] = useState<Promotion[]>(initial)
   const [type, setType] = useState<PromoType>('cart_percent')
   const [name, setName] = useState('')
@@ -135,10 +137,10 @@ export default function PromotionsManager({ initial, categories }: { initial: Pr
                 <td className="px-4 py-3 font-brand text-brand-primary">{p.name}</td>
                 <td className="px-4 py-3 font-brand text-brand-primary/60">{TYPE_LABEL[p.type]}</td>
                 <td className="px-4 py-3 font-brand text-brand-primary/70">{describe(p, categories)}</td>
-                <td className="px-4 py-3 font-brand text-brand-primary/60">{p.combinable ? 'Sí' : 'Exclusiva'}</td>
+                <td className="px-4 py-3 font-brand text-brand-primary/60">{p.combinable ? tx("Sí") : tx("Exclusiva")}</td>
                 <td className="px-4 py-3">
                   <button onClick={() => toggle(p)} className={`font-brand text-xs rounded-full px-2 py-1 ${p.active ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-500'}`}>
-                    {p.active ? 'Activa' : 'Inactiva'}
+                    {p.active ? tx("Activa") : tx("Inactiva")}
                   </button>
                 </td>
                 <td className="px-4 py-3 text-right">

@@ -36,6 +36,7 @@ export default function VipManager({
 }: {
   initialSegments: Segment[]; initialCampaigns: Campaign[]; products: Opt[]; categories: Opt[]
 }) {
+  const tx = useTx()
   const [tab, setTab] = useState<'segmentos' | 'campanas'>('segmentos')
   return (
     <div className="space-y-6">
@@ -47,7 +48,7 @@ export default function VipManager({
               tab === t ? 'border-brand-primary text-brand-primary font-semibold' : 'border-transparent text-brand-primary/50'
             }`}
           >
-            {t === 'segmentos' ? 'Segmentos' : 'Campañas'}
+            {t === 'segmentos' ? tx("Segmentos") : tx("Campañas")}
           </button>
         ))}
       </div>
@@ -118,12 +119,12 @@ function Segmentos({ initial }: { initial: Segment[] }) {
               <div className="flex-1">
                 <p className="font-brand font-semibold text-brand-primary">{s.name}</p>
                 <p className="font-brand text-xs text-brand-primary/40">
-                  {s.type === 'rules' ? 'Por reglas' : 'Manual'} · {s.member_count ?? 0} miembro(s)
+                  {s.type === 'rules' ? tx("Por reglas") : tx("Manual")} · {s.member_count ?? 0} miembro(s)
                 </p>
               </div>
               <button onClick={() => setOpen(open === s.id ? null : s.id)}
                 className="font-brand text-xs text-brand-primary border border-brand-primary/20 rounded-full px-3 py-1 hover:bg-brand-cream">
-                {open === s.id ? 'Cerrar' : 'Gestionar'}
+                {open === s.id ? tx("Cerrar") : tx("Gestionar")}
               </button>
               <button onClick={() => remove(s.id)} className="font-brand text-xs text-red-600 border border-red-200 rounded-full px-3 py-1 hover:bg-red-50">
                 <T>Eliminar</T>
@@ -157,7 +158,7 @@ function SegmentDetail({ segment, onCount }: { segment: Segment; onCount: (n: nu
     const res = await fetch(`/api/admin/segments/${segment.id}`, {
       method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ rules }),
     })
-    setMsg(res.ok ? 'Reglas guardadas.' : 'Error al guardar.')
+    setMsg(res.ok ? tx("Reglas guardadas.") : tx("Error al guardar."))
   }
   async function recalc() {
     setMsg(tx("Recalculando…"))
@@ -213,7 +214,7 @@ function SegmentDetail({ segment, onCount }: { segment: Segment; onCount: (n: nu
       {msg && <p className="font-brand text-xs text-brand-primary/60">{msg}</p>}
 
       <div>
-        <p className="font-brand text-xs text-brand-primary/50 mb-2">Miembros ({members.length})</p>
+        <p className="font-brand text-xs text-brand-primary/50 mb-2"><T>Miembros (</T>{members.length})</p>
         {members.length === 0 ? <p className="font-brand text-xs text-brand-primary/40"><T>Sin miembros.</T></p> : (
           <ul className="divide-y divide-gray-50">
             {members.map((m) => (
@@ -231,6 +232,7 @@ function SegmentDetail({ segment, onCount }: { segment: Segment; onCount: (n: nu
 
 // ── Campañas ────────────────────────────────────────────────────────────────
 function Campanas({ initial, segments, products, categories }: { initial: Campaign[]; segments: Segment[]; products: Opt[]; categories: Opt[] }) {
+  const tx = useTx()
   const [rows, setRows] = useState<Campaign[]>(initial)
   const [form, setForm] = useState({ name: '', segment_id: '', starts_at: '', ends_at: '', offer_percent: '', quota: '', product_ids: [] as number[], category_ids: [] as number[] })
   const [error, setError] = useState('')
@@ -350,7 +352,7 @@ function Campanas({ initial, segments, products, categories }: { initial: Campai
                 </div>
                 <span className={`font-brand text-xs rounded-full px-2 py-1 ${STATUS_COLOR[eff]}`}>{STATUS_LABEL[eff]}</span>
                 <button onClick={() => openReport(c.id)} className="font-brand text-xs text-brand-primary border border-brand-primary/20 rounded-full px-3 py-1 hover:bg-brand-cream">
-                  {reportFor === c.id ? 'Ocultar reporte' : 'Reporte'}
+                  {reportFor === c.id ? tx("Ocultar reporte") : tx("Reporte")}
                 </button>
                 {c.segment_id != null && c.status !== 'cancelled' && (
                   <button onClick={() => notify(c.id)} className="font-brand text-xs text-brand-primary border border-brand-primary/20 rounded-full px-3 py-1 hover:bg-brand-cream"><T>Avisar</T></button>

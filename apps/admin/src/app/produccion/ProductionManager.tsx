@@ -44,7 +44,7 @@ export default function ProductionManager({ items, uoms, boms, orders }: { items
       const res = await fetch(url, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) })
       if (!res.ok) throw new Error((await res.json().catch(() => ({})))?.error ?? 'Error')
       router.refresh()
-    } catch (e) { setError(e instanceof Error ? e.message : 'Error'); throw e } finally { setBusy(false) }
+    } catch (e) { setError(e instanceof Error ? e.message : tx("Error")); throw e } finally { setBusy(false) }
   }
 
   async function createBom() {
@@ -119,7 +119,7 @@ export default function ProductionManager({ items, uoms, boms, orders }: { items
         <div className="bg-white rounded-2xl p-5 shadow-sm">
           <h3 className="font-display text-brand-primary mb-2"><T>Recetas</T></h3>
           <ul className="space-y-1 font-brand text-sm">
-            {boms.map((b) => <li key={b.id} className="text-brand-primary/70">{b.output} · {POLICY_LABEL[b.policy] ?? b.policy} · rinde {fmt(b.yield_qty)}</li>)}
+            {boms.map((b) => <li key={b.id} className="text-brand-primary/70">{b.output} · {POLICY_LABEL[b.policy] ?? b.policy} <T>· rinde</T> {fmt(b.yield_qty)}</li>)}
           </ul>
         </div>
       )}

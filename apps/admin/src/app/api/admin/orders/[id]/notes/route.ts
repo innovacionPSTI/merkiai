@@ -4,7 +4,8 @@
  * Accesible por super_admin, admin y vendedor.
  */
 import { getAdminDb } from '@/lib/admin-db'
-import { NextRequest, NextResponse } from 'next/server'
+import { NextRequest } from 'next/server'
+import { NextResponse } from '@/lib/api-response'
 import { getAdminUser } from '@/lib/auth'
 
 async function requireVendedor() {

@@ -5,7 +5,8 @@
  * colección en la capa de datos (422 si falla). Acotado por tenant vía RLS.
  * Gated por el entitlement `colecciones` + límite `max_registros_coleccion`.
  */
-import { NextRequest, NextResponse } from 'next/server'
+import { NextRequest } from 'next/server'
+import { NextResponse } from '@/lib/api-response'
 import { getAdminUser } from '@/lib/auth'
 import { getAdminDb } from '@/lib/admin-db'
 import {

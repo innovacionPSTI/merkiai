@@ -121,7 +121,7 @@ export default function VariantTypesClient({ variantTypes: initial }: Props) {
   }
 
   async function handleDelete(vt: VariantType) {
-    if (!confirm(`¿Eliminar "${vt.name}"? Los productos que usen este tipo perderán esta opción.`)) return
+    if (!confirm(tx("¿Eliminar \"{vtName}\"? Los productos que usen este tipo perderán esta opción.", { vtName: vt.name }))) return
     const res = await fetch(`/api/admin/variant-types/${vt.id}`, { method: 'DELETE' })
     if (res.ok) {
       setItems((prev) => prev.filter((v) => v.id !== vt.id))
@@ -189,7 +189,7 @@ export default function VariantTypesClient({ variantTypes: initial }: Props) {
                         ? 'bg-purple-100 text-purple-700'
                         : 'bg-blue-100 text-blue-700'
                     }`}>
-                      {vt.display_type === 'swatch' ? 'Color' : 'Pastilla'}
+                      {vt.display_type === 'swatch' ? tx("Color") : tx("Pastilla")}
                     </span>
                   </td>
                   <td className="px-6 py-4">
@@ -201,7 +201,7 @@ export default function VariantTypesClient({ variantTypes: initial }: Props) {
                           : 'bg-gray-100 text-gray-500 hover:bg-gray-200'
                       }`}
                     >
-                      {vt.active ? 'Activo' : 'Inactivo'}
+                      {vt.active ? tx("Activo") : tx("Inactivo")}
                     </button>
                   </td>
                   <td className="px-6 py-4">
@@ -232,7 +232,7 @@ export default function VariantTypesClient({ variantTypes: initial }: Props) {
         <div className="fixed inset-0 bg-black/30 backdrop-blur-sm flex items-center justify-center z-50 p-4">
           <div className="bg-white rounded-2xl shadow-xl w-full max-w-md space-y-5 p-6">
             <h2 className="font-display text-brand-primary text-lg">
-              {isNew ? 'Nuevo tipo de variante' : `Editar: ${editing?.name}`}
+              {isNew ? tx("Nuevo tipo de variante") : `Editar: ${editing?.name}`}
             </h2>
 
             {error && (
@@ -285,7 +285,7 @@ export default function VariantTypesClient({ variantTypes: initial }: Props) {
                           value={form.swatch_hex[v] || '#cccccc'}
                           onChange={(e) => setForm((f) => ({ ...f, swatch_hex: { ...f.swatch_hex, [v]: e.target.value } }))}
                           className="w-8 h-8 rounded cursor-pointer border border-gray-200 p-0.5"
-                          aria-label={`Color de ${v}`}
+                          aria-label={tx("Color de {v}", { v })}
                         />
                         <span className="font-brand text-xs text-brand-primary">{v}</span>
                         <span className="font-mono text-[11px] text-brand-primary/40">{form.swatch_hex[v] ?? '—'}</span>
@@ -311,7 +311,7 @@ export default function VariantTypesClient({ variantTypes: initial }: Props) {
                         className="accent-brand-primary"
                       />
                       <span className="font-brand text-sm text-brand-primary">
-                        {dt === 'pill' ? 'Pastilla de texto' : 'Muestra de color'}
+                        {dt === 'pill' ? tx("Pastilla de texto") : tx("Muestra de color")}
                       </span>
                     </label>
                   ))}
@@ -342,7 +342,7 @@ export default function VariantTypesClient({ variantTypes: initial }: Props) {
                 disabled={saving}
                 className="flex-1 font-brand text-sm bg-brand-primary text-brand-cream px-4 py-2.5 rounded-xl hover:bg-brand-dark transition-colors disabled:opacity-50"
               >
-                {saving ? 'Guardando...' : 'Guardar'}
+                {saving ? 'Guardando...' : tx("Guardar")}
               </button>
             </div>
           </div>

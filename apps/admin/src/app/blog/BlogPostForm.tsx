@@ -201,7 +201,7 @@ export default function BlogPostForm({ post }: Props) {
             <span className="font-brand text-sm font-semibold text-brand-primary"><T>Publicado</T></span>
           </label>
           <p className="font-brand text-xs text-brand-primary/30 mt-1 ml-7">
-            {form.published ? 'Visible en el sitio público' : 'Borrador — no visible en el sitio'}
+            {form.published ? tx("Visible en el sitio público") : tx("Borrador — no visible en el sitio")}
           </p>
         </div>
       </div>
@@ -252,7 +252,7 @@ export default function BlogPostForm({ post }: Props) {
           />
           {form.seo_title && (
             <p className="font-brand text-xs text-brand-primary/30 mt-1 text-right">
-              {form.seo_title.length}/70 caracteres
+              {form.seo_title.length}<T>/70 caracteres</T>
             </p>
           )}
         </div>
@@ -268,7 +268,7 @@ export default function BlogPostForm({ post }: Props) {
           />
           {form.seo_desc && (
             <p className="font-brand text-xs text-brand-primary/30 mt-1 text-right">
-              {form.seo_desc.length}/160 caracteres
+              {form.seo_desc.length}<T>/160 caracteres</T>
             </p>
           )}
         </div>
@@ -298,7 +298,7 @@ export default function BlogPostForm({ post }: Props) {
           disabled={saving || !form.title || !form.slug}
           className="font-brand text-sm bg-brand-primary text-brand-cream px-6 py-2.5 rounded-xl hover:bg-brand-dark transition-colors disabled:opacity-50"
         >
-          {saving ? 'Guardando...' : isEdit ? 'Guardar cambios' : 'Crear artículo'}
+          {saving ? 'Guardando...' : isEdit ? tx("Guardar cambios") : tx("Crear artículo")}
         </button>
       </div>
     </form>

@@ -61,7 +61,7 @@ export default function MediaPicker({
           {loading ? (
             <p className="text-sm text-slate-400 text-center py-10"><T>Cargando…</T></p>
           ) : filtered.length === 0 ? (
-            <p className="text-sm text-slate-400 text-center py-10">No hay medios {q ? 'que coincidan' : 'aún'}.</p>
+            <p className="text-sm text-slate-400 text-center py-10"><T>No hay medios</T> {q ? 'que coincidan' : 'aún'}.</p>
           ) : (
             <div className="grid grid-cols-3 sm:grid-cols-4 gap-3">
               {filtered.map((a) => (

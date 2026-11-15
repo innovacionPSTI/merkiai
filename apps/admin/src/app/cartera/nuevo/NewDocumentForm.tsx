@@ -132,7 +132,7 @@ export default function NewDocumentForm(props: {
       </section>
 
       <section className="rounded-2xl border border-gray-200 bg-white p-5">
-        <h2 className="font-brand text-sm font-semibold text-brand-primary mb-3">2. {modality === 'consignment' ? 'Aliado' : 'Cliente'}</h2>
+        <h2 className="font-brand text-sm font-semibold text-brand-primary mb-3">2. {modality === 'consignment' ? tx("Aliado") : tx("Cliente")}</h2>
         {newParty ? (
           <div className="grid gap-3 md:grid-cols-4">
             <input className={input} placeholder={tx("Nombre *")} value={newParty.name} onChange={(e) => setNewParty({ ...newParty, name: e.target.value })} />
@@ -150,7 +150,7 @@ export default function NewDocumentForm(props: {
               {partyOptions.map((p) => <option key={p.id} value={p.id}>{p.name}{p.balance ? ` · debe ${money(p.balance)}` : ''}</option>)}
             </select>
             <button type="button" onClick={() => setNewParty({ name: '', email: '', phone: '' })} className="font-brand text-sm text-brand-primary underline"><T>+ Nuevo</T></button>
-            {party?.credit_limit != null && <span className="font-brand text-xs text-brand-primary/60">Cupo {money(party.credit_limit)} · disponible {money(party.credit_limit - party.balance)}</span>}
+            {party?.credit_limit != null && <span className="font-brand text-xs text-brand-primary/60"><T>Cupo</T> {money(party.credit_limit)} <T>· disponible</T> {money(party.credit_limit - party.balance)}</span>}
           </div>
         )}
         {modality === 'consignment' && partyId && (
@@ -173,7 +173,7 @@ export default function NewDocumentForm(props: {
           {lines.map((l, i) => (
             <div key={i} className="grid gap-2 md:grid-cols-12 items-center">
               <select className={`${input} md:col-span-3`} value={l.stock_item_id ?? ''} onChange={(e) => pickItem(i, e.target.value)}>
-                <option value="">{modality === 'consignment' ? 'Elige producto…' : 'Concepto libre'}</option>
+                <option value="">{modality === 'consignment' ? tx("Elige producto…") : tx("Concepto libre")}</option>
                 {props.items.filter((it) => modality !== 'consignment' || !it.isService).map((it) => <option key={it.id} value={it.id}>{it.name}{it.isService ? ' (servicio)' : ''}</option>)}
               </select>
               <input className={`${input} md:col-span-4`} placeholder={tx("Descripción")} value={l.description} onChange={(e) => setLine(i, { description: e.target.value })} />
@@ -186,7 +186,7 @@ export default function NewDocumentForm(props: {
         </div>
         {(props.priceLists?.length ?? 0) > 0 && (
           <div className="mt-3 max-w-sm">
-            <label className={label}>Lista de precios {modality === 'consignment' ? '(precio para el aliado)' : '(opcional)'}</label>
+            <label className={label}><T>Lista de precios</T> {modality === 'consignment' ? '(precio para el aliado)' : '(opcional)'}</label>
             <select className={input} value={priceListId} onChange={(e) => {
               const v = e.target.value ? Number(e.target.value) : ''
               setPriceListId(v)
@@ -199,11 +199,11 @@ export default function NewDocumentForm(props: {
         )}
         <div className="mt-3 flex items-center justify-between">
           <button type="button" className="font-brand text-sm text-brand-primary underline" onClick={() => setLines((ls) => [...ls, { kind: 'free', stock_item_id: null, description: '', qty: 1, unit_price: 0 }])}><T>+ Agregar línea</T></button>
-          <span className="font-display text-lg text-brand-primary">Total {money(total)}</span>
+          <span className="font-display text-lg text-brand-primary"><T>Total</T> {money(total)}</span>
         </div>
         {(modality === 'credit_sale' || modality === 'layaway' || modality === 'consignment') && ownLocations.length > 0 && (
           <div className="mt-3 max-w-xs">
-            <label className={label}>{modality === 'consignment' ? 'Sale de' : modality === 'layaway' ? 'Reservar en' : 'Se entrega desde'}</label>
+            <label className={label}>{modality === 'consignment' ? tx("Sale de") : modality === 'layaway' ? tx("Reservar en") : tx("Se entrega desde")}</label>
             <select className={input} value={locationId} onChange={(e) => setLocationId(e.target.value ? Number(e.target.value) : '')}>
               {ownLocations.map((l) => <option key={l.id} value={l.id}>{l.name}</option>)}
             </select>
@@ -229,7 +229,7 @@ export default function NewDocumentForm(props: {
             <div><label className={label}><T>Frecuencia</T></label>
               <select className={input} value={instEvery} onChange={(e) => setInstEvery(e.target.value as 'months' | 'days15')}><option value="months">Mensual</option><option value="days15">Quincenal</option></select>
             </div>
-            <p className="md:col-span-3 font-brand text-xs text-brand-primary/60">Se reparte el saldo (total − anticipo) en {instCount} cuota(s) de aproximadamente {money(Math.floor((total - advance) / Math.max(1, instCount)))}.</p>
+            <p className="md:col-span-3 font-brand text-xs text-brand-primary/60"><T>Se reparte el saldo (total − anticipo) en</T> {instCount} <T>cuota(s) de aproximadamente</T> {money(Math.floor((total - advance) / Math.max(1, instCount)))}.</p>
           </div>
         )}
         {showAdvance && (
@@ -241,7 +241,7 @@ export default function NewDocumentForm(props: {
               </select>
             </div>
             <div><label className={label}>Anticipo mínimo exigido (%)</label><input type="number" min={0} max={100} className={input} value={minAdvancePct} onChange={(e) => setMinAdvancePct(Math.min(100, Math.max(0, Number(e.target.value))))} />
-              {minAdvance > 0 && <p className="mt-1 font-brand text-xs text-brand-primary/60">Mínimo {money(minAdvance)}</p>}
+              {minAdvance > 0 && <p className="mt-1 font-brand text-xs text-brand-primary/60"><T>Mínimo</T> {money(minAdvance)}</p>}
             </div>
           </div>
         )}
@@ -262,7 +262,7 @@ export default function NewDocumentForm(props: {
       <div className="flex justify-end gap-3">
         <button type="button" onClick={() => router.push('/cartera')} className="font-brand text-sm text-brand-primary/60"><T>Cancelar</T></button>
         <button type="button" onClick={submit} disabled={pending} className="rounded-full bg-brand-primary px-6 py-2.5 font-brand text-sm text-white hover:bg-brand-dark disabled:opacity-60">
-          {pending ? 'Guardando…' : 'Crear documento'}
+          {pending ? tx("Guardando…") : tx("Crear documento")}
         </button>
       </div>
     </div>

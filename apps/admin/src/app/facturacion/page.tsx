@@ -52,7 +52,7 @@ export default async function FacturacionPage({ searchParams }: { searchParams: 
 
             <section className={`rounded-2xl border p-6 ${TONE[view.tone]}`}>
               <p className="font-brand text-xs uppercase tracking-wide opacity-70">
-                Plan {summary.plan?.name ?? '—'}
+                <T>Plan</T> {summary.plan?.name ?? '—'}
                 {summary.plan && summary.plan.priceCents > 0 && ` · ${money(summary.plan.priceCents, summary.plan.currency)} / mes`}
               </p>
               <h2 className="font-display text-2xl mt-1">{view.title}</h2>

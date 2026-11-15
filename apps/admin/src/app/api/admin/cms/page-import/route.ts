@@ -3,7 +3,8 @@
  * Importa un paquete de página como una página NUEVA en borrador (enabled=false).
  * Body: { package, key, slug, label? }  (o el paquete directo + key/slug/label).
  */
-import { NextRequest, NextResponse } from 'next/server'
+import { NextRequest } from 'next/server'
+import { NextResponse } from '@/lib/api-response'
 import { getAdminUser } from '@/lib/auth'
 import { getAdminDb } from '@/lib/admin-db'
 import { userCanAccess } from '@/lib/roles'

@@ -98,7 +98,7 @@ export default function TranslationsWorkspace({ locale, locales, tab, coverage, 
         <a href={`/api/admin/translations/export?locale=${encodeURIComponent(locale)}&type=${tab === 'blocks' ? 'blocks' : tab}`} className="rounded-full border border-brand-primary/30 px-4 py-2 font-brand text-sm text-brand-primary"><T>Exportar CSV</T></a>
         <a href={`/api/admin/translations/export?locale=${encodeURIComponent(locale)}&type=all`} className="rounded-full border border-brand-primary/30 px-4 py-2 font-brand text-sm text-brand-primary"><T>Exportar todo</T></a>
         <label className="rounded-full bg-brand-primary px-4 py-2 font-brand text-sm text-white cursor-pointer">
-          {pending ? 'Procesando…' : 'Importar CSV'}
+          {pending ? tx("Procesando…") : tx("Importar CSV")}
           <input ref={fileRef} type="file" accept=".csv,text/csv" className="sr-only" disabled={pending} onChange={(e) => { const f = e.target.files?.[0]; if (f) importCsv(f) }} />
         </label>
       </section>
@@ -111,7 +111,7 @@ export default function TranslationsWorkspace({ locale, locales, tab, coverage, 
             <p className="font-brand text-sm font-semibold text-brand-primary">{c.label}</p>
             <p className="font-brand text-2xl text-brand-primary mt-1">{c.percent}%</p>
             <div className="mt-2 h-1.5 rounded-full bg-gray-100 overflow-hidden"><div className="h-full bg-green-500" style={{ width: `${c.percent}%` }} /></div>
-            <p className="font-brand text-xs text-brand-primary/60 mt-2">{c.complete} de {c.items} completos{c.missing ? ` · ${c.missing} sin traducir` : ''}</p>
+            <p className="font-brand text-xs text-brand-primary/60 mt-2">{c.complete} de {c.items} <T>completos</T>{c.missing ? ` · ${c.missing} sin traducir` : ''}</p>
           </button>
         ))}
       </div>
@@ -129,7 +129,7 @@ export default function TranslationsWorkspace({ locale, locales, tab, coverage, 
             </select>
           </div>
           {visible.length === 0 ? (
-            <p className="p-6 font-brand text-sm text-brand-primary/60">{items.length === 0 ? 'No hay contenido de este tipo.' : 'Todo está traducido. ¡Bien!'}</p>
+            <p className="p-6 font-brand text-sm text-brand-primary/60">{items.length === 0 ? tx("No hay contenido de este tipo.") : tx("Todo está traducido. ¡Bien!")}</p>
           ) : (
             <ul className="max-h-[60vh] overflow-y-auto divide-y divide-gray-50">
               {visible.map((i) => (
@@ -160,7 +160,7 @@ export default function TranslationsWorkspace({ locale, locales, tab, coverage, 
               {editing.fields.map((f) => (
                 <div key={f} className="grid gap-2 md:grid-cols-2">
                   <div>
-                    <p className="font-brand text-xs font-semibold text-brand-primary/60 mb-1">{fieldLabels[f] ?? f} · original</p>
+                    <p className="font-brand text-xs font-semibold text-brand-primary/60 mb-1">{fieldLabels[f] ?? f} <T>· original</T></p>
                     <div className="rounded-xl bg-gray-50 px-3 py-2 font-brand text-sm text-brand-primary/80 whitespace-pre-wrap break-words min-h-[38px]">{editing.base[f] || '—'}</div>
                   </div>
                   <label className="block">
@@ -175,7 +175,7 @@ export default function TranslationsWorkspace({ locale, locales, tab, coverage, 
               ))}
               <p className="font-brand text-xs text-brand-primary/50"><T>Deja un campo vacío para mostrar el texto original en ese idioma.</T></p>
               <div className="flex gap-3">
-                <button type="button" disabled={pending} onClick={save} className="rounded-full bg-brand-primary px-6 py-2.5 font-brand text-sm text-white disabled:opacity-60">{pending ? 'Guardando…' : 'Guardar traducción'}</button>
+                <button type="button" disabled={pending} onClick={save} className="rounded-full bg-brand-primary px-6 py-2.5 font-brand text-sm text-white disabled:opacity-60">{pending ? tx("Guardando…") : tx("Guardar traducción")}</button>
                 <button type="button" disabled={pending} onClick={() => setEditing(null)} className="rounded-full border border-brand-primary/30 px-6 py-2.5 font-brand text-sm text-brand-primary"><T>Cancelar</T></button>
               </div>
             </div>

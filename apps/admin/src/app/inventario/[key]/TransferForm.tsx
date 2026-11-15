@@ -35,7 +35,7 @@ export default function TransferForm({ itemId, uoms, locations }: {
       })
       if (!res.ok) throw new Error((await res.json().catch(() => ({})))?.error ?? 'No se pudo transferir')
       setQty(''); router.refresh()
-    } catch (e) { setError(e instanceof Error ? e.message : 'Error') } finally { setBusy(false) }
+    } catch (e) { setError(e instanceof Error ? e.message : tx("Error")) } finally { setBusy(false) }
   }
 
   return (
@@ -64,7 +64,7 @@ export default function TransferForm({ itemId, uoms, locations }: {
           {uoms.map((u) => <option key={u.id} value={u.id}>{u.code}</option>)}
         </select>
       </label>
-      <button onClick={submit} disabled={busy} className="rounded-full bg-brand-primary text-brand-cream px-5 py-2 font-brand text-sm font-medium hover:bg-brand-dark disabled:opacity-50">{busy ? 'Despachando…' : 'Despachar'}</button>
+      <button onClick={submit} disabled={busy} className="rounded-full bg-brand-primary text-brand-cream px-5 py-2 font-brand text-sm font-medium hover:bg-brand-dark disabled:opacity-50">{busy ? tx("Despachando…") : tx("Despachar")}</button>
       {error && <p className="font-brand text-sm text-red-600 w-full">{error}</p>}
     </div>
   )

@@ -9,7 +9,7 @@
  * Descubre los tenants con documentos abiertos (única lectura cross-tenant,
  * solo `tenant_id`) y opera cada uno con su cliente RLS (`getAdminDb`).
  */
-import { NextResponse } from 'next/server'
+import { NextResponse } from '@/lib/api-response'
 import {
   createServerClient, expireLayaways, refreshDocumentStatus, getReceivablesSettings, listDueForReminder,
   markReminderSent, resolveEmailConfig, sendRawEmail, MODALITY_LABEL, type EmailConfig,

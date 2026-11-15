@@ -10,7 +10,8 @@
  * `super_admin` (el admin no puede); nunca degrada un super_admin ya existente.
  */
 import { randomUUID } from 'crypto'
-import { NextRequest, NextResponse } from 'next/server'
+import { NextRequest } from 'next/server'
+import { NextResponse } from '@/lib/api-response'
 import { createServerClient } from '@merkiai/database'
 import { withInternalAuth } from '@/lib/internal-route'
 

@@ -81,7 +81,7 @@ export default function ColeccionesClient({ initialCollections }: { initialColle
             <button key={c.key} onClick={() => { setSel(c.key); setTab('campos') }}
               className={`w-full text-left px-3 py-2 rounded-xl text-sm ${sel === c.key ? 'bg-brand-primary text-brand-cream' : 'hover:bg-gray-50 text-brand-primary/70'}`}>
               {c.label}
-              <span className="block text-[11px] opacity-60">/{c.key} · {c.fields.length} campos</span>
+              <span className="block text-[11px] opacity-60">/{c.key} · {c.fields.length} <T>campos</T></span>
             </button>
           ))}
           {collections.length === 0 && <p className="text-xs text-slate-400 py-6 text-center"><T>Sin colecciones aún.</T></p>}
@@ -131,14 +131,14 @@ export default function ColeccionesClient({ initialCollections }: { initialColle
           { key: 'label', label: 'Nombre (p. ej. Noticias)', required: true },
           { key: 'key', label: 'Clave (slug)', required: true, help: 'a-z, 0-9 y guiones. Ej: noticias' },
         ]}
-        validate={(v) => collections.some((c) => c.key === (v.key || '').trim().toLowerCase()) ? 'Ya existe una colección con esa clave.' : null}
+        validate={(v) => collections.some((c) => c.key === (v.key || '').trim().toLowerCase()) ? tx("Ya existe una colección con esa clave.") : null}
         onSubmit={(v) => { setNewOpen(false); void createCollection(v.label.trim(), v.key.trim().toLowerCase()) }}
         onClose={() => setNewOpen(false)}
       />
       <ConfirmDialog
         open={confirmDel}
         title={tx("Eliminar colección")}
-        message={current ? `¿Eliminar la colección "${current.label}" y todos sus registros? Esta acción no se puede deshacer.` : ''}
+        message={current ? tx("¿Eliminar la colección \"{currentName}\" y todos sus registros? Esta acción no se puede deshacer.", { currentName: current.label }) : ''}
         danger confirmLabel="Eliminar"
         onConfirm={() => { setConfirmDel(false); void removeCollection() }}
         onCancel={() => setConfirmDel(false)}
@@ -266,6 +266,7 @@ function RecordForm({ fields, initial, onCancel, onSave }: {
   fields: CollectionField[]; initial: CollectionItem | null
   onCancel: () => void; onSave: (form: Record<string, unknown>, status: 'draft' | 'published') => void
 }) {
+  const tx = useTx()
   const [form, setForm] = useState<Record<string, unknown>>(() => ({ ...(initial?.data ?? {}) }))
   const set = (k: string, v: unknown) => setForm((f) => ({ ...f, [k]: v }))
 
@@ -293,7 +294,7 @@ function RecordForm({ fields, initial, onCancel, onSave }: {
             </select>
           ) : (
             <input type="text" value={String(form[f.key] ?? '')} onChange={(e) => set(f.key, e.target.value)}
-              placeholder={f.type === 'image' || f.type === 'file' ? 'URL del archivo' : f.type === 'relation' ? 'slug relacionado' : ''}
+              placeholder={f.type === 'image' || f.type === 'file' ? tx("URL del archivo") : f.type === 'relation' ? 'slug relacionado' : ''}
               className="w-full border border-slate-300 rounded-lg px-2 py-1.5 text-sm" />
           )}
           {f.help && <p className="text-[11px] text-slate-400 mt-0.5">{f.help}</p>}

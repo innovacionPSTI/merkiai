@@ -24,7 +24,7 @@ export default async function TraduccionesPage({ searchParams }: { searchParams:
       <div className="space-y-6 max-w-3xl">
         <PageHeader title={tx("Traducciones")} description="Traduce productos, categorías, páginas, blog y bloques a los idiomas de tu tienda." />
         <section className="rounded-2xl border border-gray-200 bg-white p-6 font-brand text-sm text-brand-primary">
-          Tu tienda publica un solo idioma. Para traducir el contenido, habilita otro idioma en{' '}
+          <T>Tu tienda publica un solo idioma. Para traducir el contenido, habilita otro idioma en</T>{' '}
           <Link href="/configuracion/idiomas" className="underline"><T>Configuración → Idiomas y mercados</T></Link>.
         </section>
       </div>

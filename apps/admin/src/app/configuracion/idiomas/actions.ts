@@ -5,6 +5,7 @@
  * de datos (`validateMarkets`, reglas del plan incluidas); aquí solo se mapean
  * los errores a mensajes y se registra la auditoría.
  */
+import { localizeForPanel } from '@/lib/server-i18n'
 import { revalidatePath } from 'next/cache'
 import { saveMarket, deleteMarket, logAudit, MarketValidationError, type MarketInput } from '@merkiai/database'
 import { requireMarkets } from '@/lib/markets'
@@ -28,7 +29,7 @@ async function run(fn: (ctx: Awaited<ReturnType<typeof requireMarkets>>) => Prom
   }
 }
 
-export async function saveMarketAction(input: MarketInput): Promise<MarketActionResult> {
+async function saveMarketAction__impl(input: MarketInput): Promise<MarketActionResult> {
   return run(async ({ db, tenantId, rules }) => {
     const m = await saveMarket(db, tenantId, input, rules)
     return {
@@ -38,9 +39,17 @@ export async function saveMarketAction(input: MarketInput): Promise<MarketAction
   })
 }
 
-export async function deleteMarketAction(id: number): Promise<MarketActionResult> {
+async function deleteMarketAction__impl(id: number): Promise<MarketActionResult> {
   return run(async ({ db, tenantId }) => {
     await deleteMarket(db, tenantId, id)
     return { message: 'Mercado eliminado.', audit: { action: 'market.delete', entityId: id } }
   })
+}
+
+// HU-466 F6 · los mensajes de cada acción vuelven en el idioma del panel.
+export async function saveMarketAction(...args: Parameters<typeof saveMarketAction__impl>): ReturnType<typeof saveMarketAction__impl> {
+  return localizeForPanel(await saveMarketAction__impl(...args))
+}
+export async function deleteMarketAction(...args: Parameters<typeof deleteMarketAction__impl>): ReturnType<typeof deleteMarketAction__impl> {
+  return localizeForPanel(await deleteMarketAction__impl(...args))
 }

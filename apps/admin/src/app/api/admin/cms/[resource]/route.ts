@@ -9,7 +9,8 @@
  *   items    → tabla section_items (pk = id, filter = section_id)
  */
 
-import { NextRequest, NextResponse } from 'next/server'
+import { NextRequest } from 'next/server'
+import { NextResponse } from '@/lib/api-response'
 import { getAdminUser } from '@/lib/auth'
 import { getAdminDb } from '@/lib/admin-db'
 import { validateSectionPayload, validateItemByItemType } from '@/lib/section-validation'

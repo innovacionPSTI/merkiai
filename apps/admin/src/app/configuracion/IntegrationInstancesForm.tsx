@@ -77,6 +77,7 @@ function generateSecret(): string {
 function SecretField({ label, hint, hasExisting, value, onChange, generatable = false }: {
   label: string; hint?: string; hasExisting: boolean; value: string; onChange: (v: string) => void; generatable?: boolean
 }) {
+  const tx = useTx()
   const [changing, setChanging] = useState(!hasExisting)
   const [reveal, setReveal] = useState(false)
   const [copied, setCopied] = useState(false)
@@ -106,8 +107,8 @@ function SecretField({ label, hint, hasExisting, value, onChange, generatable = 
                 className="font-brand text-xs font-semibold text-brand-primary underline hover:text-brand-dark"><T>Generar clave segura</T></button>
               {value && (
                 <>
-                  <button type="button" onClick={() => setReveal((r) => !r)} className="font-brand text-xs text-brand-primary/60 hover:text-brand-primary">{reveal ? 'Ocultar' : 'Ver'}</button>
-                  <button type="button" onClick={copy} className="font-brand text-xs text-brand-primary/60 hover:text-brand-primary">{copied ? 'Copiada ✓' : 'Copiar'}</button>
+                  <button type="button" onClick={() => setReveal((r) => !r)} className="font-brand text-xs text-brand-primary/60 hover:text-brand-primary">{reveal ? tx("Ocultar") : tx("Ver")}</button>
+                  <button type="button" onClick={copy} className="font-brand text-xs text-brand-primary/60 hover:text-brand-primary">{copied ? tx("Copiada ✓") : tx("Copiar")}</button>
                 </>
               )}
             </div>
@@ -123,6 +124,7 @@ function SecretField({ label, hint, hasExisting, value, onChange, generatable = 
 }
 
 function WebhookUrl({ provider, base }: { provider: string; base?: string | null }) {
+  const tx = useTx()
   const effBase = (base || '').replace(/\/$/, '')
   const url = effBase ? `${effBase}/api/webhooks/${provider}` : `https://tu-dominio.com/api/webhooks/${provider}`
   const [copied, setCopied] = useState(false)
@@ -133,7 +135,7 @@ function WebhookUrl({ provider, base }: { provider: string; base?: string | null
         <p className="font-mono text-xs text-brand-primary/60 truncate">{url}</p>
       </div>
       <button type="button" onClick={() => { navigator.clipboard?.writeText(url); setCopied(true); setTimeout(() => setCopied(false), 1500) }}
-        className="shrink-0 font-brand text-xs text-brand-primary underline hover:text-brand-dark">{copied ? 'Copiada' : 'Copiar'}</button>
+        className="shrink-0 font-brand text-xs text-brand-primary underline hover:text-brand-dark">{copied ? tx("Copiada") : tx("Copiar")}</button>
     </div>
   )
 }
@@ -163,7 +165,7 @@ export default function IntegrationInstancesForm({ kind, apiBase, addLabel, empt
   async function run(fn: () => Promise<void>, okText?: string) {
     setBusy(true); setMsg(null)
     try { await fn(); if (okText) setMsg({ type: 'ok', text: okText }); router.refresh() }
-    catch (err) { setMsg({ type: 'err', text: err instanceof Error ? err.message : 'Error' }) }
+    catch (err) { setMsg({ type: 'err', text: err instanceof Error ? err.message : tx("Error") }) }
     finally { setBusy(false) }
   }
 
@@ -222,13 +224,13 @@ export default function IntegrationInstancesForm({ kind, apiBase, addLabel, empt
     const r = await api('/activate', 'POST', { id })
     if (!r.ok) { const miss = Array.isArray(r.data.missing) ? ` (${(r.data.missing as string[]).join(', ')})` : ''; throw new Error(((r.data.error as string) ?? 'No se pudo activar') + miss) }
     await onAfterActivate?.(id)
-  }, id ? 'Método activado' : 'Cobro en línea desactivado (pago manual)')
+  }, id ? tx("Método activado") : tx("Cobro en línea desactivado (pago manual)"))
 
   // Un carrier es el método ACTIVO solo si está activo y el incorporado (tarifa fija) no lo está.
   const carrierIsActive = (inst: MaskedInstance) => inst.isActive && !(builtin?.active)
 
   const remove = (inst: MaskedInstance) => {
-    if (typeof window !== 'undefined' && !window.confirm(`¿Quitar "${inst.label || labelOf(inst.provider)}"? Se borran sus credenciales.`)) return
+    if (typeof window !== 'undefined' && !window.confirm(tx("¿Quitar \"{provider}\"? Se borran sus credenciales.", { provider: inst.label || labelOf(inst.provider) }))) return
     run(async () => { const r = await api(`/${inst.id}`, 'DELETE'); if (!r.ok) throw new Error((r.data.error as string) ?? 'No se pudo quitar') }, 'Medio de pago eliminado')
   }
 
@@ -237,9 +239,9 @@ export default function IntegrationInstancesForm({ kind, apiBase, addLabel, empt
     try {
       const r = await api('/verify', 'POST', { id: inst.id })
       const d = r.data
-      if (r.ok && d.ok) setMsg({ type: 'ok', text: `${labelOf(inst.provider)}: credenciales válidas ✓` })
-      else if (d.supported === false) setMsg({ type: 'ok', text: `${labelOf(inst.provider)}: verificación automática no disponible; se valida en el primer pago.` })
-      else setMsg({ type: 'err', text: `${labelOf(inst.provider)}: ${(d.detail as string) ?? 'no se pudieron validar las credenciales'}` })
+      if (r.ok && d.ok) setMsg({ type: 'ok', text: tx("{provider}: credenciales válidas ✓", { provider: labelOf(inst.provider) }) })
+      else if (d.supported === false) setMsg({ type: 'ok', text: tx("{provider}: verificación automática no disponible; se valida en el primer pago.", { provider: labelOf(inst.provider) }) })
+      else setMsg({ type: 'err', text: `${labelOf(inst.provider)}: ${(d.detail as string) ?? tx("no se pudieron validar las credenciales")}` })
     } catch { setMsg({ type: 'err', text: 'No se pudo verificar.' }) }
     finally { setVerifying(null) }
   }
@@ -380,7 +382,7 @@ export default function IntegrationInstancesForm({ kind, apiBase, addLabel, empt
               {carrierIsActive(inst) && <StatusBadge tone="success"><T>Activa</T></StatusBadge>}
             </>}
             actions={<>
-              <ResourceAction icon="refresh" label={verifying === inst.id ? 'Verificando…' : 'Verificar'} onClick={() => verify(inst)} disabled={verifying !== null || busy} />
+              <ResourceAction icon="refresh" label={verifying === inst.id ? tx("Verificando…") : tx("Verificar")} onClick={() => verify(inst)} disabled={verifying !== null || busy} />
               <ResourceAction icon="edit" label={tx("Editar")} onClick={() => setDraft(editDraft(inst))} disabled={busy} />
               {!carrierIsActive(inst) && <ResourceAction icon="check" label={tx("Activar")} tone="primary" onClick={() => activate(inst.id)} disabled={busy} />}
               <ResourceAction icon="trash" label={tx("Quitar")} tone="danger" onClick={() => remove(inst)} disabled={busy} />

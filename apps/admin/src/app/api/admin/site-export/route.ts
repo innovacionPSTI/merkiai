@@ -3,7 +3,7 @@
  * Descarga un backup completo del sitio (Tema + config no sensible + nav +
  * todas las páginas) como JSON versionado. Nunca incluye secretos.
  */
-import { NextResponse } from 'next/server'
+import { NextResponse } from '@/lib/api-response'
 import { getAdminUser } from '@/lib/auth'
 import { getAdminDb } from '@/lib/admin-db'
 import { userCanAccess } from '@/lib/roles'

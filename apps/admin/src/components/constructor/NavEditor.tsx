@@ -62,7 +62,7 @@ export default function NavEditor({ pages }: { pages: PageOpt[] }) {
     const linked = it.page_key ? pages.find((p) => p.key === it.page_key) : null
     return (
       <div className={`flex items-center gap-2 py-1.5 ${child ? 'pl-5' : ''}`}>
-        <button onClick={() => patch(it.id, { enabled: !it.enabled })} title={it.enabled ? 'Visible' : 'Oculto'}
+        <button onClick={() => patch(it.id, { enabled: !it.enabled })} title={it.enabled ? tx("Visible") : tx("Oculto")}
           className={`w-2 h-2 rounded-full flex-shrink-0 ${it.enabled ? 'bg-green-500' : 'bg-slate-300'}`} aria-label={tx("Alternar visibilidad")} />
         <input defaultValue={it.label} onBlur={(e) => e.target.value.trim() && e.target.value !== it.label && patch(it.id, { label: e.target.value.trim() })}
           className="flex-1 min-w-0 rounded border border-slate-200 px-2 py-1 text-sm" aria-label={tx("Nombre del elemento")} />
@@ -72,7 +72,7 @@ export default function NavEditor({ pages }: { pages: PageOpt[] }) {
           {pages.map((p) => <option key={p.key} value={p.key}>{p.label}</option>)}
         </select>
         <button onClick={() => setDelId(it.id)} className="text-slate-300 hover:text-red-500" aria-label={tx("Eliminar")}>✕</button>
-        {linked && <span className="sr-only">vinculada a {linked.slug}</span>}
+        {linked && <span className="sr-only"><T>vinculada a</T> {linked.slug}</span>}
       </div>
     )
   }

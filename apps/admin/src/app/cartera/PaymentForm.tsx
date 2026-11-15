@@ -60,7 +60,7 @@ export default function PaymentForm({ partyId, documentId, lines, suggested }: {
           </label>
         )}
         <button type="button" onClick={submit} disabled={pending || !(amount > 0)} className="rounded-full bg-brand-primary px-5 py-2 font-brand text-sm text-white disabled:opacity-50">
-          {pending ? 'Registrando…' : 'Registrar abono'}
+          {pending ? tx("Registrando…") : tx("Registrar abono")}
         </button>
       </div>
       {msg && <p role="status" className={`font-brand text-sm ${msg.ok ? 'text-green-700' : 'text-red-600'}`}>{msg.text}</p>}

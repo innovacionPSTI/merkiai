@@ -11,10 +11,11 @@ import { useTx } from '@merkiai/ui'
 const initialState: CreateTenantState = { ok: false }
 
 function SubmitButton() {
+  const tx = useTx()
   const { pending } = useFormStatus()
   return (
     <button type="submit" style={{ ...btn, opacity: pending ? 0.6 : 1 }} disabled={pending}>
-      {pending ? 'Creando…' : 'Crear'}
+      {pending ? tx("Creando…") : tx("Crear")}
     </button>
   )
 }

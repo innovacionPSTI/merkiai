@@ -13,6 +13,7 @@ import { splitSectionFields } from '@/lib/section-fields'
 import FieldInput from './FieldInput'
 import ItemsEditor from './ItemsEditor'
 import { T } from '@merkiai/ui'
+import { useTx } from '@merkiai/ui'
 
 // HU-253 · claves de estilo compartido + sus defaults.
 const STYLE_KEYS = Object.keys(STYLE_FIELDS)
@@ -40,6 +41,7 @@ interface SectionEditorProps {
 }
 
 export default function SectionEditor({ section, onSaved, onChange }: SectionEditorProps) {
+  const tx = useTx()
   const schema = getBlockSchema(section.section_type)
   // HU-128 v2: si la sección está publicada, editar "en caliente" guarda en el
   // borrador (overlay) y NO toca lo que ve el público hasta "Publicar cambios".
@@ -94,7 +96,7 @@ export default function SectionEditor({ section, onSaved, onChange }: SectionEdi
       }
     } catch (e) {
       setStatus('error')
-      setErrorMsg(e instanceof Error ? e.message : 'Error al guardar')
+      setErrorMsg(e instanceof Error ? e.message : tx("Error al guardar"))
     }
   }
 
@@ -111,7 +113,7 @@ export default function SectionEditor({ section, onSaved, onChange }: SectionEdi
       onSaved?.({}); onChange?.()
     } catch (e) {
       setStatus('error')
-      setErrorMsg(e instanceof Error ? e.message : 'Error')
+      setErrorMsg(e instanceof Error ? e.message : tx("Error"))
     }
   }
 
@@ -152,7 +154,7 @@ export default function SectionEditor({ section, onSaved, onChange }: SectionEdi
               disabled={status === 'saving'}
               className="rounded-lg bg-indigo-600 px-4 py-2 text-sm font-medium text-white hover:bg-indigo-700 disabled:opacity-60"
             >
-              {status === 'saving' ? 'Guardando…' : published ? 'Guardar borrador' : 'Guardar'}
+              {status === 'saving' ? tx("Guardando…") : published ? tx("Guardar borrador") : tx("Guardar")}
             </button>
             {hasDraft && (
               <>
@@ -172,15 +174,15 @@ export default function SectionEditor({ section, onSaved, onChange }: SectionEdi
                 </button>
               </>
             )}
-            <span role="status" aria-live="polite" className="text-sm text-green-600">{status === 'saved' ? (published ? 'Guardado en borrador ✓' : 'Guardado ✓') : ''}</span>
+            <span role="status" aria-live="polite" className="text-sm text-green-600">{status === 'saved' ? (published ? tx("Guardado en borrador ✓") : tx("Guardado ✓")) : ''}</span>
             {status === 'error' && <span role="alert" className="text-sm text-red-600">{errorMsg}</span>}
           </div>
 
           {published && (
             <p className="text-[11px] text-slate-400">
               {hasDraft
-                ? 'Hay cambios en borrador visibles solo en la vista previa. «Publicar cambios» los hace públicos.'
-                : 'Esta sección está publicada: tus ediciones se guardan como borrador (editar en caliente) y solo se ven en la vista previa hasta publicarlas.'}
+                ? tx("Hay cambios en borrador visibles solo en la vista previa. «Publicar cambios» los hace públicos.")
+                : tx("Esta sección está publicada: tus ediciones se guardan como borrador (editar en caliente) y solo se ven en la vista previa hasta publicarlas.")}
             </p>
           )}
       </div>

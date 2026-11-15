@@ -308,7 +308,7 @@ async function AdminDashboard() {
                         <span className="font-brand text-xs text-brand-primary/30 w-4">{i + 1}</span>
                         <span className="font-brand text-sm text-brand-primary truncate max-w-[160px]">{p.name}</span>
                       </div>
-                      <span className="font-brand text-xs font-semibold text-brand-primary/60">{fmtNum(p.total)} uds.</span>
+                      <span className="font-brand text-xs font-semibold text-brand-primary/60">{fmtNum(p.total)} <T>uds.</T></span>
                     </li>
                   ))}
                 </ul>
@@ -518,7 +518,7 @@ async function GestorDashboard() {
                           <p className="font-brand text-sm font-semibold text-brand-primary">{c.code}</p>
                           <p className="font-brand text-xs text-brand-primary/40">
                             {c.discount_type === 'percent' ? `${c.discount_value}%` : fmt(c.discount_value)} ·{' '}
-                            {c.current_uses}{c.max_uses ? `/${c.max_uses}` : ''} usos
+                            {c.current_uses}{c.max_uses ? `/${c.max_uses}` : ''} <T>usos</T>
                           </p>
                         </div>
                         <span className={`font-brand text-xs font-bold rounded-full px-2.5 py-1 ${daysLeft <= 1 ? 'bg-red-100 text-red-600' : 'bg-orange-100 text-orange-600'}`}>

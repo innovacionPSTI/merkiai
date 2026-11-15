@@ -129,7 +129,7 @@ export default function CuponesClient({ initialCoupons }: Props) {
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40">
           <div className="bg-white rounded-2xl p-6 shadow-xl w-full max-w-md space-y-4">
             <h2 className="font-brand font-semibold text-brand-primary text-lg">
-              {editingId ? 'Editar cupón' : 'Nuevo cupón'}
+              {editingId ? tx("Editar cupón") : tx("Nuevo cupón")}
             </h2>
 
             <div className="grid grid-cols-2 gap-4">
@@ -157,7 +157,7 @@ export default function CuponesClient({ initialCoupons }: Props) {
 
               <div>
                 <label className="font-brand text-xs font-semibold text-brand-primary block mb-1">
-                  {form.type === 'percentage' ? 'Descuento (%)' : 'Descuento ($)'}
+                  {form.type === 'percentage' ? tx("Descuento (%)") : tx("Descuento ($)")}
                 </label>
                 <input
                   type="number"
@@ -228,7 +228,7 @@ export default function CuponesClient({ initialCoupons }: Props) {
                 disabled={saving}
                 className="flex-1 bg-brand-primary text-brand-cream rounded-full py-2.5 font-brand text-sm hover:bg-brand-dark transition-colors disabled:opacity-50"
               >
-                {saving ? 'Guardando...' : 'Guardar'}
+                {saving ? 'Guardando...' : tx("Guardar")}
               </button>
               <button
                 onClick={() => setShowForm(false)}
@@ -280,7 +280,7 @@ export default function CuponesClient({ initialCoupons }: Props) {
                     </td>
                     <td className="px-4 py-3">
                       <span className={`font-brand text-xs font-semibold px-2.5 py-1 rounded-full capitalize ${STATUS_BADGE[st]}`}>
-                        {st === 'active' ? 'Activo' : st === 'inactive' ? 'Inactivo' : st === 'expired' ? 'Expirado' : 'Agotado'}
+                        {st === 'active' ? tx("Activo") : st === 'inactive' ? tx("Inactivo") : st === 'expired' ? tx("Expirado") : tx("Agotado")}
                       </span>
                     </td>
                     <td className="px-4 py-3">
@@ -288,7 +288,7 @@ export default function CuponesClient({ initialCoupons }: Props) {
                         <button
                           onClick={() => toggleActive(c)}
                           className="font-brand text-xs text-brand-primary/40 hover:text-brand-primary transition-colors"
-                          title={c.active ? 'Desactivar' : 'Activar'}
+                          title={c.active ? tx("Desactivar") : tx("Activar")}
                         >
                           {c.active ? '⏸' : '▶️'}
                         </button>

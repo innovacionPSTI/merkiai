@@ -57,8 +57,8 @@ export default function MarketsManager({ markets, locales, priceLists, rules, us
   })
 
   const limitText = useMemo(() => {
-    if (rules.maxLanguages === null) return `Usas ${usedLanguages} idioma(s). Tu plan no tiene límite de idiomas.`
-    return `Usas ${usedLanguages} de ${rules.maxLanguages} idioma(s) incluidos en tu plan.`
+    if (rules.maxLanguages === null) return tx("Usas {usedLanguages} idioma(s). Tu plan no tiene límite de idiomas.", { usedLanguages })
+    return tx("Usas {usedLanguages} de {maxLanguages} idioma(s) incluidos en tu plan.", { usedLanguages, maxLanguages: rules.maxLanguages })
   }, [rules.maxLanguages, usedLanguages])
 
   function toggleLocale(code: string) {
@@ -113,7 +113,7 @@ export default function MarketsManager({ markets, locales, priceLists, rules, us
         <button
           type="button"
           disabled={!canAddMarket || pending}
-          title={canAddMarket ? undefined : 'Tu plan incluye un solo mercado'}
+          title={canAddMarket ? undefined : tx("Tu plan incluye un solo mercado")}
           onClick={() => { setMsg(null); setEditing(newDraft()) }}
           className="rounded-full bg-brand-primary px-5 py-2 font-brand text-sm text-white disabled:opacity-50"
         >
@@ -130,7 +130,7 @@ export default function MarketsManager({ markets, locales, priceLists, rules, us
             <div className="flex items-start justify-between gap-2">
               <div>
                 <h2 className="font-brand text-base font-semibold text-brand-primary">{m.name}</h2>
-                <p className="font-brand text-xs text-brand-primary/60">{m.countries.length ? m.countries.join(', ') : 'Sin países'} · {m.currency}</p>
+                <p className="font-brand text-xs text-brand-primary/60">{m.countries.length ? m.countries.join(', ') : tx("Sin países")} · {m.currency}</p>
               </div>
               <div className="flex gap-1">
                 {m.is_default && <span className="rounded-full bg-brand-primary/10 px-2 py-0.5 font-brand text-xs text-brand-primary"><T>Predeterminado</T></span>}
@@ -142,8 +142,8 @@ export default function MarketsManager({ markets, locales, priceLists, rules, us
                 <li key={l}>{label(l)}{l === m.default_locale ? ' · por defecto' : ''}</li>
               ))}
             </ul>
-            {m.domain && <p className="font-brand text-xs text-brand-primary/60">Dominio: {m.domain}</p>}
-            {m.price_list_id && <p className="font-brand text-xs text-brand-primary/60">Lista de precios: {priceLists.find((p) => p.id === m.price_list_id)?.name ?? '—'}</p>}
+            {m.domain && <p className="font-brand text-xs text-brand-primary/60"><T>Dominio:</T> {m.domain}</p>}
+            {m.price_list_id && <p className="font-brand text-xs text-brand-primary/60"><T>Lista de precios:</T> {priceLists.find((p) => p.id === m.price_list_id)?.name ?? '—'}</p>}
             <div className="flex gap-3 pt-1">
               <button type="button" className="font-brand text-sm text-brand-primary underline" onClick={() => { setMsg(null); setEditing(toDraft(m)) }}><T>Editar</T></button>
               {!m.is_default && !m.virtual && (
@@ -156,7 +156,7 @@ export default function MarketsManager({ markets, locales, priceLists, rules, us
 
       {editing && (
         <section className="rounded-2xl border border-brand-primary/30 bg-white p-5 space-y-4" aria-label={tx("Editar mercado")}>
-          <h2 className="font-brand text-sm font-semibold text-brand-primary">{editing.id || editing.virtual ? `Editar ${editing.name || 'mercado'}` : 'Nuevo mercado'}</h2>
+          <h2 className="font-brand text-sm font-semibold text-brand-primary">{editing.id || editing.virtual ? tx("Editar {name}", { name: editing.name || tx('mercado') }) : tx("Nuevo mercado")}</h2>
           <div className="grid gap-4 md:grid-cols-2">
             <label className="block font-brand text-sm text-brand-primary"><T>Nombre</T>
               <input className={`${input} mt-1 w-full`} value={editing.name} onChange={(e) => setEditing({ ...editing, name: e.target.value })} placeholder={tx("México")} />
@@ -166,7 +166,7 @@ export default function MarketsManager({ markets, locales, priceLists, rules, us
             </label>
             <label className="block font-brand text-sm text-brand-primary"><T>Moneda</T>
               <input className={`${input} mt-1 w-full bg-gray-50`} value={editing.currency} disabled={!rules.multiCurrency} onChange={(e) => setEditing({ ...editing, currency: e.target.value.toUpperCase() })} />
-              {!rules.multiCurrency && <span className="block font-brand text-xs text-brand-primary/60 mt-1">Por ahora todos los mercados venden en la moneda de la tienda ({baseCurrency}). Los precios en otra moneda llegan en una próxima versión.</span>}
+              {!rules.multiCurrency && <span className="block font-brand text-xs text-brand-primary/60 mt-1"><T>Por ahora todos los mercados venden en la moneda de la tienda (</T>{baseCurrency}). Los precios en otra moneda llegan en una próxima versión.</span>}
             </label>
             <label className="block font-brand text-sm text-brand-primary"><T>Dominio propio (opcional)</T>
               <input className={`${input} mt-1 w-full`} value={editing.domain ?? ''} onChange={(e) => setEditing({ ...editing, domain: e.target.value || null })} placeholder="mitienda.mx" />
@@ -207,7 +207,7 @@ export default function MarketsManager({ markets, locales, priceLists, rules, us
           </div>
 
           <div className="flex gap-3">
-            <button type="button" disabled={pending} onClick={save} className="rounded-full bg-brand-primary px-6 py-2.5 font-brand text-sm text-white disabled:opacity-60">{pending ? 'Guardando…' : 'Guardar mercado'}</button>
+            <button type="button" disabled={pending} onClick={save} className="rounded-full bg-brand-primary px-6 py-2.5 font-brand text-sm text-white disabled:opacity-60">{pending ? tx("Guardando…") : tx("Guardar mercado")}</button>
             <button type="button" disabled={pending} onClick={() => setEditing(null)} className="rounded-full border border-brand-primary/30 px-6 py-2.5 font-brand text-sm text-brand-primary"><T>Cancelar</T></button>
           </div>
         </section>
@@ -216,7 +216,7 @@ export default function MarketsManager({ markets, locales, priceLists, rules, us
       <ConfirmDialog
         open={toDelete !== null}
         title={tx("Eliminar mercado")}
-        message={toDelete ? `¿Eliminar el mercado "${toDelete.name}"? Esta acción no se puede deshacer.` : ''}
+        message={toDelete ? tx("¿Eliminar el mercado \"{toDeleteName}\"? Esta acción no se puede deshacer.", { toDeleteName: toDelete.name }) : ''}
         danger confirmLabel="Eliminar" busy={pending}
         onConfirm={() => { if (toDelete) remove(toDelete) }}
         onCancel={() => setToDelete(null)}

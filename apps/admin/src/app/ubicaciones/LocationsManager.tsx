@@ -40,7 +40,7 @@ export default function LocationsManager({ locations: initial }: { locations: Ro
       if (!res.ok) throw new Error((await res.json().catch(() => ({})))?.error ?? 'No se pudo crear')
       setName(''); setCode(''); setKind('warehouse'); setCity(''); setIsDefault(false)
       await reload(); router.refresh()
-    } catch (e) { setError(e instanceof Error ? e.message : 'Error') } finally { setBusy(false) }
+    } catch (e) { setError(e instanceof Error ? e.message : tx("Error")) } finally { setBusy(false) }
   }
 
   async function patch(id: number, body: Record<string, unknown>) {
@@ -76,7 +76,7 @@ export default function LocationsManager({ locations: initial }: { locations: Ro
           <label className="flex items-center gap-2 font-brand text-sm text-brand-primary">
             <input type="checkbox" checked={isDefault} onChange={(e) => setIsDefault(e.target.checked)} /> <T>Predeterminada</T>
           </label>
-          <button onClick={create} disabled={busy} className="rounded-full bg-brand-primary text-brand-cream px-5 py-2 font-brand text-sm font-medium hover:bg-brand-dark disabled:opacity-50">{busy ? 'Creando…' : 'Agregar'}</button>
+          <button onClick={create} disabled={busy} className="rounded-full bg-brand-primary text-brand-cream px-5 py-2 font-brand text-sm font-medium hover:bg-brand-dark disabled:opacity-50">{busy ? tx("Creando…") : tx("Agregar")}</button>
         </div>
         {error && <p className="font-brand text-sm text-red-600">{error}</p>}
       </div>
@@ -103,7 +103,7 @@ export default function LocationsManager({ locations: initial }: { locations: Ro
                 <td className="px-4 py-3 text-right">
                   <div className="flex gap-2 justify-end">
                     {!r.is_default && <button onClick={() => patch(r.id, { is_default: true })} className="font-brand text-xs text-brand-primary underline"><T>Hacer predeterminada</T></button>}
-                    <button onClick={() => patch(r.id, { active: !r.active })} className="font-brand text-xs text-brand-primary/60 underline">{r.active ? 'Desactivar' : 'Activar'}</button>
+                    <button onClick={() => patch(r.id, { active: !r.active })} className="font-brand text-xs text-brand-primary/60 underline">{r.active ? tx("Desactivar") : tx("Activar")}</button>
                   </div>
                 </td>
               </tr>

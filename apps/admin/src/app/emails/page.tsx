@@ -76,7 +76,7 @@ export default async function EmailsPage({ searchParams }: { searchParams: Promi
       {pages > 1 && (
         <div className="flex items-center justify-center gap-4 font-brand text-sm">
           {page > 1 && <a href={`/emails?page=${page - 1}${type ? `&type=${type}` : ''}`} className="text-brand-primary hover:underline"><T>← Anterior</T></a>}
-          <span className="text-brand-primary/50">Página {page} de {pages}</span>
+          <span className="text-brand-primary/50"><T>Página</T> {page} de {pages}</span>
           {page < pages && <a href={`/emails?page=${page + 1}${type ? `&type=${type}` : ''}`} className="text-brand-primary hover:underline"><T>Siguiente →</T></a>}
         </div>
       )}

@@ -136,3 +136,31 @@ describe('HU-466 · frases con clave = texto original', () => {
     expect(translatePhrase('Texto sin traducir', 'en-US')).toBe('Texto sin traducir')
   })
 })
+
+describe('HU-466 F6 · mensajes de servidor', () => {
+  it('patrones con huecos {0} traducen mensajes armados en runtime', async () => {
+    const { translatePhrase } = await import('..')
+    expect(translatePhrase('Documento F-12 creado.', 'en-US')).toBe('Document F-12 created.')
+    expect(translatePhrase('Recurso desconocido: banners', 'en-US')).toBe('Unknown resource: banners')
+    expect(translatePhrase('Documento F-12 creado.', 'es-CO')).toBe('Documento F-12 creado.')
+  })
+
+  it('localizeMessages traduce solo los campos de mensaje', async () => {
+    const { localizeMessages, hasMessages } = await import('..')
+    const body = { ok: false, error: 'No autorizado', errors: ['Sin permiso', { field: 'x', message: 'No autorizado' }], data: { error: 'No autorizado' } }
+    const out = localizeMessages(body, 'en-US')
+    expect(out.error).toBe('Unauthorized')
+    expect(out.errors).toEqual(['No permission', { field: 'x', message: 'Unauthorized' }])
+    expect(out.data).toBe(body.data)
+    expect(localizeMessages(body, 'es-MX')).toBe(body)
+    expect(hasMessages({ products: [] })).toBe(false)
+  })
+
+  it('frases con valores y plurales ICU en ambos idiomas', async () => {
+    const { translatePhrase } = await import('..')
+    const k = '{count, plural, one {# tema configurado} other {# temas configurados}}'
+    expect(translatePhrase(k, 'es-CO', { count: 1 })).toBe('1 tema configurado')
+    expect(translatePhrase(k, 'en-US', { count: 3 })).toBe('3 themes configured')
+    expect(translatePhrase('Prueba enviada a {to}', 'en-US', { to: 'a@b.co' })).toBe('Test sent to a@b.co')
+  })
+})

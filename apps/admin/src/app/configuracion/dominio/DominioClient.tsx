@@ -18,6 +18,7 @@ const STATUS: Record<string, { label: string; tone: BadgeTone }> = {
 }
 
 function DnsRow({ label, value }: { label: string; value: string }) {
+  const tx = useTx()
   const [copied, setCopied] = useState(false)
   return (
     <div className="flex items-center justify-between gap-3 rounded-lg border border-brand-primary/10 bg-brand-cream/30 px-3 py-2">
@@ -27,7 +28,7 @@ function DnsRow({ label, value }: { label: string; value: string }) {
       </div>
       <button type="button" className="shrink-0 font-brand text-xs text-brand-primary underline"
         onClick={() => { navigator.clipboard?.writeText(value); setCopied(true); setTimeout(() => setCopied(false), 1200) }}>
-        {copied ? 'Copiado' : 'Copiar'}
+        {copied ? tx("Copiado") : tx("Copiar")}
       </button>
     </div>
   )
@@ -95,14 +96,14 @@ export default function DominioClient({ domains }: { domains: AdminCustomDomain[
               <ResourceItem
                 icon={<Icon name="domain" size={18} />}
                 title={d.domain}
-                subtitle={d.isPrimary ? 'Dominio principal (canónico)' : 'Alias'}
+                subtitle={d.isPrimary ? tx("Dominio principal (canónico)") : tx("Alias")}
                 accent={d.isPrimary}
                 badges={<>
                   <StatusBadge tone={st.tone}>{st.label}</StatusBadge>
                   {d.isPrimary && <StatusBadge tone="success"><T>Principal</T></StatusBadge>}
                 </>}
                 actions={<>
-                  <ResourceAction icon="list" label={openId === d.id ? 'Ocultar DNS' : 'Ver DNS'} onClick={() => toggleDns(d.id)} disabled={busy} />
+                  <ResourceAction icon="list" label={openId === d.id ? tx("Ocultar DNS") : tx("Ver DNS")} onClick={() => toggleDns(d.id)} disabled={busy} />
                   {d.status === 'pending' && <ResourceAction icon="refresh" label={tx("Verificar")} tone="primary" onClick={() => run(() => verifyDomainAction(d.id))} disabled={busy} />}
                   {d.status === 'verified' && <ResourceAction icon="check" label={tx("Activar")} tone="primary" onClick={() => run(() => activateDomainAction(d.id))} disabled={busy} />}
                   {d.status !== 'pending' && !d.isPrimary && <ResourceAction icon="check" label={tx("Hacer principal")} onClick={() => run(() => setPrimaryDomainAction(d.id))} disabled={busy} />}

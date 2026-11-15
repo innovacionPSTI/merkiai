@@ -31,10 +31,10 @@ export default function ReconcileBoldButton({ orderId, provider = 'bold' }: { or
         setMsg(tx("Pago rechazado"))
         router.refresh()
       } else {
-        setMsg(`Aún sin confirmación de ${LABEL[provider]}`)
+        setMsg(tx("Aún sin confirmación de {provider}", { provider: LABEL[provider] }))
       }
     } catch (err) {
-      setMsg(err instanceof Error ? err.message : 'Error')
+      setMsg(err instanceof Error ? err.message : tx("Error"))
     } finally {
       setLoading(false)
     }
@@ -48,7 +48,7 @@ export default function ReconcileBoldButton({ orderId, provider = 'bold' }: { or
         disabled={loading}
         className="w-full bg-brand-primary/10 text-brand-primary rounded-xl py-2 font-brand text-sm font-medium hover:bg-brand-primary/20 transition-colors disabled:opacity-50"
       >
-        {loading ? `Consultando a ${LABEL[provider]}…` : `Verificar pago con ${LABEL[provider]}`}
+        {loading ? tx("Consultando a {provider}…", { provider: LABEL[provider] }) : tx("Verificar pago con {provider}", { provider: LABEL[provider] })}
       </button>
       {msg && <p className="font-brand text-xs text-brand-primary/60 mt-1.5 text-center">{msg}</p>}
     </div>

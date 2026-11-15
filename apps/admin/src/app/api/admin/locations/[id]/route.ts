@@ -3,7 +3,8 @@
  * PATCH → edita una ubicación o la marca como predeterminada (`is_default: true`).
  * Tenant-scoped + gated por `multi_location`.
  */
-import { NextRequest, NextResponse } from 'next/server'
+import { NextRequest } from 'next/server'
+import { NextResponse } from '@/lib/api-response'
 import { getAdminUser } from '@/lib/auth'
 import { getAdminDb } from '@/lib/admin-db'
 import { updateLocation, setDefaultLocation, isLocationKind } from '@merkiai/database'

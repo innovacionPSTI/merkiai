@@ -3,7 +3,8 @@
  * GET  → ubicaciones del tenant.
  * POST → crea una ubicación. Tenant-scoped + gated por `multi_location`.
  */
-import { NextRequest, NextResponse } from 'next/server'
+import { NextRequest } from 'next/server'
+import { NextResponse } from '@/lib/api-response'
 import { getAdminUser } from '@/lib/auth'
 import { getAdminDb } from '@/lib/admin-db'
 import { listLocations, createLocation, isLocationKind } from '@merkiai/database'

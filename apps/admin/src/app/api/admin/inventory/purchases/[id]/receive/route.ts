@@ -3,7 +3,8 @@
  * Recibe una compra: anexa entradas al libro con costo e marca recibida.
  * Idempotente (receivePurchase usa op_key). Tenant-scoped + gated por `inventory`.
  */
-import { NextRequest, NextResponse } from 'next/server'
+import { NextRequest } from 'next/server'
+import { NextResponse } from '@/lib/api-response'
 import { getAdminUser } from '@/lib/auth'
 import { getAdminDb } from '@/lib/admin-db'
 import { receivePurchase, listUoms } from '@merkiai/database'

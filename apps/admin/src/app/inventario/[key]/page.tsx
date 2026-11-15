@@ -13,6 +13,7 @@ import TransferForm from './TransferForm'
 import TransferInbox from './TransferInbox'
 import { formatNumber, formatDateTime } from '@merkiai/i18n'
 import { T } from '@merkiai/ui'
+import { getAdminTx } from '@/lib/ui-locale'
 
 export const metadata: Metadata = { title: 'Kardex' }
 export const dynamic = 'force-dynamic'
@@ -25,6 +26,7 @@ function fmt(n: number): string { return formatNumber(n, { maximumFractionDigits
 
 /** E24 · Kardex de un ítem: historial de movimientos del libro (HU-401). */
 export default async function KardexPage({ params }: { params: Promise<{ key: string }> }) {
+  const tx = await getAdminTx()
   const { key } = await params
   const { adminUser, db } = await requireAdminDb()
   if (!userCanAccess(adminUser, 'productos')) redirect('/no-autorizado')
@@ -55,7 +57,7 @@ export default async function KardexPage({ params }: { params: Promise<{ key: st
 
   return (
     <div className="space-y-6">
-      <PageHeader title={`Kardex · ${item.name}`} description={`Disponible: ${fmt(available)} · Costo unitario: ${cost == null ? '—' : fmt(cost)}`} />
+      <PageHeader title={tx("Kardex · {itemName}", { itemName: item.name })} description={tx("Disponible: {available} · Costo unitario: {cost}", { available: fmt(available), cost: cost == null ? '—' : fmt(cost) })} />
       <div className="flex items-center gap-4">
         <a href="/inventario" className="font-brand text-sm text-brand-primary/60 underline"><T>← Volver a Inventario</T></a>
         <a href={`/api/admin/operations/export?type=kardex&item=${item.id}`} className="font-brand text-sm text-brand-primary underline">Exportar kardex (CSV)</a>
@@ -68,7 +70,7 @@ export default async function KardexPage({ params }: { params: Promise<{ key: st
             <tbody>
               {byLocation.map((b) => (
                 <tr key={String(b.location_id)} className="border-t border-gray-100 first:border-t-0">
-                  <td className="py-2 text-brand-primary/70">{b.location_id != null ? (locName.get(b.location_id) ?? `#${b.location_id}`) : 'Sin ubicación'}</td>
+                  <td className="py-2 text-brand-primary/70">{b.location_id != null ? (locName.get(b.location_id) ?? `#${b.location_id}`) : tx("Sin ubicación")}</td>
                   <td className="py-2 text-right tabular-nums text-brand-primary">{fmt(b.available)}</td>
                 </tr>
               ))}

@@ -5,6 +5,7 @@ import { useActionState } from 'react'
 import { savePreset, type PresetActionState } from '../../actions'
 import { input, btn } from '@/lib/styles'
 import { useTx } from '@merkiai/ui'
+import { T } from '@merkiai/ui'
 
 const initial: PresetActionState = { ok: false }
 
@@ -69,10 +70,9 @@ export default function PresetImport() {
           <input type="hidden" name="inventory_model" value={payload.inventory_model ?? 'single'} />
           <input type="hidden" name="active" value="true" />
           <p style={{ fontSize: 12, color: 'var(--ui-muted)' }}>
-            Se publicará con el Tema, el layout y {Array.isArray(payload.home_sections) ? payload.home_sections.length : 0} sección(es) del home del archivo.
-            Disponible en todos los planes (edítalo luego si quieres restringirlo).
+            <T>Se publicará con el Tema, el layout y</T> {Array.isArray(payload.home_sections) ? payload.home_sections.length : 0} <T>sección(es) del home del archivo. Disponible en todos los planes (edítalo luego si quieres restringirlo).</T>
           </p>
-          <button type="submit" style={btn} disabled={pending}>{pending ? 'Publicando…' : 'Publicar como preset'}</button>
+          <button type="submit" style={btn} disabled={pending}>{pending ? tx("Publicando…") : tx("Publicar como preset")}</button>
           {state.error && <p style={{ color: 'var(--ui-danger)', fontSize: 13 }}>{state.error}</p>}
           {state.ok && state.message && <p style={{ color: 'var(--ui-success)', fontSize: 13 }}>{state.message}</p>}
         </form>

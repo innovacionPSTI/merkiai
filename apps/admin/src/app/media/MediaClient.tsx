@@ -77,7 +77,7 @@ export default function MediaClient({ initialAssets, pickerMode = false, onSelec
       const listJson = await listRes.json()
       setAssets(listJson.assets ?? [])
     } catch (e: unknown) {
-      setError(e instanceof Error ? e.message : 'Error al subir el archivo')
+      setError(e instanceof Error ? e.message : tx("Error al subir el archivo"))
     } finally {
       setUploading(false)
       if (fileRef.current) fileRef.current.value = ''
@@ -87,7 +87,7 @@ export default function MediaClient({ initialAssets, pickerMode = false, onSelec
   // ── Eliminar ──────────────────────────────────────────────────────────────
 
   async function handleDelete(asset: MediaAsset) {
-    if (!confirm(`¿Eliminar "${asset.key}"? Esta acción no se puede deshacer.`)) return
+    if (!confirm(tx("¿Eliminar \"{key}\"? Esta acción no se puede deshacer.", { key: asset.key }))) return
     setError(null)
 
     try {
@@ -105,7 +105,7 @@ export default function MediaClient({ initialAssets, pickerMode = false, onSelec
       setAssets((prev) => prev.filter((a) => a.key !== asset.key))
       if (selected?.key === asset.key) setSelected(null)
     } catch (e: unknown) {
-      setError(e instanceof Error ? e.message : 'Error al eliminar')
+      setError(e instanceof Error ? e.message : tx("Error al eliminar"))
     }
   }
 
@@ -126,7 +126,7 @@ export default function MediaClient({ initialAssets, pickerMode = false, onSelec
       setAssets((prev) => prev.map((a) => (a.key === updated.key ? updated : a)))
       setSelected(updated)
     } catch (e: unknown) {
-      setError(e instanceof Error ? e.message : 'Error al guardar')
+      setError(e instanceof Error ? e.message : tx("Error al guardar"))
     }
   }
 
@@ -158,10 +158,10 @@ export default function MediaClient({ initialAssets, pickerMode = false, onSelec
                   : 'bg-gray-100 text-brand-primary/60 hover:bg-gray-200'
               }`}
             >
-              {f === 'all' ? 'Todos' : 'Imágenes'}
+              {f === 'all' ? tx("Todos") : tx("Imágenes")}
             </button>
           ))}
-          <span className="text-xs text-brand-primary/30 font-brand">{filtered.length} archivos</span>
+          <span className="text-xs text-brand-primary/30 font-brand">{filtered.length} <T>archivos</T></span>
         </div>
 
         <div className="flex items-center gap-2">
@@ -171,7 +171,7 @@ export default function MediaClient({ initialAssets, pickerMode = false, onSelec
             disabled={uploading}
             className="px-4 py-2 rounded-xl bg-brand-primary text-brand-cream text-sm font-brand font-semibold hover:bg-brand-dark transition-colors disabled:opacity-50"
           >
-            {uploading ? 'Subiendo…' : '+ Subir'}
+            {uploading ? tx("Subiendo…") : tx("+ Subir")}
           </button>
           <input
             ref={fileRef}
@@ -325,7 +325,7 @@ export default function MediaClient({ initialAssets, pickerMode = false, onSelec
                 onClick={() => copyUrl(selected.url)}
                 className="w-full text-xs font-brand bg-gray-100 text-brand-primary rounded-lg py-2 hover:bg-gray-200 transition-colors"
               >
-                {copied === selected.url ? '¡Copiado!' : 'Copiar URL'}
+                {copied === selected.url ? tx("¡Copiado!") : tx("Copiar URL")}
               </button>
               <button
                 onClick={() => handleDelete(selected)}

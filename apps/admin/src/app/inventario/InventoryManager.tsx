@@ -44,9 +44,9 @@ export default function InventoryManager({ initial, uoms }: { initial: Row[]; uo
       const res = await fetch('/api/admin/inventory/backfill-stock', { method: 'POST' })
       const b = await res.json().catch(() => ({}))
       if (!res.ok) throw new Error(b?.error ?? 'No se pudo ejecutar')
-      setBackfillMsg(`Listo: ${b.applied} aperturas nuevas sobre ${b.items} ítems.`)
+      setBackfillMsg(tx("Listo: {applied} aperturas nuevas sobre {items} ítems.", { applied: b.applied, items: b.items }))
       router.refresh()
-    } catch (e) { setBackfillMsg(e instanceof Error ? e.message : 'Error') } finally { setBackfillBusy(false) }
+    } catch (e) { setBackfillMsg(e instanceof Error ? e.message : tx("Error")) } finally { setBackfillBusy(false) }
   }
 
   async function create() {
@@ -62,7 +62,7 @@ export default function InventoryManager({ initial, uoms }: { initial: Row[]; uo
       setName('')
       router.refresh()
     } catch (e) {
-      setError(e instanceof Error ? e.message : 'Error de red')
+      setError(e instanceof Error ? e.message : tx("Error de red"))
     } finally {
       setSaving(false)
     }
@@ -76,7 +76,7 @@ export default function InventoryManager({ initial, uoms }: { initial: Row[]; uo
         {backfillConfirm ? (
           <div className="flex items-center gap-2">
             <span className="font-brand text-xs text-brand-primary/60"><T>Inicializa saldos de apertura desde el stock actual de las variantes enlazadas (idempotente). ¿Confirmar?</T></span>
-            <button onClick={backfill} disabled={backfillBusy} className="rounded-full bg-brand-primary text-brand-cream px-4 py-2 font-brand text-sm hover:bg-brand-dark disabled:opacity-50">{backfillBusy ? 'Inicializando…' : 'Confirmar'}</button>
+            <button onClick={backfill} disabled={backfillBusy} className="rounded-full bg-brand-primary text-brand-cream px-4 py-2 font-brand text-sm hover:bg-brand-dark disabled:opacity-50">{backfillBusy ? tx("Inicializando…") : tx("Confirmar")}</button>
             <button onClick={() => setBackfillConfirm(false)} className="rounded-full border border-gray-200 text-brand-primary/60 px-4 py-2 font-brand text-sm"><T>Cancelar</T></button>
           </div>
         ) : (
@@ -110,7 +110,7 @@ export default function InventoryManager({ initial, uoms }: { initial: Row[]; uo
           </label>
           <button onClick={create} disabled={saving}
             className="rounded-full bg-brand-primary text-brand-cream px-5 py-2 font-brand text-sm font-medium hover:bg-brand-dark disabled:opacity-50">
-            {saving ? 'Creando…' : 'Agregar'}
+            {saving ? tx("Creando…") : tx("Agregar")}
           </button>
         </div>
         {error && <p className="font-brand text-sm text-red-600 mt-2">{error}</p>}

@@ -48,7 +48,7 @@ export default function PresetsBrowser({ presets }: { presets: PresetRow[] }) {
       />
 
       {filtered.length === 0 ? (
-        <EmptyState icon={<Icon name="preset" size={28} />} title={tx("Sin presets")} description={q || estado !== 'all' ? 'Ajusta la búsqueda o el filtro.' : 'Crea el primero con el formulario de abajo.'} />
+        <EmptyState icon={<Icon name="preset" size={28} />} title={tx("Sin presets")} description={q || estado !== 'all' ? tx("Ajusta la búsqueda o el filtro.") : tx("Crea el primero con el formulario de abajo.")} />
       ) : view === 'grid' ? (
         <CardGrid>
           {filtered.map((p) => (

@@ -4,6 +4,7 @@ import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { Icon } from '@merkiai/ui'
 import { T } from '@merkiai/ui'
+import { useTx } from '@merkiai/ui'
 
 interface Redirect {
   id: number
@@ -16,6 +17,7 @@ interface Redirect {
 }
 
 export default function RedirectsManager({ initial }: { initial: Redirect[] }) {
+  const tx = useTx()
   const router = useRouter()
   const [rows, setRows] = useState<Redirect[]>(initial)
   const [from, setFrom] = useState('')
@@ -51,7 +53,7 @@ export default function RedirectsManager({ initial }: { initial: Redirect[] }) {
   }
 
   async function remove(row: Redirect) {
-    if (!confirm(`¿Eliminar la regla ${row.from_path} → ${row.to_path}?`)) return
+    if (!confirm(tx("¿Eliminar la regla {from_path} → {to_path}?", { from_path: row.from_path, to_path: row.to_path }))) return
     const res = await fetch(`/api/admin/redirects/${row.id}`, { method: 'DELETE' })
     if (res.ok) setRows((rs) => rs.filter((r) => r.id !== row.id))
   }
@@ -121,7 +123,7 @@ export default function RedirectsManager({ initial }: { initial: Redirect[] }) {
                     onClick={() => toggle(r)}
                     className={`font-brand text-xs rounded-full px-2 py-1 ${r.active ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-500'}`}
                   >
-                    {r.active ? 'Activa' : 'Inactiva'}
+                    {r.active ? tx("Activa") : tx("Inactiva")}
                   </button>
                 </td>
                 <td className="px-4 py-3 text-right">

@@ -3,7 +3,8 @@
  * POST → transfiere stock del ítem entre dos ubicaciones (dos movimientos en el
  * libro). Gated por `inventory` + `multi_location`. Tenant-scoped (RLS).
  */
-import { NextRequest, NextResponse } from 'next/server'
+import { NextRequest } from 'next/server'
+import { NextResponse } from '@/lib/api-response'
 import { getAdminUser } from '@/lib/auth'
 import { getAdminDb } from '@/lib/admin-db'
 import { createTransfer, listUoms } from '@merkiai/database'

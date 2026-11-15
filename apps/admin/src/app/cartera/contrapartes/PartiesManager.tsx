@@ -77,9 +77,9 @@ export default function PartiesManager({ parties, consignmentEnabled, documentTy
                   return (
                     <tr key={p.id} className="border-t border-gray-50 align-top">
                       <td className="px-4 py-2"><Link href={`/cartera/contrapartes/${p.id}`} className="font-medium text-brand-primary hover:underline">{p.name}</Link><br /><span className="text-xs text-brand-primary/50">{[p.email, p.phone].filter(Boolean).join(' · ')}</span></td>
-                      <td className="px-4 py-2 text-brand-primary/70">{p.role === 'consignee' ? <>Aliado{p.consigneeLocation ? <><br /><span className="text-xs">Ubicación: {p.consigneeLocation}</span></> : null}</> : 'Cliente'}</td>
+                      <td className="px-4 py-2 text-brand-primary/70">{p.role === 'consignee' ? <><T>Aliado</T>{p.consigneeLocation ? <><br /><span className="text-xs"><T>Ubicación:</T> {p.consigneeLocation}</span></> : null}</> : tx("Cliente")}</td>
                       <td className={`px-4 py-2 text-right ${p.balance > 0 ? 'font-semibold text-red-600' : p.balance < 0 ? 'text-green-700' : ''}`}>{money(p.balance)}</td>
-                      <td className="px-4 py-2">{e ? <input className={`${input} w-32`} value={e.credit} onChange={(ev) => setEdit({ ...edit, [p.id]: { ...e, credit: ev.target.value } })} placeholder={tx("Sin cupo")} /> : (p.credit_limit != null ? money(p.credit_limit) : 'Sin cupo')}</td>
+                      <td className="px-4 py-2">{e ? <input className={`${input} w-32`} value={e.credit} onChange={(ev) => setEdit({ ...edit, [p.id]: { ...e, credit: ev.target.value } })} placeholder={tx("Sin cupo")} /> : (p.credit_limit != null ? money(p.credit_limit) : tx("Sin cupo"))}</td>
                       <td className="px-4 py-2">{e ? <input className={`${input} w-20`} value={e.terms} onChange={(ev) => setEdit({ ...edit, [p.id]: { ...e, terms: ev.target.value } })} placeholder={tx("días")} /> : (p.default_terms_days ? `${p.default_terms_days} días` : '—')}</td>
                       <td className="px-4 py-2 text-right whitespace-nowrap space-x-2">
                         {e ? (
