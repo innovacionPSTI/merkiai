@@ -5,6 +5,8 @@ import { ENTITLEMENTS_CATALOG, ADMIN_SECTIONS, STAFF_ROLES } from '@merkiai/tena
 import { input, btn } from '@/lib/styles'
 import type { PlanRow } from '@/lib/plans'
 import { savePlan } from '../../actions'
+import { T } from '@merkiai/ui'
+import { useTx } from '@merkiai/ui'
 
 const FEATURES = ENTITLEMENTS_CATALOG.filter((e) => e.kind === 'feature')
 const LIMITS = ENTITLEMENTS_CATALOG.filter((e) => e.kind === 'limit')
@@ -21,6 +23,7 @@ const EMPTY: PlanRow = {
  * selector precarga sus valores (crear si eliges «Nuevo plan»).
  */
 export default function PlanForm({ plans }: { plans: PlanRow[] }) {
+  const tx = useTx()
   const [selectedKey, setSelectedKey] = useState<string>('')
   const p = plans.find((x) => x.key === selectedKey) ?? EMPTY
   const limitVal = (k: string) => {
@@ -31,7 +34,7 @@ export default function PlanForm({ plans }: { plans: PlanRow[] }) {
   return (
     <div style={{ maxWidth: 760 }}>
       <label style={{ display: 'block', marginBottom: 12, fontSize: 13, color: '#888' }}>
-        Editar plan existente o crear uno nuevo:
+        <T>Editar plan existente o crear uno nuevo:</T>
         <select
           style={{ ...input, marginTop: 4 }}
           value={selectedKey}
@@ -47,9 +50,9 @@ export default function PlanForm({ plans }: { plans: PlanRow[] }) {
       {/* Re-montar el form al cambiar de plan para refrescar los defaultValue. */}
       <form key={selectedKey} action={savePlan} style={{ display: 'grid', gap: 12 }}>
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8 }}>
-          <input style={input} name="key" placeholder="key (p.ej. pro)" defaultValue={p.key} required readOnly={!!selectedKey} />
-          <input style={input} name="name" placeholder="Nombre visible" defaultValue={p.name} required />
-          <input style={input} name="price_cents" type="number" min={0} placeholder="precio en centavos" defaultValue={p.price_cents} />
+          <input style={input} name="key" placeholder={tx("key (p.ej. pro)")} defaultValue={p.key} required readOnly={!!selectedKey} />
+          <input style={input} name="name" placeholder={tx("Nombre visible")} defaultValue={p.name} required />
+          <input style={input} name="price_cents" type="number" min={0} placeholder={tx("precio en centavos")} defaultValue={p.price_cents} />
           <input style={input} name="currency" placeholder="COP" defaultValue={p.currency} />
           <select style={input} name="data_isolation" defaultValue={p.data_isolation}>
             <option value="shared">shared</option>
@@ -63,7 +66,7 @@ export default function PlanForm({ plans }: { plans: PlanRow[] }) {
         </div>
 
         <fieldset style={{ border: '1px solid #333', borderRadius: 8, padding: 12 }}>
-          <legend style={{ fontSize: 12, color: '#aaa', padding: '0 6px' }}>Funcionalidades</legend>
+          <legend style={{ fontSize: 12, color: '#aaa', padding: '0 6px' }}><T>Funcionalidades</T></legend>
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8 }}>
             {FEATURES.map((f) => (
               <label key={f.key} style={{ display: 'flex', gap: 8, alignItems: 'center', fontSize: 13 }} title={f.description}>

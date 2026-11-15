@@ -14,6 +14,8 @@ import type { BlockField } from '@merkiai/database'
 import { Icon, ICON_NAMES, type IconName } from '@merkiai/ui'
 import { useState } from 'react'
 import ImageUpload from '../ImageUpload'
+import { T } from '@merkiai/ui'
+import { useTx } from '@merkiai/ui'
 
 const base =
   'w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-400'
@@ -71,6 +73,7 @@ function ColorField({
   onChange: (v: unknown) => void
   placeholder?: string
 }) {
+  const tx = useTx()
   // El <input type=color> exige formato #rrggbb; si el valor aún no es válido,
   // mostramos negro en el swatch pero conservamos el texto que escribe el usuario.
   const valid = /^#[0-9a-fA-F]{6}$/.test(value)
@@ -78,7 +81,7 @@ function ColorField({
     <div className="flex items-center gap-2">
       <input
         type="color"
-        aria-label="Elegir color"
+        aria-label={tx("Elegir color")}
         className="h-9 w-10 shrink-0 cursor-pointer rounded border border-slate-300 bg-white p-0.5"
         value={valid ? value : '#000000'}
         onChange={(e) => onChange(e.target.value)}
@@ -102,6 +105,7 @@ function IconField({
   value: string
   onChange: (v: unknown) => void
 }) {
+  const tx = useTx()
   const [open, setOpen] = useState(false)
   const current = ICON_NAMES.includes(value as IconName) ? (value as IconName) : null
 
@@ -115,7 +119,7 @@ function IconField({
       >
         {current
           ? <><Icon name={current} size={18} /><span>{current}</span></>
-          : <span className="text-slate-400">Elegir icono…</span>}
+          : <span className="text-slate-400"><T>Elegir icono…</T></span>}
         <Icon name="chevron-right" size={16} className="ml-auto text-slate-400" />
       </button>
 
@@ -123,7 +127,7 @@ function IconField({
         <div className="grid grid-cols-6 gap-1 rounded-lg border border-slate-200 bg-white p-2 sm:grid-cols-8">
           <button
             type="button"
-            title="Sin icono"
+            title={tx("Sin icono")}
             onClick={() => { onChange(''); setOpen(false) }}
             className={`flex h-9 items-center justify-center rounded text-xs text-slate-400 hover:bg-slate-100 ${!current ? 'ring-2 ring-indigo-400' : ''}`}
           >

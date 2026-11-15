@@ -10,6 +10,8 @@ import { ROLE_CONFIG } from '@/lib/roles'
 import { FEATURES } from '@/lib/features'
 import { useT } from '@merkiai/ui'
 import PanelLocaleSelect from './PanelLocaleSelect'
+import { T } from '@merkiai/ui'
+import { useTx } from '@merkiai/ui'
 
 // ── Tipos ────────────────────────────────────────────────────────────────────
 
@@ -257,6 +259,7 @@ function getActiveGroupId(nodes: NavNode[], pathname: string): string | null {
 interface Props { role: AdminRole; allowedSections?: AdminSection[]; pageBuilder?: boolean; collections?: boolean; inventory?: boolean; priceLists?: boolean; quotes?: boolean; multiLocation?: boolean; receivables?: boolean }
 
 export default function AdminSidebar({ role, allowedSections: allowedSectionsProp, pageBuilder, collections, inventory, priceLists, quotes, multiLocation, receivables }: Props) {
+  const tx = useTx()
   const pathname = usePathname()
   const app = useStackApp()
 
@@ -317,7 +320,7 @@ export default function AdminSidebar({ role, allowedSections: allowedSectionsPro
     <>
       {/* Hamburger — solo móvil */}
       <button
-        aria-label="Abrir menú"
+        aria-label={tx("Abrir menú")}
         onClick={() => setDrawerOpen(true)}
         className="md:hidden fixed top-0 left-0 z-50 h-14 w-14 flex items-center justify-center text-brand-sidebar"
       >
@@ -347,7 +350,7 @@ export default function AdminSidebar({ role, allowedSections: allowedSectionsPro
           <div className="w-8 h-8 rounded-full bg-brand-cream flex items-center justify-center">
             <span className="font-display text-brand-primary text-xs font-bold">▲</span>
           </div>
-          <span className="font-display text-brand-cream text-base">Admin</span>
+          <span className="font-display text-brand-cream text-base"><T>Admin</T></span>
         </Link>
       </div>
 

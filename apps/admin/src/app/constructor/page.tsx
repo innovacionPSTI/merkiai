@@ -7,6 +7,7 @@ import { getTenantEntitlements } from '@/lib/entitlements'
 import { getOnboardingOptions } from '@/lib/onboarding'
 import { resolveFeature, FEATURES } from '@merkiai/tenancy'
 import ConstructorClient from '@/components/constructor/ConstructorClient'
+import { T } from '@merkiai/ui'
 
 export const dynamic = 'force-dynamic'
 
@@ -86,11 +87,11 @@ export default async function ConstructorPage() {
       <div className="px-6 py-4 border-b border-gray-100 flex items-start justify-between gap-4">
         <div>
           <div className="flex items-center gap-2">
-            <h1 className="font-display text-xl text-brand-primary">Constructor de páginas</h1>
-            <span className="rounded-full bg-indigo-100 text-indigo-700 text-[10px] font-semibold px-2 py-0.5">beta</span>
+            <h1 className="font-display text-xl text-brand-primary"><T>Constructor de páginas</T></h1>
+            <span className="rounded-full bg-indigo-100 text-indigo-700 text-[10px] font-semibold px-2 py-0.5"><T>beta</T></span>
           </div>
           <p className="font-brand text-xs text-brand-primary/50 mt-0.5">
-            Compón cualquier página con bloques. Base de los Templates que visten la Web.
+            <T>Compón cualquier página con bloques. Base de los Templates que visten la Web.</T>
           </p>
         </div>
         <PreviewButton />

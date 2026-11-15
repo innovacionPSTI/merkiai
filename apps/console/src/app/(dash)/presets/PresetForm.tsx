@@ -4,6 +4,8 @@ import { useState } from 'react'
 import { useActionState } from 'react'
 import { input, btn } from '@/lib/styles'
 import { savePreset, type PresetActionState } from '../../actions'
+import { T } from '@merkiai/ui'
+import { useTx } from '@merkiai/ui'
 
 const initial: PresetActionState = { ok: false }
 
@@ -38,6 +40,7 @@ interface Prod { name: string; price: string; category: string; featured: boolea
 
 /** Formulario de crear/editar Preset — campos estructurados (HU-233). */
 export default function PresetForm() {
+  const tx = useTx()
   const [state, action, pending] = useActionState(savePreset, initial)
 
   const [theme, setTheme] = useState<Record<string, string>>({
@@ -66,18 +69,18 @@ export default function PresetForm() {
       {/* Datos básicos */}
       <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8 }}>
         <label><span style={lbl}>Key (identificador)</span><input style={{ ...input, width: '100%' }} name="key" placeholder="moda-basico" required /></label>
-        <label><span style={lbl}>Nombre visible</span><input style={{ ...input, width: '100%' }} name="name" placeholder="Moda básico" required /></label>
-        <label><span style={lbl}>Nicho</span><input style={{ ...input, width: '100%' }} name="niche" placeholder="moda" required /></label>
+        <label><span style={lbl}><T>Nombre visible</T></span><input style={{ ...input, width: '100%' }} name="name" placeholder={tx("Moda básico")} required /></label>
+        <label><span style={lbl}><T>Nicho</T></span><input style={{ ...input, width: '100%' }} name="niche" placeholder="moda" required /></label>
         <label><span style={lbl}>Template (layout)</span><input style={{ ...input, width: '100%' }} name="template" defaultValue="default" /></label>
-        <label style={{ gridColumn: '1 / span 2' }}><span style={lbl}>Descripción</span><textarea style={{ ...input, width: '100%', minHeight: 44 }} name="description" placeholder="Para qué sirve este preset" /></label>
+        <label style={{ gridColumn: '1 / span 2' }}><span style={lbl}><T>Descripción</T></span><textarea style={{ ...input, width: '100%', minHeight: 44 }} name="description" placeholder={tx("Para qué sirve este preset")} /></label>
         <label style={{ gridColumn: '1 / span 2' }}><span style={lbl}>Miniatura (URL de imagen)</span><input style={{ ...input, width: '100%' }} name="thumbnail_url" placeholder="https://… (opcional; si falta, la galería usa un placeholder)" /></label>
-        <label><span style={lbl}>Modelo de inventario</span>
+        <label><span style={lbl}><T>Modelo de inventario</T></span>
           <select style={{ ...input, width: '100%' }} name="inventory_model" defaultValue="single">
             <option value="single">Stock único</option>
             <option value="multi_location">Multi-ubicación</option>
           </select>
         </label>
-        <label><span style={lbl}>Planes (vacío = todos)</span><input style={{ ...input, width: '100%' }} name="available_in_plans" placeholder="free, pro" /></label>
+        <label><span style={lbl}>Planes (vacío = todos)</span><input style={{ ...input, width: '100%' }} name="available_in_plans" placeholder={tx("free, pro")} /></label>
       </div>
 
       {/* Tema */}
@@ -90,10 +93,10 @@ export default function PresetForm() {
               <input type="color" value={theme[c.key] ?? c.def} onChange={(e) => setTheme((t) => ({ ...t, [c.key]: e.target.value }))} />
             </label>
           ))}
-          <label style={{ fontSize: 12 }}><span style={{ display: 'block', marginBottom: 2 }}>Fuente títulos</span>
+          <label style={{ fontSize: 12 }}><span style={{ display: 'block', marginBottom: 2 }}><T>Fuente títulos</T></span>
             <select style={input} value={theme.font_display} onChange={(e) => setTheme((t) => ({ ...t, font_display: e.target.value }))}>{FONTS.map((f) => <option key={f}>{f}</option>)}</select>
           </label>
-          <label style={{ fontSize: 12 }}><span style={{ display: 'block', marginBottom: 2 }}>Fuente cuerpo</span>
+          <label style={{ fontSize: 12 }}><span style={{ display: 'block', marginBottom: 2 }}><T>Fuente cuerpo</T></span>
             <select style={input} value={theme.font_body} onChange={(e) => setTheme((t) => ({ ...t, font_body: e.target.value }))}>{FONTS.map((f) => <option key={f}>{f}</option>)}</select>
           </label>
         </div>
@@ -101,7 +104,7 @@ export default function PresetForm() {
 
       {/* Secciones del home */}
       <fieldset style={section}>
-        <legend style={lbl}>Secciones de arranque del home</legend>
+        <legend style={lbl}><T>Secciones de arranque del home</T></legend>
         <div style={{ display: 'flex', flexWrap: 'wrap', gap: 10 }}>
           {SECTION_TYPES.map((s) => (
             <label key={s.value} style={{ fontSize: 13, display: 'inline-flex', alignItems: 'center', gap: 6 }}>
@@ -113,39 +116,39 @@ export default function PresetForm() {
 
       {/* Categorías de ejemplo */}
       <fieldset style={section}>
-        <legend style={lbl}>Categorías de ejemplo</legend>
+        <legend style={lbl}><T>Categorías de ejemplo</T></legend>
         {cats.map((c, i) => (
           <div key={i} style={{ display: 'flex', gap: 8, marginBottom: 6 }}>
-            <input style={{ ...input, flex: 1 }} placeholder="Nombre" value={c.name} onChange={(e) => setCats((a) => a.map((x, j) => j === i ? { ...x, name: e.target.value } : x))} />
-            <input style={{ ...input, flex: 1 }} placeholder="Descripción (opcional)" value={c.description} onChange={(e) => setCats((a) => a.map((x, j) => j === i ? { ...x, description: e.target.value } : x))} />
+            <input style={{ ...input, flex: 1 }} placeholder={tx("Nombre")} value={c.name} onChange={(e) => setCats((a) => a.map((x, j) => j === i ? { ...x, name: e.target.value } : x))} />
+            <input style={{ ...input, flex: 1 }} placeholder={tx("Descripción (opcional)")} value={c.description} onChange={(e) => setCats((a) => a.map((x, j) => j === i ? { ...x, description: e.target.value } : x))} />
             <button type="button" onClick={() => setCats((a) => a.filter((_, j) => j !== i))} style={{ ...btn, background: 'none', color: 'var(--ui-danger)' }}>×</button>
           </div>
         ))}
-        <button type="button" onClick={() => setCats((a) => [...a, { name: '', description: '' }])} style={{ ...btn, background: 'var(--ui-surface-2)', color: 'var(--ui-text)' }}>+ Categoría</button>
+        <button type="button" onClick={() => setCats((a) => [...a, { name: '', description: '' }])} style={{ ...btn, background: 'var(--ui-surface-2)', color: 'var(--ui-text)' }}><T>+ Categoría</T></button>
       </fieldset>
 
       {/* Productos de ejemplo */}
       <fieldset style={section}>
-        <legend style={lbl}>Productos de ejemplo</legend>
+        <legend style={lbl}><T>Productos de ejemplo</T></legend>
         {prods.map((p, i) => (
           <div key={i} style={{ display: 'flex', gap: 8, marginBottom: 6, alignItems: 'center', flexWrap: 'wrap' }}>
-            <input style={{ ...input, flex: 2, minWidth: 140 }} placeholder="Nombre" value={p.name} onChange={(e) => setProds((a) => a.map((x, j) => j === i ? { ...x, name: e.target.value } : x))} />
-            <input style={{ ...input, width: 110 }} type="number" min={0} placeholder="Precio" value={p.price} onChange={(e) => setProds((a) => a.map((x, j) => j === i ? { ...x, price: e.target.value } : x))} />
-            <input style={{ ...input, width: 140 }} placeholder="Categoría" value={p.category} onChange={(e) => setProds((a) => a.map((x, j) => j === i ? { ...x, category: e.target.value } : x))} />
+            <input style={{ ...input, flex: 2, minWidth: 140 }} placeholder={tx("Nombre")} value={p.name} onChange={(e) => setProds((a) => a.map((x, j) => j === i ? { ...x, name: e.target.value } : x))} />
+            <input style={{ ...input, width: 110 }} type="number" min={0} placeholder={tx("Precio")} value={p.price} onChange={(e) => setProds((a) => a.map((x, j) => j === i ? { ...x, price: e.target.value } : x))} />
+            <input style={{ ...input, width: 140 }} placeholder={tx("Categoría")} value={p.category} onChange={(e) => setProds((a) => a.map((x, j) => j === i ? { ...x, category: e.target.value } : x))} />
             <label style={{ fontSize: 12, display: 'inline-flex', alignItems: 'center', gap: 4 }}>
-              <input type="checkbox" checked={p.featured} onChange={(e) => setProds((a) => a.map((x, j) => j === i ? { ...x, featured: e.target.checked } : x))} /> destacado
+              <input type="checkbox" checked={p.featured} onChange={(e) => setProds((a) => a.map((x, j) => j === i ? { ...x, featured: e.target.checked } : x))} /> <T>destacado</T>
             </label>
             <button type="button" onClick={() => setProds((a) => a.filter((_, j) => j !== i))} style={{ ...btn, background: 'none', color: 'var(--ui-danger)' }}>×</button>
           </div>
         ))}
-        <button type="button" onClick={() => setProds((a) => [...a, { name: '', price: '', category: '', featured: false }])} style={{ ...btn, background: 'var(--ui-surface-2)', color: 'var(--ui-text)' }}>+ Producto</button>
+        <button type="button" onClick={() => setProds((a) => [...a, { name: '', price: '', category: '', featured: false }])} style={{ ...btn, background: 'var(--ui-surface-2)', color: 'var(--ui-text)' }}><T>+ Producto</T></button>
       </fieldset>
 
       {/* HU-373 · Blueprint de sitio (estructura: páginas + nav + regiones) */}
       <fieldset style={section}>
-        <legend style={lbl}>Estructura de sitio (blueprint) · opcional</legend>
+        <legend style={lbl}><T>Estructura de sitio (blueprint) · opcional</T></legend>
         <p style={{ fontSize: 12, color: 'var(--ui-text-dim)', margin: '0 0 6px' }}>
-          JSON con <code>pages</code> (key, label, slug, page_type, sections), <code>nav</code> (label, page_key, children) y
+          <T>JSON con</T> <code>pages</code> (key, label, slug, page_type, sections), <code>nav</code> (label, page_key, children) y
           <code> regions</code> (header/footer). Solo se aplica en planes con la feature <code>site_blueprints</code>; vacío = sin estructura.
         </p>
         <textarea
@@ -155,7 +158,7 @@ export default function PresetForm() {
         />
       </fieldset>
 
-      <label style={{ maxWidth: 220 }}><span style={lbl}>Estado</span>
+      <label style={{ maxWidth: 220 }}><span style={lbl}><T>Estado</T></span>
         <select style={{ ...input, width: '100%' }} name="active" defaultValue="true"><option value="true">Activo</option><option value="false">Inactivo</option></select>
       </label>
 

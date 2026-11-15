@@ -11,6 +11,8 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { listBlockTypes } from '@merkiai/database/blocks'
 import { Icon, type IconName } from '@merkiai/ui'
+import { T } from '@merkiai/ui'
+import { useTx } from '@merkiai/ui'
 
 const CATEGORY: Record<string, { label: string; icon: IconName }> = {
   content:    { label: 'Contenido',   icon: 'content' },
@@ -29,6 +31,7 @@ function catOf(type: string, schemaCat: string): string {
 }
 
 export default function AddBlockCatalog({ onAdd }: { onAdd: (type: string) => void }) {
+  const tx = useTx()
   const [open, setOpen] = useState(false)
   const [tab, setTab] = useState<string>('all')
   const [q, setQ] = useState('')
@@ -58,25 +61,25 @@ export default function AddBlockCatalog({ onAdd }: { onAdd: (type: string) => vo
         className="flex items-center gap-1.5 rounded-lg bg-slate-800 px-4 py-2 text-sm font-medium text-white hover:bg-slate-900"
         aria-expanded={open} aria-haspopup="menu"
       >
-        <Icon name="plus" size={16} /> Agregar bloque
+        <Icon name="plus" size={16} /> <T>Agregar bloque</T>
       </button>
 
       {open && (
         <div role="menu" className="absolute right-0 z-20 mt-2 w-[24rem] max-h-[72vh] overflow-hidden rounded-xl border border-slate-200 bg-white shadow-xl flex flex-col">
           <div className="p-3 border-b border-slate-100 space-y-2">
             <input
-              value={q} onChange={(e) => setQ(e.target.value)} placeholder="Buscar bloque…"
-              className="w-full rounded-lg border border-slate-300 px-2.5 py-1.5 text-sm" aria-label="Buscar bloque"
+              value={q} onChange={(e) => setQ(e.target.value)} placeholder={tx("Buscar bloque…")}
+              className="w-full rounded-lg border border-slate-300 px-2.5 py-1.5 text-sm" aria-label={tx("Buscar bloque")}
             />
             <div className="flex flex-wrap gap-1">
-              <button onClick={() => setTab('all')} className={`rounded-full px-2.5 py-1 text-xs ${tab === 'all' ? 'bg-slate-800 text-white' : 'bg-slate-100 text-slate-600 hover:bg-slate-200'}`}>Todos</button>
+              <button onClick={() => setTab('all')} className={`rounded-full px-2.5 py-1 text-xs ${tab === 'all' ? 'bg-slate-800 text-white' : 'bg-slate-100 text-slate-600 hover:bg-slate-200'}`}><T>Todos</T></button>
               {cats.map((c) => (
                 <button key={c} onClick={() => setTab(c)} className={`rounded-full px-2.5 py-1 text-xs ${tab === c ? 'bg-slate-800 text-white' : 'bg-slate-100 text-slate-600 hover:bg-slate-200'}`}>{CATEGORY[c].label}</button>
               ))}
             </div>
           </div>
           <div className="overflow-y-auto p-3 space-y-1">
-            {filtered.length === 0 && <p className="px-2 py-6 text-center text-xs text-slate-400">Sin bloques que coincidan</p>}
+            {filtered.length === 0 && <p className="px-2 py-6 text-center text-xs text-slate-400"><T>Sin bloques que coincidan</T></p>}
             {filtered.map((b) => (
               <button
                 key={b.type} role="menuitem" onClick={() => pick(b.type)}

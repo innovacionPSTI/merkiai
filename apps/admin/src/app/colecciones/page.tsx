@@ -6,6 +6,7 @@ import { FEATURES as FLAGS } from '@/lib/features'
 import { getTenantEntitlements } from '@/lib/entitlements'
 import { resolveFeature, FEATURES } from '@merkiai/tenancy'
 import ColeccionesClient from '@/components/colecciones/ColeccionesClient'
+import { T } from '@merkiai/ui'
 
 export const dynamic = 'force-dynamic'
 
@@ -26,9 +27,9 @@ export default async function ColeccionesPage() {
   return (
     <div className="h-[calc(100vh-4rem)] flex flex-col">
       <div className="px-6 py-4 border-b border-gray-100">
-        <h1 className="font-display text-xl text-brand-primary">Colecciones</h1>
+        <h1 className="font-display text-xl text-brand-primary"><T>Colecciones</T></h1>
         <p className="font-brand text-xs text-brand-primary/50 mt-0.5">
-          Define tipos de contenido reutilizables (noticias, eventos, cursos, personas…) y gestiona sus registros.
+          <T>Define tipos de contenido reutilizables (noticias, eventos, cursos, personas…) y gestiona sus registros.</T>
         </p>
       </div>
       <div className="flex-1 overflow-y-auto bg-slate-50">

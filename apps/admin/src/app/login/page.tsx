@@ -6,8 +6,10 @@ import { useRouter, useSearchParams } from 'next/navigation'
 import { useStackApp, useUser } from '@stackframe/stack'
 import { LoginScreen } from '@merkiai/ui'
 import { ADMIN_LOGIN_CONTENT, ADMIN_BRAND } from '@/lib/login-content'
+import { useTx } from '@merkiai/ui'
 
 function AdminLogin() {
+  const tx = useTx()
   const app = useStackApp()
   const user = useUser()
   const router = useRouter()
@@ -24,7 +26,7 @@ function AdminLogin() {
 
   async function handleSubmit(email: string, password: string) {
     if (!email || !password) {
-      setError('Ingresa tu correo y contraseña.')
+      setError(tx("Ingresa tu correo y contraseña."))
       return
     }
     setLoading(true)
@@ -32,12 +34,12 @@ function AdminLogin() {
     try {
       const result = await app.signInWithCredential({ email, password })
       if (result.status === 'error') {
-        setError('Correo o contraseña incorrectos.')
+        setError(tx("Correo o contraseña incorrectos."))
       } else {
         router.push(returnTo)
       }
     } catch {
-      setError('Ocurrió un error. Intenta de nuevo.')
+      setError(tx("Ocurrió un error. Intenta de nuevo."))
     } finally {
       setLoading(false)
     }
@@ -47,7 +49,7 @@ function AdminLogin() {
     try {
       await app.signInWithOAuth('google')
     } catch {
-      setError('No se pudo iniciar con Google.')
+      setError(tx("No se pudo iniciar con Google."))
     }
   }
 

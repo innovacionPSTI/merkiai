@@ -9,6 +9,8 @@ import { btn } from '@/lib/styles'
 import HostingTokenForm from './hosting-token-form'
 import { getSetting, HOSTING_TOKEN_REF_KEY } from '@/lib/platform-settings'
 import { managedProviderId } from '@/lib/hosting'
+import { T } from '@merkiai/ui'
+import { getConsoleTx } from '@/lib/ui-locale'
 
 export const dynamic = 'force-dynamic'
 
@@ -16,6 +18,7 @@ const statusTone = (s: InfraConfigStatus): BadgeTone =>
   s === 'active' ? 'success' : s === 'disabled' ? 'danger' : s === 'rotating' ? 'warn' : 'neutral'
 
 export default async function InfraestructuraPage() {
+  const tx = await getConsoleTx()
   const [{ data: tenants }, configs, tokenRef] = await Promise.all([
     platformDb().from('tenants').select('id, name').order('name', { ascending: true }),
     listTenantInfra(),
@@ -35,33 +38,32 @@ export default async function InfraestructuraPage() {
   return (
     <>
       <PageHeader
-        title="Infraestructura por tenant"
+        title={tx("Infraestructura por tenant")}
         description="Configura la base de datos dedicada de los tenants que no usan el clúster compartido. La mayoría no necesita esto."
       />
 
-      <PanelCard title="Dominios propios de las tiendas">
+      <PanelCard title={tx("Dominios propios de las tiendas")}>
         <p style={{ margin: '0 0 12px', fontSize: 13, color: 'var(--ui-muted)' }}>
-          Proveedor activo: <strong>{hosting.provider === 'cloudflare' ? 'Cloudflare for SaaS' : 'Vercel (por proyecto)'}</strong>
+          <T>Proveedor activo:</T> <strong>{hosting.provider === 'cloudflare' ? 'Cloudflare for SaaS' : 'Vercel (por proyecto)'}</strong>
           {hosting.provider === 'cloudflare' && (
-            <> · Zona: {hosting.zone ? 'configurada' : <strong style={{ color: '#B42318' }}>falta HOSTING_ZONE_ID</strong>}
-            {' '}· Destino CNAME para los comerciantes: {hosting.target ? <code>{hosting.target}</code> : <strong style={{ color: '#B42318' }}>falta HOSTING_CNAME_TARGET</strong>}</>
+            <> · Zona: {hosting.zone ? 'configurada' : <strong style={{ color: '#B42318' }}><T>falta HOSTING_ZONE_ID</T></strong>}
+            {' '}· Destino CNAME para los comerciantes: {hosting.target ? <code>{hosting.target}</code> : <strong style={{ color: '#B42318' }}><T>falta HOSTING_CNAME_TARGET</T></strong>}</>
           )}
         </p>
         <HostingTokenForm configured={Boolean(tokenRef)} />
         <p style={{ margin: '12px 0 0', fontSize: 12, color: '#888', display: 'flex', gap: 6 }}>
           <Icon name="alert" size={14} />
-          Con Cloudflare for SaaS cada dominio queda certificado y enrutado sin depender del proyecto de cómputo. El token se guarda cifrado (AWS KMS) y nunca se vuelve a mostrar.
+          <T>Con Cloudflare for SaaS cada dominio queda certificado y enrutado sin depender del proyecto de cómputo. El token se guarda cifrado (AWS KMS) y nunca se vuelve a mostrar.</T>
         </p>
       </PanelCard>
 
-      <PanelCard title="Agregar tenant">
+      <PanelCard title={tx("Agregar tenant")}>
         <div style={{ maxWidth: 560 }}>
           <InfraForm tenants={tenantList} />
         </div>
         <p style={{ margin: '14px 0 0', fontSize: 12, color: '#888', display: 'flex', gap: 6, alignItems: 'flex-start' }}>
           <Icon name="alert" size={14} />
-          Aquí solo se configuran los datos de conexión. Las llaves de acceso (secretos) se cargan
-          de forma segura al activar el almacén de secretos — se habilita más adelante.
+          <T>Aquí solo se configuran los datos de conexión. Las llaves de acceso (secretos) se cargan de forma segura al activar el almacén de secretos — se habilita más adelante.</T>
         </p>
       </PanelCard>
 
@@ -69,7 +71,7 @@ export default async function InfraestructuraPage() {
         {configs.length === 0 ? (
           <EmptyState
             icon={<Icon name="tenant" size={28} />}
-            title="Ningún tenant con infraestructura dedicada"
+            title={tx("Ningún tenant con infraestructura dedicada")}
             description="Agrega el primero con el formulario de arriba."
           />
         ) : (
@@ -83,7 +85,7 @@ export default async function InfraestructuraPage() {
                   </div>
                   <form action={deleteTenantInfraConfig}>
                     <input type="hidden" name="tenant_id" value={c.tenant_id} />
-                    <button type="submit" style={deleteBtn}>Eliminar</button>
+                    <button type="submit" style={deleteBtn}><T>Eliminar</T></button>
                   </form>
                 </div>
                 <div style={{ display: 'flex', gap: 24, flexWrap: 'wrap' }}>
@@ -102,7 +104,7 @@ export default async function InfraestructuraPage() {
                     />
                   </div>
                   <div style={{ flex: '1 1 280px', maxWidth: 420, borderLeft: '1px solid var(--ui-border)', paddingLeft: 20 }}>
-                    <h4 style={{ margin: '0 0 2px', fontSize: 13 }}>Secretos de conexión</h4>
+                    <h4 style={{ margin: '0 0 2px', fontSize: 13 }}><T>Secretos de conexión</T></h4>
                     <p style={{ margin: '0 0 12px', fontSize: 11, color: '#888' }}>
                       Se cifran con AWS KMS; solo se guarda la referencia. No se muestran una vez cargados.
                     </p>

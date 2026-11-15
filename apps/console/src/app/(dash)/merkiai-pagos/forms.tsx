@@ -4,6 +4,8 @@ import { useActionState } from 'react'
 import { useFormStatus } from 'react-dom'
 import { saveMerkiaiAccount, savePlanFeeTerms, type PagosActionState } from '../../actions'
 import { input, btn } from '@/lib/styles'
+import { T } from '@merkiai/ui'
+import { useTx } from '@merkiai/ui'
 
 const init: PagosActionState = { ok: false }
 const label: React.CSSProperties = { display: 'block', fontSize: 12, fontWeight: 600, color: 'var(--ui-muted)', margin: '0 0 4px' }
@@ -27,7 +29,7 @@ export function PlanFeeForm({ plan, planName, pct, fixedPesos }: { plan: string;
     <form action={action} style={{ display: 'flex', gap: 10, alignItems: 'flex-end', flexWrap: 'wrap' }}>
       <input type="hidden" name="plan" value={plan} />
       <strong style={{ minWidth: 120, paddingBottom: 8 }}>{planName}</strong>
-      <div><label style={label}>% por venta</label><input name="fee_pct" defaultValue={pct} inputMode="decimal" style={{ ...input, width: 90 }} /></div>
+      <div><label style={label}><T>% por venta</T></label><input name="fee_pct" defaultValue={pct} inputMode="decimal" style={{ ...input, width: 90 }} /></div>
       <div><label style={label}>+ fijo (COP)</label><input name="fee_fixed" defaultValue={fixedPesos} inputMode="numeric" style={{ ...input, width: 110 }} /></div>
       <Submit text="Guardar" />
       <Feedback s={s} />
@@ -46,13 +48,14 @@ export interface AccountDefaults {
 
 /** Alta/edición de la tienda PayZen gestionada de un tenant. Contraseña write-only. */
 export function AccountForm({ tenants, d = {} }: { tenants: { id: string; name: string }[]; d?: AccountDefaults }) {
+  const tx = useTx()
   const [s, action] = useActionState(saveMerkiaiAccount, init)
   const editing = Boolean(d.tenantId)
   return (
     <form action={action} autoComplete="off">
       <div style={grid}>
         <div>
-          <label style={label}>Tienda</label>
+          <label style={label}><T>Tienda</T></label>
           {editing ? (
             <><input type="hidden" name="tenant_id" value={d.tenantId} /><input value={tenants.find((t) => t.id === d.tenantId)?.name ?? d.tenantId} disabled style={wide} /></>
           ) : (
@@ -62,21 +65,21 @@ export function AccountForm({ tenants, d = {} }: { tenants: { id: string; name: 
             </select>
           )}
         </div>
-        <div><label style={label}>Id de tienda PayZen</label><input name="shop_id" defaultValue={d.shopId ?? ''} inputMode="numeric" placeholder="12345678" style={wide} /></div>
+        <div><label style={label}><T>Id de tienda PayZen</T></label><input name="shop_id" defaultValue={d.shopId ?? ''} inputMode="numeric" placeholder="12345678" style={wide} /></div>
         <div>
-          <label style={label}>Contraseña REST {d.hasPassword ? <span style={{ color: 'var(--ui-success)' }}>● configurada</span> : <span>○ pendiente</span>}</label>
+          <label style={label}>Contraseña REST {d.hasPassword ? <span style={{ color: 'var(--ui-success)' }}><T>● configurada</T></span> : <span><T>○ pendiente</T></span>}</label>
           <input name="password" type="password" autoComplete="new-password" placeholder={d.hasPassword ? 'Dejar vacío para no cambiar' : 'testpassword_… / prodpassword_…'} style={wide} />
         </div>
         <div>
-          <label style={label}>Estado</label>
+          <label style={label}><T>Estado</T></label>
           <select name="status" defaultValue={d.status ?? 'pending'} style={wide}>
             <option value="pending">En alta (aún no cobra)</option>
             <option value="active">Activa</option>
             <option value="disabled">Desactivada</option>
           </select>
         </div>
-        <div><label style={label}>% propio (opcional)</label><input name="fee_pct_override" defaultValue={d.pctOverride ?? ''} placeholder="Usa el del plan" inputMode="decimal" style={wide} /></div>
-        <div><label style={label}>Fijo propio COP (opcional)</label><input name="fee_fixed_override" defaultValue={d.fixedOverridePesos ?? ''} placeholder="Usa el del plan" inputMode="numeric" style={wide} /></div>
+        <div><label style={label}>% propio (opcional)</label><input name="fee_pct_override" defaultValue={d.pctOverride ?? ''} placeholder={tx("Usa el del plan")} inputMode="decimal" style={wide} /></div>
+        <div><label style={label}>Fijo propio COP (opcional)</label><input name="fee_fixed_override" defaultValue={d.fixedOverridePesos ?? ''} placeholder={tx("Usa el del plan")} inputMode="numeric" style={wide} /></div>
       </div>
       <div style={{ marginTop: 12 }}><Submit text={editing ? 'Guardar cambios' : 'Agregar tienda'} /></div>
       <Feedback s={s} />

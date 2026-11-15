@@ -12,6 +12,7 @@ import { Icon } from '@merkiai/ui'
 import { splitSectionFields } from '@/lib/section-fields'
 import FieldInput from './FieldInput'
 import ItemsEditor from './ItemsEditor'
+import { T } from '@merkiai/ui'
 
 // HU-253 · claves de estilo compartido + sus defaults.
 const STYLE_KEYS = Object.keys(STYLE_FIELDS)
@@ -57,7 +58,7 @@ export default function SectionEditor({ section, onSaved, onChange }: SectionEdi
   )
 
   if (!schema) {
-    return <p className="text-sm text-slate-500">Tipo de bloque sin contrato: <code>{section.section_type}</code></p>
+    return <p className="text-sm text-slate-500"><T>Tipo de bloque sin contrato:</T> <code>{section.section_type}</code></p>
   }
 
   const fields = Object.entries(schema.fields)
@@ -119,7 +120,7 @@ export default function SectionEditor({ section, onSaved, onChange }: SectionEdi
       <div className="space-y-4">
           {/* HU-267 · encabezado del grupo de ajustes del bloque */}
           <div className="flex items-center gap-1.5 text-[11px] font-semibold uppercase tracking-wide text-slate-500">
-            <Icon name="settings" size={13} /> Ajustes del bloque
+            <Icon name="settings" size={13} /> <T>Ajustes del bloque</T>
           </div>
           {fields.map(([key, field]) => (
             <div key={key} className={field.type === 'boolean' ? 'flex items-center gap-2' : ''}>
@@ -131,7 +132,7 @@ export default function SectionEditor({ section, onSaved, onChange }: SectionEdi
 
           {/* HU-253 · Estilo compartido (fondo / espaciado) */}
           <details className="rounded-lg border border-slate-200 bg-slate-50/50">
-            <summary className="cursor-pointer px-3 py-2 text-xs font-semibold text-slate-600 select-none">Estilo de la sección</summary>
+            <summary className="cursor-pointer px-3 py-2 text-xs font-semibold text-slate-600 select-none"><T>Estilo de la sección</T></summary>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 p-3 pt-1">
               {STYLE_KEYS.map((key) => {
                 const field = STYLE_FIELDS[key]
@@ -160,14 +161,14 @@ export default function SectionEditor({ section, onSaved, onChange }: SectionEdi
                   disabled={status === 'saving'}
                   className="rounded-lg bg-green-600 px-4 py-2 text-sm font-medium text-white hover:bg-green-700 disabled:opacity-60"
                 >
-                  Publicar cambios
+                  <T>Publicar cambios</T>
                 </button>
                 <button
                   onClick={() => draftAction('discard')}
                   disabled={status === 'saving'}
                   className="rounded-lg border border-slate-300 px-4 py-2 text-sm text-slate-600 hover:bg-slate-50 disabled:opacity-60"
                 >
-                  Descartar
+                  <T>Descartar</T>
                 </button>
               </>
             )}

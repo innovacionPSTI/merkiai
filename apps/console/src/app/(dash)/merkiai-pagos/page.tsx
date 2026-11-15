@@ -5,6 +5,8 @@ import { listRecentFeeInvoices, type FeeInvoiceStatus } from '@/lib/fee-collecti
 import { formatMoney } from '@/lib/billing-email'
 import { PlanFeeForm, AccountForm } from './forms'
 import { formatNumber } from '@merkiai/i18n'
+import { T } from '@merkiai/ui'
+import { getConsoleTx } from '@/lib/ui-locale'
 
 export const dynamic = 'force-dynamic'
 
@@ -23,6 +25,7 @@ const INVOICE: Record<FeeInvoiceStatus, { label: string; tone: BadgeTone }> = {
 const pct = (n: number) => `${formatNumber(n, { maximumFractionDigits: 3 })} %`
 
 export default async function MerkiaiPagosPage() {
+  const tx = await getConsoleTx()
   const db = platformDb()
   const [{ data: plans }, { data: tenants }, terms, accounts, invoices] = await Promise.all([
     db.from('plans').select('key, name').eq('active', true).order('price_cents', { ascending: true }),
@@ -38,13 +41,13 @@ export default async function MerkiaiPagosPage() {
   return (
     <>
       <PageHeader
-        title="Merkiai Pagos"
+        title={tx("Merkiai Pagos")}
         description="Pasarela PayZen gestionada por Merkiai para las ventas de cada tienda. El dinero va directo a la cuenta bancaria de la tienda; Merkiai cobra una comisión por venta. Recomendado para tiendas de volumen medio/alto (PayZen cobra una mensualidad por tienda); las pequeñas usan su propia pasarela."
       />
 
-      <PanelCard title="Comisión por plan">
+      <PanelCard title={tx("Comisión por plan")}>
         <p style={{ margin: '0 0 12px', fontSize: 13, color: 'var(--ui-muted)' }}>
-          Porcentaje sobre cada venta aprobada más un valor fijo opcional. Puedes dar una tarifa distinta a una tienda en su cuenta.
+          <T>Porcentaje sobre cada venta aprobada más un valor fijo opcional. Puedes dar una tarifa distinta a una tienda en su cuenta.</T>
         </p>
         <div style={{ display: 'grid', gap: 12 }}>
           {((plans ?? []) as { key: string; name: string }[]).map((p) => (
@@ -53,17 +56,17 @@ export default async function MerkiaiPagosPage() {
         </div>
       </PanelCard>
 
-      <PanelCard title="Agregar tienda">
+      <PanelCard title={tx("Agregar tienda")}>
         <AccountForm tenants={tenantList.filter((t) => !withAccount.has(t.id))} />
         <p style={{ margin: '12px 0 0', fontSize: 12, color: '#888', display: 'flex', gap: 6 }}>
           <Icon name="alert" size={14} />
-          Primero crea la tienda en el Back Office PayZen de Merkiai con la cuenta bancaria del comerciante. La contraseña se guarda cifrada (AWS KMS) y nunca se vuelve a mostrar.
+          <T>Primero crea la tienda en el Back Office PayZen de Merkiai con la cuenta bancaria del comerciante. La contraseña se guarda cifrada (AWS KMS) y nunca se vuelve a mostrar.</T>
         </p>
       </PanelCard>
 
       <PanelCard title={`Tiendas con Merkiai Pagos (${accounts.length}) · comisiones del mes: ${formatMoney(monthFees, 'COP')}`}>
         {accounts.length === 0 ? (
-          <EmptyState icon={<Icon name="tenant" size={28} />} title="Ninguna tienda usa Merkiai Pagos" description="Agrega la primera con el formulario de arriba." />
+          <EmptyState icon={<Icon name="tenant" size={28} />} title={tx("Ninguna tienda usa Merkiai Pagos")} description="Agrega la primera con el formulario de arriba." />
         ) : (
           <div style={{ display: 'grid', gap: 16 }}>
             {accounts.map((a) => (
@@ -93,12 +96,12 @@ export default async function MerkiaiPagosPage() {
         )}
       </PanelCard>
 
-      <PanelCard title="Cobros mensuales de comisiones">
+      <PanelCard title={tx("Cobros mensuales de comisiones")}>
         <p style={{ margin: '0 0 12px', fontSize: 13, color: 'var(--ui-muted)' }}>
-          El día 1 de cada mes se agrupan las comisiones del mes anterior en una cuenta por tienda y se cobran con la tarjeta registrada para su plan (hasta 3 intentos, uno por día). Si la tienda no tiene tarjeta, la cuenta queda por cobrar.
+          <T>El día 1 de cada mes se agrupan las comisiones del mes anterior en una cuenta por tienda y se cobran con la tarjeta registrada para su plan (hasta 3 intentos, uno por día). Si la tienda no tiene tarjeta, la cuenta queda por cobrar.</T>
         </p>
         {invoices.length === 0 ? (
-          <p style={{ fontSize: 13, color: 'var(--ui-muted)' }}>Aún no hay cobros.</p>
+          <p style={{ fontSize: 13, color: 'var(--ui-muted)' }}><T>Aún no hay cobros.</T></p>
         ) : (
           <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 14 }}>
             <thead><tr>{['Tienda', 'Mes', 'Valor', 'Estado', 'Intentos', 'Detalle'].map((h) => <th key={h} style={{ textAlign: 'left', padding: 8, fontSize: 12, color: '#666', borderBottom: '1px solid var(--ui-border)' }}>{h}</th>)}</tr></thead>

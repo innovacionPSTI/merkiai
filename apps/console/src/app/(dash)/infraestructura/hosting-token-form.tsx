@@ -4,6 +4,7 @@ import { useActionState } from 'react'
 import { useFormStatus } from 'react-dom'
 import { saveHostingToken, type PagosActionState } from '../../actions'
 import { input, btn } from '@/lib/styles'
+import { T } from '@merkiai/ui'
 
 const init: PagosActionState = { ok: false }
 
@@ -19,7 +20,7 @@ export default function HostingTokenForm({ configured }: { configured: boolean }
     <form action={action} autoComplete="off" style={{ display: 'flex', gap: 10, alignItems: 'flex-end', flexWrap: 'wrap' }}>
       <div style={{ flex: '1 1 320px' }}>
         <label style={{ display: 'block', fontSize: 12, fontWeight: 600, color: 'var(--ui-muted)', margin: '0 0 4px' }}>
-          Token de la API de Cloudflare {configured ? <span style={{ color: 'var(--ui-success)' }}>● configurado</span> : <span>○ pendiente</span>}
+          Token de la API de Cloudflare {configured ? <span style={{ color: 'var(--ui-success)' }}><T>● configurado</T></span> : <span><T>○ pendiente</T></span>}
         </label>
         <input name="token" type="password" autoComplete="new-password" placeholder={configured ? 'Dejar vacío no cambia nada; pega uno nuevo para rotarlo' : 'Token con permiso SSL and Certificates: Edit sobre la zona'}
           style={{ ...input, width: '100%', marginRight: 0, boxSizing: 'border-box' }} />

@@ -5,6 +5,8 @@ import { useFormStatus } from 'react-dom'
 import { Icon } from '@merkiai/ui'
 import { createTenant, type CreateTenantState } from '../actions'
 import { input, btn } from '@/lib/styles'
+import { T } from '@merkiai/ui'
+import { useTx } from '@merkiai/ui'
 
 const initialState: CreateTenantState = { ok: false }
 
@@ -18,15 +20,16 @@ function SubmitButton() {
 }
 
 export default function NewTenantForm({ plans }: { plans: { key: string; name: string }[] }) {
+  const tx = useTx()
   const [state, formAction] = useActionState(createTenant, initialState)
 
   return (
     <>
       <form action={formAction} style={{ display: 'flex', flexWrap: 'wrap', gap: 8, alignItems: 'center' }}>
-        <input style={input} name="name" placeholder="Nombre del negocio" required />
-        <input style={input} name="subdomain" placeholder="subdominio (a-z, 0-9, -)" required />
-        <input style={input} name="ownerEmail" type="email" placeholder="email del dueño (opcional)" />
-        <select name="plan" defaultValue="free" style={input} aria-label="Plan">
+        <input style={input} name="name" placeholder={tx("Nombre del negocio")} required />
+        <input style={input} name="subdomain" placeholder={tx("subdominio (a-z, 0-9, -)")} required />
+        <input style={input} name="ownerEmail" type="email" placeholder={tx("email del dueño (opcional)")} />
+        <select name="plan" defaultValue="free" style={input} aria-label={tx("Plan")}>
           {plans.map((p) => (
             <option key={p.key} value={p.key}>
               {p.name} ({p.key})
@@ -52,9 +55,7 @@ export default function NewTenantForm({ plans }: { plans: { key: string; name: s
       ))}
 
       <p style={{ margin: '8px 0 0', color: '#888', fontSize: 12 }}>
-        Crea el Team en Stack Auth + invita al dueño (si hay email). El tenant nace con el plan
-        elegido (por defecto <code>free</code>). Si el Team falla, el tenant queda en modo parcial y
-        el Team se adjunta luego.
+        <T>Crea el Team en Stack Auth + invita al dueño (si hay email). El tenant nace con el plan elegido (por defecto</T> <code>free</code><T>). Si el Team falla, el tenant queda en modo parcial y el Team se adjunta luego.</T>
       </p>
     </>
   )

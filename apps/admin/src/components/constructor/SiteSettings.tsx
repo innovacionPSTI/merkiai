@@ -9,6 +9,8 @@
 import { useState } from 'react'
 import { Icon } from '@merkiai/ui'
 import ImageUpload from '../ImageUpload'
+import { T } from '@merkiai/ui'
+import { useTx } from '@merkiai/ui'
 
 export interface SiteConfig {
   store_name: string
@@ -23,6 +25,7 @@ export interface SiteConfig {
 }
 
 export default function SiteSettings({ initial, onClose }: { initial: SiteConfig; onClose: () => void }) {
+  const tx = useTx()
   const [cfg, setCfg] = useState<SiteConfig>(initial)
   const [msg, setMsg] = useState('')
 
@@ -39,35 +42,35 @@ export default function SiteSettings({ initial, onClose }: { initial: SiteConfig
     <div className="fixed inset-0 z-50 flex justify-end bg-black/30" onClick={onClose}>
       <div className="w-96 max-w-full h-full bg-white shadow-xl p-5 overflow-y-auto" onClick={(e) => e.stopPropagation()}>
         <div className="flex items-center justify-between mb-4">
-          <h3 className="font-display text-brand-primary text-lg">Ajustes de sitio</h3>
-          <button onClick={onClose} className="text-slate-400 hover:text-slate-700" aria-label="Cerrar"><Icon name="close" size={18} /></button>
+          <h3 className="font-display text-brand-primary text-lg"><T>Ajustes de sitio</T></h3>
+          <button onClick={onClose} className="text-slate-400 hover:text-slate-700" aria-label={tx("Cerrar")}><Icon name="close" size={18} /></button>
         </div>
         {msg && <p className="text-xs text-indigo-600 mb-2">{msg}</p>}
 
         <div className="space-y-4">
           <div>
-            <label className="block text-xs font-semibold text-slate-500 mb-1">Nombre de la tienda</label>
+            <label className="block text-xs font-semibold text-slate-500 mb-1"><T>Nombre de la tienda</T></label>
             <input defaultValue={cfg.store_name} onBlur={(e) => e.target.value.trim() !== cfg.store_name && save({ store_name: e.target.value.trim() })}
               className="w-full rounded-lg border border-slate-300 px-2 py-1.5 text-sm" />
           </div>
           <div>
-            <label className="block text-xs font-semibold text-slate-500 mb-1">Descripción</label>
+            <label className="block text-xs font-semibold text-slate-500 mb-1"><T>Descripción</T></label>
             <textarea defaultValue={cfg.store_description ?? ''} rows={2} onBlur={(e) => e.target.value !== (cfg.store_description ?? '') && save({ store_description: e.target.value || null })}
               className="w-full rounded-lg border border-slate-300 px-2 py-1.5 text-sm resize-none" />
           </div>
           <div className="grid grid-cols-2 gap-3">
             <div>
-              <label className="block text-xs font-semibold text-slate-500 mb-1">Logo</label>
+              <label className="block text-xs font-semibold text-slate-500 mb-1"><T>Logo</T></label>
               <ImageUpload value={cfg.logo_url ?? ''} onChange={(url) => save({ logo_url: url || null })} bucket="content" label="" sizeClass="h-20" />
             </div>
             <div>
-              <label className="block text-xs font-semibold text-slate-500 mb-1">Favicon</label>
+              <label className="block text-xs font-semibold text-slate-500 mb-1"><T>Favicon</T></label>
               <ImageUpload value={cfg.favicon_url ?? ''} onChange={(url) => save({ favicon_url: url || null })} bucket="content" label="" sizeClass="h-20" />
             </div>
           </div>
 
           <div className="pt-3 border-t border-slate-100">
-            <p className="text-xs font-semibold text-slate-500 uppercase tracking-wide mb-2">Redes sociales</p>
+            <p className="text-xs font-semibold text-slate-500 uppercase tracking-wide mb-2"><T>Redes sociales</T></p>
             {(['instagram', 'facebook', 'tiktok'] as const).map((net) => {
               const urlKey = `${net}_url` as keyof SiteConfig
               const enKey = `${net}_enabled` as keyof SiteConfig
@@ -83,20 +86,20 @@ export default function SiteSettings({ initial, onClose }: { initial: SiteConfig
           </div>
 
           <div className="pt-3 border-t border-slate-100">
-            <p className="text-xs font-semibold text-slate-500 uppercase tracking-wide mb-2">Footer</p>
-            <label className="flex items-center gap-2 text-sm text-slate-600 mb-1"><input type="checkbox" checked={cfg.footer_show_store} onChange={toggle('footer_show_store')} /> Columna de tienda</label>
-            <label className="flex items-center gap-2 text-sm text-slate-600 mb-1"><input type="checkbox" checked={cfg.footer_show_blog} onChange={toggle('footer_show_blog')} /> Columna de blog</label>
-            <label className="flex items-center gap-2 text-sm text-slate-600"><input type="checkbox" checked={cfg.footer_show_legal} onChange={toggle('footer_show_legal')} /> Columna legal</label>
+            <p className="text-xs font-semibold text-slate-500 uppercase tracking-wide mb-2"><T>Footer</T></p>
+            <label className="flex items-center gap-2 text-sm text-slate-600 mb-1"><input type="checkbox" checked={cfg.footer_show_store} onChange={toggle('footer_show_store')} /> <T>Columna de tienda</T></label>
+            <label className="flex items-center gap-2 text-sm text-slate-600 mb-1"><input type="checkbox" checked={cfg.footer_show_blog} onChange={toggle('footer_show_blog')} /> <T>Columna de blog</T></label>
+            <label className="flex items-center gap-2 text-sm text-slate-600"><input type="checkbox" checked={cfg.footer_show_legal} onChange={toggle('footer_show_legal')} /> <T>Columna legal</T></label>
           </div>
 
           <div className="pt-3 border-t border-slate-100">
-            <p className="text-xs font-semibold text-slate-500 uppercase tracking-wide mb-2">Barra de navegación</p>
-            <label className="flex items-center gap-2 text-sm text-slate-600 mb-1"><input type="checkbox" checked={cfg.nav_show_cart} onChange={toggle('nav_show_cart')} /> Carrito</label>
-            <label className="flex items-center gap-2 text-sm text-slate-600 mb-1"><input type="checkbox" checked={cfg.nav_show_auth} onChange={toggle('nav_show_auth')} /> Cuenta / acceso</label>
-            <label className="flex items-center gap-2 text-sm text-slate-600"><input type="checkbox" checked={cfg.nav_show_wishlist} onChange={toggle('nav_show_wishlist')} /> Favoritos</label>
+            <p className="text-xs font-semibold text-slate-500 uppercase tracking-wide mb-2"><T>Barra de navegación</T></p>
+            <label className="flex items-center gap-2 text-sm text-slate-600 mb-1"><input type="checkbox" checked={cfg.nav_show_cart} onChange={toggle('nav_show_cart')} /> <T>Carrito</T></label>
+            <label className="flex items-center gap-2 text-sm text-slate-600 mb-1"><input type="checkbox" checked={cfg.nav_show_auth} onChange={toggle('nav_show_auth')} /> <T>Cuenta / acceso</T></label>
+            <label className="flex items-center gap-2 text-sm text-slate-600"><input type="checkbox" checked={cfg.nav_show_wishlist} onChange={toggle('nav_show_wishlist')} /> <T>Favoritos</T></label>
           </div>
 
-          <p className="text-[11px] text-slate-400 pt-2 border-t border-slate-100">Dominios, pagos, envíos y correos siguen en Configuración.</p>
+          <p className="text-[11px] text-slate-400 pt-2 border-t border-slate-100"><T>Dominios, pagos, envíos y correos siguen en Configuración.</T></p>
         </div>
       </div>
     </div>

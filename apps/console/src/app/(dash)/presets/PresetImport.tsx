@@ -4,6 +4,7 @@ import { useState } from 'react'
 import { useActionState } from 'react'
 import { savePreset, type PresetActionState } from '../../actions'
 import { input, btn } from '@/lib/styles'
+import { useTx } from '@merkiai/ui'
 
 const initial: PresetActionState = { ok: false }
 
@@ -22,6 +23,7 @@ interface Payload {
  * elige key/name/niche; el resto (Tema, home, inventario) viene del payload.
  */
 export default function PresetImport() {
+  const tx = useTx()
   const [state, action, pending] = useActionState(savePreset, initial)
   const [payload, setPayload] = useState<Payload | null>(null)
   const [fileErr, setFileErr] = useState('')
@@ -54,9 +56,9 @@ export default function PresetImport() {
       {payload && (
         <form action={action} style={{ display: 'grid', gap: 10 }}>
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 8 }}>
-            <input style={input} name="key" placeholder="key (p.ej. moda-boutique)" required />
-            <input style={input} name="name" placeholder="Nombre visible" required />
-            <input style={input} name="niche" placeholder="nicho (p.ej. moda)" required />
+            <input style={input} name="key" placeholder={tx("key (p.ej. moda-boutique)")} required />
+            <input style={input} name="name" placeholder={tx("Nombre visible")} required />
+            <input style={input} name="niche" placeholder={tx("nicho (p.ej. moda)")} required />
           </div>
           {/* Campos tomados del payload (mismo contrato que savePreset) */}
           <input type="hidden" name="theme" value={JSON.stringify(payload.theme ?? {})} />

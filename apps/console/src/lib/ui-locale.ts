@@ -14,3 +14,10 @@ export async function getConsoleLocale(): Promise<string> {
   if (c && (CONSOLE_LOCALES as readonly string[]).includes(c)) return c
   return matchAcceptLanguage((await headers()).get('accept-language'), [...CONSOLE_LOCALES]) ?? DEFAULT_LOCALE
 }
+
+/** Frases de la consola (clave = texto en español) para Server Components. */
+export async function getConsoleTx() {
+  const { translatePhrase } = await import('@merkiai/i18n')
+  const locale = await getConsoleLocale()
+  return (text: string, values?: Record<string, string | number>) => translatePhrase(text, locale, values)
+}

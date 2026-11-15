@@ -5,6 +5,7 @@ import { useFormStatus } from 'react-dom'
 import { Icon } from '@merkiai/ui'
 import { inviteTenantOwner, deleteTenant, type TenantActionState } from '../actions'
 import { input } from '@/lib/styles'
+import { T } from '@merkiai/ui'
 
 const initial: TenantActionState = { ok: false }
 
@@ -39,7 +40,7 @@ export default function TenantManage({
     <div style={{ display: 'flex', flexDirection: 'column', gap: 8, minWidth: 260 }}>
       {/* Dueño (super admin) */}
       <div style={{ fontSize: 12, color: 'var(--ui-muted)' }}>
-        Dueño actual: <strong>{tenant.ownerEmail || '— sin asignar —'}</strong>
+        <T>Dueño actual:</T> <strong>{tenant.ownerEmail || '— sin asignar —'}</strong>
       </div>
       <form action={inviteAction} style={{ display: 'flex', gap: 6, alignItems: 'center', flexWrap: 'wrap' }}>
         <input type="hidden" name="id" value={tenant.id} />
@@ -52,15 +53,13 @@ export default function TenantManage({
       {/* Zona de peligro */}
       {!showDanger ? (
         <button type="button" onClick={() => setShowDanger(true)} style={{ ...smallBtn, borderColor: 'var(--ui-danger)', color: 'var(--ui-danger)', alignSelf: 'flex-start' }}>
-          Eliminar…
+          <T>Eliminar…</T>
         </button>
       ) : (
         <div style={{ border: '1px solid #F0C9C4', background: '#FEF3F2', borderRadius: 'var(--ui-radius)', padding: 10 }}>
-          <p style={{ margin: '0 0 6px', fontSize: 12, fontWeight: 700, color: 'var(--ui-danger)', display: 'flex', alignItems: 'center', gap: 6 }}><Icon name="alert" size={14} /> Zona de peligro</p>
+          <p style={{ margin: '0 0 6px', fontSize: 12, fontWeight: 700, color: 'var(--ui-danger)', display: 'flex', alignItems: 'center', gap: 6 }}><Icon name="alert" size={14} /> <T>Zona de peligro</T></p>
           <p style={{ margin: '0 0 8px', fontSize: 12, color: '#7A271A' }}>
-            Esta acción es <strong>irreversible</strong>: des-aprovisiona TODO — datos de la tienda
-            (config, contenido, catálogo, pedidos, clientes, perfiles), el Team en Stack Auth y el
-            registro del tenant. Para confirmar, escribe el subdominio <strong>{subdomain || '—'}</strong>.
+            <T>Esta acción es</T> <strong><T>irreversible</T></strong><T>: des-aprovisiona TODO — datos de la tienda (config, contenido, catálogo, pedidos, clientes, perfiles), el Team en Stack Auth y el registro del tenant. Para confirmar, escribe el subdominio</T> <strong>{subdomain || '—'}</strong>.
           </p>
           <form action={deleteAction} style={{ display: 'flex', gap: 6, alignItems: 'center', flexWrap: 'wrap' }}>
             <input type="hidden" name="id" value={tenant.id} />
@@ -77,7 +76,7 @@ export default function TenantManage({
               <Pending idle="Eliminar definitivamente" busy="Eliminando…" />
             </button>
             <button type="button" onClick={() => { setShowDanger(false); setConfirmText('') }} style={smallBtn}>
-              Cancelar
+              <T>Cancelar</T>
             </button>
           </form>
           {deleteState.error && <p style={{ margin: '6px 0 0', color: 'var(--ui-danger)', fontSize: 12 }}>{deleteState.error}</p>}

@@ -9,6 +9,8 @@
  */
 import { useEffect, useMemo, useState } from 'react'
 import { Icon } from '@merkiai/ui'
+import { T } from '@merkiai/ui'
+import { useTx } from '@merkiai/ui'
 
 interface Asset { key: string; url: string; alt_text?: string | null; mime_type?: string | null }
 
@@ -21,6 +23,7 @@ export default function MediaPicker({
   /** Prefijo de mime a filtrar ('image', 'application', '' = todo). */
   mime?: string
 }) {
+  const tx = useTx()
   const [assets, setAssets] = useState<Asset[]>([])
   const [loading, setLoading] = useState(false)
   const [q, setQ] = useState('')
@@ -47,16 +50,16 @@ export default function MediaPicker({
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4" onClick={onClose}>
       <div className="w-full max-w-3xl max-h-[80vh] overflow-hidden rounded-2xl bg-white shadow-xl flex flex-col" onClick={(e) => e.stopPropagation()}>
         <div className="flex items-center gap-3 border-b border-slate-100 px-4 py-3">
-          <p className="font-brand text-sm font-semibold text-brand-primary">Biblioteca de medios</p>
+          <p className="font-brand text-sm font-semibold text-brand-primary"><T>Biblioteca de medios</T></p>
           <input
-            value={q} onChange={(e) => setQ(e.target.value)} placeholder="Buscar por nombre o alt…"
-            className="ml-auto w-56 rounded-lg border border-slate-300 px-2.5 py-1.5 text-sm" aria-label="Buscar medios"
+            value={q} onChange={(e) => setQ(e.target.value)} placeholder={tx("Buscar por nombre o alt…")}
+            className="ml-auto w-56 rounded-lg border border-slate-300 px-2.5 py-1.5 text-sm" aria-label={tx("Buscar medios")}
           />
-          <button onClick={onClose} className="text-slate-400 hover:text-slate-700" title="Cerrar" aria-label="Cerrar"><Icon name="close" size={16} /></button>
+          <button onClick={onClose} className="text-slate-400 hover:text-slate-700" title={tx("Cerrar")} aria-label={tx("Cerrar")}><Icon name="close" size={16} /></button>
         </div>
         <div className="flex-1 overflow-y-auto p-4">
           {loading ? (
-            <p className="text-sm text-slate-400 text-center py-10">Cargando…</p>
+            <p className="text-sm text-slate-400 text-center py-10"><T>Cargando…</T></p>
           ) : filtered.length === 0 ? (
             <p className="text-sm text-slate-400 text-center py-10">No hay medios {q ? 'que coincidan' : 'aún'}.</p>
           ) : (

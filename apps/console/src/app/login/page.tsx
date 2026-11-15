@@ -5,8 +5,10 @@ import { useRouter } from 'next/navigation'
 import { useStackApp, useUser } from '@stackframe/stack'
 import { LoginScreen } from '@merkiai/ui'
 import { CONSOLE_LOGIN_CONTENT, CONSOLE_BRAND } from '@/lib/login-content'
+import { useTx } from '@merkiai/ui'
 
 function ConsoleLogin() {
+  const tx = useTx()
   const app = useStackApp()
   const user = useUser()
   const router = useRouter()
@@ -21,7 +23,7 @@ function ConsoleLogin() {
 
   async function handleSubmit(email: string, password: string) {
     if (!email || !password) {
-      setError('Ingresa tu correo y contraseña.')
+      setError(tx("Ingresa tu correo y contraseña."))
       return
     }
     setLoading(true)
@@ -29,12 +31,12 @@ function ConsoleLogin() {
     try {
       const result = await app.signInWithCredential({ email, password })
       if (result.status === 'error') {
-        setError('Correo o contraseña incorrectos.')
+        setError(tx("Correo o contraseña incorrectos."))
       } else {
         router.push('/')
       }
     } catch {
-      setError('Ocurrió un error. Intenta de nuevo.')
+      setError(tx("Ocurrió un error. Intenta de nuevo."))
     } finally {
       setLoading(false)
     }
@@ -54,7 +56,7 @@ function ConsoleLogin() {
         ?? null
       setOtpNonce(nonce)
     } catch {
-      setError('No se pudo enviar el código. Verifica el correo.')
+      setError(tx("No se pudo enviar el código. Verifica el correo."))
     }
   }
 
@@ -66,12 +68,12 @@ function ConsoleLogin() {
       const fullCode = otpNonce ? `${code}${otpNonce}` : code
       const result = await app.signInWithMagicLink(fullCode)
       if (result.status === 'error') {
-        setError('Código inválido o expirado. Reenvía e intenta de nuevo.')
+        setError(tx("Código inválido o expirado. Reenvía e intenta de nuevo."))
       } else {
         router.push('/')
       }
     } catch {
-      setError('No se pudo verificar el código. Intenta de nuevo.')
+      setError(tx("No se pudo verificar el código. Intenta de nuevo."))
     } finally {
       setLoading(false)
     }

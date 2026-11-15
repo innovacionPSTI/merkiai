@@ -3,6 +3,8 @@
 import { useState, useRef } from 'react'
 import { Icon } from '@merkiai/ui'
 import MediaPicker from './MediaPicker'
+import { T } from '@merkiai/ui'
+import { useTx } from '@merkiai/ui'
 
 interface Props {
   value: string
@@ -23,6 +25,7 @@ export default function ImageUpload({
   label = 'Imagen',
   sizeClass = 'aspect-video',
 }: Props) {
+  const tx = useTx()
   const [uploading, setUploading] = useState(false)
   const [error, setError] = useState('')
   const [dragging, setDragging] = useState(false)
@@ -68,7 +71,7 @@ export default function ImageUpload({
 
   function handleFile(file: File) {
     if (!file.type.startsWith('image/')) {
-      setError('Solo se permiten imágenes')
+      setError(tx("Solo se permiten imágenes"))
       return
     }
     upload(file)
@@ -95,21 +98,21 @@ export default function ImageUpload({
               onClick={() => inputRef.current?.click()}
               className="font-brand text-xs bg-white text-brand-primary px-3 py-1.5 rounded-lg hover:bg-brand-cream"
             >
-              Cambiar
+              <T>Cambiar</T>
             </button>
             <button
               type="button"
               onClick={() => setPickerOpen(true)}
               className="font-brand text-xs bg-white text-brand-primary px-3 py-1.5 rounded-lg hover:bg-brand-cream"
             >
-              Biblioteca
+              <T>Biblioteca</T>
             </button>
             <button
               type="button"
               onClick={handleRemove}
               className="font-brand text-xs bg-red-500 text-white px-3 py-1.5 rounded-lg hover:bg-red-600"
             >
-              Eliminar
+              <T>Eliminar</T>
             </button>
           </div>
         </div>
@@ -129,21 +132,21 @@ export default function ImageUpload({
           {uploading ? (
             <div className="flex flex-col items-center gap-2">
               <div className="w-6 h-6 border-2 border-brand-primary border-t-transparent rounded-full animate-spin" />
-              <p className="font-brand text-xs text-brand-primary/50">Subiendo...</p>
+              <p className="font-brand text-xs text-brand-primary/50"><T>Subiendo...</T></p>
             </div>
           ) : (
             <div className="flex flex-col items-center gap-2 text-center px-4">
               <Icon name="media" size={28} className="text-brand-primary/40" />
               <p className="font-brand text-sm text-brand-primary/50">
-                Arrastra una imagen o <span className="text-brand-primary underline">haz clic</span>
+                <T>Arrastra una imagen o</T> <span className="text-brand-primary underline"><T>haz clic</T></span>
               </p>
-              <p className="font-brand text-xs text-brand-primary/30">JPG, PNG, WebP — máx. 5 MB</p>
+              <p className="font-brand text-xs text-brand-primary/30"><T>JPG, PNG, WebP — máx. 5 MB</T></p>
               <button
                 type="button"
                 onClick={(e) => { e.stopPropagation(); setPickerOpen(true) }}
                 className="mt-1 font-brand text-xs text-brand-primary underline"
               >
-                o elegir de la biblioteca
+                <T>o elegir de la biblioteca</T>
               </button>
             </div>
           )}

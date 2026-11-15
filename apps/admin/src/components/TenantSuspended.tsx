@@ -7,6 +7,7 @@
  * No expone acciones de gestión; solo informa y remite a soporte. El cierre de
  * sesión sigue disponible por la ruta estándar del proveedor de auth.
  */
+import { T } from '@merkiai/ui'
 export default function TenantSuspended({ canPay = false }: { canPay?: boolean }) {
   return (
     <div className="min-h-screen flex items-center justify-center bg-gray-50 p-6">
@@ -14,28 +15,27 @@ export default function TenantSuspended({ canPay = false }: { canPay?: boolean }
         <div className="w-14 h-14 rounded-full bg-amber-50 text-amber-600 flex items-center justify-center mx-auto mb-5 text-2xl">
           ⏸️
         </div>
-        <h1 className="font-display text-xl text-brand-primary mb-2">Servicio en pausa</h1>
+        <h1 className="font-display text-xl text-brand-primary mb-2"><T>Servicio en pausa</T></h1>
         <p className="font-brand text-sm text-brand-primary/60 leading-relaxed">
-          El acceso a este panel está temporalmente pausado. Tus datos están a salvo
-          y se restablecerán al regularizar la cuenta.
+          <T>El acceso a este panel está temporalmente pausado. Tus datos están a salvo y se restablecerán al regularizar la cuenta.</T>
         </p>
         {canPay ? (
           <a
             href="/facturacion"
             className="inline-block mt-5 font-brand text-sm bg-brand-primary text-white rounded-full px-5 py-2.5 hover:bg-brand-dark"
           >
-            Pagar y reactivar
+            <T>Pagar y reactivar</T>
           </a>
         ) : (
           <p className="font-brand text-sm text-brand-primary/60 leading-relaxed mt-3">
-            Para reactivarlo, pide al administrador de la tienda que regularice el pago.
+            <T>Para reactivarlo, pide al administrador de la tienda que regularice el pago.</T>
           </p>
         )}
         <a
           href="/handler/sign-out"
           className="block mt-6 font-brand text-sm text-brand-primary/50 underline hover:text-brand-primary"
         >
-          Cerrar sesión
+          <T>Cerrar sesión</T>
         </a>
       </div>
     </div>

@@ -7,6 +7,8 @@
  */
 import { useRef, useState } from 'react'
 import { Icon } from '@merkiai/ui'
+import { T } from '@merkiai/ui'
+import { useTx } from '@merkiai/ui'
 
 interface Summary {
   toCreate: number
@@ -28,6 +30,7 @@ interface Props {
 }
 
 export default function CsvImportModal({ endpoint, entityLabel, idLabel = 'slug', triggerLabel = 'Importar CSV', triggerClassName, onDone }: Props) {
+  const tx = useTx()
   const [open, setOpen] = useState(false)
   const [csv, setCsv] = useState('')
   const [fileName, setFileName] = useState('')
@@ -82,14 +85,14 @@ export default function CsvImportModal({ endpoint, entityLabel, idLabel = 'slug'
           <div className="bg-white rounded-2xl shadow-xl w-full max-w-lg max-h-[85vh] overflow-y-auto" onClick={(e) => e.stopPropagation()}>
             <div className="flex items-center justify-between px-6 py-4 border-b border-gray-100">
               <h2 className="font-display text-brand-primary text-lg">Importar {entityLabel}</h2>
-              <button onClick={close} className="text-brand-primary/40 hover:text-brand-primary" aria-label="Cerrar"><Icon name="close" size={18} /></button>
+              <button onClick={close} className="text-brand-primary/40 hover:text-brand-primary" aria-label={tx("Cerrar")}><Icon name="close" size={18} /></button>
             </div>
 
             <div className="px-6 py-5 space-y-4">
               {!result && (
                 <>
                   <a href={endpoint} className="font-brand text-xs text-brand-primary underline inline-flex items-center gap-1">
-                    <Icon name="external" size={13} /> Descargar plantilla de ejemplo
+                    <Icon name="external" size={13} /> <T>Descargar plantilla de ejemplo</T>
                   </a>
                   <input ref={fileRef} type="file" accept=".csv,text/csv" className="hidden"
                     onChange={(e) => { const f = e.target.files?.[0]; if (f) void onFile(f) }} />
@@ -102,8 +105,8 @@ export default function CsvImportModal({ endpoint, entityLabel, idLabel = 'slug'
                   <label className="flex items-start gap-2.5 cursor-pointer">
                     <input type="checkbox" checked={upsert} onChange={(e) => { setUpsert(e.target.checked); void rePreview(e.target.checked ? 'upsert' : 'create') }} className="w-4 h-4 mt-0.5 accent-brand-primary" />
                     <span>
-                      <span className="font-brand text-sm text-brand-primary block">Actualizar existentes</span>
-                      <span className="font-brand text-xs text-brand-primary/50">Si el <code className="text-[11px]">{idLabel}</code> ya existe, se actualiza en vez de omitirlo.</span>
+                      <span className="font-brand text-sm text-brand-primary block"><T>Actualizar existentes</T></span>
+                      <span className="font-brand text-xs text-brand-primary/50"><T>Si el</T> <code className="text-[11px]">{idLabel}</code> <T>ya existe, se actualiza en vez de omitirlo.</T></span>
                     </span>
                   </label>
                 </>
@@ -114,10 +117,10 @@ export default function CsvImportModal({ endpoint, entityLabel, idLabel = 'slug'
               {preview && !result && (
                 <div className="space-y-3">
                   <div className="flex flex-wrap gap-4 font-brand text-sm">
-                    <span className="text-brand-primary"><strong>{preview.toCreate}</strong> se crearán</span>
-                    {preview.toUpdate > 0 && <span className="text-blue-600"><strong>{preview.toUpdate}</strong> se actualizan</span>}
-                    {preview.skipped.length > 0 && <span className="text-amber-600"><strong>{preview.skipped.length}</strong> se omiten</span>}
-                    {preview.parseErrors.length > 0 && <span className="text-red-500"><strong>{preview.parseErrors.length}</strong> con error</span>}
+                    <span className="text-brand-primary"><strong>{preview.toCreate}</strong> <T>se crearán</T></span>
+                    {preview.toUpdate > 0 && <span className="text-blue-600"><strong>{preview.toUpdate}</strong> <T>se actualizan</T></span>}
+                    {preview.skipped.length > 0 && <span className="text-amber-600"><strong>{preview.skipped.length}</strong> <T>se omiten</T></span>}
+                    {preview.parseErrors.length > 0 && <span className="text-red-500"><strong>{preview.parseErrors.length}</strong> <T>con error</T></span>}
                   </div>
                   {preview.parseErrors.length > 0 && (
                     <ul className="text-xs font-brand text-red-500 bg-red-50 rounded-lg p-3 space-y-0.5 max-h-28 overflow-y-auto">

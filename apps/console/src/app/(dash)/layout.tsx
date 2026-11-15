@@ -4,6 +4,7 @@ import { requirePlatformOperator } from '@/lib/platform-auth'
 import LogoutButton from '@/components/LogoutButton'
 import ConsoleSidebar from '@/components/Sidebar'
 import ConsoleLocaleSelect from '@/components/ConsoleLocaleSelect'
+import { T } from '@merkiai/ui'
 
 export const dynamic = 'force-dynamic'
 
@@ -15,7 +16,7 @@ export default async function DashLayout({ children }: { children: ReactNode }) 
       sidebar={<ConsoleSidebar />}
       topbar={
         <>
-          <span style={{ fontSize: 14, color: '#6b7280', fontWeight: 600 }}>Control Plane</span>
+          <span style={{ fontSize: 14, color: '#6b7280', fontWeight: 600 }}><T>Control Plane</T></span>
           <div style={{ display: 'flex', gap: 12, alignItems: 'center' }}>
             <span style={{ fontSize: 13, color: '#666' }}>{operator.email}</span>
             <ConsoleLocaleSelect />

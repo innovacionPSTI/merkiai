@@ -10,6 +10,8 @@ import { useCallback, useEffect, useState } from 'react'
 import type { Collection, CollectionField, CollectionFieldType, CollectionItem } from '@merkiai/database'
 import { COLLECTION_FIELD_TYPES } from '@merkiai/database'
 import { ConfirmDialog, PromptModal } from '@merkiai/ui'
+import { T } from '@merkiai/ui'
+import { useTx } from '@merkiai/ui'
 
 const TYPE_LABELS: Record<CollectionFieldType, string> = {
   text: 'Texto', textarea: 'Texto largo', richtext: 'Texto enriquecido', number: 'Número',
@@ -18,6 +20,7 @@ const TYPE_LABELS: Record<CollectionFieldType, string> = {
 }
 
 export default function ColeccionesClient({ initialCollections }: { initialCollections: Collection[] }) {
+  const tx = useTx()
   const [collections, setCollections] = useState<Collection[]>(initialCollections)
   const [sel, setSel] = useState<string | null>(initialCollections[0]?.key ?? null)
   const [tab, setTab] = useState<'campos' | 'registros'>('campos')
@@ -34,7 +37,7 @@ export default function ColeccionesClient({ initialCollections }: { initialColle
     })
     const data = await res.json()
     if (!res.ok) { setMsg(data.error || 'No se pudo crear'); return }
-    setCollections((cs) => [...cs, data]); setSel(data.key); setTab('campos'); setMsg('Colección creada ✓')
+    setCollections((cs) => [...cs, data]); setSel(data.key); setTab('campos'); setMsg(tx("Colección creada ✓"))
   }
 
   async function saveFields(fields: CollectionField[]) {
@@ -45,7 +48,7 @@ export default function ColeccionesClient({ initialCollections }: { initialColle
     })
     const data = await res.json()
     if (!res.ok) { setMsg(data.error || 'No se pudo guardar'); return }
-    setCollections((cs) => cs.map((c) => (c.key === current.key ? data : c))); setMsg('Campos guardados ✓')
+    setCollections((cs) => cs.map((c) => (c.key === current.key ? data : c))); setMsg(tx("Campos guardados ✓"))
   }
 
   async function saveTemplate(template_page_key: string | null) {
@@ -56,22 +59,22 @@ export default function ColeccionesClient({ initialCollections }: { initialColle
     })
     const data = await res.json()
     if (!res.ok) { setMsg(data.error || 'No se pudo guardar la plantilla'); return }
-    setCollections((cs) => cs.map((c) => (c.key === current.key ? data : c))); setMsg('Plantilla de registro actualizada ✓')
+    setCollections((cs) => cs.map((c) => (c.key === current.key ? data : c))); setMsg(tx("Plantilla de registro actualizada ✓"))
   }
 
   async function removeCollection() {
     if (!current) return
     const res = await fetch(`/api/admin/cms/collections?key=${encodeURIComponent(current.key)}`, { method: 'DELETE' })
-    if (!res.ok) { setMsg('No se pudo eliminar'); return }
-    setCollections((cs) => cs.filter((c) => c.key !== current.key)); setSel(null); setMsg('Colección eliminada ✓')
+    if (!res.ok) { setMsg(tx("No se pudo eliminar")); return }
+    setCollections((cs) => cs.filter((c) => c.key !== current.key)); setSel(null); setMsg(tx("Colección eliminada ✓"))
   }
 
   return (
     <div className="flex flex-1 min-h-0">
       <aside className="w-64 flex-shrink-0 border-r border-gray-100 overflow-y-auto p-4">
         <div className="flex items-center justify-between mb-3">
-          <p className="font-brand text-xs font-semibold text-brand-primary/50 uppercase tracking-wide">Tipos</p>
-          <button onClick={() => setNewOpen(true)} className="text-xs text-indigo-600 hover:text-indigo-800">+ Nueva</button>
+          <p className="font-brand text-xs font-semibold text-brand-primary/50 uppercase tracking-wide"><T>Tipos</T></p>
+          <button onClick={() => setNewOpen(true)} className="text-xs text-indigo-600 hover:text-indigo-800"><T>+ Nueva</T></button>
         </div>
         <div className="space-y-1">
           {collections.map((c) => (
@@ -81,24 +84,24 @@ export default function ColeccionesClient({ initialCollections }: { initialColle
               <span className="block text-[11px] opacity-60">/{c.key} · {c.fields.length} campos</span>
             </button>
           ))}
-          {collections.length === 0 && <p className="text-xs text-slate-400 py-6 text-center">Sin colecciones aún.</p>}
+          {collections.length === 0 && <p className="text-xs text-slate-400 py-6 text-center"><T>Sin colecciones aún.</T></p>}
         </div>
       </aside>
 
       <main className="flex-1 overflow-y-auto p-6">
         {msg && <div className="mb-4 text-sm text-indigo-700 bg-indigo-50 border border-indigo-200 rounded-lg px-3 py-2">{msg}</div>}
         {!current ? (
-          <p className="text-slate-400 text-sm">Selecciona o crea una colección.</p>
+          <p className="text-slate-400 text-sm"><T>Selecciona o crea una colección.</T></p>
         ) : (
           <div className="max-w-3xl">
             <div className="flex items-center justify-between mb-4">
               <h2 className="font-display text-lg text-brand-primary">{current.label}</h2>
               <div className="flex items-center gap-2">
                 <div className="rounded-lg border border-slate-200 overflow-hidden text-sm">
-                  <button onClick={() => setTab('campos')} className={`px-3 py-1.5 ${tab === 'campos' ? 'bg-brand-primary text-brand-cream' : 'text-slate-600'}`}>Campos</button>
-                  <button onClick={() => setTab('registros')} className={`px-3 py-1.5 ${tab === 'registros' ? 'bg-brand-primary text-brand-cream' : 'text-slate-600'}`}>Registros</button>
+                  <button onClick={() => setTab('campos')} className={`px-3 py-1.5 ${tab === 'campos' ? 'bg-brand-primary text-brand-cream' : 'text-slate-600'}`}><T>Campos</T></button>
+                  <button onClick={() => setTab('registros')} className={`px-3 py-1.5 ${tab === 'registros' ? 'bg-brand-primary text-brand-cream' : 'text-slate-600'}`}><T>Registros</T></button>
                 </div>
-                <button onClick={() => setConfirmDel(true)} className="text-xs text-red-400 hover:text-red-600">Eliminar</button>
+                <button onClick={() => setConfirmDel(true)} className="text-xs text-red-400 hover:text-red-600"><T>Eliminar</T></button>
               </div>
             </div>
             {/* HU-354 AC-1 · plantilla de registro (página CMS con placeholders {{campo}}) */}
@@ -107,9 +110,9 @@ export default function ColeccionesClient({ initialCollections }: { initialColle
               <input
                 defaultValue={current.template_page_key ?? ''}
                 onBlur={(e) => { const v = e.target.value.trim(); if (v !== (current.template_page_key ?? '')) saveTemplate(v || null) }}
-                placeholder="(automática)"
+                placeholder={tx("(automática)")}
                 className="h-7 rounded border border-slate-300 px-2 text-xs font-mono w-56"
-                aria-label="Clave de la página plantilla"
+                aria-label={tx("Clave de la página plantilla")}
               />
             </div>
             {tab === 'campos'
@@ -122,7 +125,7 @@ export default function ColeccionesClient({ initialCollections }: { initialColle
       {/* HU-364 · modales de marca */}
       <PromptModal
         open={newOpen}
-        title="Nueva colección"
+        title={tx("Nueva colección")}
         submitLabel="Crear"
         fields={[
           { key: 'label', label: 'Nombre (p. ej. Noticias)', required: true },
@@ -134,7 +137,7 @@ export default function ColeccionesClient({ initialCollections }: { initialColle
       />
       <ConfirmDialog
         open={confirmDel}
-        title="Eliminar colección"
+        title={tx("Eliminar colección")}
         message={current ? `¿Eliminar la colección "${current.label}" y todos sus registros? Esta acción no se puede deshacer.` : ''}
         danger confirmLabel="Eliminar"
         onConfirm={() => { setConfirmDel(false); void removeCollection() }}
@@ -146,6 +149,7 @@ export default function ColeccionesClient({ initialCollections }: { initialColle
 
 // ── Editor del esquema de campos ─────────────────────────────────────────────
 function FieldsEditor({ fields, onSave }: { fields: CollectionField[]; onSave: (f: CollectionField[]) => void }) {
+  const tx = useTx()
   const [list, setList] = useState<CollectionField[]>(fields)
   const update = (i: number, patch: Partial<CollectionField>) => setList((l) => l.map((f, j) => (j === i ? { ...f, ...patch } : f)))
   const add = () => setList((l) => [...l, { key: `campo_${l.length + 1}`, label: `Campo ${l.length + 1}`, type: 'text' }])
@@ -155,7 +159,7 @@ function FieldsEditor({ fields, onSave }: { fields: CollectionField[]; onSave: (
     <div className="space-y-3">
       {list.map((f, i) => (
         <div key={i} className="bg-white border border-gray-200 rounded-xl p-3 flex flex-wrap items-center gap-2">
-          <input value={f.label} onChange={(e) => update(i, { label: e.target.value })} placeholder="Etiqueta"
+          <input value={f.label} onChange={(e) => update(i, { label: e.target.value })} placeholder={tx("Etiqueta")}
             className="border border-slate-300 rounded-lg px-2 py-1.5 text-sm flex-1 min-w-[140px]" />
           <input value={f.key} onChange={(e) => update(i, { key: e.target.value })} placeholder="clave"
             className="border border-slate-300 rounded-lg px-2 py-1.5 text-sm w-32 font-mono text-xs" />
@@ -164,25 +168,25 @@ function FieldsEditor({ fields, onSave }: { fields: CollectionField[]; onSave: (
             {COLLECTION_FIELD_TYPES.map((t) => <option key={t} value={t}>{TYPE_LABELS[t]}</option>)}
           </select>
           <label className="flex items-center gap-1 text-xs text-slate-600">
-            <input type="checkbox" checked={!!f.required} onChange={(e) => update(i, { required: e.target.checked })} /> Obligatorio
+            <input type="checkbox" checked={!!f.required} onChange={(e) => update(i, { required: e.target.checked })} /> <T>Obligatorio</T>
           </label>
           {f.type === 'select' && (
             <input
               value={(f.options ?? []).map((o) => o.value).join(', ')}
               onChange={(e) => update(i, { options: e.target.value.split(',').map((s) => s.trim()).filter(Boolean).map((v) => ({ value: v, label: v })) })}
-              placeholder="opciones separadas por coma"
+              placeholder={tx("opciones separadas por coma")}
               className="border border-slate-300 rounded-lg px-2 py-1.5 text-sm w-full" />
           )}
           {f.type === 'relation' && (
             <input value={f.relationTo ?? ''} onChange={(e) => update(i, { relationTo: e.target.value })}
-              placeholder="colección relacionada (clave)" className="border border-slate-300 rounded-lg px-2 py-1.5 text-sm w-56" />
+              placeholder={tx("colección relacionada (clave)")} className="border border-slate-300 rounded-lg px-2 py-1.5 text-sm w-56" />
           )}
           <button onClick={() => remove(i)} className="text-slate-300 hover:text-red-500 ml-auto">✕</button>
         </div>
       ))}
       <div className="flex gap-2">
-        <button onClick={add} className="rounded-lg border border-slate-300 px-3 py-2 text-sm text-slate-700 hover:bg-slate-50">+ Agregar campo</button>
-        <button onClick={() => onSave(list)} className="rounded-lg bg-brand-primary text-brand-cream px-4 py-2 text-sm hover:bg-brand-dark">Guardar esquema</button>
+        <button onClick={add} className="rounded-lg border border-slate-300 px-3 py-2 text-sm text-slate-700 hover:bg-slate-50"><T>+ Agregar campo</T></button>
+        <button onClick={() => onSave(list)} className="rounded-lg bg-brand-primary text-brand-cream px-4 py-2 text-sm hover:bg-brand-dark"><T>Guardar esquema</T></button>
       </div>
     </div>
   )
@@ -190,6 +194,7 @@ function FieldsEditor({ fields, onSave }: { fields: CollectionField[]; onSave: (
 
 // ── Gestor de registros ──────────────────────────────────────────────────────
 function RecordsManager({ collection, onError }: { collection: Collection; onError: (m: string) => void }) {
+  const tx = useTx()
   const [items, setItems] = useState<CollectionItem[]>([])
   const [editing, setEditing] = useState<CollectionItem | 'new' | null>(null)
 
@@ -217,13 +222,13 @@ function RecordsManager({ collection, onError }: { collection: Collection; onErr
   }
 
   if (collection.fields.length === 0) {
-    return <p className="text-sm text-slate-400">Define primero los campos de esta colección en la pestaña «Campos».</p>
+    return <p className="text-sm text-slate-400"><T>Define primero los campos de esta colección en la pestaña «Campos».</T></p>
   }
 
   return (
     <div className="space-y-3">
       <div className="flex justify-end">
-        <button onClick={() => setEditing('new')} className="rounded-lg bg-brand-primary text-brand-cream px-4 py-2 text-sm hover:bg-brand-dark">+ Nuevo registro</button>
+        <button onClick={() => setEditing('new')} className="rounded-lg bg-brand-primary text-brand-cream px-4 py-2 text-sm hover:bg-brand-dark"><T>+ Nuevo registro</T></button>
       </div>
       {editing !== null && (
         <RecordForm
@@ -239,15 +244,15 @@ function RecordsManager({ collection, onError }: { collection: Collection; onErr
             <span className={`w-2 h-2 rounded-full ${it.status === 'published' ? 'bg-green-400' : 'bg-amber-400'}`} />
             <span className="text-sm flex-1 truncate">{it.title || it.slug}</span>
             <span className="text-[11px] text-slate-400">/{it.slug}</span>
-            <button onClick={() => setEditing(it)} className="text-xs text-indigo-600 hover:text-indigo-800">Editar</button>
+            <button onClick={() => setEditing(it)} className="text-xs text-indigo-600 hover:text-indigo-800"><T>Editar</T></button>
             <button onClick={() => setDelId(it.id)} className="text-slate-300 hover:text-red-500">✕</button>
           </div>
         ))}
-        {items.length === 0 && <p className="text-sm text-slate-400 py-4 text-center">Sin registros aún.</p>}
+        {items.length === 0 && <p className="text-sm text-slate-400 py-4 text-center"><T>Sin registros aún.</T></p>}
       </div>
       <ConfirmDialog
         open={delId !== null}
-        title="Eliminar registro"
+        title={tx("Eliminar registro")}
         message="¿Eliminar este registro? Esta acción no se puede deshacer."
         danger confirmLabel="Eliminar"
         onConfirm={() => { const id = delId; setDelId(null); if (id != null) void doRemove(id) }}
@@ -295,9 +300,9 @@ function RecordForm({ fields, initial, onCancel, onSave }: {
         </div>
       ))}
       <div className="flex gap-2 pt-1">
-        <button onClick={() => onSave(form, 'published')} className="rounded-lg bg-brand-primary text-brand-cream px-4 py-2 text-sm hover:bg-brand-dark">Publicar</button>
-        <button onClick={() => onSave(form, 'draft')} className="rounded-lg border border-slate-300 px-4 py-2 text-sm text-slate-700 hover:bg-slate-50">Guardar borrador</button>
-        <button onClick={onCancel} className="text-sm text-slate-400 hover:text-slate-600 px-2">Cancelar</button>
+        <button onClick={() => onSave(form, 'published')} className="rounded-lg bg-brand-primary text-brand-cream px-4 py-2 text-sm hover:bg-brand-dark"><T>Publicar</T></button>
+        <button onClick={() => onSave(form, 'draft')} className="rounded-lg border border-slate-300 px-4 py-2 text-sm text-slate-700 hover:bg-slate-50"><T>Guardar borrador</T></button>
+        <button onClick={onCancel} className="text-sm text-slate-400 hover:text-slate-600 px-2"><T>Cancelar</T></button>
       </div>
     </div>
   )

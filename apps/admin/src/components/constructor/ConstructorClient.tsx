@@ -17,6 +17,8 @@ import AddBlockCatalog from './AddBlockCatalog'
 import NavEditor from './NavEditor'
 import SiteSettings, { type SiteConfig } from './SiteSettings'
 import { getPreviewUrlAction } from '@/app/constructor/preview-action'
+import { T } from '@merkiai/ui'
+import { useTx } from '@merkiai/ui'
 
 interface PageOption { key: string; label: string; slug: string; style?: unknown; page_type?: string; enabled?: boolean; meta_title?: string | null; meta_description?: string | null; show_in_footer?: boolean }
 
@@ -70,6 +72,7 @@ export default function ConstructorClient({
   siteBlueprints?: boolean
   blueprints?: Array<{ key: string; label: string; description?: string }>
 }) {
+  const tx = useTx()
   const [pageKey, setPageKey] = useState(initialPageKey)
   // HU-350 · lista de páginas en estado local para poder crear/duplicar desde el
   // propio hub (crear+construir en un solo lugar) sin recargar.
@@ -530,11 +533,11 @@ export default function ConstructorClient({
       {/* HU-365 AC-1 · ÁMBITO "SITIO": plantilla + estructura/navegación/ajustes de sitio */}
       <div className="rounded-xl border border-slate-200 bg-white p-4">
         <div className="flex items-center gap-2 mb-3">
-          <span className="inline-flex items-center gap-1 rounded-full bg-slate-100 text-slate-600 text-[11px] font-semibold uppercase tracking-wide px-2.5 py-1"><Icon name="settings" size={12} /> Sitio</span>
-          <span className="text-xs text-slate-400">Identidad, estructura y navegación de toda la tienda</span>
+          <span className="inline-flex items-center gap-1 rounded-full bg-slate-100 text-slate-600 text-[11px] font-semibold uppercase tracking-wide px-2.5 py-1"><Icon name="settings" size={12} /> <T>Sitio</T></span>
+          <span className="text-xs text-slate-400"><T>Identidad, estructura y navegación de toda la tienda</T></span>
         </div>
         <div className="flex flex-wrap items-center gap-3">
-          <label className="text-sm font-medium text-slate-700">Plantilla</label>
+          <label className="text-sm font-medium text-slate-700"><T>Plantilla</T></label>
           <select
             className="rounded-lg border border-slate-300 px-3 py-2 text-sm"
             value={template}
@@ -544,28 +547,28 @@ export default function ConstructorClient({
           </select>
           {isHome && !contentMode && (
             <button onClick={applyTemplate} className="rounded-lg border border-indigo-300 px-3 py-2 text-sm font-medium text-indigo-700 hover:bg-indigo-50">
-              Aplicar a esta página
+              <T>Aplicar a esta página</T>
             </button>
           )}
           <span className="h-5 w-px bg-slate-200" aria-hidden="true" />
           {/* HU-366 · estructura (outline) */}
-          <button onClick={() => setOutlineOpen(true)} className="inline-flex items-center gap-1 rounded-lg border border-slate-300 px-3 py-2 text-sm text-slate-700 hover:bg-slate-50" title="Mapa del sitio: páginas, regiones y navegación">
-            <Icon name="list" size={14} /> Estructura
+          <button onClick={() => setOutlineOpen(true)} className="inline-flex items-center gap-1 rounded-lg border border-slate-300 px-3 py-2 text-sm text-slate-700 hover:bg-slate-50" title={tx("Mapa del sitio: páginas, regiones y navegación")}>
+            <Icon name="list" size={14} /> <T>Estructura</T>
           </button>
           {/* HU-367 · navegación (menú) */}
-          <button onClick={() => setNavOpen(true)} className="inline-flex items-center gap-1 rounded-lg border border-slate-300 px-3 py-2 text-sm text-slate-700 hover:bg-slate-50" title="Editar el menú del sitio">
-            <Icon name="content" size={14} /> Navegación
+          <button onClick={() => setNavOpen(true)} className="inline-flex items-center gap-1 rounded-lg border border-slate-300 px-3 py-2 text-sm text-slate-700 hover:bg-slate-50" title={tx("Editar el menú del sitio")}>
+            <Icon name="content" size={14} /> <T>Navegación</T>
           </button>
           {/* HU-371 · ajustes de sitio (marca/footer/navbar) */}
           {siteConfig && (
-            <button onClick={() => setSiteOpen(true)} className="inline-flex items-center gap-1 rounded-lg border border-slate-300 px-3 py-2 text-sm text-slate-700 hover:bg-slate-50" title="Nombre, logo, redes, footer y navbar del sitio">
-              <Icon name="settings" size={14} /> Ajustes de sitio
+            <button onClick={() => setSiteOpen(true)} className="inline-flex items-center gap-1 rounded-lg border border-slate-300 px-3 py-2 text-sm text-slate-700 hover:bg-slate-50" title={tx("Nombre, logo, redes, footer y navbar del sitio")}>
+              <Icon name="settings" size={14} /> <T>Ajustes de sitio</T>
             </button>
           )}
           {/* HU-373 (admin) · elegir estructura de sitio (solo con `site_blueprints`) */}
           {siteBlueprints && blueprints.length > 0 && (
-            <button onClick={() => { setBlueprintMsg(null); setBlueprintOpen(true) }} className="inline-flex items-center gap-1 rounded-lg border border-indigo-300 px-3 py-2 text-sm text-indigo-700 hover:bg-indigo-50" title="Aplicar una estructura de sitio completa (páginas + navegación + regiones)">
-              <Icon name="preset" size={14} /> Estructura de sitio
+            <button onClick={() => { setBlueprintMsg(null); setBlueprintOpen(true) }} className="inline-flex items-center gap-1 rounded-lg border border-indigo-300 px-3 py-2 text-sm text-indigo-700 hover:bg-indigo-50" title={tx("Aplicar una estructura de sitio completa (páginas + navegación + regiones)")}>
+              <Icon name="preset" size={14} /> <T>Estructura de sitio</T>
             </button>
           )}
           <span role="status" aria-live="polite" className="text-sm text-green-600">{tplMsg}</span>
@@ -574,22 +577,22 @@ export default function ConstructorClient({
             <button
               onClick={() => setAdvOpen((v) => !v)}
               className="rounded-lg border border-slate-300 px-3 py-2 text-sm text-slate-700 hover:bg-slate-50"
-              aria-haspopup="menu" aria-expanded={advOpen} title="Exportar, importar y copia de seguridad"
+              aria-haspopup="menu" aria-expanded={advOpen} title={tx("Exportar, importar y copia de seguridad")}
             >
-              ··· Avanzado
+              <T>··· Avanzado</T>
             </button>
             {advOpen && (
               <>
                 <div className="fixed inset-0 z-10" onClick={() => setAdvOpen(false)} aria-hidden="true" />
                 <div className="absolute right-0 top-full z-20 mt-1 w-56 rounded-xl border border-slate-200 bg-white shadow-lg p-1.5" role="menu">
                   <a href={`/api/admin/cms/page-export?page_key=${encodeURIComponent(pageKey)}`} onClick={() => setAdvOpen(false)}
-                    className="block rounded-lg px-3 py-2 text-sm text-slate-700 hover:bg-slate-50">Exportar página</a>
+                    className="block rounded-lg px-3 py-2 text-sm text-slate-700 hover:bg-slate-50"><T>Exportar página</T></a>
                   {/* "Exportar como preset" es funcionalidad del OPERADOR (console),
                       no del comerciante → no se expone en el admin del tenant. */}
                   <a href="/api/admin/site-export" onClick={() => setAdvOpen(false)}
-                    className="block rounded-lg px-3 py-2 text-sm text-slate-700 hover:bg-slate-50" title="Backup del sitio completo (sin secretos)">Backup del sitio</a>
+                    className="block rounded-lg px-3 py-2 text-sm text-slate-700 hover:bg-slate-50" title={tx("Backup del sitio completo (sin secretos)")}><T>Backup del sitio</T></a>
                   <label className="block rounded-lg px-3 py-2 text-sm text-slate-700 hover:bg-slate-50 cursor-pointer">
-                    Importar página
+                    <T>Importar página</T>
                     <input type="file" accept="application/json,.json" className="hidden"
                       onChange={(e) => { const f = e.target.files?.[0]; setAdvOpen(false); if (f) void importPageFile(f); e.target.value = '' }} />
                   </label>
@@ -606,11 +609,11 @@ export default function ConstructorClient({
         <div className="space-y-4">
           {/* HU-365 AC-1 · ÁMBITO "PÁGINA": selección, estado y contenido de la página */}
           <div className="flex items-center gap-2">
-            <span className="inline-flex items-center gap-1 rounded-full bg-indigo-50 text-indigo-700 text-[11px] font-semibold uppercase tracking-wide px-2.5 py-1"><Icon name="content" size={12} /> Página</span>
-            <span className="text-xs text-slate-400">Selección, estado y contenido (bloques) de esta página</span>
+            <span className="inline-flex items-center gap-1 rounded-full bg-indigo-50 text-indigo-700 text-[11px] font-semibold uppercase tracking-wide px-2.5 py-1"><Icon name="content" size={12} /> <T>Página</T></span>
+            <span className="text-xs text-slate-400"><T>Selección, estado y contenido (bloques) de esta página</T></span>
           </div>
           <div className="flex flex-wrap items-center gap-3">
-            <label className="text-sm font-medium text-slate-600 sr-only">Página</label>
+            <label className="text-sm font-medium text-slate-600 sr-only"><T>Página</T></label>
             {/* HU-350 AC-2 · selector con lista filtrable (tipo/estado) dentro del hub */}
             <div className="relative">
               <button
@@ -626,25 +629,25 @@ export default function ConstructorClient({
               {pagePanel && (
                 <>
                   <div className="fixed inset-0 z-10" onClick={() => setPagePanel(false)} aria-hidden="true" />
-                  <div className="absolute left-0 top-full z-20 mt-1 w-80 rounded-xl border border-slate-200 bg-white shadow-lg p-3" role="listbox" aria-label="Páginas">
+                  <div className="absolute left-0 top-full z-20 mt-1 w-80 rounded-xl border border-slate-200 bg-white shadow-lg p-3" role="listbox" aria-label={tx("Páginas")}>
                     <input
                       type="text" value={pageQuery} onChange={(e) => setPageQuery(e.target.value)}
-                      placeholder="Buscar página…" aria-label="Buscar página"
+                      placeholder={tx("Buscar página…")} aria-label={tx("Buscar página")}
                       className="w-full rounded-lg border border-slate-300 px-2.5 py-1.5 text-sm mb-2"
                     />
                     <div className="flex gap-2 mb-2">
-                      <select value={pageTypeF} onChange={(e) => setPageTypeF(e.target.value)} className="flex-1 rounded-lg border border-slate-300 px-2 py-1.5 text-xs" aria-label="Filtrar por tipo">
+                      <select value={pageTypeF} onChange={(e) => setPageTypeF(e.target.value)} className="flex-1 rounded-lg border border-slate-300 px-2 py-1.5 text-xs" aria-label={tx("Filtrar por tipo")}>
                         <option value="">Todos los tipos</option>
                         {pageTypesPresent.map((t) => <option key={t} value={t}>{PAGE_TYPE_DISPLAY[t] ?? t}</option>)}
                       </select>
-                      <select value={pageStatusF} onChange={(e) => setPageStatusF(e.target.value as '' | 'enabled' | 'draft')} className="flex-1 rounded-lg border border-slate-300 px-2 py-1.5 text-xs" aria-label="Filtrar por estado">
+                      <select value={pageStatusF} onChange={(e) => setPageStatusF(e.target.value as '' | 'enabled' | 'draft')} className="flex-1 rounded-lg border border-slate-300 px-2 py-1.5 text-xs" aria-label={tx("Filtrar por estado")}>
                         <option value="">Todos</option>
                         <option value="enabled">Publicadas</option>
                         <option value="draft">Borrador</option>
                       </select>
                     </div>
                     <ul className="max-h-72 overflow-y-auto -mx-1">
-                      {filteredPages.length === 0 && <li className="px-2 py-3 text-xs text-slate-400 text-center">Sin páginas que coincidan</li>}
+                      {filteredPages.length === 0 && <li className="px-2 py-3 text-xs text-slate-400 text-center"><T>Sin páginas que coincidan</T></li>}
                       {filteredPages.map((p) => (
                         <li key={p.key}>
                           <button
@@ -664,8 +667,8 @@ export default function ConstructorClient({
               )}
             </div>
             {/* HU-350 · crear/duplicar página desde el hub (HU-369 · solo con estructura editable) */}
-            {!contentMode && <button onClick={openNewPage} className="rounded-lg border border-indigo-300 px-3 py-2 text-sm font-medium text-indigo-700 hover:bg-indigo-50">+ Nueva página</button>}
-            {!contentMode && <button onClick={openDuplicate} className="rounded-lg border border-slate-300 px-3 py-2 text-sm text-slate-700 hover:bg-slate-50">Duplicar</button>}
+            {!contentMode && <button onClick={openNewPage} className="rounded-lg border border-indigo-300 px-3 py-2 text-sm font-medium text-indigo-700 hover:bg-indigo-50"><T>+ Nueva página</T></button>}
+            {!contentMode && <button onClick={openDuplicate} className="rounded-lg border border-slate-300 px-3 py-2 text-sm text-slate-700 hover:bg-slate-50"><T>Duplicar</T></button>}
             {/* HU-375 · estado de publicación + publicar/despublicar */}
             {(() => {
               const published = pageList.find((p) => p.key === pageKey)?.enabled !== false
@@ -676,30 +679,30 @@ export default function ConstructorClient({
                     {published ? 'Publicada' : 'Borrador'}
                   </span>
                   {published
-                    ? <button onClick={unpublishPage} className="rounded-lg border border-slate-300 px-3 py-2 text-sm text-slate-700 hover:bg-slate-50">Pasar a borrador</button>
-                    : <button onClick={publishPage} className="rounded-lg bg-brand-primary text-brand-cream px-3 py-2 text-sm hover:bg-brand-dark">Publicar</button>}
+                    ? <button onClick={unpublishPage} className="rounded-lg border border-slate-300 px-3 py-2 text-sm text-slate-700 hover:bg-slate-50"><T>Pasar a borrador</T></button>
+                    : <button onClick={publishPage} className="rounded-lg bg-brand-primary text-brand-cream px-3 py-2 text-sm hover:bg-brand-dark"><T>Publicar</T></button>}
                 </span>
               )
             })()}
             {/* HU-375 · autoguardado (cada cambio persiste en el acto) */}
-            <span className="inline-flex items-center gap-1 text-[11px] text-slate-400" title="Los cambios se guardan automáticamente">
-              <Icon name="check" size={12} /> Autoguardado
+            <span className="inline-flex items-center gap-1 text-[11px] text-slate-400" title={tx("Los cambios se guardan automáticamente")}>
+              <Icon name="check" size={12} /> <T>Autoguardado</T>
             </span>
             {/* HU-365 · AC-3 · ajustes de página agrupados en un drawer */}
             {features.pageStyle && (
-              <button onClick={() => setPageSettingsOpen(true)} className="inline-flex items-center gap-1 rounded-lg border border-slate-300 px-3 py-2 text-sm text-slate-700 hover:bg-slate-50" title="Nombre, slug, tipo, SEO, ancho, espaciado y acento de esta página">
-                <Icon name="settings" size={14} /> Ajustes de página
+              <button onClick={() => setPageSettingsOpen(true)} className="inline-flex items-center gap-1 rounded-lg border border-slate-300 px-3 py-2 text-sm text-slate-700 hover:bg-slate-50" title={tx("Nombre, slug, tipo, SEO, ancho, espaciado y acento de esta página")}>
+                <Icon name="settings" size={14} /> <T>Ajustes de página</T>
               </button>
             )}
 
             {/* HU-358 · insertar un bloque guardado (HU-369 · solo con estructura editable) */}
             {!contentMode && savedBlocks.length > 0 && (
-              <label className="flex items-center gap-1 text-xs text-slate-600" title="Insertar un bloque guardado como copia">
-                Bloque guardado
+              <label className="flex items-center gap-1 text-xs text-slate-600" title={tx("Insertar un bloque guardado como copia")}>
+                <T>Bloque guardado</T>
                 <select
                   defaultValue=""
                   onChange={(e) => { const id = Number(e.target.value); if (id) { insertSavedBlock(id); e.currentTarget.value = '' } }}
-                  className="h-7 rounded border border-slate-300 text-xs px-1" aria-label="Insertar bloque guardado"
+                  className="h-7 rounded border border-slate-300 text-xs px-1" aria-label={tx("Insertar bloque guardado")}
                 >
                   <option value="">Insertar…</option>
                   {savedBlocks.map((b) => <option key={b.id} value={b.id}>{b.label}</option>)}
@@ -708,15 +711,15 @@ export default function ConstructorClient({
             )}
             <div className="ml-auto">
               {contentMode
-                ? <span className="inline-flex items-center gap-1 rounded-full bg-indigo-50 text-indigo-700 text-[11px] px-2.5 py-1" title="Tu plan permite editar contenidos; la estructura está fija">🔒 Modo contenido · <a href="/configuracion" className="underline">mejora a Pro</a> para editar la estructura</span>
+                ? <span className="inline-flex items-center gap-1 rounded-full bg-indigo-50 text-indigo-700 text-[11px] px-2.5 py-1" title={tx("Tu plan permite editar contenidos; la estructura está fija")}><T>🔒 Modo contenido ·</T> <a href="/configuracion" className="underline"><T>mejora a Pro</T></a> <T>para editar la estructura</T></span>
                 : <AddBlockCatalog onAdd={addBlock} />}
             </div>
           </div>
 
           {loading ? (
-            <p className="text-sm text-slate-500">Cargando…</p>
+            <p className="text-sm text-slate-500"><T>Cargando…</T></p>
           ) : sections.length === 0 ? (
-            <p className="text-sm text-slate-500">Esta página no tiene bloques. Agrega uno para empezar.</p>
+            <p className="text-sm text-slate-500"><T>Esta página no tiene bloques. Agrega uno para empezar.</T></p>
           ) : (
             <ul className="space-y-2">
               {sections.map((s, i) => {
@@ -756,14 +759,14 @@ export default function ConstructorClient({
                         draggable
                         onDragStart={() => { setDragIdx(i); setOverIdx(i) }}
                         onDragEnd={() => { setDragIdx(null); setOverIdx(null) }}
-                        title="Arrastra para reordenar"
-                        aria-label="Arrastrar para reordenar"
+                        title={tx("Arrastra para reordenar")}
+                        aria-label={tx("Arrastrar para reordenar")}
                       ><Icon name="grid" size={16} /></div>
                       )}
                       {!contentMode && (
                       <div className="flex flex-col">
-                        <button onClick={() => move(i, -1)} disabled={i === 0} className="text-slate-400 hover:text-slate-700 disabled:opacity-30 leading-none" aria-label="Subir bloque"><Icon name="chevron-right" size={14} className="-rotate-90" /></button>
-                        <button onClick={() => move(i, 1)} disabled={i === sections.length - 1} className="text-slate-400 hover:text-slate-700 disabled:opacity-30 leading-none" aria-label="Bajar bloque"><Icon name="chevron-right" size={14} className="rotate-90" /></button>
+                        <button onClick={() => move(i, -1)} disabled={i === 0} className="text-slate-400 hover:text-slate-700 disabled:opacity-30 leading-none" aria-label={tx("Subir bloque")}><Icon name="chevron-right" size={14} className="-rotate-90" /></button>
+                        <button onClick={() => move(i, 1)} disabled={i === sections.length - 1} className="text-slate-400 hover:text-slate-700 disabled:opacity-30 leading-none" aria-label={tx("Bajar bloque")}><Icon name="chevron-right" size={14} className="rotate-90" /></button>
                       </div>
                       )}
                       <div className="flex-1 min-w-[120px]">
@@ -775,31 +778,31 @@ export default function ConstructorClient({
                           (contenido previo), se muestra "Separar" para no dejarlo atrapado (AC-4). */}
                       {myRow ? (
                         <div className="flex items-center gap-1">
-                          <span className="rounded-full bg-indigo-50 text-indigo-600 text-[10px] font-semibold px-2 py-0.5" title="Este bloque está en una fila de columnas">Fila · {rowCells.length} col</span>
+                          <span className="rounded-full bg-indigo-50 text-indigo-600 text-[10px] font-semibold px-2 py-0.5" title={tx("Este bloque está en una fila de columnas")}>Fila · {rowCells.length} col</span>
                           {features.layoutAdvanced && isFirstCell && presetOpts.length > 0 && (
-                            <select value={rlayout(s) ?? presetOpts[0]} onChange={(e) => setRowLayout(s, e.target.value)} className="rounded-lg border border-slate-300 px-1.5 py-1 text-[11px]" title="Proporciones de la fila" aria-label="Proporciones de la fila">
+                            <select value={rlayout(s) ?? presetOpts[0]} onChange={(e) => setRowLayout(s, e.target.value)} className="rounded-lg border border-slate-300 px-1.5 py-1 text-[11px]" title={tx("Proporciones de la fila")} aria-label={tx("Proporciones de la fila")}>
                               {presetOpts.map((p) => <option key={p} value={p}>{p.replace(/,/g, ' · ')}</option>)}
                             </select>
                           )}
-                          <button onClick={() => splitCell(s)} className="text-[11px] text-slate-500 hover:text-red-600 border border-slate-200 rounded-lg px-2 py-1" title="Sacar de la fila (ancho completo)">Separar</button>
+                          <button onClick={() => splitCell(s)} className="text-[11px] text-slate-500 hover:text-red-600 border border-slate-200 rounded-lg px-2 py-1" title={tx("Sacar de la fila (ancho completo)")}><T>Separar</T></button>
                         </div>
                       ) : features.layoutAdvanced && i > 0 && (
-                        <button onClick={() => joinUp(i)} className="text-[11px] text-indigo-600 hover:bg-indigo-50 border border-indigo-200 rounded-lg px-2 py-1" title="Unir con el bloque de arriba en una fila de columnas">⬓ Unir ↑</button>
+                        <button onClick={() => joinUp(i)} className="text-[11px] text-indigo-600 hover:bg-indigo-50 border border-indigo-200 rounded-lg px-2 py-1" title={tx("Unir con el bloque de arriba en una fila de columnas")}><T>⬓ Unir ↑</T></button>
                       )}
                       {/* HU-351 responsive fino · ocultar por breakpoint (gated por layout_avanzado) */}
                       {features.layoutAdvanced && (
-                      <div className="flex items-center gap-0.5" title="Visibilidad por dispositivo">
+                      <div className="flex items-center gap-0.5" title={tx("Visibilidad por dispositivo")}>
                         <button
                           onClick={() => toggleSectionVisibility(s, 'hideMobile')}
                           className={`rounded-lg border px-2 py-1 text-[11px] ${sSettings(s).hideMobile ? 'border-amber-300 bg-amber-50 text-amber-700' : 'border-slate-200 text-slate-500 hover:bg-slate-50'}`}
                           title={sSettings(s).hideMobile ? 'Oculto en móvil — clic para mostrar' : 'Ocultar en móvil'}
-                          aria-label="Alternar visibilidad en móvil" aria-pressed={!!sSettings(s).hideMobile}
+                          aria-label={tx("Alternar visibilidad en móvil")} aria-pressed={!!sSettings(s).hideMobile}
                         >Móvil {sSettings(s).hideMobile ? '⃠' : ''}</button>
                         <button
                           onClick={() => toggleSectionVisibility(s, 'hideDesktop')}
                           className={`rounded-lg border px-2 py-1 text-[11px] ${sSettings(s).hideDesktop ? 'border-amber-300 bg-amber-50 text-amber-700' : 'border-slate-200 text-slate-500 hover:bg-slate-50'}`}
                           title={sSettings(s).hideDesktop ? 'Oculto en escritorio — clic para mostrar' : 'Ocultar en escritorio'}
-                          aria-label="Alternar visibilidad en escritorio" aria-pressed={!!sSettings(s).hideDesktop}
+                          aria-label={tx("Alternar visibilidad en escritorio")} aria-pressed={!!sSettings(s).hideDesktop}
                         >Escritorio {sSettings(s).hideDesktop ? '⃠' : ''}</button>
                       </div>
                       )}
@@ -815,15 +818,15 @@ export default function ConstructorClient({
                           <button
                             onClick={() => setBlockMenu(blockMenu === s.id ? null : s.id)}
                             className="rounded-lg border border-slate-300 px-2 py-1 text-xs text-slate-500 hover:bg-slate-50"
-                            aria-haspopup="menu" aria-expanded={blockMenu === s.id} title="Más acciones" aria-label="Más acciones del bloque"
+                            aria-haspopup="menu" aria-expanded={blockMenu === s.id} title={tx("Más acciones")} aria-label={tx("Más acciones del bloque")}
                           >···</button>
                           {blockMenu === s.id && (
                             <>
                               <div className="fixed inset-0 z-10" onClick={() => setBlockMenu(null)} aria-hidden="true" />
                               <div className="absolute right-0 top-full z-20 mt-1 w-44 rounded-xl border border-slate-200 bg-white shadow-lg p-1.5" role="menu">
-                                <button onClick={() => { setBlockMenu(null); duplicate(s) }} className="w-full flex items-center gap-2 rounded-lg px-3 py-2 text-sm text-slate-700 hover:bg-slate-50 text-left"><Icon name="grid" size={14} /> Duplicar</button>
-                                <button onClick={() => { setBlockMenu(null); saveBlock(s) }} className="w-full flex items-center gap-2 rounded-lg px-3 py-2 text-sm text-slate-700 hover:bg-slate-50 text-left"><Icon name="preset" size={14} /> Guardar como bloque</button>
-                                <button onClick={() => { setBlockMenu(null); remove(s) }} className="w-full flex items-center gap-2 rounded-lg px-3 py-2 text-sm text-red-600 hover:bg-red-50 text-left"><Icon name="trash" size={14} /> Eliminar</button>
+                                <button onClick={() => { setBlockMenu(null); duplicate(s) }} className="w-full flex items-center gap-2 rounded-lg px-3 py-2 text-sm text-slate-700 hover:bg-slate-50 text-left"><Icon name="grid" size={14} /> <T>Duplicar</T></button>
+                                <button onClick={() => { setBlockMenu(null); saveBlock(s) }} className="w-full flex items-center gap-2 rounded-lg px-3 py-2 text-sm text-slate-700 hover:bg-slate-50 text-left"><Icon name="preset" size={14} /> <T>Guardar como bloque</T></button>
+                                <button onClick={() => { setBlockMenu(null); remove(s) }} className="w-full flex items-center gap-2 rounded-lg px-3 py-2 text-sm text-red-600 hover:bg-red-50 text-left"><Icon name="trash" size={14} /> <T>Eliminar</T></button>
                               </div>
                             </>
                           )}
@@ -847,10 +850,10 @@ export default function ConstructorClient({
         {/* HU-219: vista previa en vivo del storefront (refresca al guardar) */}
         <div className="space-y-2">
           <div className="flex items-center justify-between">
-            <h4 className="text-xs font-semibold uppercase tracking-wide text-slate-500">Vista previa</h4>
+            <h4 className="text-xs font-semibold uppercase tracking-wide text-slate-500"><T>Vista previa</T></h4>
             <div className="flex items-center gap-2">
               {/* HU-251 · toggle de dispositivo */}
-              <div className="inline-flex rounded-lg border border-slate-300 overflow-hidden" role="group" aria-label="Dispositivo de vista previa">
+              <div className="inline-flex rounded-lg border border-slate-300 overflow-hidden" role="group" aria-label={tx("Dispositivo de vista previa")}>
                 {(['desktop', 'tablet', 'mobile'] as const).map((d) => (
                   <button
                     key={d}
@@ -862,7 +865,7 @@ export default function ConstructorClient({
                   </button>
                 ))}
               </div>
-              <button onClick={bump} className="rounded-lg border border-slate-300 px-3 py-1 text-xs font-medium text-slate-700 hover:bg-slate-50">Actualizar</button>
+              <button onClick={bump} className="rounded-lg border border-slate-300 px-3 py-1 text-xs font-medium text-slate-700 hover:bg-slate-50"><T>Actualizar</T></button>
             </div>
           </div>
           {previewUrl ? (
@@ -871,13 +874,13 @@ export default function ConstructorClient({
                 <iframe
                   key={`${previewKey}-${device}`}
                   src={previewUrl}
-                  title="Vista previa de la tienda"
+                  title={tx("Vista previa de la tienda")}
                   className="h-[70vh] bg-white rounded-lg transition-all"
                   style={{ width: device === 'desktop' ? '100%' : device === 'tablet' ? 768 : 390, maxWidth: '100%' }}
                 />
               </div>
               <p className="text-[11px] text-slate-400">
-                ¿No se ve? <a href={previewUrl} target="_blank" rel="noopener noreferrer" className="underline">Ábrela en una pestaña nueva</a> (algunos dominios propios no permiten incrustar).
+                <T>¿No se ve?</T> <a href={previewUrl} target="_blank" rel="noopener noreferrer" className="underline"><T>Ábrela en una pestaña nueva</T></a> (algunos dominios propios no permiten incrustar).
               </p>
             </>
           ) : previewErr ? (
@@ -885,7 +888,7 @@ export default function ConstructorClient({
               No se pudo generar la vista previa: {previewErr}
             </div>
           ) : (
-            <p className="rounded-xl border border-dashed border-slate-300 p-6 text-sm text-slate-400">Cargando vista previa…</p>
+            <p className="rounded-xl border border-dashed border-slate-300 p-6 text-sm text-slate-400"><T>Cargando vista previa…</T></p>
           )}
         </div>
       </div>
@@ -898,19 +901,19 @@ export default function ConstructorClient({
           <div className="fixed inset-0 z-50 flex justify-end bg-black/30" onClick={() => setPageSettingsOpen(false)}>
             <div className="w-80 max-w-full h-full bg-white shadow-xl p-5 overflow-y-auto" onClick={(e) => e.stopPropagation()}>
               <div className="flex items-center justify-between mb-4">
-                <h3 className="font-display text-brand-primary text-lg">Ajustes de página</h3>
-                <button onClick={() => setPageSettingsOpen(false)} className="text-slate-400 hover:text-slate-700" aria-label="Cerrar"><Icon name="close" size={18} /></button>
+                <h3 className="font-display text-brand-primary text-lg"><T>Ajustes de página</T></h3>
+                <button onClick={() => setPageSettingsOpen(false)} className="text-slate-400 hover:text-slate-700" aria-label={tx("Cerrar")}><Icon name="close" size={18} /></button>
               </div>
               <div className="space-y-4">
                 <div>
-                  <label className="block text-xs font-semibold text-slate-500 mb-1">Acento <span className="font-normal text-slate-400">(en cascada sobre el tema)</span></label>
+                  <label className="block text-xs font-semibold text-slate-500 mb-1"><T>Acento</T> <span className="font-normal text-slate-400">(en cascada sobre el tema)</span></label>
                   <div className="flex items-center gap-2">
-                    <input type="color" value={a || '#000000'} onChange={(e) => setPageAccent(e.target.value)} className="h-9 w-10 rounded border border-slate-300 p-0.5 cursor-pointer" aria-label="Acento de la página" />
-                    {a && <button onClick={() => setPageAccent(null)} className="text-xs text-slate-400 hover:text-red-600">Quitar</button>}
+                    <input type="color" value={a || '#000000'} onChange={(e) => setPageAccent(e.target.value)} className="h-9 w-10 rounded border border-slate-300 p-0.5 cursor-pointer" aria-label={tx("Acento de la página")} />
+                    {a && <button onClick={() => setPageAccent(null)} className="text-xs text-slate-400 hover:text-red-600"><T>Quitar</T></button>}
                   </div>
                 </div>
                 <div>
-                  <label className="block text-xs font-semibold text-slate-500 mb-1">Ancho del contenedor</label>
+                  <label className="block text-xs font-semibold text-slate-500 mb-1"><T>Ancho del contenedor</T></label>
                   <select value={st.container ?? ''} onChange={(e) => setPageStyleProp('container', e.target.value || null, 'Ancho de la página actualizado ✓')} className="w-full h-9 rounded-lg border border-slate-300 text-sm px-2">
                     <option value="">Tema</option>
                     <option value="sm">Estrecho</option>
@@ -921,7 +924,7 @@ export default function ConstructorClient({
                   </select>
                 </div>
                 <div>
-                  <label className="block text-xs font-semibold text-slate-500 mb-1">Escala de espaciado</label>
+                  <label className="block text-xs font-semibold text-slate-500 mb-1"><T>Escala de espaciado</T></label>
                   <select value={st.space ?? ''} onChange={(e) => setPageStyleProp('space', e.target.value || null, 'Espaciado de la página actualizado ✓')} className="w-full h-9 rounded-lg border border-slate-300 text-sm px-2">
                     <option value="">Tema</option>
                     <option value="compact">Compacto</option>
@@ -934,9 +937,9 @@ export default function ConstructorClient({
                   const cur = pageList.find((p) => p.key === pageKey)
                   return (
                     <div className="pt-3 border-t border-slate-100 space-y-3">
-                      <p className="text-xs font-semibold text-slate-500 uppercase tracking-wide">Página</p>
+                      <p className="text-xs font-semibold text-slate-500 uppercase tracking-wide"><T>Página</T></p>
                       <div>
-                        <label className="block text-xs font-semibold text-slate-500 mb-1">Nombre</label>
+                        <label className="block text-xs font-semibold text-slate-500 mb-1"><T>Nombre</T></label>
                         <input defaultValue={cur?.label ?? ''} onBlur={(e) => e.target.value.trim() && e.target.value !== cur?.label && savePageMeta({ label: e.target.value.trim() })}
                           className="w-full rounded-lg border border-slate-300 px-2 py-1.5 text-sm" />
                       </div>
@@ -946,7 +949,7 @@ export default function ConstructorClient({
                           className="w-full rounded-lg border border-slate-300 px-2 py-1.5 text-sm font-mono text-xs" />
                       </div>
                       <div>
-                        <label className="block text-xs font-semibold text-slate-500 mb-1">Tipo de página</label>
+                        <label className="block text-xs font-semibold text-slate-500 mb-1"><T>Tipo de página</T></label>
                         <select value={cur?.page_type ?? 'custom'} onChange={(e) => savePageMeta({ page_type: e.target.value })}
                           className="w-full h-9 rounded-lg border border-slate-300 text-sm px-2">
                           {Object.entries(PAGE_TYPE_LABELS).map(([v, l]) => <option key={v} value={v}>{l}</option>)}
@@ -955,18 +958,18 @@ export default function ConstructorClient({
                       <div>
                         <label className="block text-xs font-semibold text-slate-500 mb-1">Meta título (SEO)</label>
                         <input defaultValue={cur?.meta_title ?? ''} onBlur={(e) => e.target.value !== (cur?.meta_title ?? '') && savePageMeta({ meta_title: e.target.value || null })}
-                          className="w-full rounded-lg border border-slate-300 px-2 py-1.5 text-sm" placeholder="Título para buscadores" />
+                          className="w-full rounded-lg border border-slate-300 px-2 py-1.5 text-sm" placeholder={tx("Título para buscadores")} />
                       </div>
                       <div>
                         <label className="block text-xs font-semibold text-slate-500 mb-1">Meta descripción (SEO)</label>
                         <textarea defaultValue={cur?.meta_description ?? ''} rows={2} onBlur={(e) => e.target.value !== (cur?.meta_description ?? '') && savePageMeta({ meta_description: e.target.value || null })}
-                          className="w-full rounded-lg border border-slate-300 px-2 py-1.5 text-sm resize-none" placeholder="Descripción para buscadores" />
+                          className="w-full rounded-lg border border-slate-300 px-2 py-1.5 text-sm resize-none" placeholder={tx("Descripción para buscadores")} />
                       </div>
                       <label className="flex items-center gap-2 text-sm text-slate-600">
                         <input type="checkbox" checked={cur?.show_in_footer === true} onChange={(e) => savePageMeta({ show_in_footer: e.target.checked })} />
-                        Mostrar en el footer
+                        <T>Mostrar en el footer</T>
                       </label>
-                      <p className="text-[11px] text-slate-400">Para el menú del sitio usa «Navegación» en la barra.</p>
+                      <p className="text-[11px] text-slate-400"><T>Para el menú del sitio usa «Navegación» en la barra.</T></p>
                     </div>
                   )
                 })()}
@@ -982,10 +985,10 @@ export default function ConstructorClient({
         <div className="fixed inset-0 z-50 flex justify-end bg-black/30" onClick={() => setBlueprintOpen(false)}>
           <div className="w-96 max-w-full h-full bg-white shadow-xl p-5 overflow-y-auto" onClick={(e) => e.stopPropagation()}>
             <div className="flex items-center justify-between mb-1">
-              <h3 className="font-display text-brand-primary text-lg">Estructura de sitio</h3>
-              <button onClick={() => setBlueprintOpen(false)} className="text-slate-400 hover:text-slate-700" aria-label="Cerrar"><Icon name="close" size={18} /></button>
+              <h3 className="font-display text-brand-primary text-lg"><T>Estructura de sitio</T></h3>
+              <button onClick={() => setBlueprintOpen(false)} className="text-slate-400 hover:text-slate-700" aria-label={tx("Cerrar")}><Icon name="close" size={18} /></button>
             </div>
-            <p className="text-xs text-slate-400 mb-4">Aplica una estructura completa (varias páginas + navegación + regiones). Es aditivo: crea lo que falte en borrador, no borra tus páginas ni tu contenido.</p>
+            <p className="text-xs text-slate-400 mb-4"><T>Aplica una estructura completa (varias páginas + navegación + regiones). Es aditivo: crea lo que falte en borrador, no borra tus páginas ni tu contenido.</T></p>
             {blueprintMsg && <p className="mb-3 text-sm text-green-700">{blueprintMsg}</p>}
             <div className="space-y-2">
               {blueprints.map((b) => (
@@ -1008,10 +1011,10 @@ export default function ConstructorClient({
         <div className="fixed inset-0 z-50 flex justify-end bg-black/30" onClick={() => setOutlineOpen(false)}>
           <div className="w-96 max-w-full h-full bg-white shadow-xl p-5 overflow-y-auto" onClick={(e) => e.stopPropagation()}>
             <div className="flex items-center justify-between mb-1">
-              <h3 className="font-display text-brand-primary text-lg">Estructura del sitio</h3>
-              <button onClick={() => setOutlineOpen(false)} className="text-slate-400 hover:text-slate-700" aria-label="Cerrar"><Icon name="close" size={18} /></button>
+              <h3 className="font-display text-brand-primary text-lg"><T>Estructura del sitio</T></h3>
+              <button onClick={() => setOutlineOpen(false)} className="text-slate-400 hover:text-slate-700" aria-label={tx("Cerrar")}><Icon name="close" size={18} /></button>
             </div>
-            <p className="text-xs text-slate-400 mb-4">Mapa del sitio: páginas, regiones y menú. Toca una página para editarla.</p>
+            <p className="text-xs text-slate-400 mb-4"><T>Mapa del sitio: páginas, regiones y menú. Toca una página para editarla.</T></p>
 
             {(() => {
               const regions = pageList.filter((p) => (p.page_type ?? '') === 'region')
@@ -1022,6 +1025,7 @@ export default function ConstructorClient({
                 setTimeout(() => document.getElementById(`block-${id}`)?.scrollIntoView({ behavior: 'smooth', block: 'center' }), 60)
               }
               const Row = ({ p }: { p: PageOption }) => {
+  const tx = useTx()
                 const active = p.key === pageKey
                 return (
                   <div>
@@ -1044,7 +1048,7 @@ export default function ConstructorClient({
                             className={outlineDrag === idx ? 'opacity-40' : ''}>
                             <button onClick={() => focusSection(s.id)}
                               className="w-full flex items-center gap-2 px-2 py-1 rounded-md text-left text-xs text-slate-500 hover:bg-slate-50 hover:text-slate-800">
-                              {!contentMode && <span className="cursor-grab text-slate-300" title="Arrastra para reordenar" aria-hidden="true"><Icon name="grid" size={11} /></span>}
+                              {!contentMode && <span className="cursor-grab text-slate-300" title={tx("Arrastra para reordenar")} aria-hidden="true"><Icon name="grid" size={11} /></span>}
                               <span className={`inline-block w-1 h-1 rounded-full ${s.enabled ? 'bg-green-500' : 'bg-slate-300'}`} />
                               <span className="truncate">{getBlockSchema(s.section_type)?.label ?? s.section_type}</span>
                             </button>
@@ -1058,7 +1062,7 @@ export default function ConstructorClient({
               return (
                 <div className="space-y-5">
                   <section>
-                    <h4 className="text-[11px] font-semibold uppercase tracking-wide text-slate-400 mb-1">Páginas <span className="text-slate-300">({normalPages.length})</span></h4>
+                    <h4 className="text-[11px] font-semibold uppercase tracking-wide text-slate-400 mb-1"><T>Páginas</T> <span className="text-slate-300">({normalPages.length})</span></h4>
                     <div className="space-y-0.5">{normalPages.map((p) => <Row key={p.key} p={p} />)}</div>
                   </section>
                   {regions.length > 0 && (
@@ -1073,7 +1077,7 @@ export default function ConstructorClient({
                     </button>
                     {siteConfig && (
                       <button onClick={() => { setOutlineOpen(false); setSiteOpen(true) }} className="w-full flex items-center gap-2 px-3 py-2 rounded-lg text-left text-sm text-slate-700 hover:bg-slate-50">
-                        <Icon name="settings" size={14} /> Ajustes de sitio
+                        <Icon name="settings" size={14} /> <T>Ajustes de sitio</T>
                       </button>
                     )}
                   </section>
@@ -1088,10 +1092,10 @@ export default function ConstructorClient({
         <div className="fixed inset-0 z-50 flex justify-end bg-black/30" onClick={() => setNavOpen(false)}>
           <div className="w-96 max-w-full h-full bg-white shadow-xl p-5 overflow-y-auto" onClick={(e) => e.stopPropagation()}>
             <div className="flex items-center justify-between mb-4">
-              <h3 className="font-display text-brand-primary text-lg">Navegación</h3>
-              <button onClick={() => setNavOpen(false)} className="text-slate-400 hover:text-slate-700" aria-label="Cerrar"><Icon name="close" size={18} /></button>
+              <h3 className="font-display text-brand-primary text-lg"><T>Navegación</T></h3>
+              <button onClick={() => setNavOpen(false)} className="text-slate-400 hover:text-slate-700" aria-label={tx("Cerrar")}><Icon name="close" size={18} /></button>
             </div>
-            <p className="text-xs text-slate-400 mb-3">Elementos del menú del sitio (1 nivel de subelementos). Vincula cada uno a una página o deja una ruta libre.</p>
+            <p className="text-xs text-slate-400 mb-3"><T>Elementos del menú del sitio (1 nivel de subelementos). Vincula cada uno a una página o deja una ruta libre.</T></p>
             <NavEditor pages={pageList.map((p) => ({ key: p.key, label: p.label, slug: p.slug }))} />
           </div>
         </div>
@@ -1122,7 +1126,7 @@ export default function ConstructorClient({
       {/* HU-364 · "Nueva página": wizard tipo → nombre/URL con validación en vivo */}
       <WizardModal
         open={!!newPage}
-        title="Nueva página"
+        title={tx("Nueva página")}
         onClose={() => setNewPage(null)}
         onFinish={() => void doCreatePage()}
         finishLabel="Crear página"
@@ -1148,7 +1152,7 @@ export default function ConstructorClient({
             content: (
               <div className="space-y-3">
                 <div>
-                  <label className="text-xs text-slate-500 block mb-1">Nombre de la página *</label>
+                  <label className="text-xs text-slate-500 block mb-1"><T>Nombre de la página *</T></label>
                   <input autoFocus value={newPage.label} onChange={(e) => setNewPage((n) => n && ({ ...n, label: e.target.value }))}
                     className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm" />
                 </div>
@@ -1160,13 +1164,13 @@ export default function ConstructorClient({
                   <p className="text-[11px] text-slate-400 mt-0.5">Se usará /{slugify(newPage.slug) || slugify(newPage.label) || 'mi-pagina'}. Nace como borrador.</p>
                 </div>
                 {pageList.some((p) => p.key === (slugify(newPage.slug) || slugify(newPage.label))) && newPage.label.trim() && (
-                  <p className="text-xs text-red-500">Ya existe una página con esa clave.</p>
+                  <p className="text-xs text-red-500"><T>Ya existe una página con esa clave.</T></p>
                 )}
                 {/* HU-374 · sembrar la estructura típica del tipo (si la hay) */}
                 {(PAGE_TYPE_SEED[newPage.type]?.length ?? 0) > 0 && (
                   <label className="flex items-start gap-2 text-sm text-slate-600 pt-1">
                     <input type="checkbox" checked={newPage.seed} onChange={(e) => setNewPage((n) => n && ({ ...n, seed: e.target.checked }))} className="mt-0.5" />
-                    <span>Crear con estructura de arranque <span className="text-slate-400">({PAGE_TYPE_SEED[newPage.type].join(' · ')})</span></span>
+                    <span><T>Crear con estructura de arranque</T> <span className="text-slate-400">({PAGE_TYPE_SEED[newPage.type].join(' · ')})</span></span>
                   </label>
                 )}
               </div>

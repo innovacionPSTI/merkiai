@@ -4,6 +4,8 @@ import { useMemo, useState } from 'react'
 import { FilterBar, ResourceCard, CardGrid, DataTable, StatusBadge, Chip, EmptyState, Icon } from '@merkiai/ui'
 import type { PresetRow } from '@/lib/presets'
 import { deletePreset } from '../../actions'
+import { T } from '@merkiai/ui'
+import { useTx } from '@merkiai/ui'
 
 const INVENTORY_LABEL: Record<string, string> = { single: 'Stock único', multi_location: 'Multi-ubicación' }
 const inv = (m: string) => INVENTORY_LABEL[m] ?? m
@@ -13,7 +15,7 @@ function DeleteButton({ keyName }: { keyName: string }) {
     <form action={deletePreset}>
       <input type="hidden" name="key" value={keyName} />
       <button type="submit" style={{ background: 'none', border: 0, color: 'var(--ui-danger)', cursor: 'pointer', fontSize: 13, display: 'inline-flex', alignItems: 'center', gap: 6 }}>
-        <Icon name="trash" size={15} /> Eliminar
+        <Icon name="trash" size={15} /> <T>Eliminar</T>
       </button>
     </form>
   )
@@ -21,6 +23,7 @@ function DeleteButton({ keyName }: { keyName: string }) {
 
 /** Explorador de presets con búsqueda, filtro por estado y vista grid/lista (HU-242). */
 export default function PresetsBrowser({ presets }: { presets: PresetRow[] }) {
+  const tx = useTx()
   const [q, setQ] = useState('')
   const [estado, setEstado] = useState('all')
   const [view, setView] = useState<'grid' | 'list'>('grid')
@@ -45,7 +48,7 @@ export default function PresetsBrowser({ presets }: { presets: PresetRow[] }) {
       />
 
       {filtered.length === 0 ? (
-        <EmptyState icon={<Icon name="preset" size={28} />} title="Sin presets" description={q || estado !== 'all' ? 'Ajusta la búsqueda o el filtro.' : 'Crea el primero con el formulario de abajo.'} />
+        <EmptyState icon={<Icon name="preset" size={28} />} title={tx("Sin presets")} description={q || estado !== 'all' ? 'Ajusta la búsqueda o el filtro.' : 'Crea el primero con el formulario de abajo.'} />
       ) : view === 'grid' ? (
         <CardGrid>
           {filtered.map((p) => (
@@ -66,7 +69,7 @@ export default function PresetsBrowser({ presets }: { presets: PresetRow[] }) {
       ) : (
         <DataTable minWidth={720}>
           <thead>
-            <tr><th>Nombre</th><th>Nicho</th><th>Template</th><th>Inventario</th><th>Planes</th><th>Estado</th><th></th></tr>
+            <tr><th><T>Nombre</T></th><th><T>Nicho</T></th><th><T>Template</T></th><th><T>Inventario</T></th><th><T>Planes</T></th><th><T>Estado</T></th><th></th></tr>
           </thead>
           <tbody>
             {filtered.map((p) => (

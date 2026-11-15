@@ -2,6 +2,8 @@
 
 import { useState, useCallback } from 'react'
 import { Icon } from '@merkiai/ui'
+import { T } from '@merkiai/ui'
+import { useTx } from '@merkiai/ui'
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 
@@ -125,6 +127,7 @@ export default function ContenidoClient({
   initialSections,
   initialItems,
 }: Props) {
+  const tx = useTx()
   const [pages, setPages] = useState<Page[]>(initialPages)
   const [navItems, setNavItems] = useState<NavItem[]>(initialNavItems)
   const [sections, setSections] = useState<PageSection[]>(initialSections)
@@ -460,6 +463,7 @@ export default function ContenidoClient({
     label: string; value: string; onSave: (v: string) => void
     multiline?: boolean; placeholder?: string
   }) {
+  const tx = useTx()
     const [local, setLocal] = useState(value)
     const changed = local !== value
     const Tag = multiline ? 'textarea' : 'input'
@@ -478,7 +482,7 @@ export default function ContenidoClient({
             <button
               onClick={() => onSave(local)}
               className="font-brand text-xs bg-brand-primary text-brand-cream px-3 py-1.5 rounded-lg hover:bg-brand-dark transition-colors flex-shrink-0"
-              title="Guardar"
+              title={tx("Guardar")}
             >
               <Icon name="check" size={14} />
             </button>
@@ -500,13 +504,13 @@ export default function ContenidoClient({
         <div className="p-4 border-b border-gray-100">
           <div className="flex items-center justify-between mb-3">
             <p className="font-brand text-xs font-semibold text-brand-primary/50 uppercase tracking-wide">
-              Navegación
+              <T>Navegación</T>
             </p>
             <button
               onClick={() => { setShowNewNav(true); setExpandedNavId(null) }}
               className="font-brand text-xs text-brand-primary hover:text-brand-dark transition-colors"
             >
-              + Elemento
+              <T>+ Elemento</T>
             </button>
           </div>
 
@@ -547,7 +551,7 @@ export default function ContenidoClient({
                         }
                       }}
                       className="font-brand text-xs text-brand-primary/30 hover:text-brand-primary transition-colors flex-shrink-0"
-                      title="Editar"
+                      title={tx("Editar")}
                     >
                       <Icon name="edit" size={14} />
                     </button>
@@ -558,7 +562,7 @@ export default function ContenidoClient({
                     <div className="ml-2 mr-1 mb-2 bg-gray-50 rounded-xl p-3 space-y-2.5">
                       <div>
                         <label className="font-brand text-xs font-semibold text-brand-primary/50 block mb-1">
-                          Nombre en menú
+                          <T>Nombre en menú</T>
                         </label>
                         <input
                           type="text"
@@ -586,7 +590,7 @@ export default function ContenidoClient({
                       </div>
                       <div>
                         <label className="font-brand text-xs font-semibold text-brand-primary/50 block mb-1">
-                          Página vinculada
+                          <T>Página vinculada</T>
                         </label>
                         <select
                           value={nav.page_key ?? ''}
@@ -610,13 +614,13 @@ export default function ContenidoClient({
                           onClick={() => saveNavEdits(nav.id)}
                           className="bg-brand-primary text-brand-cream rounded-full px-3 py-1 font-brand text-xs hover:bg-brand-dark transition-colors"
                         >
-                          Guardar
+                          <T>Guardar</T>
                         </button>
                         <button
                           onClick={() => deleteNav(nav.id)}
                           className="font-brand text-xs text-red-400 hover:text-red-600 transition-colors"
                         >
-                          Eliminar
+                          <T>Eliminar</T>
                         </button>
                       </div>
                     </div>
@@ -667,7 +671,7 @@ export default function ContenidoClient({
                           {isChildExpanded && (
                             <div className="ml-1 mr-1 mb-2 bg-gray-50 rounded-xl p-3 space-y-2.5">
                               <div>
-                                <label className="font-brand text-xs font-semibold text-brand-primary/50 block mb-1">Nombre</label>
+                                <label className="font-brand text-xs font-semibold text-brand-primary/50 block mb-1"><T>Nombre</T></label>
                                 <input
                                   type="text"
                                   value={editLabel}
@@ -693,7 +697,7 @@ export default function ContenidoClient({
                                 />
                               </div>
                               <div>
-                                <label className="font-brand text-xs font-semibold text-brand-primary/50 block mb-1">Página vinculada</label>
+                                <label className="font-brand text-xs font-semibold text-brand-primary/50 block mb-1"><T>Página vinculada</T></label>
                                 <select
                                   value={child.page_key ?? ''}
                                   onChange={(e) => {
@@ -715,13 +719,13 @@ export default function ContenidoClient({
                                   onClick={() => saveNavEdits(child.id)}
                                   className="bg-brand-primary text-brand-cream rounded-full px-3 py-1 font-brand text-xs hover:bg-brand-dark transition-colors"
                                 >
-                                  Guardar
+                                  <T>Guardar</T>
                                 </button>
                                 <button
                                   onClick={() => deleteNav(child.id)}
                                   className="font-brand text-xs text-red-400 hover:text-red-600 transition-colors"
                                 >
-                                  Eliminar
+                                  <T>Eliminar</T>
                                 </button>
                               </div>
                             </div>
@@ -737,23 +741,23 @@ export default function ContenidoClient({
           {/* New nav item form */}
           {showNewNav && (
             <div className="mt-3 bg-gray-50 rounded-xl p-3 space-y-2">
-              <p className="font-brand text-xs font-semibold text-brand-primary">Nuevo elemento</p>
+              <p className="font-brand text-xs font-semibold text-brand-primary"><T>Nuevo elemento</T></p>
               <input
                 type="text"
                 value={newNavItem.label}
                 onChange={(e) => setNewNavItem((p) => ({ ...p, label: e.target.value }))}
-                placeholder="Nombre en menú"
+                placeholder={tx("Nombre en menú")}
                 className="w-full border border-gray-200 rounded-lg px-2 py-1.5 font-brand text-xs focus:outline-none focus:border-brand-primary"
               />
               <input
                 type="text"
                 value={newNavItem.href}
                 onChange={(e) => setNewNavItem((p) => ({ ...p, href: e.target.value }))}
-                placeholder="Ruta (ej: /servicios) — opcional si vincula página"
+                placeholder={tx("Ruta (ej: /servicios) — opcional si vincula página")}
                 className="w-full border border-gray-200 rounded-lg px-2 py-1.5 font-brand text-xs focus:outline-none focus:border-brand-primary"
               />
               <div>
-                <label className="font-brand text-xs text-brand-primary/50 block mb-1">Página vinculada</label>
+                <label className="font-brand text-xs text-brand-primary/50 block mb-1"><T>Página vinculada</T></label>
                 <select
                   value={newNavItem.page_key}
                   onChange={(e) => {
@@ -774,7 +778,7 @@ export default function ContenidoClient({
                 </select>
               </div>
               <div>
-                <label className="font-brand text-xs text-brand-primary/50 block mb-1">Subelemento de</label>
+                <label className="font-brand text-xs text-brand-primary/50 block mb-1"><T>Subelemento de</T></label>
                 <select
                   value={newNavItem.parent_id}
                   onChange={(e) => setNewNavItem((p) => ({ ...p, parent_id: e.target.value }))}
@@ -797,7 +801,7 @@ export default function ContenidoClient({
                 <button
                   onClick={() => setShowNewNav(false)}
                   className="font-brand text-xs text-brand-primary/40 hover:text-brand-primary"
-                  title="Cancelar"
+                  title={tx("Cancelar")}
                 >
                   <Icon name="close" size={14} />
                 </button>
@@ -810,13 +814,13 @@ export default function ContenidoClient({
         <div className="p-4 flex-1">
           <div className="flex items-center justify-between mb-3">
             <p className="font-brand text-xs font-semibold text-brand-primary/50 uppercase tracking-wide">
-              Páginas
+              <T>Páginas</T>
             </p>
             <button
               onClick={() => setShowNewPage(true)}
               className="font-brand text-xs text-brand-primary hover:text-brand-dark transition-colors"
             >
-              + Nueva
+              <T>+ Nueva</T>
             </button>
           </div>
           <div className="space-y-1">
@@ -843,7 +847,7 @@ export default function ContenidoClient({
 
           {showNewPage && (
             <div className="mt-4 bg-gray-50 rounded-xl p-3 space-y-2">
-              <p className="font-brand text-xs font-semibold text-brand-primary">Nueva página</p>
+              <p className="font-brand text-xs font-semibold text-brand-primary"><T>Nueva página</T></p>
               {(['key', 'label', 'slug'] as const).map((field) => (
                 <input
                   key={field}
@@ -874,7 +878,7 @@ export default function ContenidoClient({
                 >
                   {creatingPage ? 'Creando…' : 'Crear'}
                 </button>
-                <button onClick={() => setShowNewPage(false)} className="font-brand text-xs text-brand-primary/40 hover:text-brand-primary" title="Cancelar">
+                <button onClick={() => setShowNewPage(false)} className="font-brand text-xs text-brand-primary/40 hover:text-brand-primary" title={tx("Cancelar")}>
                   <Icon name="close" size={14} />
                 </button>
               </div>
@@ -888,13 +892,13 @@ export default function ContenidoClient({
         {error && (
           <div className="mx-6 mt-4 bg-red-50 border border-red-200 rounded-xl px-4 py-2 font-brand text-sm text-red-600">
             {error}
-            <button onClick={() => setError('')} className="ml-2 text-red-400 hover:text-red-600" title="Cerrar" aria-label="Cerrar"><Icon name="close" size={13} className="inline" /></button>
+            <button onClick={() => setError('')} className="ml-2 text-red-400 hover:text-red-600" title={tx("Cerrar")} aria-label={tx("Cerrar")}><Icon name="close" size={13} className="inline" /></button>
           </div>
         )}
 
         {!selectedPage ? (
           <div className="flex items-center justify-center h-full text-brand-primary/30 font-brand text-sm">
-            Selecciona una página del panel izquierdo
+            <T>Selecciona una página del panel izquierdo</T>
           </div>
         ) : (
           <div className="p-6 space-y-8 max-w-3xl">
@@ -912,33 +916,33 @@ export default function ContenidoClient({
                       value={selectedPage.enabled}
                       onChange={() => patchPage(selectedPage.key, { enabled: !selectedPage.enabled })}
                     />
-                    <span className="font-brand text-xs text-brand-primary/50">Habilitada</span>
+                    <span className="font-brand text-xs text-brand-primary/50"><T>Habilitada</T></span>
                   </div>
                   <div className="flex items-center gap-2">
                     <Toggle
                       value={selectedPage.show_in_footer}
                       onChange={() => patchPage(selectedPage.key, { show_in_footer: !selectedPage.show_in_footer })}
                     />
-                    <span className="font-brand text-xs text-brand-primary/50">Footer</span>
+                    <span className="font-brand text-xs text-brand-primary/50"><T>Footer</T></span>
                   </div>
                   <button
                     onClick={() => deletePage(selectedPage.key)}
                     className="font-brand text-xs text-red-400 hover:text-red-600 transition-colors"
                   >
-                    Eliminar página
+                    <T>Eliminar página</T>
                   </button>
                 </div>
               </div>
 
               <div className="grid grid-cols-2 gap-4">
                 <FieldInput
-                  label="Etiqueta"
+                  label={tx("Etiqueta")}
                   value={selectedPage.label}
                   onSave={(v) => patchPage(selectedPage.key, { label: v })}
-                  placeholder="Nombre visible"
+                  placeholder={tx("Nombre visible")}
                 />
                 <FieldInput
-                  label="Slug / URL"
+                  label={tx("Slug / URL")}
                   value={selectedPage.slug}
                   onSave={(v) => patchPage(selectedPage.key, { slug: v })}
                   placeholder="mi-pagina"
@@ -958,7 +962,7 @@ export default function ContenidoClient({
 
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <label className="font-brand text-xs font-semibold text-brand-primary/50 block mb-1">Tipo de página</label>
+                  <label className="font-brand text-xs font-semibold text-brand-primary/50 block mb-1"><T>Tipo de página</T></label>
                   <select
                     value={selectedPage.page_type}
                     onChange={(e) => patchPage(selectedPage.key, { page_type: e.target.value })}
@@ -970,7 +974,7 @@ export default function ContenidoClient({
                   </select>
                 </div>
                 <div>
-                  <label className="font-brand text-xs font-semibold text-brand-primary/50 block mb-1">Vincular a nav</label>
+                  <label className="font-brand text-xs font-semibold text-brand-primary/50 block mb-1"><T>Vincular a nav</T></label>
                   <select
                     value={navItems.find((n) => n.page_key === selectedPage.key)?.id ?? ''}
                     onChange={(e) => {
@@ -990,16 +994,16 @@ export default function ContenidoClient({
 
               <div className="grid grid-cols-2 gap-4">
                 <FieldInput
-                  label="Meta título (SEO)"
+                  label={tx("Meta título (SEO)")}
                   value={selectedPage.meta_title ?? ''}
                   onSave={(v) => patchPage(selectedPage.key, { meta_title: v || null })}
-                  placeholder="Título para buscadores"
+                  placeholder={tx("Título para buscadores")}
                 />
                 <FieldInput
-                  label="Meta descripción (SEO)"
+                  label={tx("Meta descripción (SEO)")}
                   value={selectedPage.meta_description ?? ''}
                   onSave={(v) => patchPage(selectedPage.key, { meta_description: v || null })}
-                  placeholder="Descripción para buscadores"
+                  placeholder={tx("Descripción para buscadores")}
                 />
               </div>
             </div>
@@ -1014,13 +1018,13 @@ export default function ContenidoClient({
                   onClick={() => setShowNewSection(true)}
                   className="font-brand text-sm text-brand-primary hover:text-brand-dark transition-colors"
                 >
-                  + Agregar sección
+                  <T>+ Agregar sección</T>
                 </button>
               </div>
 
               {showNewSection && (
                 <div className="bg-gray-50 rounded-2xl p-4 space-y-3">
-                  <p className="font-brand text-sm font-semibold text-brand-primary">Nueva sección</p>
+                  <p className="font-brand text-sm font-semibold text-brand-primary"><T>Nueva sección</T></p>
                   <div className="flex gap-3">
                     <select
                       value={newSectionType}
@@ -1035,7 +1039,7 @@ export default function ContenidoClient({
                       type="text"
                       value={newSectionTitle}
                       onChange={(e) => setNewSectionTitle(e.target.value)}
-                      placeholder="Título de la sección (opcional)"
+                      placeholder={tx("Título de la sección (opcional)")}
                       className="flex-1 border border-gray-200 rounded-xl px-3 py-2 font-brand text-sm focus:outline-none focus:border-brand-primary"
                     />
                   </div>
@@ -1048,7 +1052,7 @@ export default function ContenidoClient({
                       {addingSection ? 'Creando…' : 'Crear sección'}
                     </button>
                     <button onClick={() => setShowNewSection(false)} className="font-brand text-sm text-brand-primary/40 hover:text-brand-primary">
-                      Cancelar
+                      <T>Cancelar</T>
                     </button>
                   </div>
                 </div>
@@ -1056,7 +1060,7 @@ export default function ContenidoClient({
 
               {pageSections.length === 0 && !showNewSection && (
                 <p className="font-brand text-sm text-brand-primary/30 text-center py-8">
-                  Esta página no tiene secciones. Agrega una arriba.
+                  <T>Esta página no tiene secciones. Agrega una arriba.</T>
                 </p>
               )}
 
@@ -1103,39 +1107,39 @@ export default function ContenidoClient({
                       <div className="px-5 pb-5 pt-0 border-t border-gray-100 space-y-4">
                         <div className="grid grid-cols-2 gap-4 mt-4">
                           <FieldInput
-                            label="Título"
+                            label={tx("Título")}
                             value={section.title ?? ''}
                             onSave={(v) => patchSection(section.id, { title: v || null })}
-                            placeholder="Título de la sección"
+                            placeholder={tx("Título de la sección")}
                           />
                           <FieldInput
-                            label="Subtítulo"
+                            label={tx("Subtítulo")}
                             value={section.subtitle ?? ''}
                             onSave={(v) => patchSection(section.id, { subtitle: v || null })}
-                            placeholder="Subtítulo opcional"
+                            placeholder={tx("Subtítulo opcional")}
                           />
                         </div>
 
                         {['hero', 'text', 'cta', 'whatsapp'].includes(section.section_type) && (
                           <FieldInput
-                            label="Cuerpo de texto"
+                            label={tx("Cuerpo de texto")}
                             value={section.body ?? ''}
                             onSave={(v) => patchSection(section.id, { body: v || null })}
                             multiline
-                            placeholder="Texto principal…"
+                            placeholder={tx("Texto principal…")}
                           />
                         )}
 
                         {['hero', 'cta', 'testimonials', 'whatsapp', 'cards', 'faq'].includes(section.section_type) && (
                           <div className="grid grid-cols-2 gap-4">
                             <FieldInput
-                              label="Texto del CTA"
+                              label={tx("Texto del CTA")}
                               value={section.cta_label ?? ''}
                               onSave={(v) => patchSection(section.id, { cta_label: v || null })}
-                              placeholder="Ver más"
+                              placeholder={tx("Ver más")}
                             />
                             <FieldInput
-                              label="URL del CTA"
+                              label={tx("URL del CTA")}
                               value={section.cta_url ?? ''}
                               onSave={(v) => patchSection(section.id, { cta_url: v || null })}
                               placeholder="/ruta"
@@ -1145,7 +1149,7 @@ export default function ContenidoClient({
 
                         {['hero', 'testimonials'].includes(section.section_type) && (
                           <FieldInput
-                            label="Imagen de fondo (URL)"
+                            label={tx("Imagen de fondo (URL)")}
                             value={section.image_url ?? ''}
                             onSave={(v) => patchSection(section.id, { image_url: v || null })}
                             placeholder="https://..."
@@ -1186,14 +1190,14 @@ export default function ContenidoClient({
                                             type="text"
                                             defaultValue={item.title ?? ''}
                                             onBlur={(e) => e.target.value !== (item.title ?? '') && patchItem(item.id, { title: e.target.value || null })}
-                                            placeholder="Título"
+                                            placeholder={tx("Título")}
                                             className="flex-1 border border-gray-200 rounded-lg px-2 py-1 font-brand text-sm focus:outline-none focus:border-brand-primary"
                                           />
                                         </div>
                                         <textarea
                                           defaultValue={item.description ?? ''}
                                           onBlur={(e) => e.target.value !== (item.description ?? '') && patchItem(item.id, { description: e.target.value || null })}
-                                          placeholder="Descripción…"
+                                          placeholder={tx("Descripción…")}
                                           rows={2}
                                           className="w-full border border-gray-200 rounded-lg px-2 py-1 font-brand text-sm focus:outline-none focus:border-brand-primary resize-none"
                                         />
@@ -1204,13 +1208,13 @@ export default function ContenidoClient({
                                           type="text"
                                           defaultValue={item.question ?? ''}
                                           onBlur={(e) => e.target.value !== (item.question ?? '') && patchItem(item.id, { question: e.target.value || null })}
-                                          placeholder="Pregunta"
+                                          placeholder={tx("Pregunta")}
                                           className="w-full border border-gray-200 rounded-lg px-2 py-1 font-brand text-sm focus:outline-none focus:border-brand-primary"
                                         />
                                         <textarea
                                           defaultValue={item.answer ?? ''}
                                           onBlur={(e) => e.target.value !== (item.answer ?? '') && patchItem(item.id, { answer: e.target.value || null })}
-                                          placeholder="Respuesta…"
+                                          placeholder={tx("Respuesta…")}
                                           rows={2}
                                           className="w-full border border-gray-200 rounded-lg px-2 py-1 font-brand text-sm focus:outline-none focus:border-brand-primary resize-none"
                                         />
@@ -1221,13 +1225,13 @@ export default function ContenidoClient({
                                           type="text"
                                           defaultValue={item.title ?? ''}
                                           onBlur={(e) => e.target.value !== (item.title ?? '') && patchItem(item.id, { title: e.target.value || null })}
-                                          placeholder="Nombre del autor"
+                                          placeholder={tx("Nombre del autor")}
                                           className="w-full border border-gray-200 rounded-lg px-2 py-1 font-brand text-sm focus:outline-none focus:border-brand-primary"
                                         />
                                         <textarea
                                           defaultValue={item.description ?? ''}
                                           onBlur={(e) => e.target.value !== (item.description ?? '') && patchItem(item.id, { description: e.target.value || null })}
-                                          placeholder="Contenido del testimonio…"
+                                          placeholder={tx("Contenido del testimonio…")}
                                           rows={2}
                                           className="w-full border border-gray-200 rounded-lg px-2 py-1 font-brand text-sm focus:outline-none focus:border-brand-primary resize-none"
                                         />
@@ -1236,7 +1240,7 @@ export default function ContenidoClient({
                                             type="text"
                                             defaultValue={String(meta.role ?? '')}
                                             onBlur={(e) => patchItem(item.id, { metadata: { ...meta, role: e.target.value || '' } })}
-                                            placeholder="Rol / cargo"
+                                            placeholder={tx("Rol / cargo")}
                                             className="border border-gray-200 rounded-lg px-2 py-1 font-brand text-sm focus:outline-none focus:border-brand-primary"
                                           />
                                           <input
@@ -1244,7 +1248,7 @@ export default function ContenidoClient({
                                             min={1} max={5}
                                             defaultValue={String(meta.rating ?? 5)}
                                             onBlur={(e) => patchItem(item.id, { metadata: { ...meta, rating: Number(e.target.value) } })}
-                                            placeholder="Rating (1-5)"
+                                            placeholder={tx("Rating (1-5)")}
                                             className="border border-gray-200 rounded-lg px-2 py-1 font-brand text-sm focus:outline-none focus:border-brand-primary"
                                           />
                                         </div>
@@ -1252,7 +1256,7 @@ export default function ContenidoClient({
                                           type="text"
                                           defaultValue={item.image_url ?? ''}
                                           onBlur={(e) => e.target.value !== (item.image_url ?? '') && patchItem(item.id, { image_url: e.target.value || null })}
-                                          placeholder="URL avatar (opcional)"
+                                          placeholder={tx("URL avatar (opcional)")}
                                           className="w-full border border-gray-200 rounded-lg px-2 py-1 font-brand text-sm focus:outline-none focus:border-brand-primary"
                                         />
                                       </>
@@ -1262,13 +1266,13 @@ export default function ContenidoClient({
                                           type="text"
                                           defaultValue={item.title ?? ''}
                                           onBlur={(e) => e.target.value !== (item.title ?? '') && patchItem(item.id, { title: e.target.value || null })}
-                                          placeholder="Título"
+                                          placeholder={tx("Título")}
                                           className="w-full border border-gray-200 rounded-lg px-2 py-1 font-brand text-sm focus:outline-none focus:border-brand-primary"
                                         />
                                         <textarea
                                           defaultValue={item.description ?? ''}
                                           onBlur={(e) => e.target.value !== (item.description ?? '') && patchItem(item.id, { description: e.target.value || null })}
-                                          placeholder="Subtítulo / descripción…"
+                                          placeholder={tx("Subtítulo / descripción…")}
                                           rows={2}
                                           className="w-full border border-gray-200 rounded-lg px-2 py-1 font-brand text-sm focus:outline-none focus:border-brand-primary resize-none"
                                         />
@@ -1277,14 +1281,14 @@ export default function ContenidoClient({
                                             type="text"
                                             defaultValue={item.cta_text ?? ''}
                                             onBlur={(e) => e.target.value !== (item.cta_text ?? '') && patchItem(item.id, { cta_text: e.target.value || null })}
-                                            placeholder="Texto del botón"
+                                            placeholder={tx("Texto del botón")}
                                             className="border border-gray-200 rounded-lg px-2 py-1 font-brand text-sm focus:outline-none focus:border-brand-primary"
                                           />
                                           <input
                                             type="text"
                                             defaultValue={item.link_url ?? ''}
                                             onBlur={(e) => e.target.value !== (item.link_url ?? '') && patchItem(item.id, { link_url: e.target.value || null })}
-                                            placeholder="URL del botón"
+                                            placeholder={tx("URL del botón")}
                                             className="border border-gray-200 rounded-lg px-2 py-1 font-brand text-sm focus:outline-none focus:border-brand-primary"
                                           />
                                         </div>
@@ -1292,7 +1296,7 @@ export default function ContenidoClient({
                                           type="text"
                                           defaultValue={item.image_url ?? ''}
                                           onBlur={(e) => e.target.value !== (item.image_url ?? '') && patchItem(item.id, { image_url: e.target.value || null })}
-                                          placeholder="URL imagen"
+                                          placeholder={tx("URL imagen")}
                                           className="w-full border border-gray-200 rounded-lg px-2 py-1 font-brand text-sm focus:outline-none focus:border-brand-primary"
                                         />
                                         {section.section_type === 'hero' && (
@@ -1300,7 +1304,7 @@ export default function ContenidoClient({
                                             type="text"
                                             defaultValue={item.image_url_mobile ?? ''}
                                             onBlur={(e) => e.target.value !== (item.image_url_mobile ?? '') && patchItem(item.id, { image_url_mobile: e.target.value || null })}
-                                            placeholder="URL imagen mobile (opcional)"
+                                            placeholder={tx("URL imagen mobile (opcional)")}
                                             className="w-full border border-gray-200 rounded-lg px-2 py-1 font-brand text-sm focus:outline-none focus:border-brand-primary"
                                           />
                                         )}
@@ -1333,14 +1337,14 @@ export default function ContenidoClient({
                                         type="text"
                                         value={newItem.title ?? ''}
                                         onChange={(e) => setNewItem((prev) => ({ ...prev, title: e.target.value }))}
-                                        placeholder="Título de la tarjeta"
+                                        placeholder={tx("Título de la tarjeta")}
                                         className="flex-1 border border-gray-200 rounded-lg px-2 py-1.5 font-brand text-sm focus:outline-none"
                                       />
                                     </div>
                                     <textarea
                                       value={newItem.description ?? ''}
                                       onChange={(e) => setNewItem((prev) => ({ ...prev, description: e.target.value }))}
-                                      placeholder="Descripción…"
+                                      placeholder={tx("Descripción…")}
                                       rows={2}
                                       className="w-full border border-gray-200 rounded-lg px-2 py-1.5 font-brand text-sm focus:outline-none resize-none"
                                     />
@@ -1351,13 +1355,13 @@ export default function ContenidoClient({
                                       type="text"
                                       value={newItem.question ?? ''}
                                       onChange={(e) => setNewItem((prev) => ({ ...prev, question: e.target.value }))}
-                                      placeholder="Pregunta"
+                                      placeholder={tx("Pregunta")}
                                       className="w-full border border-gray-200 rounded-lg px-2 py-1.5 font-brand text-sm focus:outline-none"
                                     />
                                     <textarea
                                       value={newItem.answer ?? ''}
                                       onChange={(e) => setNewItem((prev) => ({ ...prev, answer: e.target.value }))}
-                                      placeholder="Respuesta…"
+                                      placeholder={tx("Respuesta…")}
                                       rows={2}
                                       className="w-full border border-gray-200 rounded-lg px-2 py-1.5 font-brand text-sm focus:outline-none resize-none"
                                     />
@@ -1368,13 +1372,13 @@ export default function ContenidoClient({
                                       type="text"
                                       value={newItem.title ?? ''}
                                       onChange={(e) => setNewItem((prev) => ({ ...prev, title: e.target.value }))}
-                                      placeholder="Nombre del autor"
+                                      placeholder={tx("Nombre del autor")}
                                       className="w-full border border-gray-200 rounded-lg px-2 py-1.5 font-brand text-sm focus:outline-none"
                                     />
                                     <textarea
                                       value={newItem.description ?? ''}
                                       onChange={(e) => setNewItem((prev) => ({ ...prev, description: e.target.value }))}
-                                      placeholder="Contenido del testimonio…"
+                                      placeholder={tx("Contenido del testimonio…")}
                                       rows={2}
                                       className="w-full border border-gray-200 rounded-lg px-2 py-1.5 font-brand text-sm focus:outline-none resize-none"
                                     />
@@ -1383,7 +1387,7 @@ export default function ContenidoClient({
                                         type="text"
                                         value={String((newItem as Partial<SectionItem>).metadata?.role ?? '')}
                                         onChange={(e) => setNewItem((prev) => ({ ...prev, metadata: { ...((prev as Partial<SectionItem>).metadata ?? {}), role: e.target.value } }))}
-                                        placeholder="Rol / cargo"
+                                        placeholder={tx("Rol / cargo")}
                                         className="border border-gray-200 rounded-lg px-2 py-1.5 font-brand text-sm focus:outline-none"
                                       />
                                       <input
@@ -1391,7 +1395,7 @@ export default function ContenidoClient({
                                         min={1} max={5}
                                         value={String((newItem as Partial<SectionItem>).metadata?.rating ?? 5)}
                                         onChange={(e) => setNewItem((prev) => ({ ...prev, metadata: { ...((prev as Partial<SectionItem>).metadata ?? {}), rating: Number(e.target.value) } }))}
-                                        placeholder="Rating"
+                                        placeholder={tx("Rating")}
                                         className="border border-gray-200 rounded-lg px-2 py-1.5 font-brand text-sm focus:outline-none"
                                       />
                                     </div>
@@ -1402,13 +1406,13 @@ export default function ContenidoClient({
                                       type="text"
                                       value={newItem.title ?? ''}
                                       onChange={(e) => setNewItem((prev) => ({ ...prev, title: e.target.value }))}
-                                      placeholder="Título"
+                                      placeholder={tx("Título")}
                                       className="w-full border border-gray-200 rounded-lg px-2 py-1.5 font-brand text-sm focus:outline-none"
                                     />
                                     <textarea
                                       value={newItem.description ?? ''}
                                       onChange={(e) => setNewItem((prev) => ({ ...prev, description: e.target.value }))}
-                                      placeholder="Subtítulo / descripción…"
+                                      placeholder={tx("Subtítulo / descripción…")}
                                       rows={2}
                                       className="w-full border border-gray-200 rounded-lg px-2 py-1.5 font-brand text-sm focus:outline-none resize-none"
                                     />
@@ -1417,14 +1421,14 @@ export default function ContenidoClient({
                                         type="text"
                                         value={String((newItem as Partial<SectionItem>).cta_text ?? '')}
                                         onChange={(e) => setNewItem((prev) => ({ ...prev, cta_text: e.target.value }))}
-                                        placeholder="Texto botón"
+                                        placeholder={tx("Texto botón")}
                                         className="border border-gray-200 rounded-lg px-2 py-1.5 font-brand text-sm focus:outline-none"
                                       />
                                       <input
                                         type="text"
                                         value={String((newItem as Partial<SectionItem>).link_url ?? '')}
                                         onChange={(e) => setNewItem((prev) => ({ ...prev, link_url: e.target.value }))}
-                                        placeholder="URL botón"
+                                        placeholder={tx("URL botón")}
                                         className="border border-gray-200 rounded-lg px-2 py-1.5 font-brand text-sm focus:outline-none"
                                       />
                                     </div>
@@ -1432,7 +1436,7 @@ export default function ContenidoClient({
                                       type="text"
                                       value={String((newItem as Partial<SectionItem>).image_url ?? '')}
                                       onChange={(e) => setNewItem((prev) => ({ ...prev, image_url: e.target.value }))}
-                                      placeholder="URL imagen"
+                                      placeholder={tx("URL imagen")}
                                       className="w-full border border-gray-200 rounded-lg px-2 py-1.5 font-brand text-sm focus:outline-none"
                                     />
                                     {section.section_type === 'hero' && (
@@ -1440,7 +1444,7 @@ export default function ContenidoClient({
                                         type="text"
                                         value={String((newItem as Partial<SectionItem>).image_url_mobile ?? '')}
                                         onChange={(e) => setNewItem((prev) => ({ ...prev, image_url_mobile: e.target.value }))}
-                                        placeholder="URL imagen mobile (opcional)"
+                                        placeholder={tx("URL imagen mobile (opcional)")}
                                         className="w-full border border-gray-200 rounded-lg px-2 py-1.5 font-brand text-sm focus:outline-none"
                                       />
                                     )}
@@ -1451,13 +1455,13 @@ export default function ContenidoClient({
                                     onClick={() => createItem(section.id, section.section_type)}
                                     className="bg-brand-primary text-brand-cream rounded-full px-4 py-1.5 font-brand text-xs hover:bg-brand-dark transition-colors"
                                   >
-                                    Agregar
+                                    <T>Agregar</T>
                                   </button>
                                   <button
                                     onClick={() => { setShowNewItem(null); setNewItem({ icon: '', title: '', description: '' }) }}
                                     className="font-brand text-xs text-brand-primary/40 hover:text-brand-primary"
                                   >
-                                    Cancelar
+                                    <T>Cancelar</T>
                                   </button>
                                 </div>
                               </div>

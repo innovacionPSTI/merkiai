@@ -4,6 +4,8 @@ import { getPlans } from '@/lib/plans'
 import { setTenantStatus, setTenantPlan } from '../actions'
 import NewTenantForm from './new-tenant-form'
 import TenantManage from './tenant-manage'
+import { T } from '@merkiai/ui'
+import { getConsoleTx } from '@/lib/ui-locale'
 
 export const dynamic = 'force-dynamic'
 
@@ -22,6 +24,7 @@ interface TenantRow {
 const statusTone = (s: string): BadgeTone => (s === 'active' ? 'success' : s === 'suspended' || s === 'canceled' ? 'danger' : 'warn')
 
 export default async function TenantsPage() {
+  const tx = await getConsoleTx()
   const [{ data }, plans] = await Promise.all([
     platformDb()
       .from('tenants')
@@ -35,34 +38,34 @@ export default async function TenantsPage() {
 
   return (
     <>
-      <PageHeader title="Tenants" description="Alta, plan y ciclo de vida de las tiendas." />
+      <PageHeader title={tx("Tenants")} description="Alta, plan y ciclo de vida de las tiendas." />
 
       <StatGrid>
-        <StatCard label="Total tenants" value={tenants.length} icon={<Icon name="tenant" size={20} />} />
-        <StatCard label="Activos" value={activos} tone="success" icon={<Icon name="check" size={20} />} />
-        <StatCard label="Suspendidos" value={suspendidos} tone="warning" icon={<Icon name="alert" size={20} />} />
-        <StatCard label="Planes" value={plans.length} hint="en el catálogo" icon={<Icon name="plan" size={20} />} />
+        <StatCard label={tx("Total tenants")} value={tenants.length} icon={<Icon name="tenant" size={20} />} />
+        <StatCard label={tx("Activos")} value={activos} tone="success" icon={<Icon name="check" size={20} />} />
+        <StatCard label={tx("Suspendidos")} value={suspendidos} tone="warning" icon={<Icon name="alert" size={20} />} />
+        <StatCard label={tx("Planes")} value={plans.length} hint="en el catálogo" icon={<Icon name="plan" size={20} />} />
       </StatGrid>
 
-      <PanelCard title="Nuevo tenant">
+      <PanelCard title={tx("Nuevo tenant")}>
         <NewTenantForm plans={plans.map((p) => ({ key: p.key, name: p.name }))} />
       </PanelCard>
 
       <PanelCard title={`Tenants (${tenants.length})`}>
         {tenants.length === 0 ? (
-          <EmptyState icon={<Icon name="tenant" size={28} />} title="Aún no hay tenants" description="Crea el primero con el formulario de arriba." />
+          <EmptyState icon={<Icon name="tenant" size={28} />} title={tx("Aún no hay tenants")} description="Crea el primero con el formulario de arriba." />
         ) : (
           <DataTable minWidth={760}>
             <thead>
               <tr>
-                <th>Nombre</th>
-                <th>Subdominio / dominio</th>
+                <th><T>Nombre</T></th>
+                <th><T>Subdominio / dominio</T></th>
                 <th>Dueño (super admin)</th>
-                <th>Plan</th>
-                <th>Aislamiento</th>
-                <th>Estado</th>
-                <th>Acción</th>
-                <th>Gestión</th>
+                <th><T>Plan</T></th>
+                <th><T>Aislamiento</T></th>
+                <th><T>Estado</T></th>
+                <th><T>Acción</T></th>
+                <th><T>Gestión</T></th>
               </tr>
             </thead>
             <tbody>
@@ -70,7 +73,7 @@ export default async function TenantsPage() {
                 <tr key={t.id}>
                   <td style={{ fontWeight: 600 }}>{t.name}</td>
                   <td style={{ color: 'var(--ui-muted)' }}>{t.primary_domain ?? `${t.subdomain}.merkiai.com`}</td>
-                  <td>{t.owner_email ?? <span style={{ color: 'var(--ui-muted)' }}>— sin dueño —</span>}</td>
+                  <td>{t.owner_email ?? <span style={{ color: 'var(--ui-muted)' }}><T>— sin dueño —</T></span>}</td>
                   <td>
                     <form action={setTenantPlan} style={{ display: 'flex', gap: 6 }}>
                       <input type="hidden" name="id" value={t.id} />
@@ -79,7 +82,7 @@ export default async function TenantsPage() {
                           <option key={p.key} value={p.key}>{p.name} ({p.key})</option>
                         ))}
                       </select>
-                      <button type="submit" className="mk-btn mk-btn-sm">Asignar</button>
+                      <button type="submit" className="mk-btn mk-btn-sm"><T>Asignar</T></button>
                     </form>
                   </td>
                   <td><Chip variant="neutral">{t.data_isolation}</Chip></td>

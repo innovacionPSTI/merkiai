@@ -3,6 +3,8 @@ import type { SubscriptionStatus } from '@merkiai/tenancy'
 import { listSubscriptionsOverview } from '@/lib/billing-runtime'
 import { formatMoney } from '@/lib/billing-email'
 import { formatDate } from '@merkiai/i18n'
+import { T } from '@merkiai/ui'
+import { getConsoleTx } from '@/lib/ui-locale'
 
 export const dynamic = 'force-dynamic'
 
@@ -18,6 +20,7 @@ const fmtDate = (iso: string | null) =>
   iso ? formatDate(iso, { dateStyle: 'medium', timeZone: 'America/Bogota' }) : '—'
 
 export default async function SuscripcionesPage() {
+  const tx = await getConsoleTx()
   const rows = await listSubscriptionsOverview()
   const count = (s: SubscriptionStatus) => rows.filter((r) => r.status === s).length
   const th: React.CSSProperties = { textAlign: 'left', padding: '8px 10px', fontSize: 12, color: '#666', fontWeight: 600, borderBottom: '1px solid var(--ui-border)' }
@@ -26,7 +29,7 @@ export default async function SuscripcionesPage() {
   return (
     <>
       <PageHeader
-        title="Suscripciones"
+        title={tx("Suscripciones")}
         description="Cobro de los planes a cada tenant (PayZen). El estado se actualiza solo con cada pago o rechazo; las tiendas en mora se suspenden automáticamente al vencer la gracia."
       />
       <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap', marginBottom: 16 }}>
@@ -40,7 +43,7 @@ export default async function SuscripcionesPage() {
         {rows.length === 0 ? (
           <EmptyState
             icon={<Icon name="tenant" size={28} />}
-            title="Aún no hay suscripciones"
+            title={tx("Aún no hay suscripciones")}
             description="Se crean cuando el dueño de una tienda inicia el pago de su plan desde su panel."
           />
         ) : (
@@ -48,8 +51,8 @@ export default async function SuscripcionesPage() {
             <table style={{ width: '100%', borderCollapse: 'collapse' }}>
               <thead>
                 <tr>
-                  <th style={th}>Tenant</th><th style={th}>Plan</th><th style={th}>Valor</th><th style={th}>Estado</th>
-                  <th style={th}>Vence / próximo cobro</th><th style={th}>Cobro automático</th><th style={th}>Fallos</th>
+                  <th style={th}><T>Tenant</T></th><th style={th}><T>Plan</T></th><th style={th}><T>Valor</T></th><th style={th}><T>Estado</T></th>
+                  <th style={th}><T>Vence / próximo cobro</T></th><th style={th}><T>Cobro automático</T></th><th style={th}><T>Fallos</T></th>
                 </tr>
               </thead>
               <tbody>

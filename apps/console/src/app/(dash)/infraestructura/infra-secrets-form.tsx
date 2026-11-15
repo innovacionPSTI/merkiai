@@ -4,6 +4,7 @@ import { useActionState } from 'react'
 import { useFormStatus } from 'react-dom'
 import { saveTenantInfraSecrets, type InfraActionState } from '../../actions'
 import { input, btn } from '@/lib/styles'
+import { T } from '@merkiai/ui'
 
 const initialState: InfraActionState = { ok: false }
 
@@ -49,7 +50,7 @@ export default function InfraSecretsForm({
 
       <div style={field}>
         <label style={label} htmlFor={`anon-${tenantId}`}>
-          Anon / publishable key <SetTag set={current.hasAnon} />
+          <T>Anon / publishable key</T> <SetTag set={current.hasAnon} />
         </label>
         <input id={`anon-${tenantId}`} name="anon_key" type="password" style={wide} autoComplete="new-password"
           placeholder={current.hasAnon ? 'Dejar vacío para no cambiar' : 'sb_publishable_…'} />
@@ -57,7 +58,7 @@ export default function InfraSecretsForm({
 
       <div style={field}>
         <label style={label} htmlFor={`svc-${tenantId}`}>
-          Service role key <SetTag set={current.hasService} />
+          <T>Service role key</T> <SetTag set={current.hasService} />
         </label>
         <input id={`svc-${tenantId}`} name="service_key" type="password" style={wide} autoComplete="new-password"
           placeholder={current.hasService ? 'Dejar vacío para no cambiar' : 'eyJ…'} />
@@ -65,7 +66,7 @@ export default function InfraSecretsForm({
 
       <div style={field}>
         <label style={label} htmlFor={`jwt-${tenantId}`}>
-          JWT secret <SetTag set={current.hasJwt} />
+          <T>JWT secret</T> <SetTag set={current.hasJwt} />
         </label>
         <input id={`jwt-${tenantId}`} name="jwt_secret" type="password" style={wide} autoComplete="new-password"
           placeholder={current.hasJwt ? 'Dejar vacío para no cambiar' : 'Legacy JWT secret de su BD'} />

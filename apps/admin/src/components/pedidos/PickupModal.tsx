@@ -1,6 +1,7 @@
 'use client'
 
 import { useState } from 'react'
+import { T } from '@merkiai/ui'
 
 interface Order {
   id: string
@@ -97,7 +98,7 @@ export default function PickupModal({ shippedOrders }: Props) {
         <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
           <path strokeLinecap="round" strokeLinejoin="round" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
         </svg>
-        Programar recolección
+        <T>Programar recolección</T>
       </button>
 
       {open && (
@@ -109,7 +110,7 @@ export default function PickupModal({ shippedOrders }: Props) {
           <div className="relative bg-white rounded-2xl shadow-2xl w-full max-w-lg overflow-hidden">
             {/* Header */}
             <div className="flex items-center justify-between px-6 py-4 border-b border-gray-100">
-              <h2 className="font-display text-brand-primary text-xl">Programar recolección</h2>
+              <h2 className="font-display text-brand-primary text-xl"><T>Programar recolección</T></h2>
               <button onClick={handleClose} className="text-brand-primary/40 hover:text-brand-primary transition-colors">
                 <svg className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
@@ -124,7 +125,7 @@ export default function PickupModal({ shippedOrders }: Props) {
                     <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
                   </svg>
                 </div>
-                <p className="font-brand font-semibold text-brand-primary mb-1">¡Recolección programada!</p>
+                <p className="font-brand font-semibold text-brand-primary mb-1"><T>¡Recolección programada!</T></p>
                 <p className="font-brand text-sm text-brand-primary/50 mb-6">
                   Se registró la solicitud de recolección para {selected.size} guía(s).
                 </p>
@@ -132,7 +133,7 @@ export default function PickupModal({ shippedOrders }: Props) {
                   onClick={handleClose}
                   className="bg-brand-primary text-brand-cream rounded-full px-6 py-2.5 font-brand text-sm hover:bg-brand-dark transition-colors"
                 >
-                  Cerrar
+                  <T>Cerrar</T>
                 </button>
               </div>
             ) : (
@@ -140,7 +141,7 @@ export default function PickupModal({ shippedOrders }: Props) {
                 {/* Order selection */}
                 <div>
                   <div className="flex items-center justify-between mb-2">
-                    <p className="font-brand text-sm font-semibold text-brand-primary">Seleccionar pedidos</p>
+                    <p className="font-brand text-sm font-semibold text-brand-primary"><T>Seleccionar pedidos</T></p>
                     <button
                       type="button"
                       onClick={toggleAll}
@@ -152,7 +153,7 @@ export default function PickupModal({ shippedOrders }: Props) {
                   <div className="space-y-2 max-h-48 overflow-y-auto pr-1">
                     {eligible.length === 0 ? (
                       <p className="font-brand text-sm text-brand-primary/40 text-center py-4">
-                        No hay pedidos con guía de envío generada
+                        <T>No hay pedidos con guía de envío generada</T>
                       </p>
                     ) : eligible.map((o) => (
                       <label
@@ -185,7 +186,7 @@ export default function PickupModal({ shippedOrders }: Props) {
                 <div className="grid grid-cols-3 gap-3">
                   <div className="col-span-3 sm:col-span-1">
                     <label className="font-brand text-xs font-semibold text-brand-primary block mb-1">
-                      Fecha *
+                      <T>Fecha *</T>
                     </label>
                     <input
                       type="date"
@@ -199,7 +200,7 @@ export default function PickupModal({ shippedOrders }: Props) {
                   </div>
                   <div>
                     <label className="font-brand text-xs font-semibold text-brand-primary block mb-1">
-                      Desde *
+                      <T>Desde *</T>
                     </label>
                     <input
                       type="time"
@@ -212,7 +213,7 @@ export default function PickupModal({ shippedOrders }: Props) {
                   </div>
                   <div>
                     <label className="font-brand text-xs font-semibold text-brand-primary block mb-1">
-                      Hasta *
+                      <T>Hasta *</T>
                     </label>
                     <input
                       type="time"
@@ -243,7 +244,7 @@ export default function PickupModal({ shippedOrders }: Props) {
                     onClick={handleClose}
                     className="font-brand text-sm text-brand-primary/50 hover:text-brand-primary px-4 transition-colors"
                   >
-                    Cancelar
+                    <T>Cancelar</T>
                   </button>
                 </div>
               </form>

@@ -4,6 +4,8 @@ import { useActionState } from 'react'
 import { useFormStatus } from 'react-dom'
 import { saveTenantInfraConfig, type InfraActionState } from '../../actions'
 import { input, btn } from '@/lib/styles'
+import { T } from '@merkiai/ui'
+import { useTx } from '@merkiai/ui'
 
 const initialState: InfraActionState = { ok: false }
 
@@ -50,13 +52,14 @@ export default function InfraForm({
   tenants: { id: string; name: string | null }[]
   initial?: InfraFormValues
 }) {
+  const tx = useTx()
   const [state, formAction] = useActionState(saveTenantInfraConfig, initialState)
   const editing = !!initial
 
   return (
     <form action={formAction}>
       <div style={field}>
-        <label style={label} htmlFor="tenant_id">Tenant</label>
+        <label style={label} htmlFor="tenant_id"><T>Tenant</T></label>
         {editing ? (
           <>
             <input type="hidden" name="tenant_id" value={initial!.tenant_id} />
@@ -75,14 +78,14 @@ export default function InfraForm({
       </div>
 
       <div style={field}>
-        <label style={label} htmlFor="db_ref">Clave de routing</label>
-        <input id="db_ref" name="db_ref" required style={wide} placeholder="ej. cliente-acme"
+        <label style={label} htmlFor="db_ref"><T>Clave de routing</T></label>
+        <input id="db_ref" name="db_ref" required style={wide} placeholder={tx("ej. cliente-acme")}
           defaultValue={initial?.db_ref ?? ''} />
-        <p style={{ margin: '4px 0 0', fontSize: 11, color: '#888' }}>Identifica su base dedicada. Minúsculas, números y guiones.</p>
+        <p style={{ margin: '4px 0 0', fontSize: 11, color: '#888' }}><T>Identifica su base dedicada. Minúsculas, números y guiones.</T></p>
       </div>
 
       <div style={field}>
-        <label style={label} htmlFor="db_url">Endpoint de la base de datos</label>
+        <label style={label} htmlFor="db_url"><T>Endpoint de la base de datos</T></label>
         <input id="db_url" name="db_url" required style={wide} placeholder="https://xxxx.supabase.co"
           defaultValue={initial?.db_url ?? ''} />
       </div>
@@ -101,13 +104,13 @@ export default function InfraForm({
         </div>
         <div style={{ ...field, flex: '1 1 120px' }}>
           <label style={label} htmlFor="region">Región (opcional)</label>
-          <input id="region" name="region" style={wide} placeholder="ej. us-east-1"
+          <input id="region" name="region" style={wide} placeholder={tx("ej. us-east-1")}
             defaultValue={initial?.region ?? ''} />
         </div>
       </div>
 
       <div style={field}>
-        <label style={label} htmlFor="status">Estado</label>
+        <label style={label} htmlFor="status"><T>Estado</T></label>
         <select id="status" name="status" style={wide} defaultValue={initial?.status ?? 'draft'}>
           {STATUS_OPTIONS.map((o) => (
             <option key={o.value} value={o.value}>{o.label}</option>
