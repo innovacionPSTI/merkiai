@@ -20,7 +20,11 @@ jest.mock('@/lib/store-context', () => ({
 jest.mock('@merkiai/database', () => ({
   getProducts:  jest.fn(),
   getBlogPosts: jest.fn(),
+  ...jest.requireActual('../../../../packages/database/src/queries/translations'),
 }))
+// HU-462 · configuración de idiomas (por defecto: un solo idioma).
+const mockLocaleConfig = jest.fn(async () => ({ defaultLocale: 'es-CO', locales: ['es-CO'], domains: [] as Array<{ domain: string; locale: string }> }))
+jest.mock('@/lib/request-locale', () => ({ getLocaleConfig: () => mockLocaleConfig() }))
 
 import { getProducts, getBlogPosts } from '@merkiai/database'
 import sitemap from '../app/sitemap'
@@ -130,5 +134,27 @@ describe('sitemap — blog', () => {
 
     const routes = await sitemap()
     expect(routes.find((r) => r.url === BASE)).toBeDefined()
+  })
+})
+
+// ─────────────────────────────────────────────────────────────────────────────
+describe('sitemap — HU-462 versiones por idioma', () => {
+  it('con varios idiomas lista cada versión con sus alternas (y solo las traducidas)', async () => {
+    mockLocaleConfig.mockResolvedValueOnce({ defaultLocale: 'es-CO', locales: ['es-CO', 'en-US'], domains: [] })
+    mockGetProducts.mockResolvedValue([{ id: 1, slug: 'camiseta', active: true }, { id: 2, slug: 'gorra', active: true }] as never)
+    mockGetBlogPosts.mockResolvedValue([])
+    const { getStoreContext } = jest.requireMock('@/lib/store-context') as { getStoreContext: jest.Mock }
+    getStoreContext.mockResolvedValueOnce({
+      db: { from: (t: string) => ({ select: async () => ({ data: t === 'product_translations' ? [{ product_id: 1, locale: 'en', slug: 't-shirt' }] : [] }) }) },
+      tenantId: 't1', config: null,
+    })
+    const result = await sitemap()
+    const urls = result.map((r) => r.url)
+    expect(urls).toContain(`${BASE}/en-us/shop/t-shirt`)
+    expect(urls).toContain(`${BASE}/shop/camiseta`)
+    expect(urls).not.toContain(`${BASE}/en-us/shop/gorra`)
+    const camiseta = result.find((r) => r.url === `${BASE}/shop/camiseta`)
+    expect(camiseta?.alternates?.languages).toEqual({ 'es-CO': `${BASE}/shop/camiseta`, 'en-US': `${BASE}/en-us/shop/t-shirt`, 'x-default': `${BASE}/shop/camiseta` })
+    expect(urls).toContain(`${BASE}/en-us`)
   })
 })

@@ -7,6 +7,13 @@ import SectionShell from '@/components/sections/SectionShell'
 import { groupSectionsIntoRows, cellSpanClass, cellResponsiveClasses } from '@/lib/section-rows'
 import { pageStyleVars } from '@/lib/page-style'
 import PreviewBanner from '@/components/PreviewBanner'
+import type { Metadata } from 'next'
+import { alternatesFor } from '@/lib/request-locale'
+
+/** HU-462 · canónica + hreflang de la portada por idioma. */
+export async function generateMetadata(): Promise<Metadata> {
+  return { alternates: await alternatesFor('/').catch(() => undefined) }
+}
 
 // E17/HU-157: la home lee datos del tenant resuelto por Host → render dinámico.
 export const dynamic = 'force-dynamic'

@@ -139,3 +139,12 @@ describe('AC-5 · bloques del Constructor', () => {
     expect(isTranslatableField({ label: 'x', type: 'text', storage: 'settings', translatable: false })).toBe(false)
   })
 })
+
+describe('HU-462 · versiones con contenido propio', () => {
+  it('el por defecto siempre; otro locale si tiene traducción propia o de su idioma base', async () => {
+    const { availableLocales } = await import('../translations')
+    expect(availableLocales([], ['es-CO', 'es-MX', 'en-US'], 'es-CO')).toEqual(['es-CO'])
+    expect(availableLocales(['en'], ['es-CO', 'es-MX', 'en-US'], 'es-CO')).toEqual(['es-CO', 'en-US'])
+    expect(availableLocales(['es-MX'], ['es-CO', 'es-MX', 'en-US'], 'es-CO')).toEqual(['es-CO', 'es-MX'])
+  })
+})

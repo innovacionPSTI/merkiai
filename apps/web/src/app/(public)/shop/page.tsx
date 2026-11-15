@@ -4,11 +4,15 @@ import { getRequestCatalogDb } from '@/lib/tenant-db'
 import { requireStoreContext } from '@/lib/store-context'
 import { parseShopUrl } from '@/lib/shop-filters'
 import type { Metadata } from 'next'
-import { localize } from '@/lib/request-locale'
+import { localize, alternatesFor } from '@/lib/request-locale'
 
-export const metadata: Metadata = {
-  title: 'Tienda',
-  description: 'Explora nuestra selección de productos.',
+export async function generateMetadata(): Promise<Metadata> {
+  return {
+    title: 'Tienda',
+    description: 'Explora nuestra selección de productos.',
+    // HU-462 · canónica + hreflang por idioma.
+    alternates: await alternatesFor('/shop').catch(() => undefined),
+  }
 }
 
 // E17/HU-157 + HU-270: catálogo del tenant resuelto por Host, paginado en BD.

@@ -22,6 +22,7 @@ import { groupSectionsIntoRows, cellSpanClass, cellResponsiveClasses } from '@/l
 import { pageStyleVars } from '@/lib/page-style'
 import { getRequestCatalogDb } from '@/lib/tenant-db'
 import PreviewBanner from '@/components/PreviewBanner'
+import { localizeOne, alternatesFor } from '@/lib/request-locale'
 
 export const dynamic = 'force-dynamic'
 
@@ -31,12 +32,16 @@ interface Props {
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { slug } = await params
-  const page = await getPageWithSections(slug, true, await getRequestCatalogDb()).catch(() => null)
-  if (!page) return {}
+  const db = await getRequestCatalogDb()
+  const raw = await getPageWithSections(slug, true, db).catch(() => null)
+  if (!raw) return {}
+  // HU-463/462 · título y descripción traducidos + canónica/hreflang por idioma.
+  const page = (await localizeOne(db, 'page', raw)) ?? raw
 
   return {
     title: page.meta_title ?? page.label,
     description: page.meta_description ?? undefined,
+    alternates: await alternatesFor(`/${slug}`).catch(() => undefined),
   }
 }
 

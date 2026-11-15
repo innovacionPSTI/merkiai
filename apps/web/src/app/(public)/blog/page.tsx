@@ -3,11 +3,15 @@ import { getStoreContext } from '@/lib/store-context'
 import Link from 'next/link'
 import type { Metadata } from 'next'
 import { formatDate } from '@merkiai/i18n'
-import { localize } from '@/lib/request-locale'
+import { localize, alternatesFor } from '@/lib/request-locale'
 
-export const metadata: Metadata = {
-  title: 'Blog',
-  description: 'Novedades, tutoriales y contenido de interés para nuestra comunidad.',
+export async function generateMetadata(): Promise<Metadata> {
+  return {
+    title: 'Blog',
+    description: 'Novedades, tutoriales y contenido de interés para nuestra comunidad.',
+    // HU-462 · canónica + hreflang por idioma.
+    alternates: await alternatesFor('/blog').catch(() => undefined),
+  }
 }
 
 // Multi-tenant: la tienda se resuelve por Host; render dinámico (sin cache por path).

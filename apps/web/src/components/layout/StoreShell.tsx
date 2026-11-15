@@ -15,6 +15,10 @@ import SectionRenderer from '@/components/sections/SectionRenderer'
 import { requireStoreContext } from '@/lib/store-context'
 import { getSectionsWithItems } from '@merkiai/database'
 import { resolveFeature, FEATURES } from '@merkiai/tenancy'
+import { LOCALE_INFO, type Locale } from '@merkiai/i18n'
+import LocaleSwitcher from '@/components/i18n/LocaleSwitcher'
+import LocaleSuggest from '@/components/i18n/LocaleSuggest'
+import { getLocaleConfig, getPageLang } from '@/lib/request-locale'
 
 /**
  * Claves reservadas de las REGIONES de chrome (HU-372). Son páginas del CMS
@@ -40,10 +44,15 @@ export default async function StoreShell({ children }: { children: React.ReactNo
     : [[], []]
   // Anti-recursión: ignora partials anidados dentro de la región.
   const headerBlocks = headerSections.filter((s) => s.section_type !== 'partial_ref')
+
+  // E28 · HU-462 · selector y sugerencia de idioma (solo si hay más de uno).
+  const [localeCfg, currentLocale] = await Promise.all([getLocaleConfig(), getPageLang()])
+  const localeOptions = localeCfg.locales.map((code) => ({ code, label: LOCALE_INFO[code as Locale]?.label ?? code }))
   const footerBlocks = footerSections.filter((s) => s.section_type !== 'partial_ref')
 
   return (
     <>
+      {localeOptions.length > 1 && <LocaleSuggest locales={localeOptions} current={currentLocale} />}
       {headerBlocks.length > 0 ? (
         <header>
           {headerBlocks.map((s) => (
@@ -87,6 +96,13 @@ export default async function StoreShell({ children }: { children: React.ReactNo
           showLegal: config?.footer_show_legal ?? true,
         }}
       />
+      )}
+      {localeOptions.length > 1 && (
+        <div className="bg-brand-dark text-brand-cream/80">
+          <div className="mx-auto max-w-7xl px-4 py-3 flex justify-center">
+            <LocaleSwitcher locales={localeOptions} current={currentLocale} />
+          </div>
+        </div>
       )}
     </>
   )

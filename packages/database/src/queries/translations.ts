@@ -158,6 +158,34 @@ export async function findIdByTranslatedSlug(
   return null
 }
 
+/** Traducciones guardadas de una entidad: locale + slug (HU-462: versiones y URLs por idioma). */
+export async function translationIndex(db: Db, entity: TranslatableEntity, id: string | number): Promise<Array<{ locale: string; slug: string | null }>> {
+  const def = TRANSLATABLE[entity]
+  try {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const { data } = await (db as any).from(def.table).select('locale, slug').eq(def.fk, id)
+    return ((data ?? []) as Array<{ locale: string; slug: string | null }>)
+  } catch {
+    return []
+  }
+}
+
+/** Slug de la entidad en un locale: el propio, el de su idioma base o el original. PURA. */
+export function slugForLocale(index: Array<{ locale: string; slug: string | null }>, locale: string, baseSlug: string): string {
+  return index.find((r) => r.locale === locale && r.slug)?.slug
+    ?? index.find((r) => r.locale === locale.split('-')[0] && r.slug)?.slug
+    ?? baseSlug
+}
+
+/**
+ * Locales publicables con contenido propio: el por defecto siempre; otro locale
+ * cuenta si tiene traducción propia o de su idioma base (`en` cubre `en-US`). PURA.
+ */
+export function availableLocales(stored: string[], enabled: string[], defaultLocale: string): string[] {
+  const set = new Set(stored)
+  return enabled.filter((l) => l === defaultLocale || set.has(l) || set.has(l.split('-')[0]))
+}
+
 /** Normaliza un slug traducido (minúsculas, sin acentos, guiones). */
 export function slugifyTranslation(raw: string | null | undefined): string | null {
   const s = String(raw ?? '')

@@ -8,6 +8,7 @@ import WishlistSyncOnLogin from '@/components/auth/WishlistSyncOnLogin'
 import { buildThemeCSS } from '@/lib/theme-css'
 import { getStoreContext } from '@/lib/store-context'
 import { headers } from 'next/headers'
+import { getPageLang } from '@/lib/request-locale'
 import './globals.css'
 
 // ── Fuentes ───────────────────────────────────────────────────────────────────
@@ -99,7 +100,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
   const nonce = (await headers()).get('x-nonce') ?? undefined
 
   return (
-    <html lang="es">
+    <html lang={await getPageLang().catch(() => 'es-CO')}>
       <head>
         {/* Fuentes del tema (Google Fonts en runtime; el build no depende de Google) */}
         <link rel="preconnect" href="https://fonts.googleapis.com" />

@@ -4,14 +4,14 @@ import { Icon } from '@merkiai/ui'
 import { getStoreContext } from '@/lib/store-context'
 import { getMachineDb } from '@/lib/machine-db'
 import { isPreviewMode } from '@/lib/preview'
-import { notFound } from 'next/navigation'
+import { notFound, permanentRedirect } from 'next/navigation'
 import Link from 'next/link'
 import type { Metadata } from 'next'
 import ShareWhatsApp from '@/components/blog/ShareWhatsApp'
 import { markdownToHtml } from '@/lib/markdown'
 import { buildArticleJsonLd } from '@/lib/json-ld'
 import { formatDate } from '@merkiai/i18n'
-import { localize, localizeOne, resolveBaseSlug } from '@/lib/request-locale'
+import { localize, localizeOne, resolveBaseSlug, alternatesFor, pathInRequestLocale } from '@/lib/request-locale'
 
 interface Props {
   params: Promise<{ slug: string }>
@@ -37,10 +37,14 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const title       = post.seo_title ?? post.title
   const description = post.seo_desc ?? post.excerpt ?? undefined
   const image       = post.cover_image ?? undefined
+  // HU-462 · canónica + hreflang con el slug de cada idioma (solo versiones traducidas).
+  const baseSlug = (post as { _baseSlug?: string | null })._baseSlug ?? post.slug
+  const alternates = await alternatesFor((s) => `/blog/${s}`, { type: 'blog_post', id: post.id, db: ctx.db, baseSlug }).catch(() => undefined)
 
   return {
     title,
     description,
+    alternates,
     openGraph: {
       title,
       description,
@@ -79,6 +83,8 @@ export default async function BlogPostPage({ params }: Props) {
 
   const storeConfig = ctx.config
   if (!post) notFound()
+  // HU-462 · una sola URL por idioma: el slug pedido debe ser el de este idioma.
+  if (!draftMode && post.slug && post.slug !== slug) permanentRedirect(await pathInRequestLocale(`/blog/${post.slug}`))
 
   const related = await getBlogPosts({ category: post.category ?? undefined, limit: 3 }, ctx.db)
     .then((posts) => posts.filter((p) => p.id !== post.id).slice(0, 2))

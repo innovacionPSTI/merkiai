@@ -1,6 +1,6 @@
 # Detalle · E28 — Internacionalización y mercados (idiomas, regiones, moneda)
 
-> **Épica:** **E28 · Internacionalización y mercados** (HU-460…468). **Diseño:** **ADR-011**. **Estado:** 🟡 en curso — HU-460 ✅ (v272) · HU-461 ✅ (v273) · HU-468 ✅ (v274) · HU-463 ✅ (v275).
+> **Épica:** **E28 · Internacionalización y mercados** (HU-460…468). **Diseño:** **ADR-011**. **Estado:** 🟡 en curso — HU-460 ✅ (v272) · HU-461 ✅ (v273) · HU-468 ✅ (v274) · HU-463 ✅ (v275) · HU-462 ✅ (v276).
 > **Absorbe:** HU-114a → HU-463 · HU-114b → HU-462 · HU-114c → HU-464 (E2).
 > **Construye sobre:** listas de precio (HU-407), multi-dominio (HU-279), schema de bloques del Constructor, correos idempotentes (HU-162), entitlements (ADR-002), middleware con tenant + CSP (v270), IA (HU-118).
 >
@@ -44,7 +44,7 @@
 
 > Como visitante y como buscador, quiero URLs propias por idioma y región con sus alternativas declaradas, para llegar a la versión correcta y que Google indexe cada una.
 
-**Talla:** L · **Módulo:** middleware (resolución de locale tras el tenant: prefijo → dominio del mercado → por defecto; cabecera `x-locale`; cookie `merkiai_locale`), rutas `app/[locale]/…` con *rewrite* para el locale sin prefijo, `generateMetadata` con `alternates.languages`, sitemap con `xhtml:link`, `<html lang>`, selector de idioma, aviso de sugerencia. **Estado:** 🔲
+**Talla:** L · **Módulo:** middleware (resolución de locale tras el tenant: prefijo → dominio del mercado → por defecto; cabecera `x-locale`; cookie `merkiai_locale`), rutas `app/[locale]/…` con *rewrite* para el locale sin prefijo, `generateMetadata` con `alternates.languages`, sitemap con `xhtml:link`, `<html lang>`, selector de idioma, aviso de sugerencia. **Estado:** ✅ en código (v276): lógica pura `lib/locale-routing.ts` (prefijo en minúsculas, por defecto sin prefijo con 301, dominio de mercado sin prefijo, cookie `merkiai_locale` solo por elección explícita, sin redirección por `Accept-Language`); el middleware reescribe `/<locale>/…` a la ruta sin prefijo con `x-locale` (sin mover las rutas a `app/[locale]`), aplica las redirecciones de HU-113 conservando el prefijo y lee la configuración de `/api/locales` (cache 60 s por host). `alternatesFor` (canónica autorreferenciada + hreflang recíproco + `x-default`, **solo versiones traducidas** y **slug de cada idioma**) en portada, tienda, ficha, blog y páginas del CMS; `<html lang>` por petición; sitemap con una entrada por versión y sus `xhtml:link`; ficha y blog redirigen (301) al slug del idioma. Selector de idioma (pie) + aviso "¿Ver en …?" con el idioma del navegador (descartable) vía `/api/locale` (solo locales publicados, ruta relativa segura). Con un idioma no cambia nada. *Nota operativa:* un dominio ligado a un mercado debe estar también conectado como dominio de la tienda (HU-279).
 
 | # | Escenario | Resultado |
 |---|-----------|-----------|

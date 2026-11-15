@@ -1,7 +1,7 @@
 import { getProductBySlug, getProducts, getTemplateVariant, getVariantTypes, buildSwatchColorMap, getApprovedRatings, getApprovedReviewsPage, reviewStats, REVIEWS_PAGE_SIZE } from '@merkiai/database'
 import { safeJsonForScript } from '@merkiai/tenancy/security'
 import { getStoreContext } from '@/lib/store-context'
-import { notFound } from 'next/navigation'
+import { notFound, permanentRedirect } from 'next/navigation'
 import type { Metadata } from 'next'
 import ProductDetail from '@/components/shop/ProductDetail'
 import Reviews from '@/components/shop/Reviews'
@@ -9,7 +9,7 @@ import RecentlyViewed from '@/components/shop/RecentlyViewed'
 import { buildProductJsonLd } from '@/lib/json-ld'
 import { getRequestCatalogDb } from '@/lib/tenant-db'
 import { resolveGateForProduct } from '@/lib/vip-access'
-import { localize, localizeOne, resolveBaseSlug } from '@/lib/request-locale'
+import { localize, localizeOne, resolveBaseSlug, alternatesFor, pathInRequestLocale } from '@/lib/request-locale'
 
 interface Props {
   params: Promise<{ slug: string }>
@@ -25,9 +25,15 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const firstImage  = product.images?.[0]
   const imageUrl    = firstImage?.url
 
+  // HU-462 · canónica + hreflang con el slug de cada idioma (solo versiones traducidas).
+  const db = await getRequestCatalogDb()
+  const baseSlug = (product as { _baseSlug?: string | null })._baseSlug ?? product.slug
+  const alternates = await alternatesFor((s) => `/shop/${s}`, { type: 'product', id: product.id, db, baseSlug }).catch(() => undefined)
+
   return {
     title,
     description,
+    alternates,
     openGraph: {
       title,
       description,
@@ -69,6 +75,8 @@ export default async function ProductPage({ params }: Props) {
     getStoreContext().catch(() => null),
   ])
   if (!product) notFound()
+  // HU-462 · una sola URL por idioma: el slug pedido debe ser el de este idioma.
+  if (product.slug && product.slug !== slug) permanentRedirect(await pathInRequestLocale(`/shop/${product.slug}`))
   const storeConfig = ctx?.config ?? null
 
   const related = await getProducts(undefined, db)

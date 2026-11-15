@@ -3,6 +3,7 @@ import { stackServerApp } from './stack'
 import { consoleUrl } from './lib/console-url'
 import { isCrossSiteMutation, generateNonce } from '@merkiai/tenancy/security'
 import { contentSecurityPolicy } from './lib/csp'
+import { resolveLocaleRoute, localizedPath, LOCALE_COOKIE, type LocaleConfig } from './lib/locale-routing'
 
 /**
  * Middleware de Merkiai Web.
@@ -47,6 +48,40 @@ async function getRedirects(baseUrl: string, host: string): Promise<RedirectRule
     // no bloquear la navegación si la API falla
   }
   return []
+}
+
+// ── E28 · HU-462: configuración de idiomas por host (cache en memoria) ─────────
+const localeCache = new Map<string, { value: LocaleConfig; expiresAt: number }>()
+const LOCALES_TTL_MS = 60_000
+const SINGLE: LocaleConfig = { defaultLocale: 'es-CO', locales: ['es-CO'], domains: [] }
+
+async function getLocaleConfig(baseUrl: string, host: string): Promise<LocaleConfig> {
+  const now = Date.now()
+  const cached = localeCache.get(host)
+  if (cached && cached.expiresAt > now) return cached.value
+  try {
+    const res = await fetch(`${baseUrl}/api/locales`, { cache: 'no-store' })
+    if (res.ok) {
+      const d = await res.json()
+      const value: LocaleConfig = {
+        defaultLocale: typeof d.defaultLocale === 'string' ? d.defaultLocale : 'es-CO',
+        locales: Array.isArray(d.locales) && d.locales.length ? d.locales : ['es-CO'],
+        domains: Array.isArray(d.domains) ? d.domains : [],
+      }
+      localeCache.set(host, { value, expiresAt: now + LOCALES_TTL_MS })
+      return value
+    }
+  } catch {
+    // sin configuración → un solo idioma (comportamiento histórico)
+  }
+  return SINGLE
+}
+
+/** Rutas de PÁGINA sujetas a idioma (no API, assets, handler ni archivos). */
+function isLocalizablePage(pathname: string): boolean {
+  if (pathname.startsWith('/api/') || pathname.startsWith('/_next') || pathname.startsWith('/handler')) return false
+  if (pathname === '/maintenance' || pathname === '/servicio-pausado') return false
+  return !/\.[a-z0-9]+$/i.test(pathname)
 }
 
 // ── HU-194: gate de suspensión por tenant (best-effort) ────────────────────────
@@ -126,9 +161,27 @@ function crossSiteBlocked(request: NextRequest): NextResponse | null {
 }
 
 async function route(request: NextRequest, reqHeaders: Headers): Promise<NextResponse> {
-  const { pathname } = request.nextUrl
   const csrf = crossSiteBlocked(request)
   if (csrf) return csrf
+
+  // ── E28 · HU-462: idioma por prefijo / dominio del mercado / elección guardada ──
+  // `pathname` pasa a ser la ruta SIN prefijo; si hubo prefijo se reescribe al final.
+  let pathname = request.nextUrl.pathname
+  let rewriteTo: string | null = null
+  let localeCfg: LocaleConfig = SINGLE
+  let activeLocale: string | null = null
+  const reqHost = request.nextUrl.host.toLowerCase().replace(/:\d+$/, '')
+  if (isLocalizablePage(pathname)) {
+    localeCfg = await getLocaleConfig(`${request.nextUrl.protocol}//${request.nextUrl.host}`, reqHost)
+    const lr = resolveLocaleRoute({
+      pathname, search: request.nextUrl.search, host: reqHost,
+      cookieLocale: request.cookies.get(LOCALE_COOKIE)?.value ?? null, config: localeCfg,
+    })
+    if (lr.kind === 'redirect') return NextResponse.redirect(new URL(lr.location, request.url), lr.status)
+    if (lr.kind === 'rewrite') { pathname = lr.path; rewriteTo = lr.path; activeLocale = lr.locale }
+    else activeLocale = lr.locale
+    if (activeLocale) reqHeaders.set('x-locale', activeLocale)
+  }
 
   // Rutas inmunes al modo mantenimiento
   const bypassMaintenance =
@@ -150,9 +203,10 @@ async function route(request: NextRequest, reqHeaders: Headers): Promise<NextRes
       const from = normPath(pathname)
       const hit = rules.find((r) => r.from_path === from)
       if (hit) {
+        // HU-462 · una regla aplica en cada idioma: el destino conserva el prefijo.
         const target = /^https?:\/\//i.test(hit.to_path)
           ? hit.to_path
-          : new URL(hit.to_path + request.nextUrl.search, request.url).toString()
+          : new URL((activeLocale ? localizedPath(hit.to_path, activeLocale, reqHost, localeCfg) : hit.to_path) + request.nextUrl.search, request.url).toString()
         return NextResponse.redirect(target, hit.status_code === 302 ? 302 : 301)
       }
     }
@@ -217,11 +271,20 @@ async function route(request: NextRequest, reqHeaders: Headers): Promise<NextRes
     const user = await stackServerApp.getUser()
     if (!user) {
       const loginUrl = new URL('/login', request.url)
-      loginUrl.searchParams.set('returnTo', pathname)
+      loginUrl.searchParams.set('returnTo', request.nextUrl.pathname)
       return NextResponse.redirect(loginUrl)
     }
   }
 
+  if (rewriteTo) {
+    // HU-462 · se sirve la ruta sin prefijo con el locale en `x-locale`; la
+    // elección queda en cookie para que los enlaces internos mantengan el idioma.
+    const url = request.nextUrl.clone()
+    url.pathname = rewriteTo
+    const res = NextResponse.rewrite(url, { request: { headers: reqHeaders } })
+    if (activeLocale) res.cookies.set(LOCALE_COOKIE, activeLocale, { path: '/', maxAge: 60 * 60 * 24 * 365, sameSite: 'lax' })
+    return res
+  }
   return NextResponse.next({ request: { headers: reqHeaders } })
 }
 
