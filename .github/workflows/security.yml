@@ -1,0 +1,74 @@
+name: Security
+
+# SSDF (NIST SP 800-218) · PW.7/RV.1/PS.3 — verificación continua de seguridad:
+#   · auditoría de dependencias (vulnerabilidades conocidas en producción)
+#   · escaneo de secretos en el historial
+#   · análisis estático (CodeQL) para JS/TS
+#   · SBOM (inventario de componentes) como artefacto de cada build
+on:
+  push:
+    branches: [test, develop, main]
+  pull_request:
+    branches: [test, develop, main]
+  schedule:
+    - cron: '17 9 * * 1' # semanal (lunes), detecta CVE nuevas sin cambios de código
+
+permissions:
+  contents: read
+
+concurrency:
+  group: security-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  dependencies:
+    name: Auditoría de dependencias
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 9
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      # Falla con vulnerabilidades altas/críticas en dependencias de producción.
+      - run: pnpm audit --prod --audit-level=high
+
+  secrets:
+    name: Escaneo de secretos
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: gitleaks/gitleaks-action@v2
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+  codeql:
+    name: CodeQL (JS/TS)
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      security-events: write
+      actions: read
+    steps:
+      - uses: actions/checkout@v4
+      - uses: github/codeql-action/init@v3
+        with:
+          languages: javascript-typescript
+          queries: security-extended
+      - uses: github/codeql-action/analyze@v3
+
+  sbom:
+    name: SBOM
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: anchore/sbom-action@v0
+        with:
+          format: spdx-json
+          artifact-name: merkiai-sbom.spdx.json

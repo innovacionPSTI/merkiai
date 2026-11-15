@@ -1,0 +1,10 @@
+# ISO 27001 A.8.32 / SOC 2 CC8.1 — cambios a zonas sensibles requieren revisión del responsable.
+# Ajusta el equipo/usuario cuando exista la organización en GitHub.
+/packages/database/supabase/        @parquesoft-ti/seguridad
+/packages/tenancy/                  @parquesoft-ti/seguridad
+/apps/*/src/middleware.ts           @parquesoft-ti/seguridad
+/apps/*/next.config.ts              @parquesoft-ti/seguridad
+/apps/*/src/app/api/webhooks/       @parquesoft-ti/seguridad
+/apps/*/src/app/api/internal/       @parquesoft-ti/seguridad
+/infra/                             @parquesoft-ti/seguridad
+/.github/                           @parquesoft-ti/seguridad

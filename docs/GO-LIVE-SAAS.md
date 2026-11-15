@@ -13,6 +13,7 @@
 - [ ] **Llaves de PayZen** de la tienda de Merkiai (test y producción). Sin ellas no se valida §6.
 - [ ] **CI/CD + E2E** cerrado en verde (`test` → `develop`) — se deja para justo antes del release (decisión del dueño).
 - [ ] `pnpm env:check` en verde (ninguna variable usada sin documentar).
+- [ ] Workflow **Security** en verde (audit, Gitleaks, CodeQL) y **MFA** activo en consola, admin y cuentas de nube/GitHub (`docs/SEGURIDAD-CUMPLIMIENTO.md` §3).
 - [ ] Rama `main` protegida (PR + aprobación + checks), ver `CICD.md` §4.
 
 ## 1. Cuentas y proyectos de PRODUCCIÓN **[OPS]**
