@@ -26,7 +26,7 @@ overrides:
 
 patchedDependencies:
   '@stackframe/stack@2.8.108':
-    hash: 63gru7pnzsiqcipgw6ti4wq25e
+    hash: vcvr456ueh5zmu4m4jhyjih5mu
     path: patches/@stackframe__stack@2.8.108.patch
 
 importers:
@@ -62,7 +62,7 @@ importers:
         version: link:../../packages/ui
       '@stackframe/stack':
         specifier: ^2.7.4
-        version: 2.8.108(patch_hash=63gru7pnzsiqcipgw6ti4wq25e)(@types/react-dom@18.3.7(@types/react@18.3.31))(@types/react@18.3.31)(next@16.4.3(@babel/core@7.29.7)(@opentelemetry/api@1.9.1)(@types/node@20.19.43)(react-dom@19.2.7(react@19.2.7))(react@19.2.7))(react-dom@19.2.7(react@19.2.7))(react@19.2.7)(tailwindcss@3.4.19(tsx@4.23.0))(zod@3.25.76)
+        version: 2.8.108(patch_hash=vcvr456ueh5zmu4m4jhyjih5mu)(@types/react-dom@18.3.7(@types/react@18.3.31))(@types/react@18.3.31)(next@16.4.3(@babel/core@7.29.7)(@opentelemetry/api@1.9.1)(@types/node@20.19.43)(react-dom@19.2.7(react@19.2.7))(react@19.2.7))(react-dom@19.2.7(react@19.2.7))(react@19.2.7)(tailwindcss@3.4.19(tsx@4.23.0))(zod@3.25.76)
       '@supabase/supabase-js':
         specifier: ^2.43.0
         version: 2.110.2
@@ -150,7 +150,7 @@ importers:
         version: link:../../packages/ui
       '@stackframe/stack':
         specifier: ^2.7.4
-        version: 2.8.108(patch_hash=63gru7pnzsiqcipgw6ti4wq25e)(@types/react-dom@18.3.7(@types/react@18.3.31))(@types/react@18.3.31)(next@16.4.3(@babel/core@7.29.7)(@opentelemetry/api@1.9.1)(@types/node@20.19.43)(react-dom@19.2.7(react@19.2.7))(react@19.2.7))(react-dom@19.2.7(react@19.2.7))(react@19.2.7)(zod@4.6.7)
+        version: 2.8.108(patch_hash=vcvr456ueh5zmu4m4jhyjih5mu)(@types/react-dom@18.3.7(@types/react@18.3.31))(@types/react@18.3.31)(next@16.4.3(@babel/core@7.29.7)(@opentelemetry/api@1.9.1)(@types/node@20.19.43)(react-dom@19.2.7(react@19.2.7))(react@19.2.7))(react-dom@19.2.7(react@19.2.7))(react@19.2.7)(zod@4.6.7)
       '@supabase/supabase-js':
         specifier: ^2.43.0
         version: 2.110.2
@@ -214,7 +214,7 @@ importers:
         version: 11.9.0(next@16.4.3(@babel/core@7.29.7)(@opentelemetry/api@1.9.1)(@types/node@20.19.43)(react-dom@19.2.7(react@19.2.7))(react@19.2.7))(react@19.2.7)
       '@stackframe/stack':
         specifier: ^2.7.4
-        version: 2.8.108(patch_hash=63gru7pnzsiqcipgw6ti4wq25e)(@types/react-dom@18.3.7(@types/react@18.3.31))(@types/react@18.3.31)(next@16.4.3(@babel/core@7.29.7)(@opentelemetry/api@1.9.1)(@types/node@20.19.43)(react-dom@19.2.7(react@19.2.7))(react@19.2.7))(react-dom@19.2.7(react@19.2.7))(react@19.2.7)(tailwindcss@3.4.19(tsx@4.23.0))(zod@3.25.76)
+        version: 2.8.108(patch_hash=vcvr456ueh5zmu4m4jhyjih5mu)(@types/react-dom@18.3.7(@types/react@18.3.31))(@types/react@18.3.31)(next@16.4.3(@babel/core@7.29.7)(@opentelemetry/api@1.9.1)(@types/node@20.19.43)(react-dom@19.2.7(react@19.2.7))(react@19.2.7))(react-dom@19.2.7(react@19.2.7))(react@19.2.7)(tailwindcss@3.4.19(tsx@4.23.0))(zod@3.25.76)
       '@supabase/ssr':
         specifier: ^0.4.0
         version: 0.4.1(@supabase/supabase-js@2.110.2)
@@ -7812,7 +7812,7 @@ snapshots:
       - buffer
       - supports-color
 
-  '@stackframe/stack@2.8.108(patch_hash=63gru7pnzsiqcipgw6ti4wq25e)(@types/react-dom@18.3.7(@types/react@18.3.31))(@types/react@18.3.31)(next@16.4.3(@babel/core@7.29.7)(@opentelemetry/api@1.9.1)(@types/node@20.19.43)(react-dom@19.2.7(react@19.2.7))(react@19.2.7))(react-dom@19.2.7(react@19.2.7))(react@19.2.7)(tailwindcss@3.4.19(tsx@4.23.0))(zod@3.25.76)':
+  '@stackframe/stack@2.8.108(patch_hash=vcvr456ueh5zmu4m4jhyjih5mu)(@types/react-dom@18.3.7(@types/react@18.3.31))(@types/react@18.3.31)(next@16.4.3(@babel/core@7.29.7)(@opentelemetry/api@1.9.1)(@types/node@20.19.43)(react-dom@19.2.7(react@19.2.7))(react@19.2.7))(react-dom@19.2.7(react@19.2.7))(react@19.2.7)(tailwindcss@3.4.19(tsx@4.23.0))(zod@3.25.76)':
     dependencies:
       '@ai-sdk/react': 3.0.226(react@19.2.7)(zod@3.25.76)
       '@hookform/resolvers': 5.4.0(react-hook-form@7.81.0(react@19.2.7))
@@ -7851,7 +7851,7 @@ snapshots:
       - tailwindcss
       - zod
 
-  '@stackframe/stack@2.8.108(patch_hash=63gru7pnzsiqcipgw6ti4wq25e)(@types/react-dom@18.3.7(@types/react@18.3.31))(@types/react@18.3.31)(next@16.4.3(@babel/core@7.29.7)(@opentelemetry/api@1.9.1)(@types/node@20.19.43)(react-dom@19.2.7(react@19.2.7))(react@19.2.7))(react-dom@19.2.7(react@19.2.7))(react@19.2.7)(zod@4.6.7)':
+  '@stackframe/stack@2.8.108(patch_hash=vcvr456ueh5zmu4m4jhyjih5mu)(@types/react-dom@18.3.7(@types/react@18.3.31))(@types/react@18.3.31)(next@16.4.3(@babel/core@7.29.7)(@opentelemetry/api@1.9.1)(@types/node@20.19.43)(react-dom@19.2.7(react@19.2.7))(react@19.2.7))(react-dom@19.2.7(react@19.2.7))(react@19.2.7)(zod@4.6.7)':
     dependencies:
       '@ai-sdk/react': 3.0.226(react@19.2.7)(zod@4.6.7)
       '@hookform/resolvers': 5.4.0(react-hook-form@7.81.0(react@19.2.7))
@@ -9100,7 +9100,7 @@ snapshots:
       eslint: 8.57.1
       eslint-import-resolver-node: 0.3.10
       eslint-import-resolver-typescript: 3.10.1(eslint-plugin-import@2.32.0(eslint@8.57.1))(eslint@8.57.1)
-      eslint-plugin-import: 2.32.0(@typescript-eslint/parser@7.2.0(eslint@8.57.1)(typescript@5.9.3))(eslint-import-resolver-typescript@3.10.1(eslint-plugin-import@2.32.0(eslint@8.57.1))(eslint@8.57.1))(eslint@8.57.1)
+      eslint-plugin-import: 2.32.0(@typescript-eslint/parser@7.2.0(eslint@8.57.1)(typescript@5.9.3))(eslint-import-resolver-typescript@3.10.1)(eslint@8.57.1)
       eslint-plugin-jsx-a11y: 6.10.2(eslint@8.57.1)
       eslint-plugin-react: 7.37.5(eslint@8.57.1)
       eslint-plugin-react-hooks: 5.0.0-canary-7118f5dd7-20230705(eslint@8.57.1)
@@ -9130,7 +9130,7 @@ snapshots:
       tinyglobby: 0.2.17
       unrs-resolver: 1.12.2
     optionalDependencies:
-      eslint-plugin-import: 2.32.0(@typescript-eslint/parser@7.2.0(eslint@8.57.1)(typescript@5.9.3))(eslint-import-resolver-typescript@3.10.1(eslint-plugin-import@2.32.0(eslint@8.57.1))(eslint@8.57.1))(eslint@8.57.1)
+      eslint-plugin-import: 2.32.0(@typescript-eslint/parser@7.2.0(eslint@8.57.1)(typescript@5.9.3))(eslint-import-resolver-typescript@3.10.1)(eslint@8.57.1)
     transitivePeerDependencies:
       - supports-color
 
@@ -9145,7 +9145,7 @@ snapshots:
     transitivePeerDependencies:
       - supports-color
 
-  eslint-plugin-import@2.32.0(@typescript-eslint/parser@7.2.0(eslint@8.57.1)(typescript@5.9.3))(eslint-import-resolver-typescript@3.10.1(eslint-plugin-import@2.32.0(eslint@8.57.1))(eslint@8.57.1))(eslint@8.57.1):
+  eslint-plugin-import@2.32.0(@typescript-eslint/parser@7.2.0(eslint@8.57.1)(typescript@5.9.3))(eslint-import-resolver-typescript@3.10.1)(eslint@8.57.1):
     dependencies:
       '@rtsao/scc': 1.1.0
       array-includes: 3.1.9

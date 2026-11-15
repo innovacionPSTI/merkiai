@@ -1,7 +1,8 @@
-diff -ruN a/dist/components/elements/ssr-layout-effect.js b/dist/components/elements/ssr-layout-effect.js
---- a/dist/components/elements/ssr-layout-effect.js	2026-11-14 21:40:41.547004061 -0500
-+++ b/dist/components/elements/ssr-layout-effect.js	2026-11-14 21:40:41.606004061 -0500
-@@ -8,7 +8,17 @@
+diff --git a/dist/components/elements/ssr-layout-effect.js b/dist/components/elements/ssr-layout-effect.js
+index 99773f6..0f11538 100644
+--- a/dist/components/elements/ssr-layout-effect.js
++++ b/dist/components/elements/ssr-layout-effect.js
+@@ -8,7 +8,17 @@ let react_jsx_runtime = require("react/jsx-runtime");
  //#region src/components/elements/ssr-layout-effect.tsx
  function SsrScript(props) {
  	(0, react.useLayoutEffect)(() => {
@@ -20,10 +21,11 @@ diff -ruN a/dist/components/elements/ssr-layout-effect.js b/dist/components/elem
  	}, []);
  	return /* @__PURE__ */ (0, react_jsx_runtime.jsx)("script", {
  		suppressHydrationWarning: true,
-diff -ruN a/dist/esm/components/elements/ssr-layout-effect.js b/dist/esm/components/elements/ssr-layout-effect.js
---- a/dist/esm/components/elements/ssr-layout-effect.js	2026-11-14 21:40:41.546004061 -0500
-+++ b/dist/esm/components/elements/ssr-layout-effect.js	2026-11-14 21:40:41.606004061 -0500
-@@ -6,7 +6,17 @@
+diff --git a/dist/esm/components/elements/ssr-layout-effect.js b/dist/esm/components/elements/ssr-layout-effect.js
+index 1233d79..78a7e7c 100644
+--- a/dist/esm/components/elements/ssr-layout-effect.js
++++ b/dist/esm/components/elements/ssr-layout-effect.js
+@@ -6,7 +6,17 @@ import { jsx } from "react/jsx-runtime";
  //#region src/components/elements/ssr-layout-effect.tsx
  function SsrScript(props) {
  	useLayoutEffect(() => {
