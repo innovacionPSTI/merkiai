@@ -12,6 +12,8 @@ import { toBase } from './uom'
 export const MOVEMENT_TYPES = [
   'purchase', 'production_consume', 'production_output',
   'sale', 'waste', 'adjustment', 'transfer', 'sample', 'return',
+  // E27 · apartado: la reserva baja el disponible sin vender; la liberación lo devuelve.
+  'reserve', 'release',
 ] as const
 export type MovementType = (typeof MOVEMENT_TYPES)[number]
 export type MovementDirection = 'in' | 'out'
@@ -29,11 +31,13 @@ export function defaultDirection(type: MovementType): MovementDirection | null {
     case 'purchase':
     case 'production_output':
     case 'return':
+    case 'release':
       return 'in'
     case 'sale':
     case 'production_consume':
     case 'waste':
     case 'sample':
+    case 'reserve':
       return 'out'
     case 'adjustment':
     case 'transfer':
