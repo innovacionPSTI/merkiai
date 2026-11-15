@@ -46,6 +46,15 @@ cobro mensual de comisiones incluido; falta probar con llaves · 5 🔲.
 
 ---
 
+## Línea de producto · Operaciones · *paralela a las olas de infra, tras el release*
+
+No bloquea la salida a producción. Capacidades de negocio que se ofrecen por plan (opt-in).
+
+- **E27 · Cartera operativa (ADR-010, HU-450…457):** venta a crédito, encargos con anticipo, apartados y consignación sobre el inventario por ubicación. Orden sugerido: HU-450 núcleo → HU-451 plan de pago → HU-452 encargos → HU-454 consignación → HU-453 apartado → HU-455 cobro → HU-456 facturación/reportes → HU-457 POS (con E25).
+- **E25 · POS** (HU-420…427): HU-457 de E27 se integra aquí.
+
+---
+
 ## Ola 2 — Dominios propios y storage a escala · *disparo: clientes con dominio / crece la media*
 
 La mayoría de tiendas usará **dominio propio** → esta ola desbloquea ese caso y el storage agnóstico.

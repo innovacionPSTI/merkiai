@@ -294,12 +294,15 @@ stock único) es **prerequisito del POS**. Ajustes de maduración:
 ## 7. Fuera de alcance (resuelto por integración, no por módulo)
 
 - **Contabilidad general**, cuentas bancarias, **conciliación bancaria**, cuentas
-  por pagar/cobrar contables, nómina.
+  por pagar/cobrar **contables** (plan de cuentas, asientos, causación), nómina.
 - **Facturación electrónica** como motor propio: se **integra** con el sistema que
   el tenant ya use.
-- "Créditos/fiado" y "gastos" permanecen en su **versión operativa mínima** (saldo
-  informativo de cliente ligado al crédito en tienda ya existente; gasto de caja
-  menor), **no** como módulos financieros.
+- ~~"Créditos/fiado" en versión operativa mínima~~ → **enmendado por ADR-010
+  (nov-2026):** la **cartera operativa** (saldos, abonos, cuotas, vencimientos,
+  cupo, estado de cuenta, edades) **entra** como épica **E27** (`13-detalle-e27-cartera.md`),
+  junto con encargos con anticipo, apartados y consignación. Lo contable/fiscal
+  sigue fuera (integración/exportación). "Gastos" sigue en su versión mínima
+  (gasto de caja menor).
 
 ---
 
@@ -464,8 +467,8 @@ stock único) es **prerequisito del POS**. Ajustes de maduración:
 | # | Escenario | Resultado esperado |
 |---|-----------|-------------------|
 | AC-1 | Cotización | Pedido en estado borrador convertible a orden (reusa el modelo de orden) |
-| AC-2 | Apartado | Abonos parciales (reusa el motor de pagos) que **reservan stock** (movimiento de reserva en el ledger) |
-| AC-3 | Caducidad | Reserva con vencimiento configurable que libera el stock si no se completa |
+| AC-2 | Apartado | Abonos parciales (reusa el motor de pagos) que **reservan stock** (movimiento de reserva en el ledger) — **se implementa en E27 · HU-453** (ADR-010) |
+| AC-3 | Caducidad | Reserva con vencimiento configurable que libera el stock si no se completa — **E27 · HU-453** |
 
 ### HU-409 — Reportes, tableros y alertas de operaciones · E24
 
