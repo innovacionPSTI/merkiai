@@ -15,7 +15,7 @@ const SECURITY_HEADERS = [
 ]
 
 const nextConfig: NextConfig = {
-  transpilePackages: ['@merkiai/tenancy', '@merkiai/ui'],
+  transpilePackages: ['@merkiai/tenancy', '@merkiai/ui', '@merkiai/i18n'],
   poweredByHeader: false,
   async headers() {
     return [{ source: '/(.*)', headers: SECURITY_HEADERS }]

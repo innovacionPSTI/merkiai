@@ -12,6 +12,7 @@
     "db:apply": "bash scripts/db-apply.sh",
     "db:apply:platform": "bash scripts/db-apply-platform.sh",
     "env:check": "node scripts/check-env-docs.mjs",
+    "i18n:check": "node scripts/check-i18n.mjs",
     "e2e:provision": "bash scripts/e2e-provision.sh",
     "format": "prettier --write \"**/*.{ts,tsx,md}\"",
     "db:generate": "supabase gen types typescript --local > packages/database/src/types.ts",

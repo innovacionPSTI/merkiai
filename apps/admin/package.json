@@ -15,6 +15,7 @@
   "dependencies": {
     "@hookform/resolvers": "^3.4.2",
     "@merkiai/database": "workspace:*",
+    "@merkiai/i18n": "workspace:*",
     "@merkiai/tenancy": "workspace:*",
     "@merkiai/ui": "workspace:*",
     "@stackframe/stack": "^2.7.4",

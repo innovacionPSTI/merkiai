@@ -4,6 +4,7 @@
  * (sin secretos) y pide el `formToken` para pagar. El estado lo actualiza la IPN.
  */
 import { consoleUrl } from './console-url'
+import { formatDate } from '@merkiai/i18n'
 
 export type SubscriptionStatus = 'trialing' | 'active' | 'past_due' | 'suspended' | 'canceled'
 
@@ -93,7 +94,7 @@ export interface BillingView {
 }
 
 const fmtDate = (iso: string | null) =>
-  iso ? new Intl.DateTimeFormat('es-CO', { dateStyle: 'long', timeZone: 'America/Bogota' }).format(new Date(iso)) : ''
+  iso ? formatDate(iso, { dateStyle: 'long', timeZone: 'America/Bogota' }) : ''
 
 /** Qué decirle al dueño según el estado de su suscripción. PURO. */
 export function billingView(summary: Pick<BillingSummary, 'plan' | 'subscription'>): BillingView {

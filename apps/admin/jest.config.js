@@ -18,6 +18,8 @@ const config = {
     '^@/(.*)$': '<rootDir>/src/$1',
     '^@merkiai/database$': '<rootDir>/../../packages/database/src/index.ts',
     '^@merkiai/ui$': '<rootDir>/../../packages/ui/src/index.ts',
+    '^@merkiai/i18n$': '<rootDir>/../../packages/i18n/src/index.ts',
+    '^@merkiai/i18n/(.*)$': '<rootDir>/../../packages/i18n/src/$1',
   },
   testMatch: ['**/__tests__/**/*.test.{ts,tsx}', '**/*.test.{ts,tsx}'],
   collectCoverageFrom: [

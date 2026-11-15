@@ -2,11 +2,12 @@ import Link from 'next/link'
 import type { Metadata } from 'next'
 import { listBundles } from '@merkiai/database'
 import { getRequestCatalogDb } from '@/lib/tenant-db'
+import { formatMoney } from '@merkiai/i18n'
 
 export const metadata: Metadata = { title: 'Kits y paquetes' }
 export const dynamic = 'force-dynamic'
 
-const fmt = (n: number) => new Intl.NumberFormat('es-CO', { style: 'currency', currency: 'COP', maximumFractionDigits: 0 }).format(n)
+const fmt = (n: number) => formatMoney(n)
 
 /** HU-168 · listado de bundles/kits activos del tenant (RLS filtra a activos). */
 export default async function BundlesPage() {

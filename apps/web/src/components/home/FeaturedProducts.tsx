@@ -5,6 +5,7 @@ import { useCartStore } from '@/store/cart'
 import { useEcommerceEnabled } from '@/components/EcommerceProvider'
 import type { ProductWithVariants } from '@merkiai/database'
 import { getProductOptions, getVariantAttrs, getVariantLabel, swatchColor } from '@/lib/variant-utils'
+import { formatMoney } from '@merkiai/i18n'
 
 interface FeaturedProductsProps {
   products: ProductWithVariants[]
@@ -23,7 +24,7 @@ export default function FeaturedProducts({ products, title = 'Productos Destacad
   const ecommerceEnabled = useEcommerceEnabled() // HU-173 · modo vitrina
 
   const fmt = (n: number) =>
-    new Intl.NumberFormat('es-CO', { style: 'currency', currency: 'COP', maximumFractionDigits: 0 }).format(n)
+    formatMoney(n)
 
   return (
     <section className="bg-brand-cream py-24">

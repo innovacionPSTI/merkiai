@@ -12,8 +12,9 @@
     "./blocks": "./src/blocks/index.ts"
   },
   "dependencies": {
-    "@supabase/supabase-js": "^2.43.0",
-    "@supabase/ssr": "^0.4.0"
+    "@merkiai/i18n": "workspace:*",
+    "@supabase/ssr": "^0.4.0",
+    "@supabase/supabase-js": "^2.43.0"
   },
   "scripts": {
     "test": "jest",

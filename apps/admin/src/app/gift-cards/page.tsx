@@ -5,8 +5,9 @@ import { listGiftCards, getStoreValueReconciliation } from '@merkiai/database'
 import { requireAdminDb } from '@/lib/admin-context'
 import { userCanAccess } from '@/lib/roles'
 import GiftCardsManager from './GiftCardsManager'
+import { formatMoney } from '@merkiai/i18n'
 
-const money = (n: number) => new Intl.NumberFormat('es-CO', { style: 'currency', currency: 'COP', maximumFractionDigits: 0 }).format(n)
+const money = (n: number) => formatMoney(n)
 
 export const metadata: Metadata = { title: 'Gift cards' }
 export const dynamic = 'force-dynamic'

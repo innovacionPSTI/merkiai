@@ -6,6 +6,7 @@
  */
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
+import { formatMoney } from '@merkiai/i18n'
 
 interface PurchaseRow { id: number; reference: string | null; status: string; supplier: string; lines: number; total: number }
 interface Opt { id: number; name: string }
@@ -14,7 +15,7 @@ interface UomOpt { id: number; code: string }
 interface Line { stock_item_id: number | ''; qty: string; uom_id: number | ''; unit_cost: string }
 
 const STATUS_LABEL: Record<string, string> = { draft: 'Borrador', received: 'Recibida', cancelled: 'Cancelada' }
-function money(n: number): string { return new Intl.NumberFormat('es-CO', { style: 'currency', currency: 'COP', maximumFractionDigits: 0 }).format(n) }
+function money(n: number): string { return formatMoney(n) }
 
 export default function PurchasesManager({ initial, suppliers, items, uoms }: { initial: PurchaseRow[]; suppliers: Opt[]; items: ItemOpt[]; uoms: UomOpt[] }) {
   const router = useRouter()

@@ -22,6 +22,7 @@ import { getRequestCatalogDb } from '@/lib/tenant-db'
 import SectionRenderer from '@/components/sections/SectionRenderer'
 import { groupSectionsIntoRows, cellSpanClass, cellResponsiveClasses } from '@/lib/section-rows'
 import PreviewBanner from '@/components/PreviewBanner'
+import { formatDate as i18nFormatDate } from '@merkiai/i18n'
 
 export const dynamic = 'force-dynamic'
 
@@ -59,7 +60,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 
 function formatDate(v: string): string {
   const d = new Date(v)
-  return Number.isNaN(d.getTime()) ? v : d.toLocaleDateString('es', { year: 'numeric', month: 'long', day: 'numeric' })
+  return Number.isNaN(d.getTime()) ? v : i18nFormatDate(d, { year: 'numeric', month: 'long', day: 'numeric' })
 }
 
 export default async function CollectionItemPage({ params }: Props) {

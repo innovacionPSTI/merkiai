@@ -5,6 +5,7 @@ import { getOrdersByCustomer, ensureCustomer } from '@merkiai/database'
 import { getRequestUserDb } from '@/lib/tenant-db'
 import { resolveTenant } from '@/lib/tenant-context';
 import { getMachineDb } from '@/lib/machine-db'
+import { formatMoney, formatDate } from '@merkiai/i18n'
 
 export const metadata: Metadata = { title: 'Mis pedidos' }
 
@@ -16,11 +17,7 @@ const STATUS: Record<string, { label: string; color: string; dot: string }> = {
   cancelled:  { label: 'Cancelado',  color: 'bg-red-50 text-red-600',       dot: 'bg-red-400' },
 }
 
-const COP = new Intl.NumberFormat('es-CO', {
-  style: 'currency',
-  currency: 'COP',
-  maximumFractionDigits: 0,
-})
+const COP = { format: (n: number) => formatMoney(n) }
 
 export default async function PedidosPage() {
   const user = await stackServerApp.getUser()
@@ -97,7 +94,7 @@ export default async function PedidosPage() {
                       {order.order_number}
                     </p>
                     <p className="font-brand text-xs text-brand-primary/40 mt-0.5">
-                      {new Date(order.created_at).toLocaleDateString('es-CO', {
+                      {formatDate(order.created_at, {
                         day: 'numeric',
                         month: 'long',
                         year: 'numeric',

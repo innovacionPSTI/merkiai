@@ -2,6 +2,7 @@ import { PageHeader, PanelCard, EmptyState, StatusBadge, Icon, type BadgeTone } 
 import type { SubscriptionStatus } from '@merkiai/tenancy'
 import { listSubscriptionsOverview } from '@/lib/billing-runtime'
 import { formatMoney } from '@/lib/billing-email'
+import { formatDate } from '@merkiai/i18n'
 
 export const dynamic = 'force-dynamic'
 
@@ -14,7 +15,7 @@ const STATUS: Record<SubscriptionStatus, { label: string; tone: BadgeTone }> = {
 }
 
 const fmtDate = (iso: string | null) =>
-  iso ? new Intl.DateTimeFormat('es-CO', { dateStyle: 'medium', timeZone: 'America/Bogota' }).format(new Date(iso)) : '—'
+  iso ? formatDate(iso, { dateStyle: 'medium', timeZone: 'America/Bogota' }) : '—'
 
 export default async function SuscripcionesPage() {
   const rows = await listSubscriptionsOverview()

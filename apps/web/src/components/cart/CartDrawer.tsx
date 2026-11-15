@@ -3,6 +3,7 @@
 import { useEffect } from 'react'
 import Link from 'next/link'
 import { useCartStore } from '@/store/cart'
+import { formatMoney } from '@merkiai/i18n'
 
 interface CartDrawerProps {
   open: boolean
@@ -26,7 +27,7 @@ export default function CartDrawer({ open, onClose }: CartDrawerProps) {
   }, [open])
 
   const fmt = (n: number) =>
-    new Intl.NumberFormat('es-CO', { style: 'currency', currency: 'COP', maximumFractionDigits: 0 }).format(n)
+    formatMoney(n)
 
   return (
     <>

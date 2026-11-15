@@ -7,9 +7,10 @@
 import { useEffect, useState } from 'react'
 import Link from 'next/link'
 import { useWishlistStore } from '@/store/wishlist'
+import { formatMoney } from '@merkiai/i18n'
 
 const fmt = (n: number) =>
-  new Intl.NumberFormat('es-CO', { style: 'currency', currency: 'COP', maximumFractionDigits: 0 }).format(n)
+  formatMoney(n)
 
 export default function WishlistPage() {
   const items = useWishlistStore((s) => s.items)

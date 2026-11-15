@@ -16,10 +16,11 @@ import {
 } from '@merkiai/database'
 import { withInternalAuth } from '@/lib/internal-route'
 import { getAdminDb } from '@/lib/admin-db'
+import { formatMoney } from '@merkiai/i18n'
 
 export const dynamic = 'force-dynamic'
 
-const money = (n: number) => new Intl.NumberFormat('es-CO', { style: 'currency', currency: 'COP', maximumFractionDigits: 0 }).format(n)
+const money = (n: number) => formatMoney(n)
 const esc = (s: string) => s.replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c] as string)
 
 export const POST = withInternalAuth(async () => {

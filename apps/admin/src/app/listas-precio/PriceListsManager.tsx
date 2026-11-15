@@ -7,6 +7,7 @@
  * del precio efectivo en la venta queda pendiente (coordinada con el checkout).
  */
 import { useState } from 'react'
+import { formatMoney } from '@merkiai/i18n'
 
 interface PriceList { id: number; key: string; name: string; scope_type: string; scope_value: string | null; priority: number; active: boolean }
 interface ProductRef { id: number; name: string; base_price: number | null }
@@ -14,7 +15,7 @@ interface Item { id: number; product_id: number | null; variant_id: number | nul
 
 const SCOPE_LABEL: Record<string, string> = { generic: 'Genérica', channel: 'Canal', location: 'Sede', segment: 'Segmento' }
 function money(n: number): string {
-  return new Intl.NumberFormat('es-CO', { style: 'currency', currency: 'COP', maximumFractionDigits: 0 }).format(n)
+  return formatMoney(n)
 }
 
 export default function PriceListsManager({ lists: initialLists, products }: { lists: PriceList[]; products: ProductRef[] }) {

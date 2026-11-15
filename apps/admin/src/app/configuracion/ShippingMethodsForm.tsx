@@ -14,6 +14,7 @@ import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import IntegrationInstancesForm from './IntegrationInstancesForm'
 import type { MaskedInstance, PublicProviderDef } from '@/lib/mask-instance'
+import { formatMoney } from '@merkiai/i18n'
 
 interface Props {
   provider: 'fixed' | 'skydropx'
@@ -24,7 +25,7 @@ interface Props {
 }
 
 const fmt = (n: number) =>
-  new Intl.NumberFormat('es-CO', { style: 'currency', currency: 'COP', maximumFractionDigits: 0 }).format(n)
+  formatMoney(n)
 
 export default function ShippingMethodsForm({ provider, fixedRate, instances, providers, storeBaseUrl }: Props) {
   const router = useRouter()

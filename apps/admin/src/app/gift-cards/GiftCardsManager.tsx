@@ -2,10 +2,11 @@
 
 import { useState } from 'react'
 import { Icon } from '@merkiai/ui'
+import { formatMoney } from '@merkiai/i18n'
 
 interface GiftCard { id: number; code: string; initial_balance: number; balance: number; active: boolean; note: string | null; expires_at: string | null }
 
-const money = (n: number) => new Intl.NumberFormat('es-CO', { style: 'currency', currency: 'COP', maximumFractionDigits: 0 }).format(n)
+const money = (n: number) => formatMoney(n)
 
 export default function GiftCardsManager({ initial }: { initial: GiftCard[] }) {
   const [cards, setCards] = useState<GiftCard[]>(initial)

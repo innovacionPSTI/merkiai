@@ -4,12 +4,13 @@ import Link from 'next/link'
 import { useState, useTransition } from 'react'
 import { useRouter } from 'next/navigation'
 import { createPartyAction, updatePartyAction, createConsigneeLocationAction, type ActionResult } from '../actions'
+import { formatMoney } from '@merkiai/i18n'
 
 interface PartyRow {
   id: string; name: string; email: string | null; phone: string | null; role: 'customer' | 'consignee'
   credit_limit: number | null; default_terms_days: number | null; balance: number; consigneeLocation: string | null
 }
-const money = (n: number) => new Intl.NumberFormat('es-CO', { style: 'currency', currency: 'COP', maximumFractionDigits: 0 }).format(n || 0)
+const money = (n: number) => formatMoney(n || 0)
 const input = 'rounded-xl border border-brand-primary/20 px-3 py-2 font-brand text-sm focus:border-brand-primary focus:outline-none'
 const num = (v: string) => (v.trim() === '' ? null : Math.max(0, Number(v.replace(/[.\s$]/g, ''))))
 

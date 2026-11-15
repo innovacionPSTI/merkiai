@@ -18,6 +18,8 @@ const config = {
     '^@/(.*)$': '<rootDir>/src/$1',
     '^@merkiai/database$': '<rootDir>/../../packages/database/src/index.ts',
     '^@merkiai/ui$': '<rootDir>/../../packages/ui/src/index.ts',
+    '^@merkiai/i18n$': '<rootDir>/../../packages/i18n/src/index.ts',
+    '^@merkiai/i18n/(.*)$': '<rootDir>/../../packages/i18n/src/$1',
     // Dependencias ESM puras sin babel-jest → stub CJS genérico
     // (se cargan transitivamente vía @stackframe/stack, nunca se ejecutan en tests)
     '^jose(/.*)?$': '<rootDir>/__mocks__/esm-stub.js',

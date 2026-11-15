@@ -3,6 +3,7 @@
 import { useState, useTransition } from 'react'
 import type { ShippingConfig } from '@merkiai/database'
 import { SearchableSelect, DEPARTMENTS, getCitiesForDepartment } from '@merkiai/ui'
+import { formatMoney } from '@merkiai/i18n'
 
 interface Props {
   initialConfig: ShippingConfig | null
@@ -49,7 +50,7 @@ export default function ShippingConfigForm({ initialConfig }: Props) {
   const [errorMsg, setErrorMsg] = useState('')
   const [, startTransition]     = useTransition()
 
-  const fmt = (n: number) => new Intl.NumberFormat('es-CO', { style: 'currency', currency: 'COP', maximumFractionDigits: 0 }).format(n)
+  const fmt = (n: number) => formatMoney(n)
 
   async function handleSave() {
     setStatus('saving'); setErrorMsg('')

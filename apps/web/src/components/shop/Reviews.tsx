@@ -7,6 +7,7 @@
  */
 import { useState } from 'react'
 import type { ProductReview, ReviewStats } from '@merkiai/database'
+import { formatDate } from '@merkiai/i18n'
 
 const PAGE = 5
 
@@ -109,7 +110,7 @@ export default function Reviews({ productId, stats, initialReviews, total = init
     } finally { setSending(false) }
   }
 
-  const fmtDate = (s: string) => new Intl.DateTimeFormat('es-CO', { dateStyle: 'medium' }).format(new Date(s))
+  const fmtDate = (s: string) => formatDate(s, { dateStyle: 'medium' })
 
   return (
     <section className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8 py-10 border-t border-brand-primary/10">

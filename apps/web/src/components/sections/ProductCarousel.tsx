@@ -15,9 +15,10 @@ import {
   type SectionLike,
 } from '@merkiai/database'
 import { getRequestCatalogDb } from '@/lib/tenant-db'
+import { formatMoney } from '@merkiai/i18n'
 
 const fmt = (n: number) =>
-  new Intl.NumberFormat('es-CO', { style: 'currency', currency: 'COP', maximumFractionDigits: 0 }).format(n)
+  formatMoney(n)
 
 export default async function ProductCarousel({
   section,

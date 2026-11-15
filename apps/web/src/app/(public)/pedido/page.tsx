@@ -6,10 +6,11 @@
  * server-side en `/api/orders/lookup`). No revela información si no coinciden.
  */
 import { useState } from 'react'
+import { formatMoney, formatDate } from '@merkiai/i18n'
 
 const fmt = (n: number) =>
-  new Intl.NumberFormat('es-CO', { style: 'currency', currency: 'COP', maximumFractionDigits: 0 }).format(n)
-const fmtDate = (s: string) => new Date(s).toLocaleDateString('es-CO', { day: 'numeric', month: 'long', year: 'numeric' })
+  formatMoney(n)
+const fmtDate = (s: string) => formatDate(s, { day: 'numeric', month: 'long', year: 'numeric' })
 
 const STATUS_LABEL: Record<string, string> = {
   pending: 'Pendiente', processing: 'En preparación', shipped: 'En camino',

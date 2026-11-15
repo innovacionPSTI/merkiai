@@ -4,6 +4,7 @@ import { PageHeader } from '@merkiai/ui'
 import { getAdminUser } from '@/lib/auth'
 import { billingView, canManageBilling, getBillingSummary, FEE_STATUS_LABEL, type BillingTone } from '@/lib/billing'
 import PayzenCheckout from './PayzenCheckout'
+import { formatMoney, formatDate } from '@merkiai/i18n'
 
 export const metadata: Metadata = { title: 'Plan y facturación' }
 export const dynamic = 'force-dynamic'
@@ -16,9 +17,9 @@ const TONE: Record<BillingTone, string> = {
 }
 
 const money = (cents: number, currency: string) =>
-  new Intl.NumberFormat('es-CO', { style: 'currency', currency, maximumFractionDigits: 0 }).format(cents / 100)
+  formatMoney(cents / 100, { currency })
 const date = (iso: string) =>
-  new Intl.DateTimeFormat('es-CO', { dateStyle: 'medium', timeZone: 'America/Bogota' }).format(new Date(iso))
+  formatDate(iso, { dateStyle: 'medium', timeZone: 'America/Bogota' })
 
 export default async function FacturacionPage({ searchParams }: { searchParams: Promise<{ pago?: string }> }) {
   const adminUser = await getAdminUser()

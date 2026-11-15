@@ -2,6 +2,7 @@ import { requireAdminDb } from '@/lib/admin-context'
 import { notFound } from 'next/navigation'
 import Link from 'next/link'
 import type { Metadata } from 'next'
+import { formatMoney, formatDate } from '@merkiai/i18n'
 
 export const dynamic = 'force-dynamic'
 
@@ -50,14 +51,10 @@ export default async function ClienteDetailPage({
   if (!customer && (!orders || orders.length === 0)) notFound()
 
   const fmt = (n: number) =>
-    new Intl.NumberFormat('es-CO', {
-      style: 'currency',
-      currency: 'COP',
-      maximumFractionDigits: 0,
-    }).format(n)
+    formatMoney(n)
 
   const fmtDate = (iso: string) =>
-    new Date(iso).toLocaleDateString('es-CO', {
+    formatDate(iso, {
       day: '2-digit',
       month: 'short',
       year: 'numeric',

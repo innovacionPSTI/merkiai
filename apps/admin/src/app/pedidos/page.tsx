@@ -5,6 +5,7 @@ import type { Metadata } from 'next'
 import { PageHeader, Pagination } from '@merkiai/ui'
 import PickupModal from '@/components/pedidos/PickupModal'
 import PedidosSearch from './PedidosSearch'
+import { formatMoney, formatDate } from '@merkiai/i18n'
 
 export const metadata: Metadata = { title: 'Pedidos' }
 export const dynamic = 'force-dynamic'
@@ -63,7 +64,7 @@ export default async function PedidosAdminPage({
     .limit(100)
 
   const fmt = (n: number) =>
-    new Intl.NumberFormat('es-CO', { style: 'currency', currency: 'COP', maximumFractionDigits: 0 }).format(n)
+    formatMoney(n)
 
   // Construye URL para los filtros conservando los demás params
   function filterHref(params: Record<string, string | undefined>) {
@@ -141,7 +142,7 @@ export default async function PedidosAdminPage({
                       <p className="font-brand text-xs text-brand-primary/40">{order.customer_email}</p>
                     </td>
                     <td className="px-4 py-3 font-brand text-sm text-brand-primary/50">
-                      {new Date(order.created_at).toLocaleDateString('es-CO')}
+                      {formatDate(order.created_at)}
                     </td>
                     <td className="px-4 py-3 font-brand font-bold text-brand-primary text-sm">
                       {fmt(order.total)}

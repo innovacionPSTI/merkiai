@@ -16,6 +16,7 @@ export type { EmailConfig } from '@merkiai/database'
 export { sendShippingNotification, sendStatusNotification } from '@merkiai/database'
 
 import type { EmailConfig } from '@merkiai/database'
+import { formatMoney } from '@merkiai/i18n'
 
 // ── sendEmail helper (privado — solo para funciones web-only) ────────────────
 
@@ -42,11 +43,7 @@ async function sendEmail(
 // ── Helpers de plantilla (privados — solo usados en funciones web-only) ──────
 
 function formatCOP(amount: number): string {
-  return new Intl.NumberFormat('es-CO', {
-    style: 'currency',
-    currency: 'COP',
-    maximumFractionDigits: 0,
-  }).format(amount)
+  return formatMoney(amount)
 }
 
 /** Hardening (XSS en correos): escapa datos de cliente/comerciante antes de insertarlos en HTML. */

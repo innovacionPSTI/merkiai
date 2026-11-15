@@ -6,6 +6,7 @@ import { getOrderById } from '@merkiai/database'
 import type { OrderItem } from '@merkiai/database'
 import { getRequestUserDb } from '@/lib/tenant-db'
 import ReorderButton from '@/components/account/ReorderButton'
+import { formatMoney, formatDate } from '@merkiai/i18n'
 
 export const metadata: Metadata = { title: 'Detalle del pedido' }
 export const dynamic = 'force-dynamic'
@@ -34,14 +35,10 @@ function statusIndex(s: string): number {
   return STATUS_STEPS.findIndex((step) => step.key === s)
 }
 
-const COP = new Intl.NumberFormat('es-CO', {
-  style: 'currency',
-  currency: 'COP',
-  maximumFractionDigits: 0,
-})
+const COP = { format: (n: number) => formatMoney(n) }
 
 function fmt(date: string) {
-  return new Date(date).toLocaleDateString('es-CO', {
+  return formatDate(date, {
     day: 'numeric', month: 'long', year: 'numeric',
   })
 }

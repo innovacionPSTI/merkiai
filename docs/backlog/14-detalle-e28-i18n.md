@@ -1,6 +1,6 @@
 # Detalle · E28 — Internacionalización y mercados (idiomas, regiones, moneda)
 
-> **Épica:** **E28 · Internacionalización y mercados** (HU-460…468). **Diseño:** **ADR-011**. **Estado:** 🔲 planteada (nov-2026).
+> **Épica:** **E28 · Internacionalización y mercados** (HU-460…468). **Diseño:** **ADR-011**. **Estado:** 🟡 en curso — HU-460 ✅ (v272).
 > **Absorbe:** HU-114a → HU-463 · HU-114b → HU-462 · HU-114c → HU-464 (E2).
 > **Construye sobre:** listas de precio (HU-407), multi-dominio (HU-279), schema de bloques del Constructor, correos idempotentes (HU-162), entitlements (ADR-002), middleware con tenant + CSP (v270), IA (HU-118).
 >
@@ -14,7 +14,7 @@
 
 > Como equipo de producto, quiero una base común de internacionalización para las tres apps, para que agregar un idioma sea agregar un archivo y no tocar código.
 
-**Talla:** M · **Módulo:** `packages/i18n` (next-intl, catálogos ICU por idioma base + sobrescrituras regionales, espacios `common/web/admin/console/email`), `packages/i18n/format` (`formatMoney`, `formatDate`, `formatNumber`, `formatRelative`), script `pnpm i18n:check` en CI. **Estado:** 🔲
+**Talla:** M · **Módulo:** `packages/i18n` (next-intl, catálogos ICU por idioma base + sobrescrituras regionales, espacios `common/web/admin/console/email`), `packages/i18n/format` (`formatMoney`, `formatDate`, `formatNumber`, `formatRelative`), script `pnpm i18n:check` en CI. **Estado:** ✅ en código (v272): paquete `@merkiai/i18n` sin dependencias externas (resolución en cascada + formateador ICU propio compatible con next-intl: interpolación, `plural` con `=N`/`#`, `select`, `number`, escapes); catálogos `es` (referencia), `en`, y regionales `es-CO`/`es-MX`/`es-ES`/`en-US` solo con diferencias; `matchAcceptLanguage` (solo sugerir); formateadores `formatMoney`/`formatMoneyCents`/`formatNumber`/`formatPercent`/`formatDate`/`formatDateTime`/`formatRelative` (default es-CO + COP = salida idéntica a la previa); **los ~88 formateos sueltos de web, admin, consola, database y ui migrados**; guard `scripts/check-i18n.mjs` en CI. La integración en componentes (proveedor/`useT`) llega con HU-462/465/466.
 
 | # | Escenario | Resultado |
 |---|-----------|-----------|

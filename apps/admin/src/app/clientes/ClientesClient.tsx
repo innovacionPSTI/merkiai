@@ -4,6 +4,7 @@ import { useState, useMemo } from 'react'
 import Link from 'next/link'
 import { PageHeader } from '@merkiai/ui'
 import CsvImportModal from '@/components/CsvImportModal'
+import { formatMoney, formatDate as i18nFormatDate } from '@merkiai/i18n'
 
 export type ClientType = 'con_cuenta' | 'sin_cuenta'
 
@@ -44,16 +45,12 @@ export default function ClientesClient({ clients }: Props) {
   const sinCuenta = clients.filter((c) => c.type === 'sin_cuenta').length
 
   function formatCOP(cents: number) {
-    return new Intl.NumberFormat('es-CO', {
-      style: 'currency',
-      currency: 'COP',
-      maximumFractionDigits: 0,
-    }).format(cents)
+    return formatMoney(cents)
   }
 
   function formatDate(iso: string | null) {
     if (!iso) return '—'
-    return new Date(iso).toLocaleDateString('es-CO', {
+    return i18nFormatDate(iso, {
       day: '2-digit',
       month: 'short',
       year: 'numeric',

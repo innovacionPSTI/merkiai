@@ -7,6 +7,7 @@
  */
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
+import { formatNumber } from '@merkiai/i18n'
 
 interface Row {
   id: number; key: string; name: string; item_class: string
@@ -20,7 +21,7 @@ const CLASS_LABEL: Record<string, string> = {
 }
 
 function fmt(n: number): string {
-  return new Intl.NumberFormat('es-CO', { maximumFractionDigits: 3 }).format(n)
+  return formatNumber(n, { maximumFractionDigits: 3 })
 }
 
 export default function InventoryManager({ initial, uoms }: { initial: Row[]; uoms: UomOpt[] }) {

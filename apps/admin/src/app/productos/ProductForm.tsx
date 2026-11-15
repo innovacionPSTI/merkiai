@@ -6,6 +6,7 @@ import ImageUpload from '@/components/ImageUpload'
 import { Icon } from '@merkiai/ui'
 import type { VariantType } from '@merkiai/database'
 import { useDragReorder } from '@/lib/useDragReorder'
+import { formatNumber } from '@merkiai/i18n'
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
 
@@ -307,7 +308,7 @@ export default function ProductForm({ product, categories, variantTypes }: Props
 
   const fmt = (n: string) => {
     const num = Number(n)
-    return isNaN(num) ? '' : new Intl.NumberFormat('es-CO').format(num)
+    return isNaN(num) ? '' : formatNumber(num)
   }
 
   // ── Render ─────────────────────────────────────────────────────────────────

@@ -6,6 +6,7 @@
  */
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
+import { formatDateTime } from '@merkiai/i18n'
 
 interface Row { id: number; from: string; to: string; qty: number; shipped_at: string | null }
 
@@ -38,7 +39,7 @@ export default function TransferInbox({ transfers }: { transfers: Row[] }) {
             <tr key={t.id} className="border-t border-gray-100">
               <td className="py-2 text-brand-primary">{t.from} → {t.to}</td>
               <td className="py-2 text-right tabular-nums text-brand-primary/70">{t.qty}</td>
-              <td className="py-2 text-brand-primary/60">{t.shipped_at ? new Date(t.shipped_at).toLocaleString('es-CO') : '—'}</td>
+              <td className="py-2 text-brand-primary/60">{t.shipped_at ? formatDateTime(t.shipped_at) : '—'}</td>
               <td className="py-2 text-right">
                 <div className="flex gap-2 justify-end">
                   <button onClick={() => act(t.id, 'receive')} disabled={busy === t.id} className="font-brand text-xs text-green-700 underline disabled:opacity-50">Recibir</button>

@@ -30,6 +30,7 @@ import TestimonialsSection from '@/components/sections/TestimonialsSection'
 import ProductCarousel from '@/components/sections/ProductCarousel'
 import CollectionList from '@/components/sections/CollectionList'
 import PartialRef from '@/components/sections/PartialRef'
+import { formatDate } from '@merkiai/i18n'
 
 export type HomeData = Awaited<ReturnType<typeof getWebHomeData>>
 export type HomeSection = HomeData['homeSections'][number]
@@ -142,7 +143,7 @@ function BlogPreviewBlock({ data }: BlockProps) {
             {posts.map((post) => (
               <article key={post.id} className="border-b border-brand-primary/15 pb-6 last:border-0">
                 <p className="font-brand text-xs text-brand-primary/40 mb-1">
-                  {post.published_at ? new Date(post.published_at).toLocaleDateString('es-CO', { day: 'numeric', month: 'long', year: 'numeric' }) : ''}
+                  {post.published_at ? formatDate(post.published_at, { day: 'numeric', month: 'long', year: 'numeric' }) : ''}
                 </p>
                 <h3 className="font-brand font-semibold text-brand-primary text-lg mb-2">{post.title}</h3>
                 {post.excerpt && <p className="font-brand text-sm text-brand-primary/60 mb-3 line-clamp-2">{post.excerpt}</p>}

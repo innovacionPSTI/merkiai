@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react'
 import Link from 'next/link'
 import { useRecentlyViewedStore, type RecentItem } from '@/store/recentlyViewed'
+import { formatMoney } from '@merkiai/i18n'
 
 /**
  * HU-286 · "Vistos recientemente". Registra el producto actual al montar y
@@ -28,7 +29,7 @@ export default function RecentlyViewed({ current }: { current: RecentItem }) {
   if (others.length === 0) return null
 
   const fmt = (n: number) =>
-    new Intl.NumberFormat('es-CO', { style: 'currency', currency: 'COP', maximumFractionDigits: 0 }).format(n)
+    formatMoney(n)
 
   return (
     <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pb-16">

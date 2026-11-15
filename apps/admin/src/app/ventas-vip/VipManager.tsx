@@ -2,6 +2,7 @@
 
 import { useState } from 'react'
 import { Icon } from '@merkiai/ui'
+import { formatMoney, formatDateTime } from '@merkiai/i18n'
 
 interface SegmentRules { min_orders?: number; min_total?: number; within_days?: number }
 interface Segment { id: number; name: string; type: 'manual' | 'rules'; rules: SegmentRules; member_count?: number }
@@ -332,14 +333,14 @@ function Campanas({ initial, segments, products, categories }: { initial: Campai
         {rows.map((c) => {
           const eff = effectiveStatus(c)
           const pct = (n: number) => `${Math.round(n * 100)}%`
-          const money = (n: number) => new Intl.NumberFormat('es-CO', { style: 'currency', currency: 'COP', maximumFractionDigits: 0 }).format(n)
+          const money = (n: number) => formatMoney(n)
           return (
             <div key={c.id} className="bg-white rounded-2xl shadow-sm">
               <div className="px-5 py-4 flex flex-wrap items-center gap-3">
                 <div className="flex-1 min-w-[200px]">
                   <p className="font-brand font-semibold text-brand-primary">{c.name}</p>
                   <p className="font-brand text-xs text-brand-primary/40">
-                    {new Date(c.starts_at).toLocaleString('es-CO')} → {new Date(c.ends_at).toLocaleString('es-CO')}
+                    {formatDateTime(c.starts_at)} → {formatDateTime(c.ends_at)}
                     {c.offer_percent != null ? ` · -${c.offer_percent}%` : ''}{c.quota != null ? ` · cupo ${c.quota}` : ''}
                   </p>
                 </div>

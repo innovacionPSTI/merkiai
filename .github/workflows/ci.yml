@@ -34,6 +34,9 @@ jobs:
       - name: Guard de variables de entorno (HU-364)
         run: node scripts/check-env-docs.mjs
 
+      - name: Guard de traducciones (HU-460)
+        run: node scripts/check-i18n.mjs
+
       - name: Type-check
         run: pnpm turbo run type-check
 

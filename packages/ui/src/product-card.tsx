@@ -1,5 +1,6 @@
 import * as React from 'react'
 import { cn } from './cn'
+import { formatMoney } from '@merkiai/i18n'
 
 interface ProductCardProps {
   name: string
@@ -22,11 +23,7 @@ export function ProductCard({
   className,
   onAddToCart,
 }: ProductCardProps) {
-  const formattedPrice = new Intl.NumberFormat('es-CO', {
-    style: 'currency',
-    currency: 'COP',
-    maximumFractionDigits: 0,
-  }).format(price)
+  const formattedPrice = formatMoney(price)
 
   return (
     <div

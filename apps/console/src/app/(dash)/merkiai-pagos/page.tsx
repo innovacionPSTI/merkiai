@@ -4,6 +4,7 @@ import { listAccountsOverview, listPlanFeeTerms } from '@/lib/merkiai-pagos'
 import { listRecentFeeInvoices, type FeeInvoiceStatus } from '@/lib/fee-collection'
 import { formatMoney } from '@/lib/billing-email'
 import { PlanFeeForm, AccountForm } from './forms'
+import { formatNumber } from '@merkiai/i18n'
 
 export const dynamic = 'force-dynamic'
 
@@ -19,7 +20,7 @@ const INVOICE: Record<FeeInvoiceStatus, { label: string; tone: BadgeTone }> = {
   failed: { label: 'Rechazada', tone: 'danger' },
   waived: { label: 'Sin valor', tone: 'neutral' },
 }
-const pct = (n: number) => `${n.toLocaleString('es-CO', { maximumFractionDigits: 3 })} %`
+const pct = (n: number) => `${formatNumber(n, { maximumFractionDigits: 3 })} %`
 
 export default async function MerkiaiPagosPage() {
   const db = platformDb()

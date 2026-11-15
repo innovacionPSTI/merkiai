@@ -11,6 +11,7 @@ import ShareButton from './ShareButton'
 import ShippingEstimator from './ShippingEstimator'
 import BackInStock from './BackInStock'
 import VipCountdown from './VipCountdown'
+import { formatMoney } from '@merkiai/i18n'
 
 interface Props {
   product: ProductWithVariants
@@ -83,7 +84,7 @@ export default function ProductDetail({ product, related, trustBadges = [], layo
   const ecommerceEnabled = useEcommerceEnabled() // HU-173 · modo vitrina oculta la compra
 
   const fmt = (n: number) =>
-    new Intl.NumberFormat('es-CO', { style: 'currency', currency: 'COP', maximumFractionDigits: 0 }).format(n)
+    formatMoney(n)
 
   // Values for each option, in the order they first appear across active variants
   const optionValues = useMemo<Record<string, string[]>>(() => {

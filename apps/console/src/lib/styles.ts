@@ -1,4 +1,5 @@
 import type { CSSProperties } from 'react'
+import { formatMoney } from '@merkiai/i18n'
 
 // Retintado a tokens --ui-* (HU-240). Se resuelven dentro de .mk-shell.
 // Pendiente: migrar estas pantallas al kit (DataTable/Field/btn) en HU-244 y retirar este módulo.
@@ -11,4 +12,4 @@ export const mono: CSSProperties = { fontFamily: 'monospace', fontSize: 12, whit
 export const scroll: CSSProperties = { overflowX: 'auto' }
 
 export const money = (cents: number, currency: string) =>
-  new Intl.NumberFormat('es-CO', { style: 'currency', currency, maximumFractionDigits: 0 }).format(cents / 100)
+  formatMoney(cents / 100, { currency })

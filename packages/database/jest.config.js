@@ -6,6 +6,8 @@ const config = {
   setupFilesAfterEnv: ['<rootDir>/jest.setup.ts'],
   moduleNameMapper: {
     '^@merkiai/database$': '<rootDir>/src/index.ts',
+    '^@merkiai/i18n$': '<rootDir>/../i18n/src/index.ts',
+    '^@merkiai/i18n/(.*)$': '<rootDir>/../i18n/src/$1',
   },
   testMatch: ['**/__tests__/**/*.test.ts', '**/*.test.ts'],
   collectCoverageFrom: [

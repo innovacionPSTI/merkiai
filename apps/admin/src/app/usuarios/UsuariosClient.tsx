@@ -4,6 +4,7 @@ import { useState } from 'react'
 import { PageHeader, Icon } from '@merkiai/ui'
 import { ASSIGNABLE_ROLES, ROLE_LABELS } from '@/lib/roles'
 import type { AssignableRole } from '@/lib/roles'
+import { formatDate } from '@merkiai/i18n'
 
 interface UserProfile {
   id: string
@@ -279,7 +280,7 @@ export default function UsuariosClient({ users: initialUsers, currentUserEmail }
                     </td>
                     <td className="px-6 py-4">
                       <span className="font-brand text-sm text-brand-primary/40">
-                        {new Date(u.created_at).toLocaleDateString('es-CO', {
+                        {formatDate(u.created_at, {
                           day: '2-digit',
                           month: 'short',
                           year: 'numeric',

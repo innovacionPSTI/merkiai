@@ -6,6 +6,7 @@ import { useCartStore } from '@/store/cart'
 import type { ShippingRate } from '@/lib/shipping/types'
 import SearchableSelect from '@/components/ui/SearchableSelect'
 import { DEPARTMENTS, getCitiesForDepartment } from '@merkiai/ui'
+import { formatMoney } from '@merkiai/i18n'
 
 type Step = 1 | 2 | 3
 
@@ -50,7 +51,7 @@ const FALLBACK_GATEWAYS: GatewayOption[] = [
 ]
 
 const fmt = (n: number) =>
-  new Intl.NumberFormat('es-CO', { style: 'currency', currency: 'COP', maximumFractionDigits: 0 }).format(n)
+  formatMoney(n)
 
 function addressToShipping(addr: SavedAddress): ShippingInfo {
   const parts = addr.full_name.trim().split(/\s+/)

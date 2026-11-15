@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useTransition } from 'react'
+import { formatNumber } from '@merkiai/i18n'
 
 interface Props {
   initialTerms: string | null
@@ -100,7 +101,7 @@ export default function LegalConfigForm({ initialTerms, initialPrivacy }: Props)
 
       {/* Contador */}
       <p className="font-brand text-xs text-brand-primary/30 text-right">
-        {currentValue.length.toLocaleString()} caracteres
+        {formatNumber(currentValue.length)} caracteres
       </p>
 
       {/* Acciones */}

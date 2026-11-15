@@ -3,6 +3,7 @@ import Link from 'next/link'
 import type { Metadata } from 'next'
 import { PageHeader, Icon } from '@merkiai/ui'
 import CsvImportModal from '@/components/CsvImportModal'
+import { formatDate } from '@merkiai/i18n'
 
 export const metadata: Metadata = { title: 'Blog' }
 export const dynamic = 'force-dynamic'
@@ -64,7 +65,7 @@ export default async function BlogAdminPage() {
                   </td>
                   <td className="px-6 py-3 font-brand text-sm text-brand-primary/60 capitalize">{post.category ?? '—'}</td>
                   <td className="px-6 py-3 font-brand text-sm text-brand-primary/50">
-                    {post.published_at ? new Date(post.published_at).toLocaleDateString('es-CO') : '—'}
+                    {post.published_at ? formatDate(post.published_at) : '—'}
                   </td>
                   <td className="px-6 py-3">
                     <span className={`font-brand text-xs font-semibold rounded-full px-3 py-1 ${post.published ? 'bg-green-100 text-green-600' : 'bg-gray-100 text-gray-500'}`}>

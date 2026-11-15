@@ -2,11 +2,12 @@ import type { Metadata } from 'next'
 import { verifyReceivableLink, MODALITY_LABEL, type Modality } from '@merkiai/database'
 import { resolveTenant } from '@/lib/tenant-context'
 import { getMachineDb } from '@/lib/machine-db'
+import { formatMoney } from '@merkiai/i18n'
 
 export const metadata: Metadata = { title: 'Pagar saldo', robots: { index: false, follow: false } }
 export const dynamic = 'force-dynamic'
 
-const money = (n: number) => new Intl.NumberFormat('es-CO', { style: 'currency', currency: 'COP', maximumFractionDigits: 0 }).format(n)
+const money = (n: number) => formatMoney(n)
 
 /**
  * E27 · HU-455 — Página pública para pagar el saldo de un documento de cartera

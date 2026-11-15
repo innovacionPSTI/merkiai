@@ -10,6 +10,7 @@ import type { Metadata } from 'next'
 import ShareWhatsApp from '@/components/blog/ShareWhatsApp'
 import { markdownToHtml } from '@/lib/markdown'
 import { buildArticleJsonLd } from '@/lib/json-ld'
+import { formatDate } from '@merkiai/i18n'
 
 interface Props {
   params: Promise<{ slug: string }>
@@ -126,7 +127,7 @@ export default async function BlogPostPage({ params }: Props) {
         <article>
           <p className="font-brand text-sm text-brand-primary/40 mb-3">
             {post.published_at
-              ? new Date(post.published_at).toLocaleDateString('es-CO', {
+              ? formatDate(post.published_at, {
                   weekday: 'long', day: 'numeric', month: 'long', year: 'numeric',
                 })
               : ''}
@@ -167,7 +168,7 @@ export default async function BlogPostPage({ params }: Props) {
                     {p.title}
                   </p>
                   <p className="font-brand text-xs text-brand-primary/40">
-                    {p.published_at ? new Date(p.published_at).toLocaleDateString('es-CO', { day: 'numeric', month: 'long' }) : ''}
+                    {p.published_at ? formatDate(p.published_at, { day: 'numeric', month: 'long' }) : ''}
                   </p>
                 </Link>
               ))}

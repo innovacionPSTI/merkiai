@@ -2,12 +2,13 @@
 
 import { useState } from 'react'
 import { Icon } from '@merkiai/ui'
+import { formatMoney } from '@merkiai/i18n'
 
 interface Comp { variant_id: number; qty: number }
 interface Bundle { id: number; name: string; slug: string; price: number; active: boolean; components: Comp[] }
 interface Variant { id: number; label: string }
 
-const money = (n: number) => new Intl.NumberFormat('es-CO', { style: 'currency', currency: 'COP', maximumFractionDigits: 0 }).format(n)
+const money = (n: number) => formatMoney(n)
 
 export default function BundlesManager({ initial, variants }: { initial: Bundle[]; variants: Variant[] }) {
   const [rows, setRows] = useState<Bundle[]>(initial)

@@ -7,6 +7,7 @@
  */
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
+import { formatMoney, formatDate } from '@merkiai/i18n'
 
 interface QuoteRow { id: number; quote_number: string; customer_name: string; status: string; total: number; valid_until: string | null; created_at: string | null }
 interface ProductRef { id: number; name: string; price: number | null }
@@ -20,7 +21,7 @@ const STATUS_STYLE: Record<string, string> = {
 const NEXT_STATES: Record<string, string[]> = {
   draft: ['sent', 'cancelled'], sent: ['accepted', 'cancelled', 'expired'], accepted: ['cancelled'], expired: [], cancelled: [], converted: [],
 }
-function money(n: number): string { return new Intl.NumberFormat('es-CO', { style: 'currency', currency: 'COP', maximumFractionDigits: 0 }).format(n) }
+function money(n: number): string { return formatMoney(n) }
 
 export default function QuotesManager({ quotes: initial, products }: { quotes: QuoteRow[]; products: ProductRef[] }) {
   const router = useRouter()
@@ -164,7 +165,7 @@ export default function QuotesManager({ quotes: initial, products }: { quotes: Q
                 <td className="px-4 py-3 text-brand-primary/70">{q.customer_name || '—'}</td>
                 <td className="px-4 py-3"><span className={`inline-block rounded-full px-2 py-0.5 text-xs ${STATUS_STYLE[q.status] ?? ''}`}>{STATUS_LABEL[q.status] ?? q.status}</span></td>
                 <td className="px-4 py-3 text-right tabular-nums text-brand-primary/70">{money(q.total)}</td>
-                <td className="px-4 py-3 text-brand-primary/60">{q.valid_until ? new Date(q.valid_until).toLocaleDateString('es-CO') : '—'}</td>
+                <td className="px-4 py-3 text-brand-primary/60">{q.valid_until ? formatDate(q.valid_until) : '—'}</td>
                 <td className="px-4 py-3 text-right">
                   <div className="flex gap-2 justify-end">
                     {(NEXT_STATES[q.status] ?? []).map((s) => (

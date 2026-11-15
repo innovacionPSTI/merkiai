@@ -8,6 +8,7 @@ import OrderNotes from './OrderNotes'
 import ReconcileBoldButton from './ReconcileBoldButton'
 import PaymentStatusValidator from './PaymentStatusValidator'
 import ReturnsManager from './ReturnsManager'
+import { formatMoney } from '@merkiai/i18n'
 
 export const metadata: Metadata = { title: 'Detalle de pedido' }
 
@@ -34,7 +35,7 @@ export default async function PedidoDetailPage({ params }: { params: Promise<{ i
   const returns = await getReturnsForOrder(supabase, order.id).catch(() => [])
 
   const fmt = (n: number) =>
-    new Intl.NumberFormat('es-CO', { style: 'currency', currency: 'COP', maximumFractionDigits: 0 }).format(n)
+    formatMoney(n)
 
   const currentStep = STATUS_ORDER.indexOf(order.status)
 

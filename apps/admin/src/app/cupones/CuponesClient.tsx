@@ -3,9 +3,10 @@
 import { useState } from 'react'
 import type { Coupon } from '@merkiai/database'
 import CsvImportModal from '@/components/CsvImportModal'
+import { formatMoney, formatDate } from '@merkiai/i18n'
 
 const fmt = (n: number) =>
-  new Intl.NumberFormat('es-CO', { style: 'currency', currency: 'COP', maximumFractionDigits: 0 }).format(n)
+  formatMoney(n)
 
 const STATUS_BADGE: Record<string, string> = {
   active:   'bg-green-100 text-green-700',
@@ -272,7 +273,7 @@ export default function CuponesClient({ initialCoupons }: Props) {
                       {c.used_count}{c.max_uses !== null ? ` / ${c.max_uses}` : ''}
                     </td>
                     <td className="px-4 py-3 font-brand text-sm text-brand-primary/60">
-                      {c.expires_at ? new Date(c.expires_at).toLocaleDateString('es-CO') : '—'}
+                      {c.expires_at ? formatDate(c.expires_at) : '—'}
                     </td>
                     <td className="px-4 py-3">
                       <span className={`font-brand text-xs font-semibold px-2.5 py-1 rounded-full capitalize ${STATUS_BADGE[st]}`}>

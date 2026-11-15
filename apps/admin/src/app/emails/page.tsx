@@ -4,6 +4,7 @@ import { PageHeader } from '@merkiai/ui'
 import { listEmailLog } from '@merkiai/database'
 import { requireAdminDb } from '@/lib/admin-context'
 import { userCanManageData } from '@/lib/roles'
+import { formatDateTime } from '@merkiai/i18n'
 
 export const metadata: Metadata = { title: 'Correos' }
 export const dynamic = 'force-dynamic'
@@ -19,7 +20,7 @@ const STATUS_COLOR: Record<string, string> = {
   failed: 'bg-red-100 text-red-700',
   suppressed: 'bg-gray-100 text-gray-500',
 }
-const fmt = (s: string) => new Date(s).toLocaleString('es-CO', { day: 'numeric', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' })
+const fmt = (s: string) => formatDateTime(s, { day: 'numeric', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' })
 
 /**
  * HU-162 · Registro de correos transaccionales (email_log). Gated por el permiso

@@ -12,6 +12,7 @@ import { getProductOptions, getVariantAttrs, getVariantLabel, isColorValue, swat
 import { buildShopQuery, type ShopUrlState } from '@/lib/shop-filters'
 import SearchBox from './SearchBox'
 import WishlistButton from './WishlistButton'
+import { formatMoney } from '@merkiai/i18n'
 
 const SORTS = [
   { value: 'destacados', label: 'Destacados' },
@@ -183,7 +184,7 @@ export default function ShopClient({ products, total, pageSize, facets, state, g
   const [mobileFiltersOpen, setMobileFiltersOpen] = useState(false)
 
   const fmt = (n: number) =>
-    new Intl.NumberFormat('es-CO', { style: 'currency', currency: 'COP', maximumFractionDigits: 0 }).format(n)
+    formatMoney(n)
 
   /** Navega con un estado parcial; resetea a página 1 salvo que se indique page. */
   function nav(partial: Partial<ShopUrlState>) {

@@ -6,6 +6,7 @@
  * subida cabe en el tope del plan (`max_media_mb`; null = ilimitado).
  */
 import type { Db } from '../client'
+import { formatNumber } from '@merkiai/i18n'
 
 const MB = 1024 * 1024
 
@@ -19,7 +20,7 @@ export interface QuotaCheck {
   message?: string
 }
 
-const fmtMb = (bytes: number) => `${(bytes / MB).toLocaleString('es-CO', { maximumFractionDigits: 1 })} MB`
+const fmtMb = (bytes: number) => `${formatNumber((bytes / MB), { maximumFractionDigits: 1 })} MB`
 
 /** ¿Cabe un archivo de `incomingBytes` dado el uso y el límite en MB? PURO. */
 export function checkStorageQuota(usedBytes: number, incomingBytes: number, limitMb: number | null | undefined): QuotaCheck {

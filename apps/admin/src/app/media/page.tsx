@@ -4,6 +4,7 @@ import { PageHeader } from '@merkiai/ui'
 import MediaClient from './MediaClient'
 import { getStorageUsage } from '@merkiai/database'
 import { getTenantEntitlements, resolveLimit, LIMITS } from '@/lib/entitlements'
+import { formatNumber } from '@merkiai/i18n'
 
 export const metadata: Metadata = { title: 'Media' }
 export const dynamic = 'force-dynamic'
@@ -20,7 +21,7 @@ export default async function MediaPage() {
   const limitMb = resolveLimit(ent.entitlements, LIMITS.MAX_MEDIA_MB)
   const usedMb = usage ? usage.bytes / (1024 * 1024) : null
   const pct = usedMb != null && limitMb ? Math.min(100, Math.round((usedMb / limitMb) * 100)) : null
-  const fmt = (n: number) => n.toLocaleString('es-CO', { maximumFractionDigits: 1 })
+  const fmt = (n: number) => formatNumber(n, { maximumFractionDigits: 1 })
 
   return (
     <div className="space-y-2">

@@ -9,6 +9,7 @@
 import { getEmailProvider } from '../providers/email'
 import type { Db } from '../client'
 import { resolveTemplate, getEmailTemplateOverride } from '../queries/email-templates'
+import { formatDateTime } from '@merkiai/i18n'
 
 export interface EmailConfig {
   apiKey: string
@@ -287,7 +288,7 @@ export async function sendVipCampaignInvite(
   config: EmailConfig,
 ): Promise<void> {
   const name = config.storeName ?? 'Mi Tienda'
-  const when = data.endsAt ? new Date(data.endsAt).toLocaleString('es-CO') : null
+  const when = data.endsAt ? formatDateTime(data.endsAt) : null
 
   const content = `
     <p style="margin: 0 0 4px; color: #8a6a4a; font-size: 12px; text-transform: uppercase; letter-spacing: 1px; font-family: sans-serif;">Acceso anticipado VIP</p>

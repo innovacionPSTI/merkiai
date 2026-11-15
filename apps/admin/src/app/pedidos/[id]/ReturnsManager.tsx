@@ -3,6 +3,7 @@
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import type { OrderReturn } from '@merkiai/database'
+import { formatDate } from '@merkiai/i18n'
 
 const STATUS: Record<string, { label: string; cls: string }> = {
   requested: { label: 'Solicitada', cls: 'bg-amber-100 text-amber-700' },
@@ -10,7 +11,7 @@ const STATUS: Record<string, { label: string; cls: string }> = {
   rejected:  { label: 'Rechazada',  cls: 'bg-red-100 text-red-700' },
 }
 
-const fmtDate = (s: string) => new Date(s).toLocaleDateString('es-CO', { day: 'numeric', month: 'short', year: 'numeric' })
+const fmtDate = (s: string) => formatDate(s, { day: 'numeric', month: 'short', year: 'numeric' })
 
 /**
  * HU-107a · Gestión de devoluciones (RMA) de un pedido. Permite registrar una

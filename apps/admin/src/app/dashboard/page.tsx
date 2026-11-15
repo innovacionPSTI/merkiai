@@ -5,6 +5,7 @@ import { getStoreConfig } from '@merkiai/database'
 import { getAdminUser } from '@/lib/auth'
 import { requireAdminDb } from '@/lib/admin-context'
 import type { AdminRole } from '@/lib/roles'
+import { formatMoney, formatNumber, formatDate } from '@merkiai/i18n'
 
 export const metadata: Metadata = { title: 'Dashboard' }
 export const dynamic = 'force-dynamic'
@@ -12,9 +13,9 @@ export const dynamic = 'force-dynamic'
 // ── Formato ──────────────────────────────────────────────────────────────────
 
 const fmt = (n: number) =>
-  new Intl.NumberFormat('es-CO', { style: 'currency', currency: 'COP', maximumFractionDigits: 0 }).format(n)
+  formatMoney(n)
 
-const fmtNum = (n: number) => new Intl.NumberFormat('es-CO').format(n)
+const fmtNum = (n: number) => formatNumber(n)
 
 const STATUS_LABEL: Record<string, string> = {
   pending:    'Pendiente',
@@ -540,7 +541,7 @@ export default async function DashboardPage() {
   const adminUser = await getAdminUser()
   const role: AdminRole = adminUser?.role ?? 'vendedor'
 
-  const today = new Date().toLocaleDateString('es-CO', {
+  const today = formatDate(new Date(), {
     weekday: 'long', day: 'numeric', month: 'long', year: 'numeric',
   })
 

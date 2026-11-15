@@ -3,14 +3,15 @@
  * Sin `RESEND_API_KEY` el mailer es no-op con log (dev / entornos sin correo).
  */
 import type { BillingEmailTemplate, BillingMailer } from './billing'
+import { formatMoneyCents, formatDate as i18nFormatDate } from '@merkiai/i18n'
 
 type Ctx = { tenantName: string; amountCents: number; currency: string; periodEnd: string | null }
 
 export function formatMoney(amountCents: number, currency: string): string {
-  return new Intl.NumberFormat('es-CO', { style: 'currency', currency, maximumFractionDigits: 0 }).format(amountCents / 100)
+  return formatMoneyCents(amountCents, { currency })
 }
 function formatDate(iso: string | null): string {
-  return iso ? new Intl.DateTimeFormat('es-CO', { dateStyle: 'long', timeZone: 'America/Bogota' }).format(new Date(iso)) : '—'
+  return iso ? i18nFormatDate(iso, { dateStyle: 'long', timeZone: 'America/Bogota' }) : '—'
 }
 const ESC: Record<string, string> = { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }
 const esc = (s: string) => s.replace(/[&<>"']/g, (c) => ESC[c])

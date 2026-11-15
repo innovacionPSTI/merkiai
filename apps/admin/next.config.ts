@@ -16,7 +16,7 @@ const SECURITY_HEADERS = [
 
 const nextConfig: NextConfig = {
   poweredByHeader: false,
-  transpilePackages: ['@merkiai/ui', '@merkiai/database'],
+  transpilePackages: ['@merkiai/ui', '@merkiai/database', '@merkiai/i18n'],
 
   // El barrel @merkiai/database re-exporta utilidades server-only (preview.ts →
   // node:crypto). Si un componente cliente lo arrastra (directa o transitivamente),

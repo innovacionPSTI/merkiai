@@ -8,6 +8,7 @@
 import { useMemo, useState, useTransition } from 'react'
 import { useRouter } from 'next/navigation'
 import { createDocumentAction, createPartyAction, suggestPricesAction } from '../actions'
+import { formatMoney } from '@merkiai/i18n'
 
 type Modality = 'credit_sale' | 'special_order' | 'layaway' | 'consignment'
 interface PartyRef { id: string; name: string; role: 'customer' | 'consignee'; balance: number; credit_limit: number | null }
@@ -21,7 +22,7 @@ const MODALITIES: Array<{ key: Modality; label: string; help: string }> = [
   { key: 'layaway', label: 'Apartado', help: 'Separas productos con abonos; se entregan al completar el pago.' },
   { key: 'consignment', label: 'Consignación', help: 'Dejas mercancía a un aliado; te paga lo que vende y devuelve lo que no.' },
 ]
-const money = (n: number) => new Intl.NumberFormat('es-CO', { style: 'currency', currency: 'COP', maximumFractionDigits: 0 }).format(n || 0)
+const money = (n: number) => formatMoney(n || 0)
 const input = 'w-full rounded-xl border border-brand-primary/20 px-3 py-2 font-brand text-sm focus:border-brand-primary focus:outline-none'
 const label = 'block font-brand text-xs font-semibold text-brand-primary/70 mb-1'
 

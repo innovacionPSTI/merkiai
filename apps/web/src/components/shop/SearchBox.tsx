@@ -9,6 +9,7 @@ import { useEffect, useRef, useState } from 'react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { Icon } from '@merkiai/ui'
+import { formatMoney } from '@merkiai/i18n'
 
 interface Suggestion {
   id: number
@@ -19,7 +20,7 @@ interface Suggestion {
 }
 
 const fmt = (n: number) =>
-  new Intl.NumberFormat('es-CO', { style: 'currency', currency: 'COP', maximumFractionDigits: 0 }).format(n)
+  formatMoney(n)
 
 export default function SearchBox({ initialQuery = '', onSearch, fullWidth = false }: { initialQuery?: string; onSearch: (q: string) => void; fullWidth?: boolean }) {
   const router = useRouter()

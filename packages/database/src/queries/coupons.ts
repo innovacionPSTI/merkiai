@@ -1,5 +1,6 @@
 import type { Db } from '../client'
 import type { Coupon } from '../types'
+import { formatNumber } from '@merkiai/i18n'
 
 export type { Coupon }
 
@@ -58,7 +59,7 @@ export function validateCoupon(coupon: Coupon, orderSubtotal: number): CouponVal
   if (orderSubtotal < coupon.min_order_amount) {
     return {
       valid: false,
-      error: `Monto mínimo de pedido: $${coupon.min_order_amount.toLocaleString('es-CO')}`,
+      error: `Monto mínimo de pedido: $${formatNumber(coupon.min_order_amount)}`,
     }
   }
 

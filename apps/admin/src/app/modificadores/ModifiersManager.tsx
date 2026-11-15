@@ -7,6 +7,7 @@
  * opcional de inventario al venderse). El descuento real se aplica en la venta.
  */
 import { useState } from 'react'
+import { formatMoney } from '@merkiai/i18n'
 
 interface Option { id: number; name: string; price_delta: number; consume_stock_item_id: number | null; consume_qty: number | null; consume_uom_id: number | null }
 interface Group { id: number; name: string; min_select: number; max_select: number; required: boolean; options: Option[] }
@@ -14,7 +15,7 @@ interface ItemRef { id: number; name: string; uom_id: number | null }
 interface UomRef { id: number; code: string }
 
 function money(n: number): string {
-  return new Intl.NumberFormat('es-CO', { style: 'currency', currency: 'COP', maximumFractionDigits: 0 }).format(n)
+  return formatMoney(n)
 }
 
 export default function ModifiersManager({ products, items, uoms }: {

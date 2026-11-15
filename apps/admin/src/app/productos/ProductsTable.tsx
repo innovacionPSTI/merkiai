@@ -9,12 +9,13 @@ import { useState } from 'react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { Icon } from '@merkiai/ui'
+import { formatMoney } from '@merkiai/i18n'
 
 interface Category { id: number; name: string }
 interface Props { products: any[]; categories: Category[]; emptyQ?: string; lowStockThreshold?: number }
 
 const fmt = (n: number) =>
-  new Intl.NumberFormat('es-CO', { style: 'currency', currency: 'COP', maximumFractionDigits: 0 }).format(n)
+  formatMoney(n)
 
 export default function ProductsTable({ products, categories, emptyQ, lowStockThreshold = 5 }: Props) {
   const router = useRouter()

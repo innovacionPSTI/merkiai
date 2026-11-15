@@ -6,6 +6,7 @@
  */
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
+import { formatNumber } from '@merkiai/i18n'
 
 interface ItemOpt { id: number; name: string; uom_id: number | null }
 interface UomOpt { id: number; code: string }
@@ -15,7 +16,7 @@ interface CompLine { component_stock_item_id: number | ''; qty: string; uom_id: 
 
 const POLICY_LABEL: Record<string, string> = { al_vender: 'Al vender', al_producir: 'Al producir' }
 const STATUS_LABEL: Record<string, string> = { draft: 'Borrador', completed: 'Completada', cancelled: 'Cancelada' }
-function fmt(n: number): string { return new Intl.NumberFormat('es-CO', { maximumFractionDigits: 3 }).format(n) }
+function fmt(n: number): string { return formatNumber(n, { maximumFractionDigits: 3 }) }
 
 export default function ProductionManager({ items, uoms, boms, orders }: { items: ItemOpt[]; uoms: UomOpt[]; boms: BomRow[]; orders: OrderRow[] }) {
   const router = useRouter()

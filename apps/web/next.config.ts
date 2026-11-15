@@ -30,7 +30,7 @@ const SECURITY_HEADERS = [
 
 const nextConfig: NextConfig = {
   poweredByHeader: false,
-  transpilePackages: ['@merkiai/ui', '@merkiai/database'],
+  transpilePackages: ['@merkiai/ui', '@merkiai/database', '@merkiai/i18n'],
 
   // Ver apps/admin: evita UnhandledSchemeError de `node:crypto` (preview.ts del
   // barrel) en bundles de cliente. Normaliza `node:` y stub de crypto en cliente.

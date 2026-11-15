@@ -4,6 +4,7 @@ import { PageHeader } from '@merkiai/ui'
 import { listAudit } from '@merkiai/database'
 import { requireAdminDb } from '@/lib/admin-context'
 import { userCanManageData } from '@/lib/roles'
+import { formatDateTime } from '@merkiai/i18n'
 
 export const metadata: Metadata = { title: 'Auditoría' }
 export const dynamic = 'force-dynamic'
@@ -23,7 +24,7 @@ const ACTION_LABEL: Record<string, string> = {
 }
 
 const fmt = (s: string) =>
-  new Date(s).toLocaleString('es-CO', { day: 'numeric', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' })
+  formatDateTime(s, { day: 'numeric', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' })
 
 /**
  * HU-146 · Registro de auditoría. Traza de operaciones sensibles del panel.

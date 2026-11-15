@@ -8,6 +8,7 @@ import { requireAdminDb } from './admin-context'
 import { userCanAccess } from './roles'
 import { getTenantEntitlements } from './entitlements'
 import { resolveFeature, FEATURES } from '@merkiai/tenancy'
+import { formatMoney } from '@merkiai/i18n'
 
 export async function requireCartera() {
   const { adminUser, db } = await requireAdminDb()
@@ -23,7 +24,7 @@ export async function requireCartera() {
 }
 
 export const money = (n: number) =>
-  new Intl.NumberFormat('es-CO', { style: 'currency', currency: 'COP', maximumFractionDigits: 0 }).format(n)
+  formatMoney(n)
 
 export const PAYMENT_STATUS_LABEL: Record<string, string> = {
   draft: 'Borrador', open: 'Abierto', partial: 'Abonado', paid: 'Pagado', overdue: 'Vencido', written_off: 'Castigado', void: 'Anulado',

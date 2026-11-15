@@ -14,6 +14,7 @@ import {
 } from '@merkiai/database'
 import { requireCartera } from '@/lib/cartera'
 import { resolveStoreBaseUrl } from '@/lib/store-url'
+import { formatMoney } from '@merkiai/i18n'
 
 export type ActionResult = { ok: true; id?: number | string; message?: string } | { ok: false; error: string }
 
@@ -78,7 +79,7 @@ export async function sendStatementAction(partyId: string): Promise<ActionResult
     if (!st.party?.email) return { ok: false, error: 'Esta contraparte no tiene correo registrado.' }
     const ec = await resolveEmailConfig(db, tenantId).catch(() => null)
     if (!ec) return { ok: false, error: 'Configura el correo de tu tienda (Configuración → Emails) para enviar estados de cuenta.' }
-    const money = (n: number) => new Intl.NumberFormat('es-CO', { style: 'currency', currency: 'COP', maximumFractionDigits: 0 }).format(n)
+    const money = (n: number) => formatMoney(n)
     const esc = (s: string) => s.replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c] as string)
     const open = st.documents.filter((d) => d.balance > 0)
     const rows = open.map((d) => `<tr><td style="padding:4px 8px">${esc(d.number)}</td><td style="padding:4px 8px">${esc(MODALITY_LABEL[d.modality])}</td><td style="padding:4px 8px">${d.due_date ?? '—'}</td><td style="padding:4px 8px;text-align:right">${money(d.balance)}</td></tr>`).join('')

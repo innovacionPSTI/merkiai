@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react'
 import Link from 'next/link'
 import { Icon } from '@merkiai/ui'
 import { useCartStore } from '@/store/cart'
+import { formatMoney } from '@merkiai/i18n'
 
 interface ShippingPublicConfig {
   provider: 'fixed' | 'skydropx'
@@ -44,7 +45,7 @@ export default function CartView({ density = 'comfortable' }: Props) {
   }, [])
 
   const fmt = (n: number) =>
-    new Intl.NumberFormat('es-CO', { style: 'currency', currency: 'COP', maximumFractionDigits: 0 }).format(n)
+    formatMoney(n)
 
   const sub = subtotal()
 

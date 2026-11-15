@@ -3,10 +3,11 @@ import type { Metadata } from 'next'
 import { getBundleWithComponents, bundleMaxQty, componentsListPrice, bundleSavings } from '@merkiai/database'
 import { getRequestCatalogDb } from '@/lib/tenant-db'
 import AddBundleButton from '@/components/shop/AddBundleButton'
+import { formatMoney } from '@merkiai/i18n'
 
 interface Props { params: Promise<{ slug: string }> }
 
-const fmt = (n: number) => new Intl.NumberFormat('es-CO', { style: 'currency', currency: 'COP', maximumFractionDigits: 0 }).format(n)
+const fmt = (n: number) => formatMoney(n)
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { slug } = await params

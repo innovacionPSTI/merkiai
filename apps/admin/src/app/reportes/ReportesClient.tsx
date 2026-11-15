@@ -1,6 +1,7 @@
 'use client'
 
 import { useCallback, useEffect, useState } from 'react'
+import { formatMoney } from '@merkiai/i18n'
 
 interface SalesReport {
   from: string; to: string; revenue: number; orders: number; avgTicket: number
@@ -8,7 +9,7 @@ interface SalesReport {
   topProducts: { product_id: number; name: string; qty: number; revenue: number }[]
 }
 
-const COP = new Intl.NumberFormat('es-CO', { style: 'currency', currency: 'COP', maximumFractionDigits: 0 })
+const COP = { format: (n: number) => formatMoney(n) }
 
 function isoDaysAgo(n: number): string {
   const d = new Date()

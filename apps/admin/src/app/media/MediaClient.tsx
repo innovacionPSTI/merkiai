@@ -2,6 +2,7 @@
 
 import { useState, useRef, useCallback } from 'react'
 import type { MediaAsset } from '@merkiai/database'
+import { formatDate } from '@merkiai/i18n'
 
 // ── Tipos ────────────────────────────────────────────────────────────────────
 
@@ -291,7 +292,7 @@ export default function MediaClient({ initialAssets, pickerMode = false, onSelec
                 </p>
               )}
               <p className="font-brand text-xs text-brand-primary/30">
-                {new Date(selected.created_at).toLocaleDateString('es-CO', { day: 'numeric', month: 'short', year: 'numeric' })}
+                {formatDate(selected.created_at, { day: 'numeric', month: 'short', year: 'numeric' })}
               </p>
             </div>
 

@@ -2,6 +2,7 @@
 
 import { useState } from 'react'
 import type { NewsletterSubscriber } from '@merkiai/database'
+import { formatDate } from '@merkiai/i18n'
 
 interface Props {
   initialSubscribers: NewsletterSubscriber[]
@@ -145,7 +146,7 @@ export default function NewsletterClient({ initialSubscribers }: Props) {
                     <tr key={s.id} className="border-b border-brand-primary/5 last:border-0 hover:bg-brand-cream/30 transition-colors">
                       <td className="px-6 py-3 font-brand text-sm text-brand-primary">{s.email}</td>
                       <td className="px-6 py-3 font-brand text-sm text-brand-primary/50">
-                        {new Date(s.subscribed_at).toLocaleDateString('es-CO', {
+                        {formatDate(s.subscribed_at, {
                           day: 'numeric', month: 'short', year: 'numeric',
                         })}
                       </td>

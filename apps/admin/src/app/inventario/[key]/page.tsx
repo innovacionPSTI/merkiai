@@ -11,6 +11,7 @@ import AdjustForm from './AdjustForm'
 import EditItemForm from './EditItemForm'
 import TransferForm from './TransferForm'
 import TransferInbox from './TransferInbox'
+import { formatNumber, formatDateTime } from '@merkiai/i18n'
 
 export const metadata: Metadata = { title: 'Kardex' }
 export const dynamic = 'force-dynamic'
@@ -19,7 +20,7 @@ const TYPE_LABEL: Record<string, string> = {
   purchase: 'Compra', production_consume: 'Consumo producción', production_output: 'Salida producción',
   sale: 'Venta', waste: 'Merma', adjustment: 'Ajuste', transfer: 'Traslado', sample: 'Muestra', return: 'Devolución',
 }
-function fmt(n: number): string { return new Intl.NumberFormat('es-CO', { maximumFractionDigits: 3 }).format(n) }
+function fmt(n: number): string { return formatNumber(n, { maximumFractionDigits: 3 }) }
 
 /** E24 · Kardex de un ítem: historial de movimientos del libro (HU-401). */
 export default async function KardexPage({ params }: { params: Promise<{ key: string }> }) {
@@ -103,7 +104,7 @@ export default async function KardexPage({ params }: { params: Promise<{ key: st
             )}
             {movs.map((m) => (
               <tr key={m.id} className="border-t border-gray-100">
-                <td className="px-4 py-3 text-brand-primary/70">{new Date(m.created_at).toLocaleString('es-CO')}</td>
+                <td className="px-4 py-3 text-brand-primary/70">{formatDateTime(m.created_at)}</td>
                 <td className="px-4 py-3">{TYPE_LABEL[m.movement_type] ?? m.movement_type}</td>
                 <td className={`px-4 py-3 text-right tabular-nums ${m.direction === 'in' ? 'text-green-700' : 'text-red-600'}`}>
                   {m.direction === 'in' ? '+' : '−'}{fmt(m.qty)}

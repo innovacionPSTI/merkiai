@@ -7,6 +7,7 @@ import { userCanAccess } from '@/lib/roles'
 import { FEATURES as FLAGS } from '@/lib/features'
 import { getTenantEntitlements } from '@/lib/entitlements'
 import { resolveFeature, FEATURES } from '@merkiai/tenancy'
+import { formatMoney, formatNumber } from '@merkiai/i18n'
 
 export const metadata: Metadata = { title: 'Operaciones' }
 export const dynamic = 'force-dynamic'
@@ -16,8 +17,8 @@ const TYPE_LABEL: Record<string, string> = {
   purchase: 'Compras', production_consume: 'Consumo producción', production_output: 'Salida producción',
   sale: 'Ventas', waste: 'Merma', adjustment: 'Ajustes', transfer: 'Traslados', sample: 'Muestras', return: 'Devoluciones',
 }
-function money(n: number): string { return new Intl.NumberFormat('es-CO', { style: 'currency', currency: 'COP', maximumFractionDigits: 0 }).format(n) }
-function num(n: number): string { return new Intl.NumberFormat('es-CO', { maximumFractionDigits: 3 }).format(n) }
+function money(n: number): string { return formatMoney(n) }
+function num(n: number): string { return formatNumber(n, { maximumFractionDigits: 3 }) }
 
 /** E24 · Tablero de operaciones (HU-409 F1): valor del inventario a costo,
  *  existencias por clase y resumen de movimientos de los últimos 30 días, sobre

@@ -2,6 +2,7 @@ import { getBlogPosts } from '@merkiai/database'
 import { getStoreContext } from '@/lib/store-context'
 import Link from 'next/link'
 import type { Metadata } from 'next'
+import { formatDate } from '@merkiai/i18n'
 
 export const metadata: Metadata = {
   title: 'Blog',
@@ -85,7 +86,7 @@ export default async function BlogPage({
                     <div className="flex items-center justify-between">
                       <p className="font-brand text-xs text-brand-primary/40">
                         {featured.published_at
-                          ? new Date(featured.published_at).toLocaleDateString('es-CO', { day: 'numeric', month: 'long', year: 'numeric' })
+                          ? formatDate(featured.published_at, { day: 'numeric', month: 'long', year: 'numeric' })
                           : ''}
                       </p>
                       <span className="font-brand text-sm text-brand-primary underline">Leer más →</span>
@@ -112,7 +113,7 @@ export default async function BlogPage({
                     <div className="p-5">
                       <p className="font-brand text-xs text-brand-primary/40 mb-1">
                         {post.published_at
-                          ? new Date(post.published_at).toLocaleDateString('es-CO', { day: 'numeric', month: 'long', year: 'numeric' })
+                          ? formatDate(post.published_at, { day: 'numeric', month: 'long', year: 'numeric' })
                           : ''}
                       </p>
                       <h3 className="font-brand font-semibold text-brand-primary mb-2 group-hover:text-brand-dark transition-colors line-clamp-2">
