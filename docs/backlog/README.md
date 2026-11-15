@@ -22,6 +22,10 @@ El backlog de Merkiai (antes un único `PRODUCT_BACKLOG.md` de ~5000 líneas) se
 10. `10-detalle-constructor-v2.md` — Constructor v2 (autoría unificada, colecciones, blueprints).
 11. `11-detalle-pos-operaciones.md` — **E24 · Operaciones e inventario** (HU-400…410) y **E25 · Punto de venta** (HU-420…427): planteamiento + catálogo formal de HU (inventario/ledger `stock_item`+UoM, BOM con política de consumo, producción/costeo, compras, listas de precio, modificadores, POS offline-first, reportes/tableros/alertas). Capa opt-in por plan; anti-ERP (lo fiscal/contable solo por integración). **Precede y reconcilia E18** (multiubicación = proyección del ledger).
 
+12. `12-detalle-e26-infra-celdas.md` — E26 · infraestructura multi-celda, agnosticismo y dominios a escala.
+13. `13-detalle-e27-cartera.md` — E27 · cartera operativa (crédito, encargos, apartados, consignación).
+14. `14-detalle-e28-i18n.md` — **E28 · internacionalización y mercados** (idiomas, regiones, moneda; ADR-011).
+
 `JIRA-MIGRATION.md` — plan turnkey para migrar todo a un proyecto Jira cuando salga la versión operativa.
 
 ## Regla de edición

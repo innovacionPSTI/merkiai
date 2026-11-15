@@ -53,6 +53,10 @@ No bloquea la salida a producción. Capacidades de negocio que se ofrecen por pl
 - **E27 · Cartera operativa (ADR-010, HU-450…457)** — **v268: código completo salvo POS (HU-457, con E25)**; falta aplicar `e17/76` y activar las features `receivables`/`consignment` en un plan: venta a crédito, encargos con anticipo, apartados y consignación sobre el inventario por ubicación. Orden sugerido: HU-450 núcleo → HU-451 plan de pago → HU-452 encargos → HU-454 consignación → HU-453 apartado → HU-455 cobro → HU-456 facturación/reportes → HU-457 POS (con E25).
 - **E25 · POS** (HU-420…427): HU-457 de E27 se integra aquí.
 
+## Línea de producto · Internacionalización · *tras el release, sin mercado prioritario*
+
+- **E28 · Internacionalización y mercados (ADR-011, HU-460…468)** — 🔲 planteada. No bloquea el release. Base mínima para abrir cualquier mercado: HU-460 (fundaciones) → HU-461 (idiomas y mercados) → HU-468 (formatos regionales) → HU-463 (contenido) → HU-462 (rutas + hreflang) → HU-465 (storefront/checkout/correos). Luego HU-464 (editor), HU-466 (admin/consola, progresiva) y HU-467 (multimoneda) cuando haya un mercado vendible en otra moneda. Vender en España como mercado exige una pasarela en EUR (no integrada).
+
 ---
 
 ## Ola 2 — Dominios propios y storage a escala · *disparo: clientes con dominio / crece la media*

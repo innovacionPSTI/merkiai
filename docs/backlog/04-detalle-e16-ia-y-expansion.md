@@ -250,7 +250,7 @@
 
 ### HU-114 — Internacionalización (i18n) · E2  *(dividida en 114a/114b/114c)*
 
-> **XL dividida.** La i18n se entrega en tres HU incrementales. Candidata a épica propia si se prioriza como eje.
+> **⇢ Absorbida por E28 (nov-2026, ADR-011):** HU-114a → **HU-463**, HU-114b → **HU-462**, HU-114c → **HU-464**. El detalle vigente está en `14-detalle-e28-i18n.md`; lo de abajo queda como histórico.
 
 #### HU-114a — i18n: modelo de traducciones + idioma por defecto · E2
 
