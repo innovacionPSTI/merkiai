@@ -7,11 +7,13 @@ import { getAdminDb } from '@/lib/admin-db'
 import { userCanAccess } from '@/lib/roles'
 import { maskInstance, publicProviders } from '@/lib/mask-instance'
 import IntegrationInstancesForm from '../IntegrationInstancesForm'
+import { getAdminTx } from '@/lib/ui-locale'
 
 export const metadata: Metadata = { title: 'Emails · Configuración' }
 export const dynamic = 'force-dynamic'
 
 export default async function ConfigEmailsPage() {
+  const tx = await getAdminTx()
   const adminUser = await getAdminUser()
   if (!adminUser || !userCanAccess(adminUser, 'configuracion')) redirect('/no-autorizado')
 
@@ -25,7 +27,7 @@ export default async function ConfigEmailsPage() {
   return (
     <div>
       <div className="mb-8">
-        <PageHeader title="Emails" description="Proveedor de correo para confirmaciones de pedido, newsletters y notificaciones transaccionales. Solo uno activo a la vez." />
+        <PageHeader title={tx("Emails")} description={tx("Proveedor de correo para confirmaciones de pedido, newsletters y notificaciones transaccionales. Solo uno activo a la vez.")} />
       </div>
       <IntegrationInstancesForm
         kind="email"

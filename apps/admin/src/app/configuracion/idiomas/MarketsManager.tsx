@@ -4,6 +4,7 @@ import { useMemo, useState, useTransition } from 'react'
 import { useRouter } from 'next/navigation'
 import { ConfirmDialog } from '@merkiai/ui'
 import { saveMarketAction, deleteMarketAction } from './actions'
+import { T } from '@merkiai/ui'
 
 interface MarketView {
   id: number
@@ -114,11 +115,11 @@ export default function MarketsManager({ markets, locales, priceLists, rules, us
           onClick={() => { setMsg(null); setEditing(newDraft()) }}
           className="rounded-full bg-brand-primary px-5 py-2 font-brand text-sm text-white disabled:opacity-50"
         >
-          Agregar mercado
+          <T>Agregar mercado</T>
         </button>
       </section>
       {!canAddMarket && (
-        <p className="font-brand text-xs text-brand-primary/60 -mt-2">Tu plan incluye un solo mercado. Para vender en varios países con su propia configuración, mejora tu plan desde <a href="/facturacion" className="underline">Plan y facturación</a>.</p>
+        <p className="font-brand text-xs text-brand-primary/60 -mt-2"><T>Tu plan incluye un solo mercado. Para vender en varios países con su propia configuración, mejora tu plan desde</T> <a href="/facturacion" className="underline"><T>Plan y facturación</T></a>.</p>
       )}
 
       <div className="grid gap-4 md:grid-cols-2">
@@ -130,8 +131,8 @@ export default function MarketsManager({ markets, locales, priceLists, rules, us
                 <p className="font-brand text-xs text-brand-primary/60">{m.countries.length ? m.countries.join(', ') : 'Sin países'} · {m.currency}</p>
               </div>
               <div className="flex gap-1">
-                {m.is_default && <span className="rounded-full bg-brand-primary/10 px-2 py-0.5 font-brand text-xs text-brand-primary">Predeterminado</span>}
-                {!m.active && <span className="rounded-full bg-gray-100 px-2 py-0.5 font-brand text-xs text-gray-600">Inactivo</span>}
+                {m.is_default && <span className="rounded-full bg-brand-primary/10 px-2 py-0.5 font-brand text-xs text-brand-primary"><T>Predeterminado</T></span>}
+                {!m.active && <span className="rounded-full bg-gray-100 px-2 py-0.5 font-brand text-xs text-gray-600"><T>Inactivo</T></span>}
               </div>
             </div>
             <ul className="font-brand text-sm text-brand-primary space-y-0.5">
@@ -142,9 +143,9 @@ export default function MarketsManager({ markets, locales, priceLists, rules, us
             {m.domain && <p className="font-brand text-xs text-brand-primary/60">Dominio: {m.domain}</p>}
             {m.price_list_id && <p className="font-brand text-xs text-brand-primary/60">Lista de precios: {priceLists.find((p) => p.id === m.price_list_id)?.name ?? '—'}</p>}
             <div className="flex gap-3 pt-1">
-              <button type="button" className="font-brand text-sm text-brand-primary underline" onClick={() => { setMsg(null); setEditing(toDraft(m)) }}>Editar</button>
+              <button type="button" className="font-brand text-sm text-brand-primary underline" onClick={() => { setMsg(null); setEditing(toDraft(m)) }}><T>Editar</T></button>
               {!m.is_default && !m.virtual && (
-                <button type="button" className="font-brand text-sm text-red-600 underline" disabled={pending} onClick={() => setToDelete(m)}>Eliminar</button>
+                <button type="button" className="font-brand text-sm text-red-600 underline" disabled={pending} onClick={() => setToDelete(m)}><T>Eliminar</T></button>
               )}
             </div>
           </article>
@@ -155,21 +156,21 @@ export default function MarketsManager({ markets, locales, priceLists, rules, us
         <section className="rounded-2xl border border-brand-primary/30 bg-white p-5 space-y-4" aria-label="Editar mercado">
           <h2 className="font-brand text-sm font-semibold text-brand-primary">{editing.id || editing.virtual ? `Editar ${editing.name || 'mercado'}` : 'Nuevo mercado'}</h2>
           <div className="grid gap-4 md:grid-cols-2">
-            <label className="block font-brand text-sm text-brand-primary">Nombre
+            <label className="block font-brand text-sm text-brand-primary"><T>Nombre</T>
               <input className={`${input} mt-1 w-full`} value={editing.name} onChange={(e) => setEditing({ ...editing, name: e.target.value })} placeholder="México" />
             </label>
-            <label className="block font-brand text-sm text-brand-primary">Países (código de 2 letras)
+            <label className="block font-brand text-sm text-brand-primary"><T>Países (código de 2 letras)</T>
               <input className={`${input} mt-1 w-full`} value={editing.countriesText} onChange={(e) => setEditing({ ...editing, countriesText: e.target.value })} placeholder="MX" />
             </label>
-            <label className="block font-brand text-sm text-brand-primary">Moneda
+            <label className="block font-brand text-sm text-brand-primary"><T>Moneda</T>
               <input className={`${input} mt-1 w-full bg-gray-50`} value={editing.currency} disabled={!rules.multiCurrency} onChange={(e) => setEditing({ ...editing, currency: e.target.value.toUpperCase() })} />
               {!rules.multiCurrency && <span className="block font-brand text-xs text-brand-primary/60 mt-1">Por ahora todos los mercados venden en la moneda de la tienda ({baseCurrency}). Los precios en otra moneda llegan en una próxima versión.</span>}
             </label>
-            <label className="block font-brand text-sm text-brand-primary">Dominio propio (opcional)
+            <label className="block font-brand text-sm text-brand-primary"><T>Dominio propio (opcional)</T>
               <input className={`${input} mt-1 w-full`} value={editing.domain ?? ''} onChange={(e) => setEditing({ ...editing, domain: e.target.value || null })} placeholder="mitienda.mx" />
             </label>
             {priceLists.length > 0 && (
-              <label className="block font-brand text-sm text-brand-primary">Lista de precios (opcional)
+              <label className="block font-brand text-sm text-brand-primary"><T>Lista de precios (opcional)</T>
                 <select className={`${input} mt-1 w-full`} value={editing.price_list_id ?? ''} onChange={(e) => setEditing({ ...editing, price_list_id: e.target.value ? Number(e.target.value) : null })}>
                   <option value="">Precio general de la tienda</option>
                   {priceLists.map((p) => <option key={p.id} value={p.id}>{p.name}</option>)}
@@ -179,7 +180,7 @@ export default function MarketsManager({ markets, locales, priceLists, rules, us
           </div>
 
           <fieldset className="space-y-2">
-            <legend className="font-brand text-sm text-brand-primary">Idiomas del mercado</legend>
+            <legend className="font-brand text-sm text-brand-primary"><T>Idiomas del mercado</T></legend>
             <div className="flex flex-wrap gap-3">
               {locales.map((l) => (
                 <label key={l.code} className="flex items-center gap-2 font-brand text-sm text-brand-primary">
@@ -187,7 +188,7 @@ export default function MarketsManager({ markets, locales, priceLists, rules, us
                 </label>
               ))}
             </div>
-            <label className="block font-brand text-sm text-brand-primary">Idioma por defecto del mercado
+            <label className="block font-brand text-sm text-brand-primary"><T>Idioma por defecto del mercado</T>
               <select className={`${input} mt-1`} value={editing.default_locale} onChange={(e) => setEditing({ ...editing, default_locale: e.target.value })}>
                 {editing.locales.map((l) => <option key={l} value={l}>{label(l)}</option>)}
               </select>
@@ -196,16 +197,16 @@ export default function MarketsManager({ markets, locales, priceLists, rules, us
 
           <div className="flex flex-wrap gap-5">
             <label className="flex items-center gap-2 font-brand text-sm text-brand-primary">
-              <input type="checkbox" checked={editing.is_default} disabled={markets.length <= 1 && editing.is_default} onChange={(e) => setEditing({ ...editing, is_default: e.target.checked })} /> Mercado predeterminado de la tienda
+              <input type="checkbox" checked={editing.is_default} disabled={markets.length <= 1 && editing.is_default} onChange={(e) => setEditing({ ...editing, is_default: e.target.checked })} /> <T>Mercado predeterminado de la tienda</T>
             </label>
             <label className="flex items-center gap-2 font-brand text-sm text-brand-primary">
-              <input type="checkbox" checked={editing.active} disabled={editing.is_default} onChange={(e) => setEditing({ ...editing, active: e.target.checked })} /> Activo
+              <input type="checkbox" checked={editing.active} disabled={editing.is_default} onChange={(e) => setEditing({ ...editing, active: e.target.checked })} /> <T>Activo</T>
             </label>
           </div>
 
           <div className="flex gap-3">
             <button type="button" disabled={pending} onClick={save} className="rounded-full bg-brand-primary px-6 py-2.5 font-brand text-sm text-white disabled:opacity-60">{pending ? 'Guardando…' : 'Guardar mercado'}</button>
-            <button type="button" disabled={pending} onClick={() => setEditing(null)} className="rounded-full border border-brand-primary/30 px-6 py-2.5 font-brand text-sm text-brand-primary">Cancelar</button>
+            <button type="button" disabled={pending} onClick={() => setEditing(null)} className="rounded-full border border-brand-primary/30 px-6 py-2.5 font-brand text-sm text-brand-primary"><T>Cancelar</T></button>
           </div>
         </section>
       )}

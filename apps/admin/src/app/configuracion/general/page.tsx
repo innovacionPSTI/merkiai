@@ -11,11 +11,14 @@ import { resolveFeature, FEATURES } from '@merkiai/tenancy'
 import StoreConfigForm from '../StoreConfigForm'
 import DataTransferWidget from '../DataTransferWidget'
 import BackupWidget from '../BackupWidget'
+import { T } from '@merkiai/ui'
+import { getAdminTx } from '@/lib/ui-locale'
 
 export const metadata: Metadata = { title: 'General · Configuración' }
 export const dynamic = 'force-dynamic'
 
 export default async function ConfigGeneralPage() {
+  const tx = await getAdminTx()
   const adminUser = await getAdminUser()
   if (!adminUser || !userCanAccess(adminUser, 'configuracion')) {
     redirect('/no-autorizado')
@@ -30,15 +33,15 @@ export default async function ConfigGeneralPage() {
   return (
     <div>
       <div className="mb-8">
-        <PageHeader title="General" description="Datos de contacto y nombre de la tienda." />
+        <PageHeader title={tx("General")} description={tx("Datos de contacto y nombre de la tienda.")} />
       </div>
 
       <StoreConfigForm initialConfig={storeConfig} editorialInConstructor={editorialInConstructor} />
 
       <div className="mt-8">
-        <h2 className="font-display text-brand-primary text-xl mb-1">Contenido del sitio</h2>
+        <h2 className="font-display text-brand-primary text-xl mb-1"><T>Contenido del sitio</T></h2>
         <p className="font-brand text-sm text-brand-primary/50 mb-4">
-          Exporta o importa el contenido del sitio (páginas, navegación, banners, secciones).
+          <T>Exporta o importa el contenido del sitio (páginas, navegación, banners, secciones).</T>
         </p>
         <div className="bg-white rounded-2xl p-6 shadow-sm">
           <DataTransferWidget />
@@ -46,9 +49,9 @@ export default async function ConfigGeneralPage() {
       </div>
 
       <div className="mt-8">
-        <h2 className="font-display text-brand-primary text-xl mb-1">Respaldos de datos</h2>
+        <h2 className="font-display text-brand-primary text-xl mb-1"><T>Respaldos de datos</T></h2>
         <p className="font-brand text-sm text-brand-primary/50 mb-4">
-          Descarga una copia de tus productos, pedidos y clientes.
+          <T>Descarga una copia de tus productos, pedidos y clientes.</T>
         </p>
         <div className="bg-white rounded-2xl p-6 shadow-sm">
           {userCanManageData(adminUser) && <BackupWidget />}

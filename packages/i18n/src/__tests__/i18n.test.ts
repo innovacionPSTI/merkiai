@@ -127,3 +127,12 @@ describe('catálogos', () => {
     expect(nb(t('bad'))).toBe('{x, plural, one {y}}')
   })
 })
+
+describe('HU-466 · frases con clave = texto original', () => {
+  it('español devuelve el texto; inglés usa el diccionario; sin entrada → original', async () => {
+    const { translatePhrase } = await import('..')
+    expect(translatePhrase('Guardado correctamente', 'es-MX')).toBe('Guardado correctamente')
+    expect(translatePhrase('Guardado  correctamente', 'en-US')).toBe('Saved successfully')
+    expect(translatePhrase('Texto sin traducir', 'en-US')).toBe('Texto sin traducir')
+  })
+})

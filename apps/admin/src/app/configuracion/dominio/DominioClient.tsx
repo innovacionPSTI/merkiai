@@ -8,6 +8,7 @@ import {
   addDomainAction, verifyDomainAction, activateDomainAction,
   setPrimaryDomainAction, removeDomainAction, domainProvisionAction,
 } from './actions'
+import { T } from '@merkiai/ui'
 
 const STATUS: Record<string, { label: string; tone: BadgeTone }> = {
   pending:  { label: 'Pendiente de verificar', tone: 'warn' },
@@ -63,16 +64,16 @@ export default function DominioClient({ domains }: { domains: AdminCustomDomain[
       {adding && (
         <div className="flex flex-wrap items-end gap-3 mb-4 rounded-2xl border border-brand-primary/15 bg-brand-cream/30 p-4">
           <div className="flex-1 min-w-[220px]">
-            <label className="font-brand text-sm font-semibold text-brand-primary block mb-1">Dominio propio</label>
+            <label className="font-brand text-sm font-semibold text-brand-primary block mb-1"><T>Dominio propio</T></label>
             <input type="text" autoFocus value={newDomain} onChange={(e) => setNewDomain(e.target.value)} placeholder="mitienda.com"
               className="w-full border border-brand-primary/20 rounded-xl px-4 py-2.5 font-mono text-sm focus:outline-none focus:border-brand-primary" />
           </div>
           <button type="button" disabled={busy || !newDomain.trim()}
             onClick={() => run(async () => { const r = await addDomainAction(newDomain); if (r.ok) { setNewDomain(''); setAdding(false) } return r })}
             className="bg-brand-primary text-brand-cream rounded-full px-6 py-2.5 font-brand text-sm hover:bg-brand-dark transition-colors disabled:opacity-50">
-            Agregar
+            <T>Agregar</T>
           </button>
-          <button type="button" onClick={() => { setAdding(false); setNewDomain('') }} className="font-brand text-sm text-brand-primary/60 hover:text-brand-primary">Cancelar</button>
+          <button type="button" onClick={() => { setAdding(false); setNewDomain('') }} className="font-brand text-sm text-brand-primary/60 hover:text-brand-primary"><T>Cancelar</T></button>
         </div>
       )}
 
@@ -96,7 +97,7 @@ export default function DominioClient({ domains }: { domains: AdminCustomDomain[
                 accent={d.isPrimary}
                 badges={<>
                   <StatusBadge tone={st.tone}>{st.label}</StatusBadge>
-                  {d.isPrimary && <StatusBadge tone="success">Principal</StatusBadge>}
+                  {d.isPrimary && <StatusBadge tone="success"><T>Principal</T></StatusBadge>}
                 </>}
                 actions={<>
                   <ResourceAction icon="list" label={openId === d.id ? 'Ocultar DNS' : 'Ver DNS'} onClick={() => toggleDns(d.id)} disabled={busy} />
@@ -108,16 +109,16 @@ export default function DominioClient({ domains }: { domains: AdminCustomDomain[
               />
               {openId === d.id && (
                 <div className="ml-4 mb-3 space-y-2">
-                  {p === undefined && <p className="font-brand text-xs text-brand-primary/50">Cargando instrucciones…</p>}
-                  {p === null && <p className="font-brand text-xs text-red-600">No se pudo cargar las instrucciones DNS.</p>}
+                  {p === undefined && <p className="font-brand text-xs text-brand-primary/50"><T>Cargando instrucciones…</T></p>}
+                  {p === null && <p className="font-brand text-xs text-red-600"><T>No se pudo cargar las instrucciones DNS.</T></p>}
                   {p && (
                     <>
                       {p.txtName && p.txtValue && (<>
-                        <p className="font-brand text-xs font-semibold text-brand-primary/70">1 · Verifica la propiedad (TXT)</p>
+                        <p className="font-brand text-xs font-semibold text-brand-primary/70"><T>1 · Verifica la propiedad (TXT)</T></p>
                         <DnsRow label={`TXT · ${p.txtName}`} value={p.txtValue} />
                       </>)}
                       {p.provision?.records?.length ? (<>
-                        <p className="font-brand text-xs font-semibold text-brand-primary/70 mt-2">2 · Apunta tu dominio</p>
+                        <p className="font-brand text-xs font-semibold text-brand-primary/70 mt-2"><T>2 · Apunta tu dominio</T></p>
                         {p.provision.records.map((r, i) => (
                           <DnsRow key={i} label={`${r.type} · ${r.name}${r.purpose ? ` (${r.purpose})` : ''}`} value={r.value} />
                         ))}

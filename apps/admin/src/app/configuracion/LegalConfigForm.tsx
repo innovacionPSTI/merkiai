@@ -2,6 +2,7 @@
 
 import { useState, useTransition } from 'react'
 import { formatNumber } from '@merkiai/i18n'
+import { T } from '@merkiai/ui'
 
 interface Props {
   initialTerms: string | null
@@ -75,7 +76,7 @@ export default function LegalConfigForm({ initialTerms, initialPrivacy }: Props)
 
       {/* Hint */}
       <p className="font-brand text-xs text-brand-primary/40">
-        Escribe en Markdown. Usa <code className="bg-brand-primary/5 px-1 rounded">## Título</code>,{' '}
+        <T>Escribe en Markdown. Usa</T> <code className="bg-brand-primary/5 px-1 rounded">## Título</code>,{' '}
         <code className="bg-brand-primary/5 px-1 rounded">**negrita**</code>,{' '}
         <code className="bg-brand-primary/5 px-1 rounded">- lista</code>, etc.
         El contenido se renderiza en{' '}
@@ -120,7 +121,7 @@ export default function LegalConfigForm({ initialTerms, initialPrivacy }: Props)
             <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
             </svg>
-            Guardado correctamente
+            <T>Guardado correctamente</T>
           </span>
         )}
 

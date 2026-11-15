@@ -9,11 +9,14 @@ import { maskInstance, publicProviders } from '@/lib/mask-instance'
 import { resolveStoreBaseUrl } from '@/lib/store-url'
 import ShippingConfigForm from '../ShippingConfigForm'
 import ShippingMethodsForm from '../ShippingMethodsForm'
+import { T } from '@merkiai/ui'
+import { getAdminTx } from '@/lib/ui-locale'
 
 export const metadata: Metadata = { title: 'Envíos · Configuración' }
 export const dynamic = 'force-dynamic'
 
 export default async function ConfigEnviosPage() {
+  const tx = await getAdminTx()
   const adminUser = await getAdminUser()
   if (!adminUser || !userCanAccess(adminUser, 'configuracion')) redirect('/no-autorizado')
 
@@ -29,14 +32,14 @@ export default async function ConfigEnviosPage() {
   return (
     <div className="space-y-8">
       <div>
-        <PageHeader title="Envíos" description="Transportadoras (credenciales) y ajustes de envío: tarifa, envío gratis y dirección de origen. Solo una transportadora activa a la vez." />
+        <PageHeader title={tx("Envíos")} description={tx("Transportadoras (credenciales) y ajustes de envío: tarifa, envío gratis y dirección de origen. Solo una transportadora activa a la vez.")} />
       </div>
 
       {/* Métodos de envío (tarifa fija + transportadoras, un solo activo) */}
       <div>
-        <h2 className="font-display text-brand-primary text-xl mb-1">Métodos de envío</h2>
+        <h2 className="font-display text-brand-primary text-xl mb-1"><T>Métodos de envío</T></h2>
         <p className="font-brand text-sm text-brand-primary/50 mb-4">
-          Elige cómo se cobra el envío. Solo un método activo a la vez: la tarifa fija o una transportadora que cotiza en tiempo real y genera guías.
+          <T>Elige cómo se cobra el envío. Solo un método activo a la vez: la tarifa fija o una transportadora que cotiza en tiempo real y genera guías.</T>
         </p>
         <ShippingMethodsForm
           provider={(shippingConfig?.provider as 'fixed' | 'skydropx') ?? 'fixed'}
@@ -49,8 +52,8 @@ export default async function ConfigEnviosPage() {
 
       {/* Ajustes globales (envío gratis, cargo adicional, dirección de origen) */}
       <div>
-        <h2 className="font-display text-brand-primary text-xl mb-1">Ajustes globales</h2>
-        <p className="font-brand text-sm text-brand-primary/50 mb-4">Envío gratis, cargo adicional y dirección de origen. Aplican sin importar el método activo.</p>
+        <h2 className="font-display text-brand-primary text-xl mb-1"><T>Ajustes globales</T></h2>
+        <p className="font-brand text-sm text-brand-primary/50 mb-4"><T>Envío gratis, cargo adicional y dirección de origen. Aplican sin importar el método activo.</T></p>
         <div className="bg-white rounded-2xl p-6 shadow-sm">
           <ShippingConfigForm initialConfig={shippingConfig} />
         </div>

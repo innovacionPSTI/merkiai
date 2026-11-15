@@ -89,6 +89,18 @@ for (const file of dirs.flatMap((d) => walk(join(ROOT, d)))) {
   }
 }
 
+// Frases (clave = texto en español, HU-466): cobertura del diccionario por idioma.
+const phraseDicts = {}
+for (const name of readdirSync(join(I18N, 'phrases'))) {
+  const m = /^admin\.(\w+)\.ts$/.exec(name)
+  if (m) phraseDicts[m[1]] = loadTs(join(I18N, 'phrases', name)).default
+}
+const phraseUses = new Set()
+const T_RE = /<T(?:\s[^>]*)?>([^<{}]+)<\/T>|\btx\(\s*'([^']+)'|\btx\(\s*"([^"]+)"/g
+for (const file of dirs.flatMap((d) => walk(join(ROOT, d)))) {
+  for (const m of readFileSync(file, 'utf8').matchAll(T_RE)) phraseUses.add((m[1] ?? m[2] ?? m[3]).replace(/\s+/g, ' ').trim())
+}
+
 // Cobertura
 console.log(`i18n · ${ref.size} claves en "${REFERENCE}" · ${usages} usos en código`)
 for (const [tag, msgs] of Object.entries(catalogs)) {
@@ -99,6 +111,11 @@ for (const [tag, msgs] of Object.entries(catalogs)) {
     const covered = [...ref.keys()].filter((k) => msgs.has(k)).length
     console.log(`  ${tag.padEnd(6)} cobertura ${((covered / ref.size) * 100).toFixed(1)} % (${covered}/${ref.size})`)
   }
+}
+
+for (const [lang, dict] of Object.entries(phraseDicts)) {
+  const missing = [...phraseUses].filter((p) => !(p in dict))
+  console.log(`  frases ${lang}: ${phraseUses.size - missing.length}/${phraseUses.size} traducidas${missing.length ? ` (faltan ${missing.length}: ${missing.slice(0, 5).map((p) => JSON.stringify(p)).join(', ')}${missing.length > 5 ? '…' : ''})` : ''}`)
 }
 
 if (errors.length) {

@@ -8,11 +8,13 @@ import { userCanAccess } from '@/lib/roles'
 import { resolveStoreBaseUrl } from '@/lib/store-url'
 import { maskInstance, publicProviders } from '@/lib/mask-instance'
 import IntegrationInstancesForm from '../IntegrationInstancesForm'
+import { getAdminTx } from '@/lib/ui-locale'
 
 export const metadata: Metadata = { title: 'Pagos · Configuración' }
 export const dynamic = 'force-dynamic'
 
 export default async function ConfigPagosPage() {
+  const tx = await getAdminTx()
   const adminUser = await getAdminUser()
   if (!adminUser || !userCanAccess(adminUser, 'configuracion')) redirect('/no-autorizado')
 
@@ -29,7 +31,7 @@ export default async function ConfigPagosPage() {
   return (
     <div>
       <div className="mb-8">
-        <PageHeader title="Pagos" description="Agrega los medios de pago que uses. Puedes tener varias configuraciones por pasarela (p. ej. Pruebas y Producción); solo una cobra a la vez. Los secretos nunca se exponen al cliente." />
+        <PageHeader title={tx("Pagos")} description={tx("Agrega los medios de pago que uses. Puedes tener varias configuraciones por pasarela (p. ej. Pruebas y Producción); solo una cobra a la vez. Los secretos nunca se exponen al cliente.")} />
       </div>
       <IntegrationInstancesForm
         kind="payment"

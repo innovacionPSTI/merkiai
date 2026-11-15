@@ -5,6 +5,7 @@ import { EMAIL_TEMPLATES, listEmailTemplates } from '@merkiai/database'
 import { requireAdminDb } from '@/lib/admin-context'
 import { userCanAccess } from '@/lib/roles'
 import EmailTemplatesEditor from './EmailTemplatesEditor'
+import { getAdminTx } from '@/lib/ui-locale'
 
 export const metadata: Metadata = { title: 'Plantillas de correo' }
 export const dynamic = 'force-dynamic'
@@ -15,6 +16,7 @@ export const dynamic = 'force-dynamic'
  * tipo. El layout/tema lo pone la app; sin override se usa el default de sistema.
  */
 export default async function PlantillasCorreoPage() {
+  const tx = await getAdminTx()
   const { adminUser, db } = await requireAdminDb()
   if (!userCanAccess(adminUser, 'configuracion')) redirect('/no-autorizado')
 
@@ -27,8 +29,8 @@ export default async function PlantillasCorreoPage() {
   return (
     <div className="space-y-6">
       <PageHeader
-        title="Plantillas de correo"
-        description="Personaliza el asunto y el contenido de cada correo. Usa variables como {{order_number}} o {{customer_name}}. El encabezado y pie se arman con tu marca."
+        title={tx("Plantillas de correo")}
+        description={tx("Personaliza el asunto y el contenido de cada correo. Usa variables como {{order_number}} o {{customer_name}}. El encabezado y pie se arman con tu marca.")}
       />
       <EmailTemplatesEditor initial={templates} />
     </div>

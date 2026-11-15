@@ -7,7 +7,7 @@
 import { cache } from 'react'
 import { cookies, headers } from 'next/headers'
 import { createServerClient } from '@merkiai/database'
-import { normalizeLocale, matchAcceptLanguage, DEFAULT_LOCALE, createTranslator } from '@merkiai/i18n'
+import { normalizeLocale, matchAcceptLanguage, DEFAULT_LOCALE, createTranslator, translatePhrase } from '@merkiai/i18n'
 import { stackServerApp } from '../stack'
 
 export const ADMIN_LOCALE_COOKIE = 'merkiai_admin_locale'
@@ -36,4 +36,10 @@ export const getAdminLocale = cache(async (): Promise<string> => {
 /** Traductor del panel para Server Components. */
 export async function getAdminT(namespace?: string) {
   return createTranslator(await getAdminLocale(), namespace)
+}
+
+/** Frases del panel (clave = texto en español) para Server Components: `tx('Guardar')`. */
+export async function getAdminTx() {
+  const locale = await getAdminLocale()
+  return (text: string, values?: Record<string, string | number>) => translatePhrase(text, locale, values)
 }

@@ -4,6 +4,7 @@ import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { ResourceList, ResourceItem, ResourceAction, EnvBadge, StatusBadge, WizardModal, Icon, type WizardStep } from '@merkiai/ui'
 import type { MaskedInstance, PublicProviderDef } from '@/lib/mask-instance'
+import { T } from '@merkiai/ui'
 
 interface Props {
   kind: 'payment' | 'shipping' | 'email'
@@ -92,7 +93,7 @@ function SecretField({ label, hint, hasExisting, value, onChange, generatable = 
       {!editing ? (
         <div className="flex items-center gap-3">
           <span className="flex-1 border border-brand-primary/10 rounded-xl px-4 py-2.5 font-mono text-sm text-brand-primary/40 bg-gray-50">••••••••••••</span>
-          <button type="button" onClick={() => setChanging(true)} className="font-brand text-xs text-brand-primary underline hover:text-brand-dark">Cambiar</button>
+          <button type="button" onClick={() => setChanging(true)} className="font-brand text-xs text-brand-primary underline hover:text-brand-dark"><T>Cambiar</T></button>
         </div>
       ) : (
         <>
@@ -101,7 +102,7 @@ function SecretField({ label, hint, hasExisting, value, onChange, generatable = 
           {generatable && (
             <div className="flex items-center gap-3 mt-1.5">
               <button type="button" onClick={() => { onChange(generateSecret()); setReveal(true) }}
-                className="font-brand text-xs font-semibold text-brand-primary underline hover:text-brand-dark">Generar clave segura</button>
+                className="font-brand text-xs font-semibold text-brand-primary underline hover:text-brand-dark"><T>Generar clave segura</T></button>
               {value && (
                 <>
                   <button type="button" onClick={() => setReveal((r) => !r)} className="font-brand text-xs text-brand-primary/60 hover:text-brand-primary">{reveal ? 'Ocultar' : 'Ver'}</button>
@@ -114,7 +115,7 @@ function SecretField({ label, hint, hasExisting, value, onChange, generatable = 
       )}
       {hint && <p className="font-brand text-xs text-brand-primary/40 mt-1">{hint}</p>}
       {generatable && editing && (
-        <p className="font-brand text-xs text-amber-600/80 mt-1">Pega esta misma clave en Skydropx (método HMAC) y guárdala aquí. Debe coincidir exactamente.</p>
+        <p className="font-brand text-xs text-amber-600/80 mt-1"><T>Pega esta misma clave en Skydropx (método HMAC) y guárdala aquí. Debe coincidir exactamente.</T></p>
       )}
     </div>
   )
@@ -127,7 +128,7 @@ function WebhookUrl({ provider, base }: { provider: string; base?: string | null
   return (
     <div className="rounded-xl border border-brand-primary/10 bg-brand-cream/30 p-3 flex items-center justify-between gap-3">
       <div className="min-w-0">
-        <p className="font-brand text-xs font-semibold text-brand-primary/70">URL de webhook</p>
+        <p className="font-brand text-xs font-semibold text-brand-primary/70"><T>URL de webhook</T></p>
         <p className="font-mono text-xs text-brand-primary/60 truncate">{url}</p>
       </div>
       <button type="button" onClick={() => { navigator.clipboard?.writeText(url); setCopied(true); setTimeout(() => setCopied(false), 1500) }}
@@ -250,7 +251,7 @@ export default function IntegrationInstancesForm({ kind, apiBase, addLabel, empt
         {/* Entorno */}
         {showEnv && (
           <div>
-            <label className="font-brand text-sm font-semibold text-brand-primary block mb-1.5">Entorno</label>
+            <label className="font-brand text-sm font-semibold text-brand-primary block mb-1.5"><T>Entorno</T></label>
             <div className="inline-flex rounded-xl border border-brand-primary/20 p-1 bg-brand-cream/40">
               {(['test', 'production'] as Env[]).map((e) => (
                 <button key={e} type="button" onClick={() => setEnv(e)}
@@ -264,7 +265,7 @@ export default function IntegrationInstancesForm({ kind, apiBase, addLabel, empt
 
         {/* Etiqueta interna */}
         <div>
-          <label className="font-brand text-sm font-semibold text-brand-primary block mb-1">Etiqueta (interna)</label>
+          <label className="font-brand text-sm font-semibold text-brand-primary block mb-1"><T>Etiqueta (interna)</T></label>
           <input type="text" value={d.label} onChange={(e) => setDraft((x) => x ? { ...x, label: e.target.value } : x)}
             placeholder={`Ej. ${def.label} ${d.environment === 'production' ? 'producción' : 'pruebas'}`}
             className="w-full border border-brand-primary/20 rounded-xl px-4 py-2.5 font-brand text-sm focus:outline-none focus:border-brand-primary" />
@@ -292,7 +293,7 @@ export default function IntegrationInstancesForm({ kind, apiBase, addLabel, empt
         {/* Tu Compra: medios de pago */}
         {d.provider === 'tucompra' && (
           <div>
-            <label className="font-brand text-sm font-semibold text-brand-primary block mb-1.5">Medios de pago habilitados</label>
+            <label className="font-brand text-sm font-semibold text-brand-primary block mb-1.5"><T>Medios de pago habilitados</T></label>
             <div className="space-y-2">
               {d.tcMethods.map((m, i) => {
                 const meta = TC_METHODS.find((x) => x.tipo === m.tipo)!
@@ -357,7 +358,7 @@ export default function IntegrationInstancesForm({ kind, apiBase, addLabel, empt
             accent={builtin.active}
             badges={<>
               {builtin.badgeText && <StatusBadge tone="neutral">{builtin.badgeText}</StatusBadge>}
-              {builtin.active && <StatusBadge tone="success">Activo</StatusBadge>}
+              {builtin.active && <StatusBadge tone="success"><T>Activo</T></StatusBadge>}
             </>}
             actions={<>
               {builtin.onEdit && <ResourceAction icon="edit" label="Editar" onClick={builtin.onEdit} disabled={busy} />}
@@ -374,7 +375,7 @@ export default function IntegrationInstancesForm({ kind, apiBase, addLabel, empt
             accent={carrierIsActive(inst)}
             badges={<>
               {showEnv && <EnvBadge env={inst.environment === 'production' ? 'prod' : 'demo'} />}
-              {carrierIsActive(inst) && <StatusBadge tone="success">Activa</StatusBadge>}
+              {carrierIsActive(inst) && <StatusBadge tone="success"><T>Activa</T></StatusBadge>}
             </>}
             actions={<>
               <ResourceAction icon="refresh" label={verifying === inst.id ? 'Verificando…' : 'Verificar'} onClick={() => verify(inst)} disabled={verifying !== null || busy} />
@@ -389,7 +390,7 @@ export default function IntegrationInstancesForm({ kind, apiBase, addLabel, empt
       {anyActive && kind === 'payment' && (
         <button type="button" onClick={() => activate(null)} disabled={busy}
           className="mt-4 font-brand text-xs text-brand-primary/50 hover:text-brand-primary underline disabled:opacity-40">
-          Desactivar cobro en línea (usar pago manual)
+          <T>Desactivar cobro en línea (usar pago manual)</T>
         </button>
       )}
 

@@ -3,6 +3,7 @@
 import { useState, useTransition } from 'react'
 import type { StoreConfig, TrustBadge } from '@merkiai/database'
 import ImageUpload from '@/components/ImageUpload'
+import { T } from '@merkiai/ui'
 
 interface Props {
   initialConfig: StoreConfig | null
@@ -144,9 +145,8 @@ export default function StoreConfigForm({ initialConfig, editorialInConstructor 
       {editorialInConstructor && (
         <div className="rounded-2xl border border-indigo-100 bg-indigo-50/60 px-5 py-4">
           <p className="font-brand text-sm text-brand-primary">
-            La <strong>marca, redes, navegación y pie de página</strong> ahora se editan en el{' '}
-            <a href="/constructor" className="underline font-semibold hover:text-indigo-700">Constructor → Ajustes de sitio</a>.
-            Aquí quedan solo los ajustes operativos.
+            <T>La</T> <strong><T>marca, redes, navegación y pie de página</T></strong> ahora se editan en el{' '}
+            <a href="/constructor" className="underline font-semibold hover:text-indigo-700"><T>Constructor → Ajustes de sitio</T></a><T>. Aquí quedan solo los ajustes operativos.</T>
           </p>
         </div>
       )}
@@ -154,11 +154,10 @@ export default function StoreConfigForm({ initialConfig, editorialInConstructor 
       {/* Marca: logo + favicon — HU-371: se oculta si se edita en el Constructor */}
       {!editorialInConstructor && (
       <div className="bg-white rounded-2xl p-6 shadow-sm">
-        <h2 className="font-display text-brand-primary text-lg mb-4">Marca</h2>
-        <p className="font-brand text-xs font-semibold text-brand-primary mb-1">Logo de la tienda</p>
+        <h2 className="font-display text-brand-primary text-lg mb-4"><T>Marca</T></h2>
+        <p className="font-brand text-xs font-semibold text-brand-primary mb-1"><T>Logo de la tienda</T></p>
         <p className="font-brand text-xs text-brand-primary/40 mb-3">
-          Aparece en la barra de navegación y el pie de página. PNG o WebP con fondo transparente recomendado.
-          Dimensiones sugeridas: <strong>400 × 400 px</strong>.
+          <T>Aparece en la barra de navegación y el pie de página. PNG o WebP con fondo transparente recomendado. Dimensiones sugeridas:</T> <strong><T>400 × 400 px</T></strong>.
         </p>
         <div className="w-48">
           <ImageUpload
@@ -172,10 +171,9 @@ export default function StoreConfigForm({ initialConfig, editorialInConstructor 
 
         {/* Favicon (dentro de la tarjeta Marca) */}
         <div className="border-t border-gray-100 pt-5 mt-5">
-        <p className="font-brand text-xs font-semibold text-brand-primary mb-1">Favicon</p>
+        <p className="font-brand text-xs font-semibold text-brand-primary mb-1"><T>Favicon</T></p>
         <p className="font-brand text-xs text-brand-primary/40 mb-3">
-          Icono que aparece en la pestaña del navegador y en marcadores. PNG cuadrado recomendado.
-          Dimensiones: <strong>64 × 64 px</strong>. Si no se sube, se usa el <code>favicon.ico</code> estático.
+          <T>Icono que aparece en la pestaña del navegador y en marcadores. PNG cuadrado recomendado. Dimensiones:</T> <strong><T>64 × 64 px</T></strong><T>. Si no se sube, se usa el</T> <code>favicon.ico</code> <T>estático.</T>
         </p>
         <div className="w-24">
           <ImageUpload
@@ -198,14 +196,14 @@ export default function StoreConfigForm({ initialConfig, editorialInConstructor 
       )}
 
       <div className="bg-white rounded-2xl p-6 shadow-sm space-y-4">
-        <h2 className="font-display text-brand-primary text-lg">Información de la tienda</h2>
+        <h2 className="font-display text-brand-primary text-lg"><T>Información de la tienda</T></h2>
         {/* WhatsApp */}
         <div>
           <label className="font-brand text-xs font-semibold text-brand-primary block mb-1">
-            Número de WhatsApp
+            <T>Número de WhatsApp</T>
           </label>
           <p className="font-brand text-xs text-brand-primary/40 mb-2">
-            Formato internacional sin + ni espacios (ej. 573001234567).
+            <T>Formato internacional sin + ni espacios (ej. 573001234567).</T>
           </p>
           <input
             type="tel"
@@ -220,7 +218,7 @@ export default function StoreConfigForm({ initialConfig, editorialInConstructor 
         {!editorialInConstructor && (
         <div>
           <label className="font-brand text-xs font-semibold text-brand-primary block mb-1">
-            Nombre de la tienda
+            <T>Nombre de la tienda</T>
           </label>
           <input
             type="text"
@@ -235,10 +233,10 @@ export default function StoreConfigForm({ initialConfig, editorialInConstructor 
         {/* Prefijo del número de orden */}
         <div>
           <label className="font-brand text-xs font-semibold text-brand-primary block mb-1">
-            Prefijo del número de orden
+            <T>Prefijo del número de orden</T>
           </label>
           <p className="font-brand text-xs text-brand-primary/40 mb-2">
-            Se antepone al consecutivo (ej. <strong>{(orderPrefix || 'ORD').toUpperCase()}-0001</strong>). Letras, números, guion y guion bajo.
+            <T>Se antepone al consecutivo (ej.</T> <strong>{(orderPrefix || 'ORD').toUpperCase()}-0001</strong><T>). Letras, números, guion y guion bajo.</T>
           </p>
           <input
             type="text"
@@ -254,7 +252,7 @@ export default function StoreConfigForm({ initialConfig, editorialInConstructor 
         {!editorialInConstructor && (
         <div>
           <label className="font-brand text-xs font-semibold text-brand-primary block mb-1">
-            Descripción SEO
+            <T>Descripción SEO</T>
           </label>
           <p className="font-brand text-xs text-brand-primary/40 mb-2">
             Se usa en &lt;meta description&gt; y Open Graph. Máx. 160 caracteres recomendado.
@@ -276,10 +274,10 @@ export default function StoreConfigForm({ initialConfig, editorialInConstructor 
         {/* Keywords SEO */}
         <div>
           <label className="font-brand text-xs font-semibold text-brand-primary block mb-1">
-            Palabras clave SEO
+            <T>Palabras clave SEO</T>
           </label>
           <p className="font-brand text-xs text-brand-primary/40 mb-2">
-            Separadas por comas. Ej: tienda online, envíos a todo el país, compra segura.
+            <T>Separadas por comas. Ej: tienda online, envíos a todo el país, compra segura.</T>
           </p>
           <input
             type="text"
@@ -293,7 +291,7 @@ export default function StoreConfigForm({ initialConfig, editorialInConstructor 
         {/* Email */}
         <div>
           <label className="font-brand text-xs font-semibold text-brand-primary block mb-1">
-            Email de contacto
+            <T>Email de contacto</T>
           </label>
           <input
             type="email"
@@ -309,9 +307,9 @@ export default function StoreConfigForm({ initialConfig, editorialInConstructor 
       {!editorialInConstructor && (
       <div className="bg-white rounded-2xl p-6 shadow-sm space-y-4">
         <div>
-          <h2 className="font-display text-brand-primary text-lg mb-0.5">Redes sociales</h2>
+          <h2 className="font-display text-brand-primary text-lg mb-0.5"><T>Redes sociales</T></h2>
           <p className="font-brand text-xs text-brand-primary/40">
-            Los iconos aparecen en el footer solo si están habilitados y tienen URL.
+            <T>Los iconos aparecen en el footer solo si están habilitados y tienen URL.</T>
           </p>
         </div>
 
@@ -376,9 +374,9 @@ export default function StoreConfigForm({ initialConfig, editorialInConstructor 
       {/* Operaciones del sitio */}
       <div className="bg-white rounded-2xl p-6 shadow-sm space-y-4">
         <div>
-          <h2 className="font-display text-brand-primary text-lg mb-0.5">Operaciones</h2>
+          <h2 className="font-display text-brand-primary text-lg mb-0.5"><T>Operaciones</T></h2>
           <p className="font-brand text-xs text-brand-primary/40">
-            Ajustes que afectan la disponibilidad y el comportamiento global del sitio.
+            <T>Ajustes que afectan la disponibilidad y el comportamiento global del sitio.</T>
           </p>
         </div>
 
@@ -401,7 +399,7 @@ export default function StoreConfigForm({ initialConfig, editorialInConstructor 
             <p className={`font-brand text-sm font-semibold ${maintenanceMode ? 'text-red-600' : 'text-brand-primary'}`}>
               Modo mantenimiento
               {maintenanceMode && (
-                <span className="ml-2 text-xs font-normal bg-red-100 text-red-600 px-2 py-0.5 rounded-full">Activo</span>
+                <span className="ml-2 text-xs font-normal bg-red-100 text-red-600 px-2 py-0.5 rounded-full"><T>Activo</T></span>
               )}
             </p>
             <p className="font-brand text-xs text-brand-primary/40 mt-0.5">
@@ -428,7 +426,7 @@ export default function StoreConfigForm({ initialConfig, editorialInConstructor 
           <div>
             <p className="font-brand text-sm font-semibold text-brand-primary">Vercel Analytics</p>
             <p className="font-brand text-xs text-brand-primary/40 mt-0.5">
-              Activa el seguimiento de visitas con Vercel Analytics. No requiere cookies ni afecta la privacidad del usuario.
+              <T>Activa el seguimiento de visitas con Vercel Analytics. No requiere cookies ni afecta la privacidad del usuario.</T>
             </p>
           </div>
         </div>
@@ -438,11 +436,10 @@ export default function StoreConfigForm({ initialConfig, editorialInConstructor 
       {!editorialInConstructor && (
       <div className="bg-white rounded-2xl p-6 shadow-sm space-y-4">
         <div>
-          <h2 className="font-display text-brand-primary text-lg mb-0.5">Barra de navegación</h2>
+          <h2 className="font-display text-brand-primary text-lg mb-0.5"><T>Barra de navegación</T></h2>
           <p className="font-brand text-xs text-brand-primary/40">
             Los ítems del menú se configuran desde{' '}
-            <a href="/nav" className="underline hover:text-brand-primary">Navegación</a>.
-            Aquí puedes mostrar u ocultar el carrito y el botón de acceso.
+            <a href="/nav" className="underline hover:text-brand-primary"><T>Navegación</T></a><T>. Aquí puedes mostrar u ocultar el carrito y el botón de acceso.</T>
           </p>
         </div>
         {[
@@ -476,9 +473,9 @@ export default function StoreConfigForm({ initialConfig, editorialInConstructor 
       {!editorialInConstructor && (
       <div className="bg-white rounded-2xl p-6 shadow-sm space-y-4">
         <div>
-          <h2 className="font-display text-brand-primary text-lg mb-0.5">Pie de página</h2>
+          <h2 className="font-display text-brand-primary text-lg mb-0.5"><T>Pie de página</T></h2>
           <p className="font-brand text-xs text-brand-primary/40">
-            Las columnas de Servicios y Nosotros se controlan desde <strong>Páginas</strong>. Aquí puedes mostrar u ocultar las columnas estáticas.
+            <T>Las columnas de Servicios y Nosotros se controlan desde</T> <strong><T>Páginas</T></strong><T>. Aquí puedes mostrar u ocultar las columnas estáticas.</T>
           </p>
         </div>
         {[
@@ -511,9 +508,9 @@ export default function StoreConfigForm({ initialConfig, editorialInConstructor 
       {/* Página de producto (ola PDP · HU-285/286/287) */}
       <div className="bg-white rounded-2xl p-6 shadow-sm space-y-4">
         <div>
-          <h2 className="font-display text-brand-primary text-lg mb-0.5">Página de producto</h2>
+          <h2 className="font-display text-brand-primary text-lg mb-0.5"><T>Página de producto</T></h2>
           <p className="font-brand text-xs text-brand-primary/40">
-            Funciones opcionales de la ficha de producto. El diseño se adapta a tu plantilla.
+            <T>Funciones opcionales de la ficha de producto. El diseño se adapta a tu plantilla.</T>
           </p>
         </div>
         {[
@@ -548,9 +545,9 @@ export default function StoreConfigForm({ initialConfig, editorialInConstructor 
       {/* Inventario (HU-106) */}
       <div className="bg-white rounded-2xl p-6 shadow-sm space-y-4">
         <div>
-          <h2 className="font-display text-brand-primary text-lg mb-0.5">Inventario</h2>
+          <h2 className="font-display text-brand-primary text-lg mb-0.5"><T>Inventario</T></h2>
           <p className="font-brand text-xs text-brand-primary/40">
-            Alertas de stock bajo. Los productos con reposición automática (backorder) no se avisan.
+            <T>Alertas de stock bajo. Los productos con reposición automática (backorder) no se avisan.</T>
           </p>
         </div>
         <div className="flex items-start gap-3">
@@ -566,9 +563,9 @@ export default function StoreConfigForm({ initialConfig, editorialInConstructor 
             className="w-24 rounded-lg border border-brand-primary/15 px-3 py-2 font-brand text-sm text-brand-primary focus:border-brand-primary focus:outline-none"
           />
           <div>
-            <span className="font-brand text-sm font-semibold text-brand-primary">Umbral de stock bajo</span>
+            <span className="font-brand text-sm font-semibold text-brand-primary"><T>Umbral de stock bajo</T></span>
             <p className="font-brand text-xs text-brand-primary/40">
-              Una variante se marca en bajo stock cuando su existencia es igual o menor a este número.
+              <T>Una variante se marca en bajo stock cuando su existencia es igual o menor a este número.</T>
             </p>
           </div>
         </div>
@@ -577,9 +574,9 @@ export default function StoreConfigForm({ initialConfig, editorialInConstructor 
       {/* Badges de confianza */}
       <div className="bg-white rounded-2xl p-6 shadow-sm space-y-4">
         <div>
-          <h2 className="font-display text-brand-primary text-lg mb-0.5">Badges de confianza</h2>
+          <h2 className="font-display text-brand-primary text-lg mb-0.5"><T>Badges de confianza</T></h2>
           <p className="font-brand text-xs text-brand-primary/40">
-            Se muestran en la página de cada producto. Incluye emoji si quieres (ej: 🚚 Envío gratis · ✓ Garantía).
+            <T>Se muestran en la página de cada producto. Incluye emoji si quieres (ej: 🚚 Envío gratis · ✓ Garantía).</T>
           </p>
         </div>
 
@@ -639,7 +636,7 @@ export default function StoreConfigForm({ initialConfig, editorialInConstructor 
             disabled={!newBadgeText.trim()}
             className="font-brand text-sm bg-brand-primary text-brand-cream px-4 py-2 rounded-xl hover:bg-brand-dark transition-colors disabled:opacity-40"
           >
-            + Agregar
+            <T>+ Agregar</T>
           </button>
         </div>
       </div>
@@ -659,7 +656,7 @@ export default function StoreConfigForm({ initialConfig, editorialInConstructor 
             <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
             </svg>
-            Guardado
+            <T>Guardado</T>
           </span>
         )}
         {status === 'error' && (

@@ -15,6 +15,7 @@ import { useRouter } from 'next/navigation'
 import IntegrationInstancesForm from './IntegrationInstancesForm'
 import type { MaskedInstance, PublicProviderDef } from '@/lib/mask-instance'
 import { formatMoney } from '@merkiai/i18n'
+import { T } from '@merkiai/ui'
 
 interface Props {
   provider: 'fixed' | 'skydropx'
@@ -85,7 +86,7 @@ export default function ShippingMethodsForm({ provider, fixedRate, instances, pr
 
       {editing && (
         <div className="mt-3 rounded-2xl border border-brand-primary/15 bg-brand-cream/30 p-4">
-          <label className="font-brand text-sm font-semibold text-brand-primary block mb-1">Monto de la tarifa fija (COP)</label>
+          <label className="font-brand text-sm font-semibold text-brand-primary block mb-1"><T>Monto de la tarifa fija (COP)</T></label>
           <div className="flex items-center gap-3">
             <input type="number" min={0} step={500} value={rate} onChange={(e) => setRate(e.target.value)}
               className="w-48 border border-brand-primary/20 rounded-xl px-4 py-2.5 font-brand text-sm focus:outline-none focus:border-brand-primary" />
@@ -93,9 +94,9 @@ export default function ShippingMethodsForm({ provider, fixedRate, instances, pr
               className="bg-brand-primary text-brand-cream rounded-full px-5 py-2 font-brand text-sm hover:bg-brand-dark transition-colors disabled:opacity-50">
               {busy ? 'Guardando…' : 'Guardar monto'}
             </button>
-            <button type="button" onClick={() => { setRate(String(fixedRate)); setEditing(false) }} className="font-brand text-sm text-brand-primary/60 hover:text-brand-primary">Cancelar</button>
+            <button type="button" onClick={() => { setRate(String(fixedRate)); setEditing(false) }} className="font-brand text-sm text-brand-primary/60 hover:text-brand-primary"><T>Cancelar</T></button>
           </div>
-          <p className="font-brand text-xs text-brand-primary/40 mt-1">Se cobra cuando "Tarifa fija" es el método activo, o como respaldo si la transportadora no responde.</p>
+          <p className="font-brand text-xs text-brand-primary/40 mt-1"><T>Se cobra cuando "Tarifa fija" es el método activo, o como respaldo si la transportadora no responde.</T></p>
         </div>
       )}
 

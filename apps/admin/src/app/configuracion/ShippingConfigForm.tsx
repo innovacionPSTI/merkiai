@@ -4,6 +4,7 @@ import { useState, useTransition } from 'react'
 import type { ShippingConfig } from '@merkiai/database'
 import { SearchableSelect, DEPARTMENTS, getCitiesForDepartment } from '@merkiai/ui'
 import { formatMoney } from '@merkiai/i18n'
+import { T } from '@merkiai/ui'
 
 interface Props {
   initialConfig: ShippingConfig | null
@@ -91,14 +92,14 @@ export default function ShippingConfigForm({ initialConfig }: Props) {
       <div className="border border-brand-primary/10 rounded-2xl p-5 space-y-4">
         <div className="flex items-center justify-between">
           <div>
-            <p className="font-brand text-sm font-semibold text-brand-primary">Envío gratis</p>
-            <p className="font-brand text-xs text-brand-primary/40 mt-0.5">Cuando el subtotal supera el monto mínimo, el envío es gratis automáticamente.</p>
+            <p className="font-brand text-sm font-semibold text-brand-primary"><T>Envío gratis</T></p>
+            <p className="font-brand text-xs text-brand-primary/40 mt-0.5"><T>Cuando el subtotal supera el monto mínimo, el envío es gratis automáticamente.</T></p>
           </div>
           <Toggle enabled={freeShippingEnabled} onChange={setFreeShippingEnabled} />
         </div>
         {freeShippingEnabled && (
           <div>
-            <label className="font-brand text-xs font-semibold text-brand-primary block mb-1">Monto mínimo (COP)</label>
+            <label className="font-brand text-xs font-semibold text-brand-primary block mb-1"><T>Monto mínimo (COP)</T></label>
             <input type="number" min={0} step={1000} value={freeShippingMin} onChange={(e) => setFreeShippingMin(e.target.value)}
               className="w-48 border border-gray-200 rounded-xl px-4 py-2.5 font-brand text-sm focus:outline-none focus:border-brand-primary" />
             <p className="font-brand text-xs text-brand-primary/40 mt-1">Pedidos de {fmt(Number(freeShippingMin) || 0)} o más tendrán envío gratis.</p>
@@ -109,9 +110,9 @@ export default function ShippingConfigForm({ initialConfig }: Props) {
       {/* ── Cargo adicional de envío ─────────────────────────────────────── */}
       <div className="border border-brand-primary/10 rounded-2xl p-5 space-y-4">
         <div>
-          <p className="font-brand text-sm font-semibold text-brand-primary">Cargo adicional de envío</p>
+          <p className="font-brand text-sm font-semibold text-brand-primary"><T>Cargo adicional de envío</T></p>
           <p className="font-brand text-xs text-brand-primary/40 mt-0.5">
-            Se suma a la tarifa que calcula la transportadora (manejo, empaque…). Es transparente para el comprador: se incluye en el precio de envío mostrado, sin desglose. No aplica a la tarifa fija. Elige <strong>un</strong> tipo de cargo.
+            <T>Se suma a la tarifa que calcula la transportadora (manejo, empaque…). Es transparente para el comprador: se incluye en el precio de envío mostrado, sin desglose. No aplica a la tarifa fija. Elige</T> <strong><T>un</T></strong> <T>tipo de cargo.</T>
           </p>
         </div>
 
@@ -127,13 +128,13 @@ export default function ShippingConfigForm({ initialConfig }: Props) {
 
         {feeMode === 'fixed' ? (
           <div>
-            <label className="font-brand text-xs font-semibold text-brand-primary block mb-1">Monto fijo (COP)</label>
+            <label className="font-brand text-xs font-semibold text-brand-primary block mb-1"><T>Monto fijo (COP)</T></label>
             <input type="number" min={0} step={500} value={feeFixed} onChange={(e) => setFeeFixed(e.target.value)}
               className="w-40 border border-gray-200 rounded-xl px-4 py-2.5 font-brand text-sm focus:outline-none focus:border-brand-primary" />
           </div>
         ) : (
           <div>
-            <label className="font-brand text-xs font-semibold text-brand-primary block mb-1">Porcentaje (%)</label>
+            <label className="font-brand text-xs font-semibold text-brand-primary block mb-1"><T>Porcentaje (%)</T></label>
             <input type="number" min={0} max={100} step={0.5} value={feePercent} onChange={(e) => setFeePercent(e.target.value)}
               className="w-32 border border-gray-200 rounded-xl px-4 py-2.5 font-brand text-sm focus:outline-none focus:border-brand-primary" />
           </div>
@@ -149,29 +150,29 @@ export default function ShippingConfigForm({ initialConfig }: Props) {
       {/* ── Dirección de origen ──────────────────────────────────────────── */}
       <div className="border border-brand-primary/10 rounded-2xl p-5 space-y-4 bg-brand-cream/30">
         <div>
-          <p className="font-brand text-sm font-semibold text-brand-primary">Dirección de origen (bodega / remitente)</p>
-          <p className="font-brand text-xs text-brand-primary/40 mt-0.5">Aparece en las guías como remitente y se usa para cotizar con transportadoras. Requerida al activar una transportadora.</p>
+          <p className="font-brand text-sm font-semibold text-brand-primary"><T>Dirección de origen (bodega / remitente)</T></p>
+          <p className="font-brand text-xs text-brand-primary/40 mt-0.5"><T>Aparece en las guías como remitente y se usa para cotizar con transportadoras. Requerida al activar una transportadora.</T></p>
         </div>
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
           <div>
-            <label className="font-brand text-xs font-semibold text-brand-primary block mb-1">Nombre / Empresa *</label>
+            <label className="font-brand text-xs font-semibold text-brand-primary block mb-1"><T>Nombre / Empresa *</T></label>
             <input type="text" value={originName} onChange={(e) => setOriginName(e.target.value)} placeholder="Nombre del remitente / empresa"
               className="w-full border border-gray-200 rounded-xl px-4 py-2.5 font-brand text-sm focus:outline-none focus:border-brand-primary" />
           </div>
           <div>
-            <label className="font-brand text-xs font-semibold text-brand-primary block mb-1">Teléfono *</label>
+            <label className="font-brand text-xs font-semibold text-brand-primary block mb-1"><T>Teléfono *</T></label>
             <input type="tel" value={originPhone} onChange={(e) => setOriginPhone(e.target.value)} placeholder="3001234567"
               className="w-full border border-gray-200 rounded-xl px-4 py-2.5 font-brand text-sm focus:outline-none focus:border-brand-primary" />
           </div>
         </div>
         <div>
-          <label className="font-brand text-xs font-semibold text-brand-primary block mb-1">Dirección (calle y número) *</label>
+          <label className="font-brand text-xs font-semibold text-brand-primary block mb-1"><T>Dirección (calle y número) *</T></label>
           <input type="text" value={originStreet} onChange={(e) => setOriginStreet(e.target.value)} placeholder="Calle 10 # 43-57"
             className="w-full border border-gray-200 rounded-xl px-4 py-2.5 font-brand text-sm focus:outline-none focus:border-brand-primary" />
         </div>
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
           <div>
-            <label className="font-brand text-xs font-semibold text-brand-primary block mb-1">Barrio</label>
+            <label className="font-brand text-xs font-semibold text-brand-primary block mb-1"><T>Barrio</T></label>
             <input type="text" value={originNeighborhood} onChange={(e) => setOriginNeighborhood(e.target.value)} placeholder="Barrio / sector"
               className="w-full border border-gray-200 rounded-xl px-4 py-2.5 font-brand text-sm focus:outline-none focus:border-brand-primary" />
           </div>
@@ -182,13 +183,13 @@ export default function ShippingConfigForm({ initialConfig }: Props) {
           <SearchableSelect label="Departamento *" value={originDepartment} options={DEPARTMENTS}
             placeholder="Selecciona departamento" onChange={(dept) => { setOriginDepartment(dept); setOriginCity('') }} />
           <div>
-            <label className="font-brand text-xs font-semibold text-brand-primary block mb-1">Código postal <span className="font-normal text-brand-primary/40">(opcional)</span></label>
+            <label className="font-brand text-xs font-semibold text-brand-primary block mb-1"><T>Código postal</T> <span className="font-normal text-brand-primary/40">(opcional)</span></label>
             <input type="text" value={originPostalCode} onChange={(e) => setOriginPostalCode(e.target.value.replace(/\D/g, '').slice(0, 6))} placeholder="6 dígitos" maxLength={6} inputMode="numeric"
               className="w-full border border-gray-200 rounded-xl px-4 py-2.5 font-brand text-sm focus:outline-none focus:border-brand-primary" />
           </div>
         </div>
         <div>
-          <label className="font-brand text-xs font-semibold text-brand-primary block mb-1">Email de contacto *</label>
+          <label className="font-brand text-xs font-semibold text-brand-primary block mb-1"><T>Email de contacto *</T></label>
           <input type="email" value={originEmail} onChange={(e) => setOriginEmail(e.target.value)} placeholder="despachos@mitienda.com"
             className="w-full border border-gray-200 rounded-xl px-4 py-2.5 font-brand text-sm focus:outline-none focus:border-brand-primary" />
         </div>
@@ -200,7 +201,7 @@ export default function ShippingConfigForm({ initialConfig }: Props) {
           className="bg-brand-primary text-brand-cream rounded-full px-6 py-2.5 font-brand text-sm hover:bg-brand-dark transition-colors disabled:opacity-50 disabled:cursor-not-allowed">
           {status === 'saving' ? 'Guardando...' : 'Guardar ajustes'}
         </button>
-        {status === 'saved' && <span className="font-brand text-sm text-green-600">Guardado ✓</span>}
+        {status === 'saved' && <span className="font-brand text-sm text-green-600"><T>Guardado ✓</T></span>}
         {status === 'error' && <span className="font-brand text-sm text-red-600">{errorMsg}</span>}
       </div>
     </div>

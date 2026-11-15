@@ -1,6 +1,7 @@
 'use client'
 
 import { useRef, useState } from 'react'
+import { T } from '@merkiai/ui'
 
 type ImportResult = {
   success: boolean
@@ -50,7 +51,7 @@ export default function DataTransferWidget() {
           download
           className="px-4 py-2 rounded-xl bg-brand-primary text-brand-cream text-sm font-brand font-semibold hover:bg-brand-dark transition-colors"
         >
-          ↓ Exportar contenido
+          <T>↓ Exportar contenido</T>
         </a>
 
         {/* Import */}
@@ -71,7 +72,7 @@ export default function DataTransferWidget() {
       </div>
 
       <p className="font-brand text-xs text-brand-primary/40">
-        Exporta un snapshot JSON de páginas, secciones, nav, banners y configuración. Importa para restaurar idempotentemente.
+        <T>Exporta un snapshot JSON de páginas, secciones, nav, banners y configuración. Importa para restaurar idempotentemente.</T>
       </p>
 
       {error && (

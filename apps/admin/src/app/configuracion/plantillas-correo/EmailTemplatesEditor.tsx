@@ -1,6 +1,7 @@
 'use client'
 
 import { useState } from 'react'
+import { T } from '@merkiai/ui'
 
 interface Tpl { type: string; label: string; vars: string[]; subject: string; body: string; enabled: boolean; customized: boolean }
 
@@ -54,7 +55,7 @@ export default function EmailTemplatesEditor({ initial }: { initial: Tpl[] }) {
           <div className="flex items-center gap-3 px-5 py-4">
             <div className="flex-1">
               <p className="font-brand font-semibold text-brand-primary">{t.label}
-                {t.customized && <span className="ml-2 font-brand text-[11px] text-brand-primary/40">personalizada</span>}
+                {t.customized && <span className="ml-2 font-brand text-[11px] text-brand-primary/40"><T>personalizada</T></span>}
               </p>
               <p className="font-brand text-xs text-brand-primary/40 font-mono">{t.type}</p>
             </div>
@@ -70,12 +71,12 @@ export default function EmailTemplatesEditor({ initial }: { initial: Tpl[] }) {
           {open === t.type && (
             <div className="border-t border-gray-100 px-5 py-4 space-y-3">
               <label className="block">
-                <span className="font-brand text-xs text-brand-primary/50">Asunto</span>
+                <span className="font-brand text-xs text-brand-primary/50"><T>Asunto</T></span>
                 <input value={t.subject} onChange={(e) => patch(t.type, { subject: e.target.value })}
                   className="mt-1 w-full rounded-lg border border-brand-primary/15 px-3 py-2 font-brand text-sm" />
               </label>
               <label className="block">
-                <span className="font-brand text-xs text-brand-primary/50">Cuerpo</span>
+                <span className="font-brand text-xs text-brand-primary/50"><T>Cuerpo</T></span>
                 <textarea value={t.body} onChange={(e) => patch(t.type, { body: e.target.value })} rows={6}
                   className="mt-1 w-full rounded-lg border border-brand-primary/15 px-3 py-2 font-brand text-sm" />
               </label>
@@ -88,14 +89,14 @@ export default function EmailTemplatesEditor({ initial }: { initial: Tpl[] }) {
                   {saving === t.type ? 'Guardando…' : 'Guardar'}
                 </button>
                 <button onClick={() => doPreview(t)} type="button"
-                  className="font-brand text-sm border border-brand-primary/20 text-brand-primary rounded-full px-4 py-2 hover:bg-brand-cream">Vista previa</button>
+                  className="font-brand text-sm border border-brand-primary/20 text-brand-primary rounded-full px-4 py-2 hover:bg-brand-cream"><T>Vista previa</T></button>
                 <button onClick={() => sendTest(t)} type="button"
-                  className="font-brand text-sm border border-brand-primary/20 text-brand-primary rounded-full px-4 py-2 hover:bg-brand-cream">Enviar prueba</button>
+                  className="font-brand text-sm border border-brand-primary/20 text-brand-primary rounded-full px-4 py-2 hover:bg-brand-cream"><T>Enviar prueba</T></button>
                 {msg[t.type] && <span className="font-brand text-xs text-brand-primary/60">{msg[t.type]}</span>}
               </div>
               {preview[t.type] && (
                 <div className="mt-2 border border-brand-primary/10 rounded-xl overflow-hidden">
-                  <p className="font-brand text-xs text-brand-primary/50 px-3 py-2 border-b border-brand-primary/10">Asunto: <strong>{preview[t.type]!.subject}</strong></p>
+                  <p className="font-brand text-xs text-brand-primary/50 px-3 py-2 border-b border-brand-primary/10"><T>Asunto:</T> <strong>{preview[t.type]!.subject}</strong></p>
                   <iframe title="preview" srcDoc={preview[t.type]!.html} className="w-full h-72 bg-white" />
                 </div>
               )}

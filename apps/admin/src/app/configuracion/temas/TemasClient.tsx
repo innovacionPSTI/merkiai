@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation'
 import { Icon, contrastRatio, contrastLevel, type ContrastLevel } from '@merkiai/ui'
 import { listTemplates } from '@merkiai/database/blocks'
 import type { Theme } from '@merkiai/database'
+import { T } from '@merkiai/ui'
 
 // HU-121 · opciones de layout de la plantilla (del registro de templates).
 const LAYOUT_OPTIONS = listTemplates().map((t) => ({
@@ -128,7 +129,7 @@ function ThemePreview({ form }: { form: ThemeFormData }) {
         style={{ background: form.color_primary }}
       >
         <span className="font-semibold text-sm" style={{ color: form.color_cream }}>
-          Mi Tienda
+          <T>Mi Tienda</T>
         </span>
         <div className="flex gap-1.5">
           <div className="w-2 h-2 rounded-full opacity-50" style={{ background: form.color_cream }} />
@@ -138,15 +139,15 @@ function ThemePreview({ form }: { form: ThemeFormData }) {
       {/* Content */}
       <div className="p-4 space-y-3">
         <div>
-          <div className="text-xs mb-1" style={{ color: form.color_text + '80' }}>Encabezado</div>
+          <div className="text-xs mb-1" style={{ color: form.color_text + '80' }}><T>Encabezado</T></div>
           <div className="text-lg font-bold leading-tight" style={{ color: form.color_primary }}>
-            Nombre del Producto
+            <T>Nombre del Producto</T>
           </div>
         </div>
         <div>
-          <div className="text-xs mb-1" style={{ color: form.color_text + '80' }}>Párrafo</div>
+          <div className="text-xs mb-1" style={{ color: form.color_text + '80' }}><T>Párrafo</T></div>
           <div className="text-xs leading-relaxed" style={{ color: form.color_text }}>
-            Descripción del producto con sus principales características.
+            <T>Descripción del producto con sus principales características.</T>
           </div>
         </div>
         {/* Botones */}
@@ -155,13 +156,13 @@ function ThemePreview({ form }: { form: ThemeFormData }) {
             className="px-3 py-1.5 rounded-full text-xs font-medium"
             style={{ background: form.color_primary, color: form.color_cream }}
           >
-            Comprar →
+            <T>Comprar →</T>
           </div>
           <div
             className="px-3 py-1.5 rounded-full text-xs font-medium border"
             style={{ borderColor: form.color_primary, color: form.color_primary, background: 'transparent' }}
           >
-            Ver más
+            <T>Ver más</T>
           </div>
         </div>
         {/* Paleta */}
@@ -205,7 +206,7 @@ function ContrastCheck({ form }: { form: ThemeFormData }) {
   return (
     <div className="mt-4 border border-gray-200 rounded-xl p-4">
       <div className="flex items-center justify-between mb-3">
-        <span className="text-xs font-medium text-gray-700">Verificación de contraste</span>
+        <span className="text-xs font-medium text-gray-700"><T>Verificación de contraste</T></span>
         <span className={`text-xs font-semibold px-2 py-0.5 rounded-full inline-flex items-center gap-1 ${failing ? 'bg-red-100 text-red-600' : 'bg-green-100 text-green-700'}`}>
           <Icon name={failing ? 'alert' : 'check'} size={13} />
           {failing ? `${failing} con problemas` : 'Todo correcto'}
@@ -227,7 +228,7 @@ function ContrastCheck({ form }: { form: ThemeFormData }) {
           </li>
         ))}
       </ul>
-      <p className="text-[11px] text-gray-400 mt-3">WCAG 2.1 — AA requiere ≥ 4.5:1 (texto normal).</p>
+      <p className="text-[11px] text-gray-400 mt-3"><T>WCAG 2.1 — AA requiere ≥ 4.5:1 (texto normal).</T></p>
     </div>
   )
 }
@@ -263,12 +264,12 @@ function ThemeCard({
             <span className="font-semibold text-gray-900 text-sm">{theme.name}</span>
             {theme.is_active && (
               <span className="text-xs bg-green-100 text-green-700 px-2 py-0.5 rounded-full font-medium">
-                Activo
+                <T>Activo</T>
               </span>
             )}
             {theme.is_default && !theme.is_active && (
               <span className="text-xs bg-gray-100 text-gray-500 px-2 py-0.5 rounded-full">
-                Por defecto
+                <T>Por defecto</T>
               </span>
             )}
           </div>
@@ -301,7 +302,7 @@ function ThemeCard({
           onClick={() => onEdit(theme)}
           className="flex-1 py-1.5 text-xs font-medium text-gray-600 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors"
         >
-          Editar
+          <T>Editar</T>
         </button>
         <a
           href={`/api/admin/themes/${theme.id}/export`}
@@ -317,7 +318,7 @@ function ThemeCard({
             disabled={isPending}
             className="flex-1 py-1.5 text-xs font-medium text-white bg-brand-primary rounded-lg hover:bg-brand-dark transition-colors disabled:opacity-50"
           >
-            Activar
+            <T>Activar</T>
           </button>
         )}
         {canDelete && (
@@ -390,7 +391,7 @@ function ThemeModal({
           <div className="lg:col-span-3 space-y-5">
             {/* Nombre */}
             <div>
-              <label className="block text-xs font-medium text-gray-700 mb-1">Nombre del tema</label>
+              <label className="block text-xs font-medium text-gray-700 mb-1"><T>Nombre del tema</T></label>
               <input
                 ref={firstFieldRef}
                 type="text"
@@ -403,7 +404,7 @@ function ThemeModal({
 
             {/* Colores */}
             <div>
-              <div className="text-xs font-medium text-gray-700 mb-2">Paleta de colores</div>
+              <div className="text-xs font-medium text-gray-700 mb-2"><T>Paleta de colores</T></div>
               <div className="space-y-2">
                 {COLOR_FIELDS.map(({ key, label, description }) => (
                   <div key={key} className="flex items-center gap-3">
@@ -425,10 +426,10 @@ function ThemeModal({
 
             {/* Tipografía */}
             <div>
-              <div className="text-xs font-medium text-gray-700 mb-2">Tipografía</div>
+              <div className="text-xs font-medium text-gray-700 mb-2"><T>Tipografía</T></div>
               <div className="space-y-3">
                 <div>
-                  <div className="text-xs text-gray-500 mb-1.5">Encabezados (display)</div>
+                  <div className="text-xs text-gray-500 mb-1.5"><T>Encabezados (display)</T></div>
                   <div className="grid grid-cols-2 gap-2">
                     {FONT_DISPLAY_OPTIONS.map((f) => (
                       <button
@@ -447,7 +448,7 @@ function ThemeModal({
                   </div>
                 </div>
                 <div>
-                  <div className="text-xs text-gray-500 mb-1.5">Cuerpo de texto (body)</div>
+                  <div className="text-xs text-gray-500 mb-1.5"><T>Cuerpo de texto (body)</T></div>
                   <div className="grid grid-cols-2 gap-2">
                     {FONT_BODY_OPTIONS.map((f) => (
                       <button
@@ -470,8 +471,8 @@ function ThemeModal({
 
             {/* Layout de la plantilla (HU-121) */}
             <div>
-              <div className="text-xs font-medium text-gray-700 mb-2">Disposición del inicio</div>
-              <p className="text-[11px] text-gray-400 mb-2 leading-tight">La plantilla define paleta, tipografía y la disposición del home juntas.</p>
+              <div className="text-xs font-medium text-gray-700 mb-2"><T>Disposición del inicio</T></div>
+              <p className="text-[11px] text-gray-400 mb-2 leading-tight"><T>La plantilla define paleta, tipografía y la disposición del home juntas.</T></p>
               <div className="grid grid-cols-2 gap-2">
                 {LAYOUT_OPTIONS.map((l) => (
                   <button
@@ -492,7 +493,7 @@ function ThemeModal({
 
             {/* Modo de color (HU-247) */}
             <div>
-              <div className="text-xs font-medium text-gray-700 mb-2">Modo de color</div>
+              <div className="text-xs font-medium text-gray-700 mb-2"><T>Modo de color</T></div>
               <div className="grid grid-cols-3 gap-2">
                 {SCHEME_OPTIONS.map((s) => (
                   <button
@@ -512,7 +513,7 @@ function ThemeModal({
 
               {form.color_scheme !== 'light' && (
                 <div className="mt-3 space-y-2">
-                  <div className="text-xs text-gray-500">Paleta oscura</div>
+                  <div className="text-xs text-gray-500"><T>Paleta oscura</T></div>
                   {DARK_FIELDS.map(({ key, label, description }) => (
                     <div key={key} className="flex items-center gap-3">
                       <input
@@ -535,7 +536,7 @@ function ThemeModal({
 
           {/* Preview */}
           <div className="lg:col-span-2">
-            <div className="text-xs font-medium text-gray-700 mb-2">Vista previa</div>
+            <div className="text-xs font-medium text-gray-700 mb-2"><T>Vista previa</T></div>
             <ThemePreview form={form} />
             <ContrastCheck form={form} />
           </div>
@@ -547,7 +548,7 @@ function ThemeModal({
             onClick={onClose}
             className="px-4 py-2 text-sm text-gray-600 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors"
           >
-            Cancelar
+            <T>Cancelar</T>
           </button>
           <button
             onClick={onSave}
@@ -695,7 +696,7 @@ export default function TemasClient({ initialThemes }: { initialThemes: Theme[] 
         </div>
         <div className="flex items-center gap-2">
           <label className="flex items-center gap-2 border border-gray-200 text-gray-700 rounded-xl px-4 py-2 text-sm font-medium hover:bg-gray-50 transition-colors cursor-pointer">
-            <Icon name="external" size={15} /> Importar plantilla
+            <Icon name="external" size={15} /> <T>Importar plantilla</T>
             <input
               type="file"
               accept="application/json,.json"
@@ -714,7 +715,7 @@ export default function TemasClient({ initialThemes }: { initialThemes: Theme[] 
             <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4" />
             </svg>
-            Nuevo tema
+            <T>Nuevo tema</T>
           </button>
         </div>
       </div>
@@ -723,7 +724,7 @@ export default function TemasClient({ initialThemes }: { initialThemes: Theme[] 
       {themes.length === 0 ? (
         <div className="text-center py-16 text-gray-400">
           <div className="flex justify-center mb-3"><Icon name="palette" size={32} /></div>
-          <div className="text-sm">No hay temas. Crea el primero.</div>
+          <div className="text-sm"><T>No hay temas. Crea el primero.</T></div>
         </div>
       ) : (
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
@@ -742,8 +743,7 @@ export default function TemasClient({ initialThemes }: { initialThemes: Theme[] 
 
       {/* Nota informativa */}
       <div className="mt-8 p-4 bg-amber-50 border border-amber-200 rounded-xl text-sm text-amber-800">
-        <strong>Nota:</strong> Los cambios de tema se reflejan en el sitio web en la próxima carga de página.
-        El tema predeterminado no se puede eliminar.
+        <strong><T>Nota:</T></strong> <T>Los cambios de tema se reflejan en el sitio web en la próxima carga de página. El tema predeterminado no se puede eliminar.</T>
       </div>
 
       {/* Modal crear/editar */}
