@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { resolveActivePayment, resolveEmailConfig, BoldGateway, applyStockForOrder, markWebhookEventProcessed } from '@merkiai/database'
 import { resolveTenant } from '@/lib/tenant-context'
+import { handleReceivableWebhook, isReceivableReference } from '@/lib/receivable-payments'
 import { getMachineDb } from '@/lib/machine-db'
 import { amountCoversOrder } from '@/lib/payment-guards'
 import { sendOrderConfirmation, buildEmailConfig, deliverStorefrontEmail } from '@/lib/email'
@@ -60,6 +61,11 @@ export async function POST(req: NextRequest) {
 
   const { orderReference, rawStatus, paymentId, amountCop } = webhookData
   let paymentStatus = gateway.mapStatus(rawStatus)
+
+  // E27 · HU-455 · abono de cartera pagado con enlace (referencia CXC-…), no un pedido.
+  if (isReceivableReference(orderReference)) {
+    return handleReceivableWebhook({ tenantId, provider: 'bold', reference: orderReference, approved: paymentStatus === 'approved', paymentId, amountCop })
+  }
 
   // Idempotencia por id de evento (no reprocesar reintentos del mismo evento).
   const { duplicate } = await markWebhookEventProcessed('bold', `${orderReference}:${rawStatus}:${paymentId ?? ''}`)

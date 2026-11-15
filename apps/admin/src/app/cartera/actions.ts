@@ -9,10 +9,11 @@ import { revalidatePath } from 'next/cache'
 import {
   createReceivableDocument, registerPayment, deliverLines, reportConsignmentSale, returnConsignment,
   voidDocument, writeOffDocument, adjustDocument, createProductionForLine, suggestLinePrices,
-  getStatement, resolveEmailConfig, sendRawEmail, MODALITY_LABEL, createParty, savePartyCredit, saveReceivablesSettings, createLocation,
+  getStatement, resolveEmailConfig, sendRawEmail, MODALITY_LABEL, signReceivableLink, createParty, savePartyCredit, saveReceivablesSettings, createLocation,
   isModality, type CreateDocumentInput, type ReceivablePaymentMethod, type ReceivablesSettings,
 } from '@merkiai/database'
 import { requireCartera } from '@/lib/cartera'
+import { resolveStoreBaseUrl } from '@/lib/store-url'
 
 export type ActionResult = { ok: true; id?: number | string; message?: string } | { ok: false; error: string }
 
@@ -79,6 +80,18 @@ export async function sendStatementAction(partyId: string): Promise<ActionResult
       <p style="color:#6b7280;font-size:13px">Si tienes dudas, responde este correo.</p></div>`
     await sendRawEmail({ apiKey: ec.apiKey, fromEmail: ec.fromEmail, storeName: ec.storeName, emailProvider: ec.provider }, { to: st.party.email, subject: `Estado de cuenta · saldo ${money(st.balance)}`, html })
     return { ok: true, message: `Estado de cuenta enviado a ${st.party.email}.` }
+  }, [])
+}
+
+/** Enlace público firmado para que el cliente pague el saldo con la pasarela de la tienda (HU-455). */
+export async function paymentLinkAction(documentId: number): Promise<ActionResult> {
+  return run(async ({ tenantId }) => {
+    const secret = process.env.INTERNAL_API_SECRET
+    if (!secret) return { ok: false, error: 'El entorno no tiene configurado el secreto interno.' }
+    const base = await resolveStoreBaseUrl(tenantId)
+    if (!base) return { ok: false, error: 'No se pudo resolver la dirección de tu tienda.' }
+    const url = `${base}/pagar-saldo?d=${documentId}&s=${encodeURIComponent(signReceivableLink(tenantId, documentId, secret))}`
+    return { ok: true, message: url }
   }, [])
 }
 

@@ -8,7 +8,7 @@
  */
 import { useState, useTransition } from 'react'
 import { useRouter } from 'next/navigation'
-import { deliverAction, productionAction, reportSaleAction, returnConsignmentAction, voidAction, writeOffAction, adjustAction, type ActionResult } from '../actions'
+import { deliverAction, paymentLinkAction, productionAction, reportSaleAction, returnConsignmentAction, voidAction, writeOffAction, adjustAction, type ActionResult } from '../actions'
 
 interface LineRef { id: number; description: string; pendingDelivery: number; consignAvailable: number; isItem?: boolean }
 const input = 'rounded-xl border border-brand-primary/20 px-3 py-1.5 font-brand text-sm focus:border-brand-primary focus:outline-none'
@@ -90,6 +90,15 @@ export default function DocumentActions({ documentId, modality, balance, policy,
       )}
 
       <div className="flex flex-wrap gap-2">
+        {balance > 0 && (
+          <button type="button" className={btn} disabled={pending} onClick={() => start(async () => {
+            const r = await paymentLinkAction(documentId)
+            if (r.ok && r.message) {
+              await navigator.clipboard?.writeText(r.message).catch(() => undefined)
+              setMsg({ ok: true, text: `Enlace de pago copiado: ${r.message}` })
+            } else if (!r.ok) setMsg({ ok: false, text: r.error })
+          })}>Enlace de pago</button>
+        )}
         <button type="button" className={btn} onClick={() => setPanel(panel === 'adjust' ? '' : 'adjust')}>Ajustar</button>
         {balance > 0 && <button type="button" className={btn} onClick={() => setPanel(panel === 'writeoff' ? '' : 'writeoff')}>Castigar saldo</button>}
         <button type="button" className={`${btn} border-red-300 text-red-700`} onClick={() => setPanel(panel === 'void' ? '' : 'void')}>Anular</button>

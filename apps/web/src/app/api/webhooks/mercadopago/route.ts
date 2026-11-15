@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { resolveActivePayment, resolveEmailConfig, applyStockForOrder, markWebhookEventProcessed } from '@merkiai/database'
 import { resolveTenant } from '@/lib/tenant-context'
+import { handleReceivableWebhook, isReceivableReference } from '@/lib/receivable-payments'
 import { getMachineDb } from '@/lib/machine-db'
 import { getMercadoPagoPayment, mapMercadoPagoStatus, verifyMercadoPagoSignature } from '@/lib/mercadopago'
 import { amountCoversOrder } from '@/lib/payment-guards'
@@ -76,6 +77,11 @@ export async function POST(req: NextRequest) {
   if (!reference) {
     console.warn('[webhook/mercadopago] Pago sin external_reference:', paymentId)
     return NextResponse.json({ ok: true })
+  }
+
+  // E27 · HU-455 · abono de cartera pagado con enlace (referencia CXC-…), no un pedido.
+  if (isReceivableReference(reference)) {
+    return handleReceivableWebhook({ tenantId, provider: 'mercadopago', reference, approved: mapMercadoPagoStatus(mpStatus) === 'approved', paymentId, amountCop: typeof payment.transaction_amount === 'number' ? payment.transaction_amount : null })
   }
 
   let paymentStatus = mapMercadoPagoStatus(mpStatus)

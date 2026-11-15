@@ -50,7 +50,7 @@ cobro mensual de comisiones incluido; falta probar con llaves · 5 🔲.
 
 No bloquea la salida a producción. Capacidades de negocio que se ofrecen por plan (opt-in).
 
-- **E27 · Cartera operativa (ADR-010, HU-450…457)** — **v267: código completo salvo enlace de pago (HU-455) y POS (HU-457, con E25)**; falta aplicar `e17/76` y activar las features `receivables`/`consignment` en un plan: venta a crédito, encargos con anticipo, apartados y consignación sobre el inventario por ubicación. Orden sugerido: HU-450 núcleo → HU-451 plan de pago → HU-452 encargos → HU-454 consignación → HU-453 apartado → HU-455 cobro → HU-456 facturación/reportes → HU-457 POS (con E25).
+- **E27 · Cartera operativa (ADR-010, HU-450…457)** — **v268: código completo salvo POS (HU-457, con E25)**; falta aplicar `e17/76` y activar las features `receivables`/`consignment` en un plan: venta a crédito, encargos con anticipo, apartados y consignación sobre el inventario por ubicación. Orden sugerido: HU-450 núcleo → HU-451 plan de pago → HU-452 encargos → HU-454 consignación → HU-453 apartado → HU-455 cobro → HU-456 facturación/reportes → HU-457 POS (con E25).
 - **E25 · POS** (HU-420…427): HU-457 de E27 se integra aquí.
 
 ---

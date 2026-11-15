@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { resolveActivePayment, resolveEmailConfig, applyStockForOrder, markWebhookEventProcessed } from '@merkiai/database'
 import { resolveTenant } from '@/lib/tenant-context'
+import { handleReceivableWebhook, isReceivableReference } from '@/lib/receivable-payments'
 import { getMachineDb } from '@/lib/machine-db'
 import { verifyWompiWebhook, isWompiTimestampFresh, mapWompiStatus } from '@/lib/wompi'
 import { amountCoversOrder } from '@/lib/payment-guards'
@@ -74,6 +75,11 @@ export async function POST(req: NextRequest) {
   const amountInCents = typeof transaction.amount_in_cents === 'number' ? transaction.amount_in_cents : undefined
 
   if (!reference || !wompiStatus) return NextResponse.json({ ok: true })
+
+  // E27 · HU-455 · abono de cartera pagado con enlace (referencia CXC-…), no un pedido.
+  if (isReceivableReference(reference)) {
+    return handleReceivableWebhook({ tenantId, provider: 'wompi', reference, approved: mapWompiStatus(wompiStatus) === 'approved', paymentId, amountCop: amountInCents != null ? amountInCents / 100 : null })
+  }
 
   // Idempotencia por id de evento: no reprocesar reintentos del mismo estado.
   const { duplicate } = await markWebhookEventProcessed('wompi', `${paymentId ?? reference}:${wompiStatus}`)

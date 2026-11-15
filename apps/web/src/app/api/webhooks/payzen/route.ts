@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { resolveActivePayment, resolveEmailConfig, PayzenGateway, applyStockForOrder, markWebhookEventProcessed } from '@merkiai/database'
 import { resolveTenant } from '@/lib/tenant-context'
+import { handleReceivableWebhook, isReceivableReference } from '@/lib/receivable-payments'
 import { getMachineDb } from '@/lib/machine-db'
 import { amountCoversOrder } from '@/lib/payment-guards'
 import { hydrateManagedPayment, reportMerkiaiFee, MERKIAI_PAGOS } from '@/lib/merkiai-pagos'
@@ -76,6 +77,11 @@ export async function POST(req: NextRequest) {
     }
   }
 
+  // E27 · HU-455 · abono de cartera pagado con enlace (referencia CXC-…), no un pedido.
+  if (isReceivableReference(orderReference)) {
+    return handleReceivableWebhook({ tenantId, provider: 'payzen', reference: orderReference, approved: paymentStatus === 'approved', paymentId, amountCop })
+  }
+
   // Idempotencia por id de evento (no reprocesar reintentos del mismo evento).
   const { duplicate } = await markWebhookEventProcessed('payzen', `${orderReference}:${rawStatus}:${paymentId ?? ''}`)
   if (duplicate) return NextResponse.json({ ok: true, idempotent: true })
@@ -90,6 +96,7 @@ export async function POST(req: NextRequest) {
   if (existing?.payment_status === 'approved' && paymentStatus === 'approved') {
     return NextResponse.json({ ok: true, idempotent: true })
   }
+
 
   // Guarda anti-subpago: el monto viene del payload firmado de PayZen.
   if (paymentStatus === 'approved' && existing && !amountCoversOrder(amountCop, existing.total)) {
