@@ -14,7 +14,7 @@
   "devDependencies": {
     "typescript": "^5.4.0",
     "@types/react": "^18",
-    "tailwindcss": "^3.4.0"
+    "tailwindcss": "^4.3.5"
   },
   "dependencies": {
     "@merkiai/i18n": "workspace:*"
