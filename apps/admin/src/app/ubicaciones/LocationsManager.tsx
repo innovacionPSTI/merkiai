@@ -8,7 +8,7 @@ import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 
 interface Row { id: number; code: string; name: string; kind: string; city: string | null; is_default: boolean; active: boolean }
-const KIND_LABEL: Record<string, string> = { warehouse: 'Bodega', store: 'Tienda', pickup: 'Punto de retiro' }
+const KIND_LABEL: Record<string, string> = { warehouse: 'Bodega', store: 'Tienda', pickup: 'Punto de retiro', consignment: 'Aliado (consignación)' }
 
 export default function LocationsManager({ locations: initial }: { locations: Row[] }) {
   const router = useRouter()
@@ -63,7 +63,7 @@ export default function LocationsManager({ locations: initial }: { locations: Ro
           <label>
             <span className="font-brand text-xs font-semibold text-brand-primary block mb-1">Tipo</span>
             <select value={kind} onChange={(e) => setKind(e.target.value)} className="border border-gray-200 rounded-xl px-3 py-2 font-brand text-sm">
-              {Object.entries(KIND_LABEL).map(([v, l]) => <option key={v} value={v}>{l}</option>)}
+              {Object.entries(KIND_LABEL).filter(([v]) => v !== 'consignment').map(([v, l]) => <option key={v} value={v}>{l}</option>)}
             </select>
           </label>
           <label>

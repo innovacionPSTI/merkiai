@@ -125,6 +125,7 @@ export default async function AdminRootLayout({ children }: { children: React.Re
   const priceListsEnabled = adminUser ? resolveFeature(layoutEntitlements, FEATURES.PRICE_LISTS) : false
   const quotesEnabled = adminUser ? resolveFeature(layoutEntitlements, FEATURES.QUOTES) : false
   const multiLocationEnabled = adminUser ? resolveFeature(layoutEntitlements, FEATURES.MULTI_LOCATION) : false
+  const receivablesEnabled = adminUser ? resolveFeature(layoutEntitlements, FEATURES.RECEIVABLES) : false
 
   // HU-194 · gate de suspensión: si el tenant está suspendido/cancelado, el panel
   // se bloquea (espejo del storefront). Fail-open (ver isTenantBlocked).
@@ -149,7 +150,7 @@ export default async function AdminRootLayout({ children }: { children: React.Re
               <TenantSuspended canPay={billingAllowed} />
             ) : isProtectedRoute && adminUser ? (
               <div className="flex min-h-screen">
-                <AdminSidebar role={adminUser.role} allowedSections={adminUser.allowedSections} pageBuilder={pageBuilderEnabled} collections={collectionsEnabled} inventory={inventoryEnabled} priceLists={priceListsEnabled} quotes={quotesEnabled} multiLocation={multiLocationEnabled} />
+                <AdminSidebar role={adminUser.role} allowedSections={adminUser.allowedSections} pageBuilder={pageBuilderEnabled} collections={collectionsEnabled} inventory={inventoryEnabled} priceLists={priceListsEnabled} quotes={quotesEnabled} multiLocation={multiLocationEnabled} receivables={receivablesEnabled} />
                 <div className="flex-1 flex flex-col min-w-0">
                   {/* Topbar */}
                   <header className="bg-white border-b border-gray-100 pl-14 pr-6 md:px-6 py-4 flex items-center justify-between shadow-sm sticky top-0 z-10">

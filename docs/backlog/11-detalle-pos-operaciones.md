@@ -467,8 +467,8 @@ stock único) es **prerequisito del POS**. Ajustes de maduración:
 | # | Escenario | Resultado esperado |
 |---|-----------|-------------------|
 | AC-1 | Cotización | Pedido en estado borrador convertible a orden (reusa el modelo de orden) |
-| AC-2 | Apartado | Abonos parciales (reusa el motor de pagos) que **reservan stock** (movimiento de reserva en el ledger) — **se implementa en E27 · HU-453** (ADR-010) |
-| AC-3 | Caducidad | Reserva con vencimiento configurable que libera el stock si no se completa — **E27 · HU-453** |
+| AC-2 | Apartado | Abonos parciales (reusa el motor de pagos) que **reservan stock** (movimiento de reserva en el ledger) — **implementado en E27 · HU-453** (v267) |
+| AC-3 | Caducidad | Reserva con vencimiento configurable que libera el stock si no se completa — **implementado en E27 · HU-453** (v267) |
 
 ### HU-409 — Reportes, tableros y alertas de operaciones · E24
 

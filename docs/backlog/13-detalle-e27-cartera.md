@@ -1,6 +1,6 @@
 # Detalle · E27 — Cartera operativa (crédito, encargos, apartados y consignación)
 
-> **Épica:** **E27 · Cartera operativa** (HU-450…457). Todo 🔲 (roadmap). **Diseño:** **ADR-010**.
+> **Épica:** **E27 · Cartera operativa** (HU-450…457). **v267:** HU-450/451/452/453/454/456 ✅ en código · HU-455 🟡 · HU-457 🔲 (con E25). **Diseño:** **ADR-010**.
 > **Construye sobre:** E24 (libro de movimientos, producción, listas de precio HU-407, cotizaciones HU-408), E18 (ubicaciones HU-176, transferencias con estados HU-180), crédito en tienda (HU-148), pasarelas por tenant (ADR-004/009). **Habilita:** E25 POS (tender a crédito, abonos en caja).
 >
 > **Principio:** una sola primitiva (documento + libro de cartera, el saldo es proyección) y **modalidades como datos**: `credit_sale`, `special_order`, `layaway`, `consignment`. Opt-in por plan (`receivables`, `consignment`). Cartera **operativa**, no contable (lo fiscal/contable por integración).
@@ -13,7 +13,7 @@
 
 > Como comerciante, quiero registrar lo que me deben y lo que me abonan, por cliente o aliado, para saber en todo momento cuánto tengo por cobrar.
 
-**Módulo:** contraparte (generaliza `customers` con rol `customer`/`consignee`, cupo y condiciones opcionales); `receivable_documents` (líneas genéricas: variante, servicio o línea libre; modalidad; estados de **pago** y **entrega** independientes; referencias opcionales a cotización/pedido/orden de producción/transferencia); **`receivable_movements`** (ledger tipificado e idempotente: cargo, abono, nota crédito, ajuste, castigo, saldo a favor aplicado); saldo y cuenta corriente como proyección; aplicación de abonos (antiguo primero o a una línea); estado de cuenta por contraparte (vista + PDF/correo); RLS por tenant; feature `receivables`. **Estado:** 🔲
+**Módulo:** contraparte (generaliza `customers` con rol `customer`/`consignee`, cupo y condiciones opcionales); `receivable_documents` (líneas genéricas: variante, servicio o línea libre; modalidad; estados de **pago** y **entrega** independientes; referencias opcionales a cotización/pedido/orden de producción/transferencia); **`receivable_movements`** (ledger tipificado e idempotente: cargo, abono, nota crédito, ajuste, castigo, saldo a favor aplicado); saldo y cuenta corriente como proyección; aplicación de abonos (antiguo primero o a una línea); estado de cuenta por contraparte (vista + PDF/correo); RLS por tenant; feature `receivables`. **Estado:** ✅ en código (v267): migración `e17/76_receivables.sql`; motor puro `receivables-engine.ts`; capa `receivables.ts`; admin **Cartera** (resumen con KPIs y edades, filtros, detalle con movimientos, **Clientes y aliados** con cupo/plazo, **estado de cuenta** imprimible/PDF con saldo acumulado, abono a la cuenta corriente). Correo directo del estado de cuenta: pendiente (hoy se imprime/guarda PDF).
 
 | # | Escenario | Resultado |
 |---|-----------|-----------|
@@ -27,7 +27,7 @@
 
 > Como comerciante, quiero pactar pagos libres con fecha límite o en cuotas, para adaptarme a cada acuerdo.
 
-**Módulo:** plan por documento: `free` (abonos libres + vencimiento) o `installments` (cuotas con fechas y valores iguales o personalizados); **anticipo mínimo** (% o valor) al crear; mora por documento o por cuota; valores por defecto por contraparte/tienda. **Estado:** 🔲
+**Módulo:** plan por documento: `free` (abonos libres + vencimiento) o `installments` (cuotas con fechas y valores iguales o personalizados); **anticipo mínimo** (% o valor) al crear; mora por documento o por cuota; valores por defecto por contraparte/tienda. **Estado:** ✅ en código (v267): abonos libres con fecha límite (o plazo por defecto de la contraparte), cuotas iguales mensuales/quincenales y cuotas personalizadas (motor), anticipo mínimo (%), mora por cuota en el detalle y en el estado.
 
 | # | Escenario | Resultado |
 |---|-----------|-----------|
@@ -39,7 +39,7 @@
 
 > Como comerciante que elabora por encargo, quiero recibir un anticipo por pedido o por cada producto y cobrar el saldo al entregar, para financiar la elaboración sin perder el control del saldo.
 
-**Módulo:** modalidad `special_order`; anticipo por documento o **por línea**; estado de entrega por línea (entregas parciales); **política de entrega configurable** por tienda y por documento (`require_full_payment` | `allow_balance_on_delivery`, este último pasa el saldo a crédito sujeto a cupo); generación opcional de **orden de producción** (E24) y descuento del terminado al entregar; cancelación: anticipo → saldo a favor (crédito en tienda) o reembolso. **Estado:** 🔲
+**Módulo:** modalidad `special_order`; anticipo por documento o **por línea**; estado de entrega por línea (entregas parciales); **política de entrega configurable** por tienda y por documento (`require_full_payment` | `allow_balance_on_delivery`, este último pasa el saldo a crédito sujeto a cupo); generación opcional de **orden de producción** (E24) y descuento del terminado al entregar; cancelación: anticipo → saldo a favor (crédito en tienda) o reembolso. **Estado:** ✅ en código (v267): anticipo por documento o imputado a una línea, entregas parciales por línea, política de entrega por tienda y por encargo (con cupo), **crear orden de producción** desde la línea, anulación con saldo a favor o reembolso.
 
 | # | Escenario | Resultado |
 |---|-----------|-----------|
@@ -53,7 +53,7 @@
 
 > Como comerciante, quiero apartar productos con abonos, para asegurar la venta sin que se vendan a otro mientras el cliente completa el pago.
 
-**Módulo:** modalidad `layaway`; movimiento de **reserva** en el ledger (baja el disponible sin vender) con **caducidad**; al saldar → venta y entrega; al caducar → liberación y abonos a saldo a favor o reembolso según configuración. **Estado:** 🔲
+**Módulo:** modalidad `layaway`; movimiento de **reserva** en el ledger (baja el disponible sin vender) con **caducidad**; al saldar → venta y entrega; al caducar → liberación y abonos a saldo a favor o reembolso según configuración. **Estado:** ✅ en código (v267): movimientos `reserve`/`release` en el libro de inventario (el disponible baja sin vender), caducidad configurable (`layaway_days`), al saldar → venta y entrega automáticas, al vencer → liberación + saldo a favor (tarea diaria).
 
 | # | Escenario | Resultado |
 |---|-----------|-----------|
@@ -65,7 +65,7 @@
 
 > Como comerciante, quiero dejar mercancía a aliados que la venden y me pagan de a poco, devolviendo lo que no venden, para ampliar canales sin perder el control del inventario ni del saldo.
 
-**Módulo:** feature `consignment` (requiere `multi_location`); `locations.kind = 'consignment'` ligada a la contraparte aliado; **entrega** = transferencia a su ubicación **+ cargo** por lo entregado (precio de la lista del canal, HU-407); **reporte de venta** registrado por el comerciante (venta desde la ubicación del aliado, sin cargo nuevo, cierra el derecho de devolución); **devolución** = transferencia de regreso **+ nota crédito**; inventario en consignación por aliado; liquidación periódica (resumen entregado/vendido/devuelto/abonado). **Estado:** 🔲
+**Módulo:** feature `consignment` (requiere `multi_location`); `locations.kind = 'consignment'` ligada a la contraparte aliado; **entrega** = transferencia a su ubicación **+ cargo** por lo entregado (precio de la lista del canal, HU-407); **reporte de venta** registrado por el comerciante (venta desde la ubicación del aliado, sin cargo nuevo, cierra el derecho de devolución); **devolución** = transferencia de regreso **+ nota crédito**; inventario en consignación por aliado; liquidación periódica (resumen entregado/vendido/devuelto/abonado). **Estado:** ✅ en código (v267): ubicación `consignment` ligada al aliado (se crea desde Clientes y aliados), entrega = transferencia + cargo, “Vendió” (venta desde su ubicación, sin cargo nuevo) y “Devolvió” (transferencia de regreso + nota crédito), columnas vendido/devuelto/en poder del aliado. Precio de canal: se digita en la línea (resolución automática por lista de precios del canal pendiente).
 
 | # | Escenario | Resultado |
 |---|-----------|-----------|
@@ -79,7 +79,7 @@
 
 > Como comerciante, quiero que mis clientes y aliados puedan pagar su saldo en línea y recibir recordatorios, para cobrar a tiempo sin perseguir a nadie.
 
-**Módulo:** enlace de pago del saldo (o de una cuota) con la **pasarela activa del tenant** (ADR-004; PayZen BYO/Merkiai Pagos); confirmación → abono idempotente por transacción; sobrepago/anticipo cancelado → **crédito en tienda** (HU-148); **recordatorios** antes y después del vencimiento (correo, cron existente). **Estado:** 🔲
+**Módulo:** enlace de pago del saldo (o de una cuota) con la **pasarela activa del tenant** (ADR-004; PayZen BYO/Merkiai Pagos); confirmación → abono idempotente por transacción; sobrepago/anticipo cancelado → **crédito en tienda** (HU-148); **recordatorios** antes y después del vencimiento (correo, cron existente). **Estado:** 🟡 parcial (v267): saldo a favor → crédito en tienda (sobrepago y anulación) y **recordatorios** por correo antes/después del vencimiento (cron diario console → admin). **Pendiente:** enlace de pago del saldo con la pasarela (requiere enganchar los 5 webhooks del storefront y probar con llaves).
 
 | # | Escenario | Resultado |
 |---|-----------|-----------|
@@ -91,7 +91,7 @@
 
 > Como comerciante, quiero decidir en qué momento se factura cada modalidad y tener reportes de cartera, para cumplir con mi contador sin que la plataforma asuma criterios fiscales.
 
-**Módulo:** **evento de facturación** configurable por tienda y por modalidad (`on_document` | `on_payment` | `on_delivery` | `on_settlement` | `none`) hacia la integración fiscal (`integration_instances`); exportación CSV para contabilidad; reportes: **cartera por edades** (0-30/31-60/61-90/+90), recaudo por período, **anticipos recibidos sin entregar**, inventario en consignación. **Estado:** 🔲
+**Módulo:** **evento de facturación** configurable por tienda y por modalidad (`on_document` | `on_payment` | `on_delivery` | `on_settlement` | `none`) hacia la integración fiscal (`integration_instances`); exportación CSV para contabilidad; reportes: **cartera por edades** (0-30/31-60/61-90/+90), recaudo por período, **anticipos recibidos sin entregar**, inventario en consignación. **Estado:** ✅ en código (v267): evento de facturación configurable por modalidad (bandeja `receivable_invoice_events` visible en Ajustes; la integración fiscal la consume), CSV para el contador, edades, recaudo del mes y anticipos sin entregar.
 
 | # | Escenario | Resultado |
 |---|-----------|-----------|
@@ -103,7 +103,7 @@
 
 > Como cajero, quiero vender a crédito y recibir abonos en caja, para atender clientes con cuenta sin salir del POS.
 
-**Módulo:** tender **"a crédito"** que crea el documento; **abonos en caja** a cualquier documento abierto (entran a la sesión de caja); verificación de **cupo**; funcionamiento **offline** con la cola idempotente del POS. **Estado:** 🔲
+**Módulo:** tender **"a crédito"** que crea el documento; **abonos en caja** a cualquier documento abierto (entran a la sesión de caja); verificación de **cupo**; funcionamiento **offline** con la cola idempotente del POS. **Estado:** 🔲 depende de E25 (POS): el modelo ya admite el método `pos` y la cola idempotente; falta la superficie POS.
 
 | # | Escenario | Resultado |
 |---|-----------|-----------|

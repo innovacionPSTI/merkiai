@@ -8,7 +8,7 @@
  */
 import type { Db } from '../client'
 
-export const LOCATION_KINDS = ['warehouse', 'store', 'pickup'] as const
+export const LOCATION_KINDS = ['warehouse', 'store', 'pickup', 'consignment'] as const
 export type LocationKind = (typeof LOCATION_KINDS)[number]
 
 export function isLocationKind(v: unknown): v is LocationKind {

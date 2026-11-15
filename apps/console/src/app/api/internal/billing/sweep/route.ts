@@ -3,6 +3,8 @@
  *  - HU-440: suspende suscripciones `past_due` con la gracia vencida.
  *  - HU-441: factura y cobra las comisiones de Merkiai Pagos del mes cerrado
  *    (solo si PayZen está configurado; si no, se informa y se omite).
+ *  - E27: dispara la tarea diaria de CARTERA de las tiendas en el admin
+ *    (apartados vencidos, vencimientos, recordatorios) — server-to-server.
  *  - `GET`  → Vercel Cron diario (`vercel.json`), autenticado con `CRON_SECRET`.
  *  - `POST` → disparo manual server-to-server (`x-internal-secret`).
  * Idempotente: re-ejecutarlo no suspende dos veces.
@@ -29,7 +31,20 @@ async function run() {
     } catch (err) {
       fees = { skipped: String((err as Error)?.message ?? err) }
     }
-    return NextResponse.json({ ...result, fees })
+    // E27 · cartera de las tiendas (vive en la BD de tienda → la ejecuta el admin).
+    let receivables: unknown = { skipped: 'ADMIN_APP_URL/INTERNAL_API_SECRET no configurados' }
+    const adminUrl = process.env.ADMIN_APP_URL
+    if (adminUrl && process.env.INTERNAL_API_SECRET) {
+      try {
+        const r = await fetch(`${adminUrl.replace(/\/$/, '')}/api/internal/receivables/sweep`, {
+          method: 'POST', headers: { 'x-internal-secret': process.env.INTERNAL_API_SECRET }, cache: 'no-store',
+        })
+        receivables = await r.json().catch(() => ({ status: r.status }))
+      } catch (err) {
+        receivables = { error: String((err as Error)?.message ?? err) }
+      }
+    }
+    return NextResponse.json({ ...result, fees, receivables })
   } catch (err) {
     return NextResponse.json({ error: 'sweep_failed', detail: String((err as Error)?.message ?? err) }, { status: 502 })
   }

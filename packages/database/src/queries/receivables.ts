@@ -19,6 +19,7 @@ import {
 import { recordMovement } from './stock-movements'
 import { createTransfer, receiveTransfer } from './stock-transfer'
 import { addStoreCredit } from './gift-cards'
+import { createProductionOrder } from './production'
 
 // Tablas nuevas (e17/76) aún no están en los tipos generados.
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -473,6 +474,20 @@ export async function deliverLines(
   const updated = await refreshDocumentStatus(db, documentId)
   if (updated.delivery_status === 'delivered') await emitInvoiceIfConfigured(db, tenantId, updated, 'on_delivery', updated.total, `rdoc:${documentId}:inv:delivery`)
   return updated
+}
+
+/** Encargo → orden de producción del ítem de una línea (E24). Al completarla entra el terminado; la entrega lo descuenta. */
+export async function createProductionForLine(db: Db, tenantId: string, documentId: number, lineId: number, locationId?: number | null): Promise<{ productionOrderId: number }> {
+  const doc = await loadDoc(db, documentId)
+  if (doc.modality !== 'special_order') throw new Error('Solo los encargos generan órdenes de producción.')
+  const line = (await loadLines(db, documentId)).find((l) => l.id === lineId)
+  if (!line?.stock_item_id) throw new Error('La línea debe ser un producto del inventario.')
+  const po = await createProductionOrder(db, {
+    tenant_id: tenantId, output_stock_item_id: line.stock_item_id, planned_qty: line.qty - line.qty_delivered,
+    location_id: locationId ?? doc.location_id, notes: `Encargo ${doc.number}: ${line.description}`,
+  })
+  await t(db).from('receivable_documents').update({ production_order_id: po.id, updated_at: new Date().toISOString() }).eq('id', documentId)
+  return { productionOrderId: po.id }
 }
 
 // ─── Consignación ─────────────────────────────────────────────────────────────
