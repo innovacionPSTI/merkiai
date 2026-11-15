@@ -1,6 +1,6 @@
 import type { Metadata } from 'next'
 import { PageHeader } from '@merkiai/ui'
-import { listParties, listStockItems, listLocations, getReceivablesSettings, isModality } from '@merkiai/database'
+import { listParties, listStockItems, listLocations, getReceivablesSettings, isModality, listPriceLists } from '@merkiai/database'
 import { requireCartera } from '@/lib/cartera'
 import NewDocumentForm from './NewDocumentForm'
 
@@ -10,11 +10,12 @@ export const dynamic = 'force-dynamic'
 export default async function NuevoDocumentoPage({ searchParams }: { searchParams: Promise<{ modalidad?: string; contraparte?: string }> }) {
   const { db, tenantId, consignmentEnabled } = await requireCartera()
   const sp = await searchParams
-  const [parties, items, locations, settings] = await Promise.all([
+  const [parties, items, locations, settings, priceLists] = await Promise.all([
     listParties(db, { withBalance: true }).catch(() => []),
     listStockItems(db, { activeOnly: true }).catch(() => []),
     listLocations(db, { activeOnly: true }).catch(() => []),
     getReceivablesSettings(db, tenantId),
+    listPriceLists(db, { activeOnly: true }).catch(() => []),
   ])
   return (
     <div className="space-y-6 max-w-4xl">
@@ -27,6 +28,7 @@ export default async function NuevoDocumentoPage({ searchParams }: { searchParam
         defaultDeliveryPolicy={settings.delivery_policy}
         initialModality={isModality(sp.modalidad) ? sp.modalidad : 'special_order'}
         initialParty={sp.contraparte ?? ''}
+        priceLists={priceLists.map((l) => ({ id: l.id, name: l.name }))}
       />
     </div>
   )

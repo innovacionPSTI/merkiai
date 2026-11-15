@@ -31,7 +31,7 @@ export default async function EstadoDeCuentaPage({ params }: { params: Promise<{
         <div className="text-right">
           <p className="font-brand text-xs text-brand-primary/60">Saldo</p>
           <p className={`font-display text-2xl ${balance > 0 ? 'text-red-600' : 'text-green-700'}`}>{money(balance)}</p>
-          <PrintButton />
+          <PrintButton partyId={party.id} hasEmail={!!party.email} />
         </div>
       </div>
 

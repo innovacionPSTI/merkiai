@@ -20,6 +20,7 @@ import { recordMovement } from './stock-movements'
 import { createTransfer, receiveTransfer } from './stock-transfer'
 import { addStoreCredit } from './gift-cards'
 import { createProductionOrder } from './production'
+import { listPriceLists, resolveEffectivePrice, type PriceListItem } from './price-lists'
 
 // Tablas nuevas (e17/76) aún no están en los tipos generados.
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -488,6 +489,35 @@ export async function createProductionForLine(db: Db, tenantId: string, document
   })
   await t(db).from('receivable_documents').update({ production_order_id: po.id, updated_at: new Date().toISOString() }).eq('id', documentId)
   return { productionOrderId: po.id }
+}
+
+/**
+ * Precio sugerido por ítem de inventario (E27 · consignación/encargos): parte del
+ * precio de la variante enlazada al ítem y aplica la lista de precios elegida
+ * (p. ej. la del canal del aliado), con la misma resolución que el resto del
+ * catálogo (variante > producto, prioridad de la lista).
+ */
+export async function suggestLinePrices(db: Db, stockItemIds: number[], priceListId?: number | null): Promise<Record<number, number>> {
+  if (!stockItemIds.length) return {}
+  const { data: variants } = await t(db).from('product_variants').select('id, product_id, price, stock_item_id').in('stock_item_id', stockItemIds)
+  const rows = (variants ?? []) as Array<{ id: number; product_id: number; price: number; stock_item_id: number }>
+  let items: PriceListItem[] = []
+  const priority = new Map<number, number>()
+  if (priceListId) {
+    const lists = await listPriceLists(db, { activeOnly: true })
+    const list = lists.find((l) => l.id === priceListId)
+    if (list) {
+      priority.set(list.id, list.priority)
+      const { data } = await t(db).from('price_list_items').select('*').eq('price_list_id', list.id)
+      items = (data ?? []) as PriceListItem[]
+    }
+  }
+  const out: Record<number, number> = {}
+  for (const v of rows) {
+    if (out[v.stock_item_id] != null) continue
+    out[v.stock_item_id] = resolveEffectivePrice(Number(v.price), { productId: v.product_id, variantId: v.id, items, listPriority: priority })
+  }
+  return out
 }
 
 // ─── Consignación ─────────────────────────────────────────────────────────────

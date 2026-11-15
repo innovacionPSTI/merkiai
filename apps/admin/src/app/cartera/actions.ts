@@ -8,7 +8,8 @@
 import { revalidatePath } from 'next/cache'
 import {
   createReceivableDocument, registerPayment, deliverLines, reportConsignmentSale, returnConsignment,
-  voidDocument, writeOffDocument, adjustDocument, createProductionForLine, createParty, savePartyCredit, saveReceivablesSettings, createLocation,
+  voidDocument, writeOffDocument, adjustDocument, createProductionForLine, suggestLinePrices,
+  getStatement, resolveEmailConfig, sendRawEmail, MODALITY_LABEL, createParty, savePartyCredit, saveReceivablesSettings, createLocation,
   isModality, type CreateDocumentInput, type ReceivablePaymentMethod, type ReceivablesSettings,
 } from '@merkiai/database'
 import { requireCartera } from '@/lib/cartera'
@@ -51,6 +52,34 @@ export async function deliverAction(documentId: number, items: Array<{ line_id: 
     await deliverLines(db, tenantId, documentId, items, { location_id: locationId ?? null })
     return { ok: true, message: 'Entrega registrada.' }
   })
+}
+
+/** Precios sugeridos por ítem (variante enlazada + lista de precios del canal, si se elige). */
+export async function suggestPricesAction(stockItemIds: number[], priceListId: number | null): Promise<Record<number, number>> {
+  const { db } = await requireCartera()
+  return suggestLinePrices(db, stockItemIds.filter((n) => Number.isFinite(n)), priceListId).catch(() => ({}))
+}
+
+/** Envía el estado de cuenta por correo a la contraparte (proveedor de correo de la tienda). */
+export async function sendStatementAction(partyId: string): Promise<ActionResult> {
+  return run(async ({ db, tenantId }) => {
+    const st = await getStatement(db, partyId)
+    if (!st.party?.email) return { ok: false, error: 'Esta contraparte no tiene correo registrado.' }
+    const ec = await resolveEmailConfig(db, tenantId).catch(() => null)
+    if (!ec) return { ok: false, error: 'Configura el correo de tu tienda (Configuración → Emails) para enviar estados de cuenta.' }
+    const money = (n: number) => new Intl.NumberFormat('es-CO', { style: 'currency', currency: 'COP', maximumFractionDigits: 0 }).format(n)
+    const esc = (s: string) => s.replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c] as string)
+    const open = st.documents.filter((d) => d.balance > 0)
+    const rows = open.map((d) => `<tr><td style="padding:4px 8px">${esc(d.number)}</td><td style="padding:4px 8px">${esc(MODALITY_LABEL[d.modality])}</td><td style="padding:4px 8px">${d.due_date ?? '—'}</td><td style="padding:4px 8px;text-align:right">${money(d.balance)}</td></tr>`).join('')
+    const html = `<div style="font-family:system-ui,sans-serif;max-width:600px;margin:auto;color:#1f2937">
+      <h2 style="margin:0 0 8px">Estado de cuenta</h2>
+      <p>Hola, <strong>${esc(st.party.name ?? '')}</strong>. Este es tu estado de cuenta al ${new Date().toISOString().slice(0, 10)}.</p>
+      ${open.length ? `<table style="border-collapse:collapse;width:100%;font-size:14px"><thead><tr style="text-align:left;color:#6b7280"><th style="padding:4px 8px">Documento</th><th style="padding:4px 8px">Tipo</th><th style="padding:4px 8px">Vence</th><th style="padding:4px 8px;text-align:right">Saldo</th></tr></thead><tbody>${rows}</tbody></table>` : '<p>No tienes saldos pendientes.</p>'}
+      <p style="font-size:16px">Saldo total: <strong>${money(st.balance)}</strong></p>
+      <p style="color:#6b7280;font-size:13px">Si tienes dudas, responde este correo.</p></div>`
+    await sendRawEmail({ apiKey: ec.apiKey, fromEmail: ec.fromEmail, storeName: ec.storeName, emailProvider: ec.provider }, { to: st.party.email, subject: `Estado de cuenta · saldo ${money(st.balance)}`, html })
+    return { ok: true, message: `Estado de cuenta enviado a ${st.party.email}.` }
+  }, [])
 }
 
 export async function productionAction(documentId: number, lineId: number): Promise<ActionResult> {

@@ -7,7 +7,7 @@
  */
 import { useMemo, useState, useTransition } from 'react'
 import { useRouter } from 'next/navigation'
-import { createDocumentAction, createPartyAction } from '../actions'
+import { createDocumentAction, createPartyAction, suggestPricesAction } from '../actions'
 
 type Modality = 'credit_sale' | 'special_order' | 'layaway' | 'consignment'
 interface PartyRef { id: string; name: string; role: 'customer' | 'consignee'; balance: number; credit_limit: number | null }
@@ -28,6 +28,7 @@ const label = 'block font-brand text-xs font-semibold text-brand-primary/70 mb-1
 export default function NewDocumentForm(props: {
   parties: PartyRef[]; items: ItemRef[]; locations: LocRef[]; consignmentEnabled: boolean
   defaultDeliveryPolicy: 'require_full_payment' | 'allow_balance_on_delivery'; initialModality: Modality; initialParty: string
+  priceLists?: Array<{ id: number; name: string }>
 }) {
   const router = useRouter()
   const [pending, start] = useTransition()
@@ -49,6 +50,17 @@ export default function NewDocumentForm(props: {
   const ownLocations = props.locations.filter((l) => l.kind !== 'consignment')
   const [locationId, setLocationId] = useState<number | ''>(ownLocations.find((l) => l.is_default)?.id ?? ownLocations[0]?.id ?? '')
   const [notes, setNotes] = useState('')
+  const [priceListId, setPriceListId] = useState<number | ''>('')
+
+  /** Precio sugerido (variante + lista de precios del canal) al elegir un producto. */
+  async function suggest(targets: Array<{ index: number; stockItemId: number }>, listId: number | '') {
+    if (!targets.length) return
+    const prices = await suggestPricesAction(targets.map((x) => x.stockItemId), listId === '' ? null : listId)
+    setLines((ls) => ls.map((l, idx) => {
+      const tgt = targets.find((x) => x.index === idx)
+      return tgt && prices[tgt.stockItemId] != null ? { ...l, unit_price: prices[tgt.stockItemId] } : l
+    }))
+  }
 
   const party = parties.find((p) => p.id === partyId)
   const consigneeLocs = props.locations.filter((l) => l.kind === 'consignment' && (!partyId || l.party_id === partyId))
@@ -62,6 +74,7 @@ export default function NewDocumentForm(props: {
   function pickItem(i: number, id: string) {
     const it = props.items.find((x) => x.id === Number(id))
     setLine(i, it ? { kind: 'item', stock_item_id: it.id, description: it.name } : { kind: 'free', stock_item_id: null })
+    if (it && !it.isService) void suggest([{ index: i, stockItemId: it.id }], priceListId)
   }
 
   function addParty() {
@@ -167,6 +180,19 @@ export default function NewDocumentForm(props: {
             </div>
           ))}
         </div>
+        {(props.priceLists?.length ?? 0) > 0 && (
+          <div className="mt-3 max-w-sm">
+            <label className={label}>Lista de precios {modality === 'consignment' ? '(precio para el aliado)' : '(opcional)'}</label>
+            <select className={input} value={priceListId} onChange={(e) => {
+              const v = e.target.value ? Number(e.target.value) : ''
+              setPriceListId(v)
+              void suggest(lines.map((l, index) => ({ index, stockItemId: l.stock_item_id ?? 0 })).filter((x) => x.stockItemId > 0), v)
+            }}>
+              <option value="">Precio normal del producto</option>
+              {props.priceLists!.map((l) => <option key={l.id} value={l.id}>{l.name}</option>)}
+            </select>
+          </div>
+        )}
         <div className="mt-3 flex items-center justify-between">
           <button type="button" className="font-brand text-sm text-brand-primary underline" onClick={() => setLines((ls) => [...ls, { kind: 'free', stock_item_id: null, description: '', qty: 1, unit_price: 0 }])}>+ Agregar línea</button>
           <span className="font-display text-lg text-brand-primary">Total {money(total)}</span>
