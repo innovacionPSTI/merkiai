@@ -1913,6 +1913,8 @@ const adminEn: Record<string, string> = {
   "Vacío = moneda de la tienda. Un cupón de monto fijo solo vale en su moneda.": "Empty = store currency. A fixed-amount coupon only works in its currency.",
   "Vacío = moneda de la tienda. Úsala para el mercado que vende en esa moneda.": "Empty = store currency. Use it for the market that sells in that currency.",
   "{0}: la lista de precios está en {1} y el mercado vende en {2}.": "{0}: the price list is in {1} and the market sells in {2}.",
+  "Nivel raíz": "Root level",
+  "Tu plan permite un solo nivel de menú (sin subelementos).": "Your plan allows a single menu level (no sub-items).",
 }
 
 export default adminEn

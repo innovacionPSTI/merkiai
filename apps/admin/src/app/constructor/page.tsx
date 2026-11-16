@@ -5,7 +5,7 @@ import { requireAdminDb } from '@/lib/admin-context'
 import { FEATURES as FLAGS } from '@/lib/features'
 import { getTenantEntitlements } from '@/lib/entitlements'
 import { getOnboardingOptions } from '@/lib/onboarding'
-import { resolveFeature, featureAllowed, FEATURES } from '@merkiai/tenancy'
+import { resolveFeature, resolveLimit, featureAllowed, FEATURES, LIMITS } from '@merkiai/tenancy'
 import ConstructorClient from '@/components/constructor/ConstructorClient'
 import { T } from '@merkiai/ui'
 
@@ -35,6 +35,7 @@ export default async function ConstructorPage() {
     savedBlocks: featureAllowed(entitlements, FEATURES.SAVED_BLOCKS),
     globalPartials: featureAllowed(entitlements, FEATURES.GLOBAL_PARTIALS),
     dynamicList: featureAllowed(entitlements, FEATURES.DYNAMIC_LIST),
+    navDepth: entitlements ? resolveLimit(entitlements, LIMITS.MAX_NAV_DEPTH) : null,
   }
 
   const { adminUser, db: supabase } = await requireAdminDb()

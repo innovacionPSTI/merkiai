@@ -60,6 +60,8 @@ interface ConstructorFeatures {
   layoutAdvanced: boolean; pageStyle: boolean
   /** HU-359 · capacidades que el plan puede apagar (por defecto, permitidas). */
   savedBlocks?: boolean; globalPartials?: boolean; dynamicList?: boolean
+  /** HU-367 AC-3 · niveles de menú permitidos (null = sin límite). */
+  navDepth?: number | null
 }
 
 export default function ConstructorClient({
@@ -1100,7 +1102,7 @@ export default function ConstructorClient({
               <button onClick={() => setNavOpen(false)} className="text-slate-400 hover:text-slate-700" aria-label={tx("Cerrar")}><Icon name="close" size={18} /></button>
             </div>
             <p className="text-xs text-slate-400 mb-3"><T>Elementos del menú del sitio (1 nivel de subelementos). Vincula cada uno a una página o deja una ruta libre.</T></p>
-            <NavEditor pages={pageList.map((p) => ({ key: p.key, label: p.label, slug: p.slug }))} />
+            <NavEditor pages={pageList.map((p) => ({ key: p.key, label: p.label, slug: p.slug }))} maxDepth={features.navDepth ?? null} />
           </div>
         </div>
       )}

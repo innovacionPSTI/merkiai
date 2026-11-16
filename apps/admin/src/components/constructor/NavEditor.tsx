@@ -14,7 +14,7 @@ import { useTx } from '@merkiai/ui'
 interface NavItem { id: number; label: string; href: string | null; enabled: boolean; order_index: number; parent_id: number | null; page_key?: string | null }
 interface PageOpt { key: string; label: string; slug: string }
 
-export default function NavEditor({ pages }: { pages: PageOpt[] }) {
+export default function NavEditor({ pages, maxDepth = null }: { pages: PageOpt[]; /** HU-367 AC-3 · niveles de menú del plan (1 = sin subelementos; null = sin límite). */ maxDepth?: number | null }) {
   const tx = useTx()
   const [items, setItems] = useState<NavItem[]>([])
   const [msg, setMsg] = useState('')
@@ -93,10 +93,12 @@ export default function NavEditor({ pages }: { pages: PageOpt[] }) {
       <div className="flex items-center gap-2 pt-2 border-t border-slate-100">
         <input value={newLabel} onChange={(e) => setNewLabel(e.target.value)} placeholder={tx("Nuevo elemento…")}
           className="flex-1 rounded border border-slate-300 px-2 py-1.5 text-sm" aria-label={tx("Nombre del nuevo elemento")} />
-        <select value={newParent} onChange={(e) => setNewParent(e.target.value)} className="rounded border border-slate-300 px-1 py-1.5 text-xs" aria-label={tx("Subelemento de")}>
-          <option value="">Nivel raíz</option>
-          {tops.map((t) => <option key={t.id} value={t.id}>↳ {t.label}</option>)}
-        </select>
+        {(maxDepth === null || maxDepth >= 2) && (
+          <select value={newParent} onChange={(e) => setNewParent(e.target.value)} className="rounded border border-slate-300 px-1 py-1.5 text-xs" aria-label={tx("Subelemento de")}>
+            <option value="">{tx('Nivel raíz')}</option>
+            {tops.map((t) => <option key={t.id} value={t.id}>↳ {t.label}</option>)}
+          </select>
+        )}
         <button onClick={create} disabled={!newLabel.trim()} className="rounded-lg bg-brand-primary text-brand-cream px-3 py-1.5 text-sm hover:bg-brand-dark disabled:opacity-40">
           <Icon name="plus" size={14} />
         </button>
