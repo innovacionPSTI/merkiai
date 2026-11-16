@@ -22,7 +22,7 @@
     "@types/node": "^20.19.43",
     "prettier": "^3.9.10",
     "turbo": "^2.11.10",
-    "typescript": "^5.9.3"
+    "typescript": "^7.0.2"
   },
   "pnpm": {
     "comment-overrides": "Overrides SOLO para parches de seguridad de transitivas, manteniendo el mismo major (API-compatibles). NUNCA subir de major una dependencia directa aquí (p. ej. zod 3→4 rompe la app); los saltos de major van como HU de migración con pruebas.",
