@@ -25,7 +25,7 @@ jobs:
     # push a `develop` → entorno de staging; el resto (push a `test`, PR) → pruebas.
     environment: ${{ github.event_name == 'push' && github.ref_name == 'develop' && 'staging' || 'test' }}
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
 
       - uses: pnpm/action-setup@v4
         with: { version: 9 }
