@@ -243,7 +243,7 @@ export const blockSchemas: Record<string, BlockSchema> = {
           { value: 'manual',       label: 'Selección manual' },
         ],
       },
-      category_slug: { label: 'Categoría (slug)', type: 'text', storage: 'settings', help: 'Solo si la fuente es "De una categoría". Ej: cafe-medio' },
+      category_slug: { label: 'Categoría (slug)', type: 'text', storage: 'settings', help: 'Solo si la fuente es "De una categoría". Ej: novedades' },
       product_slugs: { label: 'Productos (slugs)', type: 'textarea', storage: 'settings', help: 'Solo si la fuente es "Selección manual". Slugs separados por coma, en orden.' },
       limit: { label: 'Cantidad', type: 'number', storage: 'settings', default: 8 },
     },
@@ -308,7 +308,7 @@ export const blockSchemas: Record<string, BlockSchema> = {
     label: 'Avance del blog',
     description: 'Muestra los artículos más recientes del blog.',
     category: 'content',
-    fields: { title: { label: 'Título', type: 'text', storage: 'settings', default: 'Notas de Café' } },
+    fields: { title: { label: 'Título', type: 'text', storage: 'settings', default: 'Notas destacadas' } },
     source: {
       kind: 'blog.recent',
       params: { limit: { label: 'Cantidad de artículos', type: 'number', storage: 'settings', default: 2 } },

@@ -69,7 +69,7 @@ export async function markStockNotified(db: Db, ids: number[]): Promise<void> {
 export async function notifyBackInStock(
   db: Db,
   variantId: number,
-  info: { productName: string; productUrl?: string | null; variantLabel?: string | null },
+  info: { productName: string; productUrl?: string | null; variantLabel?: string | null; locale?: string | null },
   config: EmailConfig,
 ): Promise<number> {
   try {
@@ -80,7 +80,7 @@ export async function notifyBackInStock(
     for (const s of subs) {
       try {
         await sendBackInStock(
-          { to: s.email, productName: info.productName, productUrl: info.productUrl, variantLabel: info.variantLabel },
+          { to: s.email, productName: info.productName, productUrl: info.productUrl, variantLabel: info.variantLabel, locale: info.locale },
           config,
         )
         sent.push(s.id)

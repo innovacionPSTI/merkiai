@@ -55,6 +55,8 @@ export async function PATCH(
             tenantId: adminUser.tenantId,
             type,
             to: order.customer_email,
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            locale: (order as any).locale ?? null,
             vars: {
               customer_name: order.customer_name,
               order_number: order.order_number,

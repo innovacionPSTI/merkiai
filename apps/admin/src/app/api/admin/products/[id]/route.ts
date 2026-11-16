@@ -1,7 +1,7 @@
 import type { Database } from '@merkiai/database'
 import { NextRequest } from 'next/server'
 import { NextResponse } from '@/lib/api-response'
-import { resolveEmailConfig, notifyBackInStock, suggestRedirectOnSlugChange } from '@merkiai/database'
+import { resolveEmailConfig, getStoreDefaultLocale, notifyBackInStock, suggestRedirectOnSlugChange } from '@merkiai/database'
 import { getAdminUser } from '@/lib/auth'
 import { getAdminDb } from '@/lib/admin-db'
 
@@ -134,13 +134,14 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
         const emailConfig = { apiKey: ec.apiKey, fromEmail: ec.fromEmail, storeName: ec.storeName, emailProvider: ec.provider }
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         const options: string[] = Array.isArray((product as any).variant_options) ? (product as any).variant_options : []
+        const locale = await getStoreDefaultLocale(supabase, adminUser.tenantId)
         for (const v of replenished) {
           const attrs = (v.attributes ?? {}) as Record<string, string>
           const variantLabel = options.map((o) => attrs[o]).filter(Boolean).join(' · ') || null
           await notifyBackInStock(
             supabase,
             Number(v.id),
-            { productName: product.name, productUrl: null, variantLabel },
+            { productName: product.name, productUrl: null, variantLabel, locale },
             emailConfig,
           ).catch((e) => console.error('[products PATCH] back-in-stock:', e instanceof Error ? e.message : e))
         }

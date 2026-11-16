@@ -6,9 +6,24 @@ import { useTx } from '@merkiai/ui'
 
 interface Tpl { type: string; label: string; vars: string[]; subject: string; body: string; enabled: boolean; customized: boolean }
 
-export default function EmailTemplatesEditor({ initial }: { initial: Tpl[] }) {
+const LANGUAGE_LABEL: Record<string, string> = { es: 'Español', en: 'English' }
+
+export default function EmailTemplatesEditor({ initial, languages = ['es'], initialLanguage = 'es' }: { initial: Tpl[]; languages?: string[]; initialLanguage?: string }) {
   const tx = useTx()
   const [rows, setRows] = useState<Tpl[]>(initial)
+  const [lang, setLang] = useState(initialLanguage)
+  const [loadingLang, setLoadingLang] = useState(false)
+
+  // E28 · HU-465 · cambia el idioma que se edita (cada idioma guarda su versión).
+  async function switchLanguage(next: string) {
+    if (next === lang) return
+    setLoadingLang(true)
+    try {
+      const res = await fetch(`/api/admin/email-templates?locale=${encodeURIComponent(next)}`)
+      const d = await res.json()
+      if (res.ok) { setRows(d.templates); setLang(next); setOpen(null); setPreview({}); setMsg({}) }
+    } finally { setLoadingLang(false) }
+  }
   const [open, setOpen] = useState<string | null>(null)
   const [saving, setSaving] = useState<string | null>(null)
   const [msg, setMsg] = useState<Record<string, string>>({})
@@ -17,17 +32,17 @@ export default function EmailTemplatesEditor({ initial }: { initial: Tpl[] }) {
   async function doPreview(t: Tpl) {
     const res = await fetch('/api/admin/email-templates/preview', {
       method: 'POST', headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ type: t.type, subject: t.subject, body: t.body }),
+      body: JSON.stringify({ type: t.type, subject: t.subject, body: t.body, locale: lang }),
     })
     const d = await res.json()
     if (res.ok) setPreview((p) => ({ ...p, [t.type]: { subject: d.subject, html: d.html } }))
     else setMsg((m) => ({ ...m, [t.type]: d.error ?? 'Error' }))
   }
   async function sendTest(t: Tpl) {
-    setMsg((m) => ({ ...m, [t.type]: 'Enviando prueba…' }))
+    setMsg((m) => ({ ...m, [t.type]: tx('Enviando prueba…') }))
     const res = await fetch('/api/admin/email-templates/preview', {
       method: 'POST', headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ type: t.type, subject: t.subject, body: t.body, send: true }),
+      body: JSON.stringify({ type: t.type, subject: t.subject, body: t.body, send: true, locale: lang }),
     })
     const d = await res.json()
     setMsg((m) => ({ ...m, [t.type]: res.ok ? tx("Prueba enviada a {to}", { to: d.to }) : (d.error ?? 'Error') }))
@@ -42,16 +57,28 @@ export default function EmailTemplatesEditor({ initial }: { initial: Tpl[] }) {
     try {
       const res = await fetch('/api/admin/email-templates', {
         method: 'POST', headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ type: t.type, subject: t.subject, body: t.body, enabled: t.enabled }),
+        body: JSON.stringify({ type: t.type, subject: t.subject, body: t.body, enabled: t.enabled, locale: lang }),
       })
       const d = await res.json()
-      setMsg((m) => ({ ...m, [t.type]: res.ok ? 'Guardado.' : (d.error ?? 'Error') }))
+      setMsg((m) => ({ ...m, [t.type]: res.ok ? tx('Guardado.') : (d.error ?? 'Error') }))
       if (res.ok) patch(t.type, { customized: true })
     } finally { setSaving(null) }
   }
 
   return (
     <div className="space-y-3">
+      {languages.length > 1 && (
+        <div className="flex flex-wrap items-center gap-2" role="tablist" aria-label={tx("Idioma de la plantilla")}>
+          <span className="font-brand text-xs text-brand-primary/60"><T>Idioma de la plantilla</T></span>
+          {languages.map((l) => (
+            <button key={l} type="button" role="tab" aria-selected={l === lang} disabled={loadingLang} onClick={() => switchLanguage(l)}
+              className={`rounded-full px-3 py-1 font-brand text-xs border ${l === lang ? 'bg-brand-primary text-brand-cream border-brand-primary' : 'border-brand-primary/20 text-brand-primary hover:bg-brand-cream'}`}>
+              {LANGUAGE_LABEL[l] ?? l}
+            </button>
+          ))}
+          <span className="font-brand text-[11px] text-brand-primary/40"><T>Cada cliente recibe el correo en el idioma en que compró.</T></span>
+        </div>
+      )}
       {rows.map((t) => (
         <div key={t.type} className="bg-white rounded-2xl shadow-sm">
           <div className="flex items-center gap-3 px-5 py-4">

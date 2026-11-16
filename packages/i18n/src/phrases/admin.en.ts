@@ -1880,6 +1880,10 @@ const adminEn: Record<string, string> = {
   "Ítem padre": "Parent item",
   "Ítems de servicio": "Service items",
   "↑ Importar contenido": "↑ Import content",
+  "Cada cliente recibe el correo en el idioma en que compró.": "Each customer receives the email in the language they bought in.",
+  "Enviando prueba…": "Sending test…",
+  "Guardado.": "Saved.",
+  "Idioma de la plantilla": "Template language",
 }
 
 export default adminEn

@@ -90,6 +90,8 @@ export async function PATCH(
           tenantId: user!.tenantId,
           type: 'payment.confirmed',
           to: order.customer_email,
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          locale: (order as any).locale ?? null,
           vars: { customer_name: order.customer_name, order_number: order.order_number, total: (order as any).total ?? '' },
         }, { apiKey: ec.apiKey, fromEmail: ec.fromEmail, storeName: ec.storeName, emailProvider: ec.provider })
         // HU-162 · registro del correo.

@@ -1,3 +1,4 @@
+import { getRequestLocale } from '@/lib/request-locale'
 import { NextRequest, NextResponse } from 'next/server'
 import { resolveEmailConfig } from '@merkiai/database'
 import { getMachineDb } from '@/lib/machine-db'
@@ -39,6 +40,7 @@ export async function POST(req: NextRequest) {
           await sendNewsletterConfirmation(
             email,
             buildEmailConfig(ec.apiKey, ec.fromEmail, ec.storeName, ec.provider),
+            await getRequestLocale().then((r) => r.locale ?? r.defaultLocale).catch(() => undefined),
           )
         }
       } catch (emailErr) {

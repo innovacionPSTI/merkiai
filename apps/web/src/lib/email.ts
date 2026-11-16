@@ -189,69 +189,68 @@ export async function sendOrderConfirmation(order: Order, config: EmailConfig): 
   })
 }
 
-/** Email de confirmación de suscripción al newsletter */
+const P = 'style="margin: 0 0 16px; color: #8a6a4a; font-size: 14px; font-family: sans-serif;"'
+const H2 = 'style="margin: 0 0 8px; color: #614a2a; font-size: 20px; font-family: sans-serif;"'
+const BTN = 'style="display: inline-block; background: #614a2a; color: #fff8ec; text-decoration: none; padding: 12px 28px; border-radius: 50px; font-size: 14px; font-weight: 600; font-family: sans-serif;"'
+
+/** Email de confirmación de suscripción al newsletter (E28 · HU-465: en el idioma de la visita). */
 export async function sendNewsletterConfirmation(
   to: string,
   config: EmailConfig,
+  locale = 'es-CO',
 ): Promise<void> {
   const name    = config.storeName ?? 'Mi Tienda'
   const siteUrl = (config.siteUrl ?? process.env.NEXT_PUBLIC_SITE_URL ?? '').replace(/\/$/, '')
+  const ts = createTranslator(locale, 'email.system')
 
   const content = `
-    <h2 style="margin: 0 0 8px; color: #614a2a; font-size: 20px; font-family: sans-serif;">¡Ya eres parte de la familia ${esc(name)}!</h2>
-    <p style="margin: 0 0 16px; color: #8a6a4a; font-size: 14px; font-family: sans-serif;">
-      Gracias por suscribirte a nuestro boletín. Te mantendremos al tanto de
-      novedades, promociones y contenido exclusivo.
-    </p>
-    <p style="margin: 0 0 24px; color: #8a6a4a; font-size: 14px; font-family: sans-serif;">
-      Mientras tanto, te invitamos a explorar nuestra tienda y descubrir los productos
-      que seleccionamos esta temporada.
-    </p>
+    <h2 ${H2}>${ts('newsletter_title', { store: esc(name) })}</h2>
+    <p ${P}>${ts('newsletter_body')}</p>
+    <p style="margin: 0 0 24px; color: #8a6a4a; font-size: 14px; font-family: sans-serif;">${ts('newsletter_body2')}</p>
     ${siteUrl ? `
     <div style="text-align: center;">
-      <a href="${siteUrl}/shop" style="display: inline-block; background: #614a2a; color: #fff8ec; text-decoration: none; padding: 12px 28px; border-radius: 50px; font-size: 14px; font-weight: 600; font-family: sans-serif;">
-        Ver la tienda
+      <a href="${esc(siteUrl)}/shop" ${BTN}>
+        ${ts('newsletter_cta')}
       </a>
     </div>` : ''}
     <p style="margin: 24px 0 0; color: #8a6a4a; font-size: 12px; font-family: sans-serif; text-align: center;">
-      Si no solicitaste esta suscripción, puedes ignorar este correo.
+      ${ts('newsletter_ignore')}
     </p>`
 
   await sendEmail(config, {
     from: `${fromName(name)} <${config.fromEmail}>`,
     to: [to],
-    subject: `¡Bienvenido al boletín de ${name}! ☕`,
-    html: baseTemplate(content, config),
+    subject: ts('newsletter_subject', { store: name }),
+    html: baseTemplate(content, config, locale),
   })
 }
 
-/** Email de bienvenida al registrarse */
+/** Email de bienvenida al registrarse (E28 · HU-465: en el idioma de la visita). */
 export async function sendWelcomeEmail(
   to: string,
   name: string,
   config: EmailConfig,
+  locale = 'es-CO',
 ): Promise<void> {
   const storeName = config.storeName ?? 'Mi Tienda'
   const siteUrl   = (config.siteUrl ?? process.env.NEXT_PUBLIC_SITE_URL ?? '').replace(/\/$/, '')
+  const ts = createTranslator(locale, 'email.system')
 
   const content = `
-    <h2 style="margin: 0 0 8px; color: #614a2a; font-size: 20px; font-family: sans-serif;">¡Bienvenido a ${esc(storeName)}, ${esc(name)}!</h2>
-    <p style="margin: 0 0 24px; color: #8a6a4a; font-size: 14px; font-family: sans-serif;">
-      Tu cuenta ha sido creada exitosamente. Ya puedes explorar nuestro catálogo
-      y hacer seguimiento de tus pedidos desde tu cuenta.
-    </p>
+    <h2 ${H2}>${ts('welcome_title', { store: esc(storeName), name: esc(name) })}</h2>
+    <p style="margin: 0 0 24px; color: #8a6a4a; font-size: 14px; font-family: sans-serif;">${ts('welcome_body')}</p>
     ${siteUrl ? `
     <div style="text-align: center;">
-      <a href="${siteUrl}/shop" style="display: inline-block; background: #614a2a; color: #fff8ec; text-decoration: none; padding: 12px 28px; border-radius: 50px; font-size: 14px; font-weight: 600; font-family: sans-serif;">
-        Explorar la tienda
+      <a href="${esc(siteUrl)}/shop" ${BTN}>
+        ${ts('welcome_cta')}
       </a>
     </div>` : ''}`
 
   await sendEmail(config, {
     from: `${fromName(storeName)} <${config.fromEmail}>`,
     to: [to],
-    subject: `Bienvenido a ${storeName} — Cuenta creada`,
-    html: baseTemplate(content, config),
+    subject: ts('welcome_subject', { store: storeName }),
+    html: baseTemplate(content, config, locale),
   })
 }
 

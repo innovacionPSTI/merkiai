@@ -38,7 +38,7 @@ export async function POST(
   const supabase = getAdminDb(user!.tenantId)
   const { data: order } = await supabase
     .from('orders')
-    .select('order_number, payment_method, customer_email, customer_name')
+    .select('order_number, payment_method, customer_email, customer_name, locale')
     .eq('id', orderId)
     .single()
 
@@ -59,7 +59,8 @@ export async function POST(
             .single()
           if (cfg?.resend_api_key && cfg?.resend_from_email) {
             await sendPaymentConfirmed(
-              { order_number: order.order_number, customer_email: order.customer_email, customer_name: order.customer_name },
+              // eslint-disable-next-line @typescript-eslint/no-explicit-any
+              { order_number: order.order_number, customer_email: order.customer_email, customer_name: order.customer_name, locale: (order as any).locale ?? null },
               { apiKey: cfg.resend_api_key, fromEmail: cfg.resend_from_email, storeName: cfg.store_name ?? undefined },
             )
           }

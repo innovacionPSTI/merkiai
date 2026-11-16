@@ -1,4 +1,5 @@
 import type { Db } from '../client'
+import { getStoreDefaultLocale } from './markets'
 import { sendVipCampaignInvite, type EmailConfig } from '../lib/email'
 
 /**
@@ -312,13 +313,15 @@ export async function notifyCampaignMembers(
     .eq('channel', 'email')
   const notified = new Set((already ?? []).map((r: any) => r.customer_id as string))
 
+  // E28 · HU-465 · el aviso va en el idioma por defecto de la tienda.
+  const locale = await getStoreDefaultLocale(db, tenantId)
   let sent = 0
   let skipped = 0
   for (const m of members) {
     if (notified.has(m.customer_id)) { skipped += 1; continue }
     try {
       await sendVipCampaignInvite(
-        { to: m.email, campaignName: campaign.name, accessUrl: opts.accessUrl ?? null, endsAt: campaign.ends_at },
+        { to: m.email, campaignName: campaign.name, accessUrl: opts.accessUrl ?? null, endsAt: campaign.ends_at, locale },
         opts.emailConfig,
       )
       await db.from('vip_campaign_notifications')

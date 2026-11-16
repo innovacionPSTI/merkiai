@@ -225,6 +225,15 @@ export async function listMarkets(db: Db, tenantId: string): Promise<Market[]> {
   return rows.length ? rows : [{ ...DEFAULT_MARKET }]
 }
 
+/** Locale por defecto de la tienda leído de BD (fail-safe: es-CO). Para correos sin pedido. */
+export async function getStoreDefaultLocale(db: Db, tenantId: string): Promise<Locale> {
+  try {
+    return storeDefaultLocale(await listMarkets(db, tenantId))
+  } catch {
+    return DEFAULT_MARKET.default_locale
+  }
+}
+
 export class MarketValidationError extends Error {
   constructor(readonly errors: string[]) {
     super(errors.join(' '))

@@ -41,3 +41,33 @@ describe('email templates (HU-160)', () => {
     })
   })
 })
+
+describe('E28 · HU-465 · plantillas por idioma', () => {
+  // eslint-disable-next-line @typescript-eslint/no-var-requires
+  const { emailTemplateLanguage, emailTemplatesFor } = require('../email-templates')
+
+  it('el idioma de plantilla es el idioma base del locale (desconocido → es)', () => {
+    expect(emailTemplateLanguage('es-MX')).toBe('es')
+    expect(emailTemplateLanguage('en-US')).toBe('en')
+    expect(emailTemplateLanguage('pt-BR')).toBe('es')
+    expect(emailTemplateLanguage(null)).toBe('es')
+  })
+
+  it('sin override usa el default del idioma del pedido; las variables no cambian', () => {
+    const en = resolveTemplate('order.shipped', { customer_name: 'Sam', order_number: 'ORD-7', carrier_name: 'X', tracking_url: 'u' }, null, 'en-US')
+    expect(en?.subject).toBe('Your order ORD-7 is on its way')
+    expect(en?.body).toContain('Hi Sam')
+    const es = resolveTemplate('order.shipped', { order_number: 'ORD-7' }, null, 'es-CO')
+    expect(es?.subject).toBe('Tu pedido ORD-7 va en camino')
+  })
+
+  it('el catálogo en inglés cubre todos los tipos con las mismas variables', () => {
+    const en = emailTemplatesFor('en')
+    expect(en).toHaveLength(EMAIL_TEMPLATES.length)
+    for (const t of en) {
+      const base = emailTemplateDef(t.type)!
+      expect(t.vars).toEqual(base.vars)
+      expect(t.subject).not.toBe(base.subject)
+    }
+  })
+})

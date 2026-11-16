@@ -9,7 +9,12 @@
 import { getEmailProvider } from '../providers/email'
 import type { Db } from '../client'
 import { resolveTemplate, getEmailTemplateOverride } from '../queries/email-templates'
-import { formatDateTime } from '@merkiai/i18n'
+import { formatDateTime, createTranslator, normalizeLocale, DEFAULT_LOCALE } from '@merkiai/i18n'
+
+/** Locale de un correo (E28 · HU-465): el del pedido/destinatario o el por defecto. */
+function mailLocale(locale?: string | null): string {
+  return normalizeLocale(locale ?? null) ?? DEFAULT_LOCALE
+}
 
 export interface EmailConfig {
   apiKey: string
@@ -67,8 +72,9 @@ export async function sendTemplatedEmail(
   params: { tenantId: string; type: string; to: string; vars: Record<string, string | number | null | undefined>; locale?: string },
   config: EmailConfig,
 ): Promise<TemplatedEmailResult> {
-  const override = await getEmailTemplateOverride(db, params.type, params.locale ?? 'es').catch(() => null)
-  const resolved = resolveTemplate(params.type, params.vars, override)
+  const locale = mailLocale(params.locale)
+  const override = await getEmailTemplateOverride(db, params.type, locale).catch(() => null)
+  const resolved = resolveTemplate(params.type, params.vars, override, locale)
   if (!resolved) return { status: 'skipped' }
   if (!resolved.enabled) return { status: 'suppressed' }
   const name = config.storeName ?? 'Mi Tienda'
@@ -76,7 +82,7 @@ export async function sendTemplatedEmail(
     from: `${fromName(name)} <${config.fromEmail}>`,
     to: [params.to],
     subject: resolved.subject,
-    html: baseTemplate(templateBodyToHtml(resolved.body), config),
+    html: baseTemplate(templateBodyToHtml(resolved.body), config, locale),
   })
   return { status: 'sent', subject: resolved.subject }
 }
@@ -93,18 +99,19 @@ export function renderTemplatedPreview(
   vars: Record<string, string | number | null | undefined>,
   override: { subject?: string; body?: string; enabled?: boolean } | null,
   config: EmailConfig,
+  locale?: string | null,
 ): { subject: string; html: string; enabled: boolean } | null {
-  const resolved = resolveTemplate(type, vars, override)
+  const resolved = resolveTemplate(type, vars, override, locale)
   if (!resolved) return null
-  return { subject: resolved.subject, html: baseTemplate(templateBodyToHtml(resolved.body), config), enabled: resolved.enabled }
+  return { subject: resolved.subject, html: baseTemplate(templateBodyToHtml(resolved.body), config, mailLocale(locale)), enabled: resolved.enabled }
 }
 
-function baseTemplate(content: string, config: EmailConfig): string {
+function baseTemplate(content: string, config: EmailConfig, locale: string = DEFAULT_LOCALE): string {
   const name = config.storeName ?? 'Mi Tienda'
   const url  = (config.siteUrl ?? '').replace(/\/$/, '')
 
   return `<!DOCTYPE html>
-<html lang="es">
+<html lang="${esc(locale)}">
 <head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"></head>
 <body style="margin: 0; padding: 0; background-color: #fff8ec;">
   <table width="100%" cellpadding="0" cellspacing="0">
@@ -134,7 +141,21 @@ function baseTemplate(content: string, config: EmailConfig): string {
 </html>`
 }
 
-/** Notificación al cliente cuando el pedido cambia a "shipped" */
+const P = 'style="margin: 0 0 24px; color: #8a6a4a; font-size: 14px; font-family: sans-serif;"'
+const H2 = 'style="margin: 0 0 8px; color: #614a2a; font-size: 20px; font-family: sans-serif;"'
+const BTN = 'style="display: inline-block; background: #614a2a; color: #fff8ec; text-decoration: none; padding: 12px 28px; border-radius: 50px; font-size: 14px; font-weight: 600; font-family: sans-serif;"'
+
+/** Línea de cierre "Pedido: ORD-1 · Nombre" en el idioma del correo. */
+function orderFooter(t: (k: string, v?: Record<string, string | number>) => string, order: { order_number: string; customer_name: string }): string {
+  return `<p style="margin: 0; font-size: 13px; color: #8a6a4a; text-align: center; font-family: sans-serif;">
+      ${t('order_line')} <strong>${esc(order.order_number)}</strong> · ${esc(order.customer_name)}
+    </p>`
+}
+
+/**
+ * Notificación al cliente cuando el pedido cambia a "shipped".
+ * E28 · HU-465: textos en el idioma del pedido (`order.locale`).
+ */
 export async function sendShippingNotification(
   order: {
     order_number: string
@@ -143,170 +164,168 @@ export async function sendShippingNotification(
     tracking_number?: string | null
     carrier_name?: string | null
     label_url?: string | null
+    locale?: string | null
   },
   config: EmailConfig,
 ): Promise<void> {
   const name = config.storeName ?? 'Mi Tienda'
+  const locale = mailLocale(order.locale)
+  const t = createTranslator(locale, 'email.system')
 
   const content = `
-    <h2 style="margin: 0 0 8px; color: #614a2a; font-size: 20px; font-family: sans-serif;">¡Tu pedido está en camino!</h2>
-    <p style="margin: 0 0 24px; color: #8a6a4a; font-size: 14px; font-family: sans-serif;">
-      Tu pedido <strong>${order.order_number}</strong> ha sido despachado.
+    <h2 ${H2}>${t('shipped_title')}</h2>
+    <p ${P}>
+      ${t('shipped_body', { orderNumber: esc(order.order_number) })}
     </p>
     ${order.tracking_number ? `
     <div style="background: #fff8ec; border-radius: 12px; padding: 20px; margin-bottom: 24px; text-align: center;">
-      <p style="margin: 0 0 4px; font-size: 13px; color: #8a6a4a; font-family: sans-serif;">Número de tracking</p>
+      <p style="margin: 0 0 4px; font-size: 13px; color: #8a6a4a; font-family: sans-serif;">${t('tracking_number')}</p>
       <p style="margin: 0 0 8px; font-size: 24px; font-weight: 700; color: #614a2a; letter-spacing: 0.05em; font-family: monospace;">${esc(order.tracking_number)}</p>
-      ${order.carrier_name ? `<p style="margin: 0; font-size: 13px; color: #8a6a4a; font-family: sans-serif;">Transportadora: <strong>${esc(order.carrier_name)}</strong></p>` : ''}
+      ${order.carrier_name ? `<p style="margin: 0; font-size: 13px; color: #8a6a4a; font-family: sans-serif;">${t('carrier')} <strong>${esc(order.carrier_name)}</strong></p>` : ''}
     </div>
     ${order.label_url ? `
     <div style="text-align: center; margin-bottom: 24px;">
-      <a href="${esc(order.label_url)}" style="display: inline-block; background: #614a2a; color: #fff8ec; text-decoration: none; padding: 12px 28px; border-radius: 50px; font-size: 14px; font-weight: 600; font-family: sans-serif;">
-        Descargar guía de envío
+      <a href="${esc(order.label_url)}" ${BTN}>
+        ${t('download_label')}
       </a>
     </div>` : ''}` : ''}
-    <p style="margin: 0; font-size: 13px; color: #8a6a4a; text-align: center; font-family: sans-serif;">
-      Pedido: <strong>${order.order_number}</strong> · ${esc(order.customer_name)}
-    </p>`
+    ${orderFooter(t, order)}`
 
   await sendEmail(config, {
     from: `${fromName(name)} <${config.fromEmail}>`,
     to: [order.customer_email],
-    subject: `Tu pedido ${order.order_number} ha sido despachado — ${name}`,
-    html: baseTemplate(content, config),
+    subject: t('shipped_subject', { orderNumber: order.order_number, store: name }),
+    html: baseTemplate(content, config, locale),
   })
 }
 
-/** Notificación al cliente cuando el administrador confirma manualmente el pago */
+/** Notificación al cliente cuando el administrador confirma manualmente el pago (idioma del pedido). */
 export async function sendPaymentConfirmed(
   order: {
     order_number: string
     customer_email: string
     customer_name: string
+    locale?: string | null
   },
   config: EmailConfig,
 ): Promise<void> {
   const name = config.storeName ?? 'Mi Tienda'
+  const locale = mailLocale(order.locale)
+  const t = createTranslator(locale, 'email.system')
 
   const content = `
-    <h2 style="margin: 0 0 8px; color: #614a2a; font-size: 20px; font-family: sans-serif;">¡Confirmamos tu pago!</h2>
-    <p style="margin: 0 0 24px; color: #8a6a4a; font-size: 14px; font-family: sans-serif;">
-      Verificamos el pago de tu pedido <strong>${order.order_number}</strong> y ya está en preparación.
-      Te avisaremos cuando sea despachado.
+    <h2 ${H2}>${t('paid_title')}</h2>
+    <p ${P}>
+      ${t('paid_body', { orderNumber: esc(order.order_number) })}
     </p>
-    <p style="margin: 0; font-size: 13px; color: #8a6a4a; text-align: center; font-family: sans-serif;">
-      Pedido: <strong>${order.order_number}</strong> · ${esc(order.customer_name)}
-    </p>`
+    ${orderFooter(t, order)}`
 
   await sendEmail(config, {
     from: `${fromName(name)} <${config.fromEmail}>`,
     to: [order.customer_email],
-    subject: `Pago confirmado — Pedido ${order.order_number} · ${name}`,
-    html: baseTemplate(content, config),
+    subject: t('paid_subject', { orderNumber: order.order_number, store: name }),
+    html: baseTemplate(content, config, locale),
   })
 }
 
-/** Notificación genérica de cambio de estado — para "delivered" y "cancelled" */
+/** Notificación genérica de cambio de estado — para "delivered" y "cancelled" (idioma del pedido). */
 export async function sendStatusNotification(
   order: {
     order_number: string
     customer_email: string
     customer_name: string
+    locale?: string | null
   },
   status: 'delivered' | 'cancelled',
   config: EmailConfig,
 ): Promise<void> {
   const name = config.storeName ?? 'Mi Tienda'
-
-  const isDelivered = status === 'delivered'
-  const heading = isDelivered ? '¡Tu pedido fue entregado!' : 'Tu pedido ha sido cancelado'
-  const body = isDelivered
-    ? `Tu pedido <strong>${order.order_number}</strong> fue marcado como entregado. Esperamos que disfrutes tu compra.`
-    : `Tu pedido <strong>${order.order_number}</strong> ha sido cancelado. Si tienes dudas, contáctanos.`
+  const locale = mailLocale(order.locale)
+  const t = createTranslator(locale, 'email.system')
+  const key = status === 'delivered' ? 'delivered' : 'cancelled'
 
   const content = `
-    <h2 style="margin: 0 0 8px; color: #614a2a; font-size: 20px; font-family: sans-serif;">${heading}</h2>
-    <p style="margin: 0 0 24px; color: #8a6a4a; font-size: 14px; font-family: sans-serif;">${body}</p>
-    <p style="margin: 0; font-size: 13px; color: #8a6a4a; text-align: center; font-family: sans-serif;">
-      Pedido: <strong>${order.order_number}</strong> · ${esc(order.customer_name)}
-    </p>`
-
-  const subjects: Record<typeof status, string> = {
-    delivered: `Pedido ${order.order_number} entregado — ${name}`,
-    cancelled:  `Pedido ${order.order_number} cancelado — ${name}`,
-  }
+    <h2 ${H2}>${t(`${key}_title`)}</h2>
+    <p ${P}>${t(`${key}_body`, { orderNumber: esc(order.order_number) })}</p>
+    ${orderFooter(t, order)}`
 
   await sendEmail(config, {
     from: `${fromName(name)} <${config.fromEmail}>`,
     to: [order.customer_email],
-    subject: subjects[status],
-    html: baseTemplate(content, config),
+    subject: t(`${key}_subject`, { orderNumber: order.order_number, store: name }),
+    html: baseTemplate(content, config, locale),
   })
 }
 
-/** HU-105 · aviso de reposición de stock ("avísame cuando vuelva"). */
+/** HU-105 · aviso de reposición de stock ("avísame cuando vuelva"), en el idioma indicado. */
 export async function sendBackInStock(
   data: {
     to: string
     productName: string
     productUrl?: string | null
     variantLabel?: string | null
+    locale?: string | null
   },
   config: EmailConfig,
 ): Promise<void> {
   const name = config.storeName ?? 'Mi Tienda'
+  const locale = mailLocale(data.locale)
+  const t = createTranslator(locale, 'email.system')
   const label = data.variantLabel ? ` (${data.variantLabel})` : ''
 
   const content = `
-    <h2 style="margin: 0 0 8px; color: #614a2a; font-size: 20px; font-family: sans-serif;">¡Volvió a estar disponible!</h2>
-    <p style="margin: 0 0 24px; color: #8a6a4a; font-size: 14px; font-family: sans-serif;">
-      <strong>${esc(data.productName)}</strong>${esc(label)} ya tiene stock. Si todavía lo quieres, consíguelo antes de que se agote de nuevo.
+    <h2 ${H2}>${t('restock_title')}</h2>
+    <p ${P}>
+      ${t('restock_body', { product: esc(data.productName + label) })}
     </p>
     ${data.productUrl ? `
     <div style="text-align: center; margin-bottom: 24px;">
-      <a href="${esc(data.productUrl)}" style="display: inline-block; background: #614a2a; color: #fff8ec; text-decoration: none; padding: 12px 28px; border-radius: 50px; font-size: 14px; font-weight: 600; font-family: sans-serif;">
-        Ver producto
+      <a href="${esc(data.productUrl)}" ${BTN}>
+        ${t('restock_cta')}
       </a>
     </div>` : ''}`
 
   await sendEmail(config, {
     from: `${fromName(name)} <${config.fromEmail}>`,
     to: [data.to],
-    subject: `Ya disponible: ${data.productName} — ${name}`,
-    html: baseTemplate(content, config),
+    subject: t('restock_subject', { product: data.productName, store: name }),
+    html: baseTemplate(content, config, locale),
   })
 }
 
-/** HU-292 · invitación a una venta VIP / acceso anticipado. */
+/** HU-292 · invitación a una venta VIP / acceso anticipado, en el idioma indicado. */
 export async function sendVipCampaignInvite(
   data: {
     to: string
     campaignName: string
     accessUrl?: string | null
     endsAt?: string | null
+    locale?: string | null
   },
   config: EmailConfig,
 ): Promise<void> {
   const name = config.storeName ?? 'Mi Tienda'
-  const when = data.endsAt ? formatDateTime(data.endsAt) : null
+  const locale = mailLocale(data.locale)
+  const t = createTranslator(locale, 'email.system')
+  const when = data.endsAt ? formatDateTime(data.endsAt, { locale }) : null
 
   const content = `
-    <p style="margin: 0 0 4px; color: #8a6a4a; font-size: 12px; text-transform: uppercase; letter-spacing: 1px; font-family: sans-serif;">Acceso anticipado VIP</p>
-    <h2 style="margin: 0 0 8px; color: #614a2a; font-size: 20px; font-family: sans-serif;">${esc(data.campaignName)}</h2>
-    <p style="margin: 0 0 24px; color: #8a6a4a; font-size: 14px; font-family: sans-serif;">
-      Como miembro de nuestro Club VIP, tienes acceso anticipado a esta venta exclusiva${when ? ` hasta el <strong>${when}</strong>` : ''}. Aprovéchala antes que el público general.
+    <p style="margin: 0 0 4px; color: #8a6a4a; font-size: 12px; text-transform: uppercase; letter-spacing: 1px; font-family: sans-serif;">${t('vip_kicker')}</p>
+    <h2 ${H2}>${esc(data.campaignName)}</h2>
+    <p ${P}>
+      ${when ? t('vip_body_until', { date: esc(when) }) : t('vip_body')}
     </p>
     ${data.accessUrl ? `
     <div style="text-align: center; margin-bottom: 24px;">
-      <a href="${esc(data.accessUrl)}" style="display: inline-block; background: #614a2a; color: #fff8ec; text-decoration: none; padding: 12px 28px; border-radius: 50px; font-size: 14px; font-weight: 600; font-family: sans-serif;">
-        Comprar ahora
+      <a href="${esc(data.accessUrl)}" ${BTN}>
+        ${t('vip_cta')}
       </a>
     </div>` : ''}`
 
   await sendEmail(config, {
     from: `${fromName(name)} <${config.fromEmail}>`,
     to: [data.to],
-    subject: `Acceso VIP: ${data.campaignName} — ${name}`,
-    html: baseTemplate(content, config),
+    subject: t('vip_subject', { campaign: data.campaignName, store: name }),
+    html: baseTemplate(content, config, locale),
   })
 }

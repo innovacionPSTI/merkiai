@@ -106,7 +106,8 @@ describe('POST /api/newsletter — primera suscripción', () => {
     await POST(makeRequest({ email: 'new@example.com' }))
     expect(mockSendNewsletterConfirmation).toHaveBeenCalledWith(
       'new@example.com',
-      expect.objectContaining({ apiKey: 're_test', fromEmail: 'noreply@tienda.example.com' })
+      expect.objectContaining({ apiKey: 're_test', fromEmail: 'noreply@tienda.example.com' }),
+      undefined, // E28 · HU-465 · locale de la visita (sin petición real → idioma por defecto)
     )
   })
 

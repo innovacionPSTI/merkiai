@@ -23,7 +23,7 @@ export interface BlogParseResult { posts: ImportBlogPost[]; errors: BlogParseErr
 export const BLOG_IMPORT_TEMPLATE = [
   'slug,title,excerpt,content,cover_image,category,published,published_at,seo_title,seo_desc',
   'bienvenida,Bienvenida a la tienda,Nuestro primer artículo,"Hola, este es el contenido.",,Noticias,true,2026-01-15,,',
-  'guia-cafe,Guía de café,Cómo preparar el mejor café,Contenido largo…,,Guías,false,,,',
+  'guia-de-compra,Guía de compra,Cómo elegir el producto ideal,Contenido largo…,,Guías,false,,,',
 ].join('\n')
 
 const ALIASES: Record<string, string> = {

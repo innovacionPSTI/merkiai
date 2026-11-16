@@ -1,4 +1,5 @@
 import type { Db } from '../client'
+import { baseLanguage } from '@merkiai/i18n'
 
 /**
  * Plantillas de email editables (HU-160). Override por tienda del asunto y el
@@ -52,8 +53,56 @@ export const EMAIL_TEMPLATES: EmailTemplateDef[] = [
     body: 'Hola {{customer_name}},\n\nPara restablecer tu contraseña entra aquí: {{reset_url}}\n\nSi no fuiste tú, ignora este correo.' },
 ]
 
-export function emailTemplateDef(type: string): EmailTemplateDef | undefined {
-  return EMAIL_TEMPLATES.find((t) => t.type === type)
+/**
+ * E28 · HU-465 · defaults de sistema en otros idiomas (la referencia es `es`,
+ * arriba). Cada idioma base tiene su propio texto; si falta un tipo, cae a `es`.
+ */
+const EMAIL_TEMPLATE_TEXT: Record<string, Partial<Record<EmailTemplateType, { label: string; subject: string; body: string }>>> = {
+  en: {
+    'payment.confirmed': { label: 'Payment confirmed', subject: 'We received your payment — order {{order_number}}',
+      body: 'Hi {{customer_name}},\n\nWe received the payment for order {{order_number}}. Thank you for your purchase! We will let you know when it ships.' },
+    'payment.rejected': { label: 'Payment declined', subject: 'Your payment could not be processed — order {{order_number}}',
+      body: 'Hi {{customer_name}},\n\nWe could not process the payment for order {{order_number}}. You can try again or use another payment method.' },
+    'order.processing': { label: 'Order processing', subject: 'Your order {{order_number}} is being processed',
+      body: 'Hi {{customer_name}},\n\nWe are preparing your order {{order_number}}. You will hear from us soon.' },
+    'order.shipped': { label: 'Order shipped', subject: 'Your order {{order_number}} is on its way',
+      body: 'Hi {{customer_name}},\n\nYour order {{order_number}} was shipped with {{carrier_name}}. Track your shipment here: {{tracking_url}}' },
+    'order.delivered': { label: 'Order delivered', subject: 'Your order {{order_number}} was delivered',
+      body: 'Hi {{customer_name}},\n\nYour order {{order_number}} was delivered. We hope you enjoy it!' },
+    'order.cancelled': { label: 'Order cancelled', subject: 'Your order {{order_number}} was cancelled',
+      body: 'Hi {{customer_name}},\n\nYour order {{order_number}} was cancelled. If you have any questions, contact us.' },
+    'order.exception': { label: 'Order issue', subject: 'There is an update about your order {{order_number}}',
+      body: 'Hi {{customer_name}},\n\nThere was an issue with your order {{order_number}}. Our team will contact you.' },
+    'account.welcome': { label: 'Welcome', subject: 'Welcome!',
+      body: 'Hi {{customer_name}},\n\nThank you for creating your account. Welcome aboard!' },
+    'account.recovery': { label: 'Password recovery', subject: 'Reset your password',
+      body: 'Hi {{customer_name}},\n\nTo reset your password go here: {{reset_url}}\n\nIf this was not you, ignore this email.' },
+  },
+}
+
+/** Idiomas con textos de sistema para las plantillas (la referencia primero). */
+export const EMAIL_TEMPLATE_LANGUAGES = ['es', ...Object.keys(EMAIL_TEMPLATE_TEXT)] as const
+
+/** Idioma de plantilla para un locale (`es-MX` → `es`, `en-US` → `en`; desconocido → `es`). */
+export function emailTemplateLanguage(locale?: string | null): string {
+  const lang = baseLanguage(locale || 'es')
+  return (EMAIL_TEMPLATE_LANGUAGES as readonly string[]).includes(lang) ? lang : 'es'
+}
+
+/**
+ * Definición de un tipo en un idioma: etiqueta, asunto y cuerpo de sistema del
+ * idioma pedido (o `es` si no hay traducción). Las variables no cambian.
+ */
+export function emailTemplateDef(type: string, locale?: string | null): EmailTemplateDef | undefined {
+  const def = EMAIL_TEMPLATES.find((t) => t.type === type)
+  if (!def) return undefined
+  const text = EMAIL_TEMPLATE_TEXT[emailTemplateLanguage(locale)]?.[def.type]
+  return text ? { ...def, ...text } : def
+}
+
+/** Catálogo completo en un idioma (para el editor del admin). */
+export function emailTemplatesFor(locale?: string | null): EmailTemplateDef[] {
+  return EMAIL_TEMPLATES.map((t) => emailTemplateDef(t.type, locale)!)
 }
 
 /** Interpola `{{var}}` con los valores dados; variables faltantes → ''. Pura. */
@@ -69,14 +118,16 @@ export interface ResolvedTemplate { subject: string; body: string; enabled: bool
 /**
  * Resuelve asunto+cuerpo interpolados para un tipo: usa el override de la tienda
  * si existe, si no el default de sistema. `enabled=false` ⇒ el llamador NO envía.
- * Pura (recibe el override ya leído de BD).
+ * El default sale del idioma del `locale` (E28 · HU-465). Pura (recibe el
+ * override ya leído de BD, que debe ser del mismo idioma).
  */
 export function resolveTemplate(
   type: string,
   vars: Record<string, string | number | null | undefined>,
   override?: { subject?: string; body?: string; enabled?: boolean } | null,
+  locale?: string | null,
 ): ResolvedTemplate | null {
-  const def = emailTemplateDef(type)
+  const def = emailTemplateDef(type, locale)
   const subjectTpl = override?.subject ?? def?.subject
   const bodyTpl = override?.body ?? def?.body
   if (subjectTpl == null || bodyTpl == null) return null
@@ -91,15 +142,16 @@ export function resolveTemplate(
 
 export interface EmailTemplateRow { type: string; subject: string; body: string; enabled: boolean; locale: string }
 
-/** Overrides guardados del tenant (merge con el catálogo en el admin). */
+/** Overrides guardados del tenant en un idioma (merge con el catálogo en el admin).
+ *  Se guardan por idioma base (`es`, `en`): `es-MX` y `es-CO` comparten plantilla. */
 export async function listEmailTemplates(db: Db, locale = 'es'): Promise<EmailTemplateRow[]> {
-  const { data } = await db.from('email_templates').select('type, subject, body, enabled, locale').eq('locale', locale)
+  const { data } = await db.from('email_templates').select('type, subject, body, enabled, locale').eq('locale', emailTemplateLanguage(locale))
   return (data ?? []) as EmailTemplateRow[]
 }
 
 /** Override de un tipo, o null si usa el default. */
 export async function getEmailTemplateOverride(db: Db, type: string, locale = 'es'): Promise<EmailTemplateRow | null> {
-  const { data } = await db.from('email_templates').select('type, subject, body, enabled, locale').eq('type', type).eq('locale', locale).maybeSingle()
+  const { data } = await db.from('email_templates').select('type, subject, body, enabled, locale').eq('type', type).eq('locale', emailTemplateLanguage(locale)).maybeSingle()
   return (data as EmailTemplateRow) ?? null
 }
 
@@ -112,6 +164,6 @@ export async function upsertEmailTemplate(
   const { error } = await db
     .from('email_templates')
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    .upsert({ tenant_id: tenantId, type: input.type, locale: input.locale ?? 'es', subject: input.subject, body: input.body, enabled: input.enabled, updated_at: new Date().toISOString() } as any, { onConflict: 'tenant_id,type,locale' })
+    .upsert({ tenant_id: tenantId, type: input.type, locale: emailTemplateLanguage(input.locale), subject: input.subject, body: input.body, enabled: input.enabled, updated_at: new Date().toISOString() } as any, { onConflict: 'tenant_id,type,locale' })
   if (error) throw error
 }

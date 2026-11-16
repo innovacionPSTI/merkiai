@@ -1,3 +1,4 @@
+import { getRequestLocale } from '@/lib/request-locale'
 import { NextRequest, NextResponse } from 'next/server'
 import { stackServerApp } from '@/stack'
 import { resolveEmailConfig, ensureCustomer } from '@merkiai/database'
@@ -88,6 +89,7 @@ export async function POST(request: NextRequest) {
           email,
           displayName,
           buildEmailConfig(ec.apiKey, ec.fromEmail, ec.storeName, ec.provider),
+          await getRequestLocale().then((r) => r.locale ?? r.defaultLocale).catch(() => undefined),
         )
       }
     }

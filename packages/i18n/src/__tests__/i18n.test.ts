@@ -164,3 +164,13 @@ describe('HU-466 F6 · mensajes de servidor', () => {
     expect(translatePhrase('Prueba enviada a {to}', 'en-US', { to: 'a@b.co' })).toBe('Test sent to a@b.co')
   })
 })
+
+describe('HU-465 · correos de sistema', () => {
+  it('textos con HTML e interpolación en ambos idiomas', () => {
+    const en = createTranslator('en-US', 'email.system')
+    const es = createTranslator('es-CO', 'email.system')
+    expect(en('shipped_body', { orderNumber: 'ORD-1' })).toBe('Your order <strong>ORD-1</strong> has been shipped.')
+    expect(es('delivered_subject', { orderNumber: 'ORD-1', store: 'Tienda' })).toBe('Pedido ORD-1 entregado — Tienda')
+    expect(en('vip_body_until', { date: 'May 1' })).toContain('<strong>May 1</strong>')
+  })
+})
