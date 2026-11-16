@@ -19,7 +19,7 @@
     "db:generate:remote": "supabase gen types typescript --project-id \"$SUPABASE_PROJECT_REF\" --schema public > packages/database/src/types.ts"
   },
   "devDependencies": {
-    "@types/node": "^20.19.43",
+    "@types/node": "^26.6.6",
     "prettier": "^3.9.10",
     "turbo": "^2.11.10",
     "typescript": "^5.9.3"
