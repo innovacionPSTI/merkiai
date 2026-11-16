@@ -50,7 +50,8 @@ export default async function PedidoDetailPage({ params }: Props) {
   // E28 · HU-465 · textos, fechas y montos en el idioma de la petición.
   const t = await getT('web.orders')
   const locale = await getPageLang().catch(() => 'es-CO')
-  const COP = { format: (n: number) => formatMoney(n, { locale }) }
+  // HU-467 · montos en la moneda del pedido (fija desde su creación).
+  const COP = { format: (n: number) => formatMoney(n, { locale, currency: (order as { currency?: string } | null)?.currency ?? 'COP' }) }
   const fmt = fmtIn(locale)
 
   const user = await stackServerApp.getUser()

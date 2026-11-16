@@ -9,7 +9,7 @@ import { useEffect, useRef, useState } from 'react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { Icon } from '@merkiai/ui'
-import { formatMoney } from '@merkiai/i18n'
+import { useFormat } from '@/components/i18n/I18nProvider'
 
 interface Suggestion {
   id: number
@@ -19,10 +19,10 @@ interface Suggestion {
   min_price: number | null
 }
 
-const fmt = (n: number) =>
-  formatMoney(n)
 
 export default function SearchBox({ initialQuery = '', onSearch, fullWidth = false }: { initialQuery?: string; onSearch: (q: string) => void; fullWidth?: boolean }) {
+  const { money } = useFormat()
+  const fmt = (n: number) => money(n)
   const router = useRouter()
   const [q, setQ] = useState(initialQuery)
   const [items, setItems] = useState<Suggestion[]>([])

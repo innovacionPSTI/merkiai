@@ -1,6 +1,8 @@
-import { suggestProducts } from '@merkiai/database'
+import { suggestProducts, localizeProductPrices } from '@merkiai/database'
 import { NextRequest, NextResponse } from 'next/server'
 import { getRequestCatalogDb } from '@/lib/tenant-db'
+import { resolveTenant } from '@/lib/tenant-context'
+import { getApiPricing } from '@/lib/request-pricing'
 
 export const dynamic = 'force-dynamic'
 
@@ -16,7 +18,9 @@ export async function GET(req: NextRequest) {
 
   try {
     const db = await getRequestCatalogDb()
-    const suggestions = await suggestProducts(db, q, limit)
+    // HU-467 · precio "desde" en la moneda de la visita.
+    const { tenantId } = await resolveTenant()
+    const suggestions = localizeProductPrices(await suggestProducts(db, q, limit), await getApiPricing(tenantId))
     return NextResponse.json({ suggestions })
   } catch {
     return NextResponse.json({ suggestions: [] })

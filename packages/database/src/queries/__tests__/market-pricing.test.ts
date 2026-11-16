@@ -87,3 +87,53 @@ describe('HU-467 · mercados', () => {
     expect(n.tax_included).toBe(false)
   })
 })
+
+describe('HU-467 F2 · contexto de la visita', () => {
+  const { resolveMarket, priceIn, localizeProductPrices, couponForCurrency, promotionsForCurrency, storedValueUsable, basePricingContext } =
+    // eslint-disable-next-line @typescript-eslint/no-var-requires
+    require('../market-pricing')
+  const co = { key: 'co', name: 'Colombia', currency: 'COP', fx_rate: null, price_rounding: 'auto', tax_rate: 19, tax_included: true, price_list_id: null, locales: ['es-CO'], default_locale: 'es-CO', domain: null, is_default: true, active: true }
+  const us = { key: 'us', name: 'Estados Unidos', currency: 'USD', fx_rate: 0.00025, price_rounding: 'x99', tax_rate: 0, tax_included: false, price_list_id: 5, locales: ['en-US', 'es-CO'], default_locale: 'en-US', domain: 'tienda.us', is_default: false, active: true }
+  const ctx = { market: us, baseCurrency: 'COP', currency: 'USD', converting: true, listPrices: new Map([['v:11', 25], ['p:2', 40]]) }
+
+  it('mercado por dominio, luego por idioma (prefiere el por defecto), luego el por defecto', () => {
+    expect(resolveMarket([co, us], { host: 'www.tienda.us' }).key).toBe('us')
+    expect(resolveMarket([co, us], { locale: 'en-US' }).key).toBe('us')
+    expect(resolveMarket([co, us], { locale: 'es-CO' }).key).toBe('co')
+    expect(resolveMarket([co, us], { locale: 'es-ES' }).key).toBe('co')
+  })
+
+  it('precio: lista por variante → por producto → conversión; sin conversión = base', () => {
+    expect(priceIn(ctx, { basePrice: 120_000, variantId: 11, productId: 1 })).toBe(25)
+    expect(priceIn(ctx, { basePrice: 120_000, variantId: 12, productId: 2 })).toBe(40)
+    expect(priceIn(ctx, { basePrice: 120_000, variantId: 13, productId: 3 })).toBe(30.99)
+    expect(priceIn(basePricingContext('COP'), { basePrice: 120_000 })).toBe(120_000)
+  })
+
+  it('filas de catálogo: variantes, min/max, precio tachado y moneda; sin precio → se omite', () => {
+    const rows = [{ id: 1, min_price: 120_000, max_price: 160_000, variants: [{ id: 11, price: 120_000, compare_at_price: 140_000 }, { id: 14, price: 160_000, compare_at_price: null }] }]
+    const [r] = localizeProductPrices(rows, ctx)
+    expect(r.currency).toBe('USD')
+    expect(r.variants.map((v: { price: number }) => v.price)).toEqual([25, 40.99])
+    expect(r.variants[0].compare_at_price).toBe(35.99)
+    expect([r.min_price, r.max_price]).toEqual([25, 40.99])
+    const noRate = { ...ctx, market: { ...us, fx_rate: null }, listPrices: new Map() }
+    expect(localizeProductPrices([{ id: 9, min_price: 1000 }], noRate)).toEqual([])
+  })
+
+  it('AC-6 · cupón fijo solo en su moneda; porcentual con mínimo convertido; gift card/saldo por moneda', () => {
+    expect(couponForCurrency({ type: 'fixed', currency: null, min_order_amount: 0 }, ctx)).toBeNull()
+    expect(couponForCurrency({ type: 'fixed', currency: 'USD', min_order_amount: 10 }, ctx)?.min_order_amount).toBe(10)
+    expect(couponForCurrency({ type: 'percentage', currency: null, min_order_amount: 100_000 }, ctx)?.min_order_amount).toBe(25.99)
+    expect(storedValueUsable(null, ctx)).toBe(false)
+    expect(storedValueUsable('usd', ctx)).toBe(true)
+  })
+
+  it('promociones: en otra moneda se omiten las de monto fijo y se convierte el mínimo', () => {
+    const promos = [{ type: 'cart_fixed', config: { amount: 10_000 } }, { type: 'cart_percent', config: { percent: 10, min_subtotal: 200_000 } }]
+    const out = promotionsForCurrency(promos, ctx)
+    expect(out).toHaveLength(1)
+    expect(out[0].config.min_subtotal).toBe(50.99)
+    expect(promotionsForCurrency(promos, basePricingContext())).toBe(promos)
+  })
+})

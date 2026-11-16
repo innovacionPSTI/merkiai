@@ -1,4 +1,5 @@
 import { getWebHomeData } from '@merkiai/database'
+import { localizePrices } from '@/lib/request-pricing'
 import { requireStoreContext } from '@/lib/store-context'
 import { getMachineDb } from '@/lib/machine-db'
 import { isPreviewMode } from '@/lib/preview'
@@ -26,7 +27,10 @@ export default async function HomePage() {
   // (las políticas RLS *_admin_all no filtran por `enabled`); fuera de preview, el
   // cliente anon tenant-scoped (solo publicado). HU-128.
   const db = preview ? getMachineDb(ctx.tenantId) : ctx.db
-  const data = await getWebHomeData(db, { preview })
+  const raw = await getWebHomeData(db, { preview })
+  // HU-467 · productos del home con el precio en la moneda de la visita.
+  const [featuredProducts, bestSellers] = await Promise.all([localizePrices(raw.featuredProducts), localizePrices(raw.bestSellers)])
+  const data = { ...raw, featuredProducts, bestSellers }
 
   const template = ctx.template // HU-121: plantilla activa (tema) → layout
   const blocks   = getHomeBlocks(template)

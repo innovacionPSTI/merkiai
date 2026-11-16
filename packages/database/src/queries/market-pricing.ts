@@ -152,3 +152,167 @@ export function validateMarketCurrencies(
   }
   return [...new Set(errors)]
 }
+
+// ── Contexto de precios de una petición (storefront / checkout) ────────────────
+
+/** Mercado mínimo para resolver precios (subconjunto de `Market`). */
+export interface PricingMarket extends MarketPricing {
+  key: string
+  name: string
+  locales: string[]
+  default_locale: string
+  domain: string | null
+  is_default: boolean
+  active: boolean
+}
+
+/**
+ * Mercado de una visita: el del dominio, si coincide; si no, el que tiene el
+ * locale como idioma por defecto o habilitado (con preferencia por el mercado
+ * por defecto); si nada coincide, el mercado por defecto. Pura.
+ */
+export function resolveMarket<M extends PricingMarket>(markets: M[], opts: { locale?: string | null; host?: string | null }): M | null {
+  const active = markets.filter((m) => m.active)
+  if (active.length === 0) return markets[0] ?? null
+  const def = active.find((m) => m.is_default) ?? active[0]
+  const host = String(opts.host ?? '').toLowerCase().replace(/:\d+$/, '').replace(/^www\./, '')
+  if (host) {
+    const byDomain = active.find((m) => m.domain && (host === m.domain || host === `www.${m.domain}`))
+    if (byDomain) return byDomain
+  }
+  const locale = opts.locale ?? null
+  if (locale) {
+    if (def.locales.includes(locale)) return def
+    const byDefault = active.find((m) => m.default_locale === locale)
+    if (byDefault) return byDefault
+    const byEnabled = active.find((m) => m.locales.includes(locale))
+    if (byEnabled) return byEnabled
+  }
+  return def
+}
+
+export interface PricingContext {
+  market: PricingMarket | null
+  baseCurrency: string
+  /** Moneda en que se muestra y se cobra. */
+  currency: string
+  /** true si el mercado vende en otra moneda (hay que convertir). */
+  converting: boolean
+  /** Precios de la lista del mercado: `v:<variantId>` y `p:<productId>`. */
+  listPrices: Map<string, number>
+}
+
+/** Contexto neutro: moneda base, sin conversión (cero regresión). */
+export function basePricingContext(baseCurrency = 'COP', market: PricingMarket | null = null): PricingContext {
+  return { market, baseCurrency, currency: baseCurrency, converting: false, listPrices: new Map() }
+}
+
+/**
+ * Precio de una variante/producto en el contexto: lista del mercado (variante →
+ * producto) o conversión del precio base. Sin conversión → precio base.
+ * `null` = sin precio en esa moneda (no se puede vender en el mercado).
+ */
+export function priceIn(ctx: PricingContext, input: { basePrice: number; variantId?: number | null; productId?: number | null }): number | null {
+  if (!ctx.converting || !ctx.market) return input.basePrice
+  const list = (input.variantId != null ? ctx.listPrices.get(`v:${input.variantId}`) : undefined)
+    ?? (input.productId != null ? ctx.listPrices.get(`p:${input.productId}`) : undefined)
+  return marketPrice({ basePrice: input.basePrice, listPrice: list ?? null }, ctx.market, ctx.baseCurrency)
+}
+
+/** Monto de la tienda (envío, mínimos) en la moneda del contexto: solo conversión. */
+export function amountIn(ctx: PricingContext, baseAmount: number): number | null {
+  if (!ctx.converting || !ctx.market) return baseAmount
+  return convertFromBase(baseAmount, ctx.market, ctx.baseCurrency)
+}
+
+type PriceRow = Record<string, unknown>
+
+/**
+ * Convierte los precios de filas de producto del catálogo (lista, ficha,
+ * carrusel): `variants[].price`/`compare_at_price`, `min_price`/`max_price`,
+ * `price`/`compare_at_price` planos y `price_delta` de modificadores. Los
+ * productos sin precio en la moneda del mercado se omiten. Sin conversión → igual.
+ */
+export function localizeProductPrices<T>(rows: T[], ctx: PricingContext): T[] {
+  if (!ctx.converting || !ctx.market) return rows
+  const out: T[] = []
+  for (const row of rows) {
+    const r = convertProductRow(row as unknown as PriceRow, ctx)
+    if (r) out.push(r as unknown as T)
+  }
+  return out
+}
+
+function convertProductRow(row: PriceRow, ctx: PricingContext): PriceRow | null {
+  const productId = typeof row.id === 'number' ? row.id : Number(row.product_id ?? NaN)
+  const next: PriceRow = { ...row, currency: ctx.currency }
+  const conv = (v: unknown, variantId?: number | null): number | null =>
+    typeof v === 'number' || (typeof v === 'string' && v !== '' && Number.isFinite(Number(v)))
+      ? priceIn(ctx, { basePrice: Number(v), variantId: variantId ?? null, productId: Number.isFinite(productId) ? productId : null })
+      : null
+  const fx = (v: unknown): number | null => (v == null ? null : amountIn(ctx, Number(v)))
+
+  if (Array.isArray(row.variants)) {
+    const variants = (row.variants as PriceRow[]).map((v): PriceRow | null => {
+      const price = conv(v.price, typeof v.id === 'number' ? v.id : null)
+      return price == null ? null : { ...v, price, compare_at_price: fx(v.compare_at_price) }
+    })
+    const priced = variants.filter((v): v is PriceRow => v !== null)
+    if (priced.length === 0 && variants.length > 0) return null
+    next.variants = priced
+    const prices = priced.map((v) => Number(v.price))
+    if ('min_price' in row) next.min_price = prices.length ? Math.min(...prices) : null
+    if ('max_price' in row) next.max_price = prices.length ? Math.max(...prices) : null
+  } else {
+    if ('min_price' in row && row.min_price != null) { const p = conv(row.min_price); if (p == null) return null; next.min_price = p }
+    if ('max_price' in row && row.max_price != null) next.max_price = conv(row.max_price) ?? next.min_price
+  }
+  if ('price' in row && row.price != null) { const p = conv(row.price, typeof row.variant_id === 'number' ? row.variant_id : null); if (p == null) return null; next.price = p }
+  if ('compare_at_price' in row && !Array.isArray(row.variants)) next.compare_at_price = fx(row.compare_at_price)
+  if (Array.isArray(row.modifier_groups)) {
+    next.modifier_groups = (row.modifier_groups as PriceRow[]).map((g) => ({
+      ...g,
+      options: Array.isArray(g.options) ? (g.options as PriceRow[]).map((o) => ({ ...o, price_delta: fx(o.price_delta) ?? 0 })) : g.options,
+    }))
+  }
+  return next
+}
+
+/**
+ * Cupones, gift cards y saldo solo se aplican en su moneda (AC-6). `null` en el
+ * dato = moneda base de la tienda. Los cupones porcentuales valen en cualquiera.
+ */
+export function storedValueUsable(valueCurrency: string | null | undefined, ctx: Pick<PricingContext, 'currency' | 'baseCurrency'>): boolean {
+  return String(valueCurrency || ctx.baseCurrency).toUpperCase() === ctx.currency.toUpperCase()
+}
+
+/**
+ * Promociones aplicables en la moneda del contexto: las de monto fijo están en la
+ * moneda base (no aplican en otra); los mínimos de compra se convierten. Pura.
+ */
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+export function promotionsForCurrency<P extends { type: string; config?: any }>(promos: P[], ctx: PricingContext): P[] {
+  if (!ctx.converting) return promos
+  return promos
+    .filter((p) => p.type !== 'cart_fixed')
+    .map((p) => {
+      const min = p.config?.min_subtotal
+      if (min == null) return p
+      const converted = amountIn(ctx, Number(min))
+      return converted == null ? null : { ...p, config: { ...p.config, min_subtotal: converted } }
+    })
+    .filter((p): p is P => p !== null)
+}
+
+/**
+ * Cupón en la moneda del contexto (AC-6): el de monto fijo solo vale en su
+ * moneda; el porcentual vale en cualquiera, con el mínimo de compra convertido
+ * si está en la moneda base. `null` = no aplica en esta moneda. Pura.
+ */
+export function couponForCurrency<C extends { type: string; currency?: string | null; min_order_amount: number }>(coupon: C, ctx: PricingContext): C | null {
+  const own = String(coupon.currency || ctx.baseCurrency).toUpperCase()
+  if (own === ctx.currency.toUpperCase()) return coupon
+  if (coupon.type !== 'percentage') return null
+  const min = coupon.min_order_amount ? amountIn(ctx, coupon.min_order_amount) : 0
+  return min == null ? null : { ...coupon, min_order_amount: min }
+}

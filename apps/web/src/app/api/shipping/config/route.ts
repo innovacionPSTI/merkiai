@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server'
-import { getShippingConfig } from '@merkiai/database';
+import { getShippingConfig, amountIn } from '@merkiai/database';
+import { getApiPricing } from '@/lib/request-pricing'
 import { resolveTenant } from '@/lib/tenant-context';
 import { getMachineDb } from '@/lib/machine-db'
 
@@ -14,11 +15,17 @@ export async function GET() {
   try {
     const { tenantId } = await resolveTenant();
     const config = await getShippingConfig(getMachineDb(tenantId), tenantId)
+    // HU-467 · montos en la moneda del mercado de la visita; la transportadora
+    // cotiza en la moneda base, así que en otra moneda rige la tarifa fija.
+    const pricing = await getApiPricing(tenantId)
+    const market = pricing.market
     return NextResponse.json({
-      provider:                 config.provider,
-      fixed_rate:               config.fixed_rate,
+      provider:                 pricing.converting ? 'fixed' : config.provider,
+      fixed_rate:               amountIn(pricing, config.fixed_rate) ?? config.fixed_rate,
       free_shipping_enabled:    config.free_shipping_enabled,
-      free_shipping_min_amount: config.free_shipping_min_amount,
+      free_shipping_min_amount: amountIn(pricing, config.free_shipping_min_amount) ?? config.free_shipping_min_amount,
+      currency:                 pricing.currency,
+      tax: { rate: market?.tax_rate ?? 0, included: market?.tax_included ?? true },
     })
   } catch {
     // Fallback seguro si la BD no responde

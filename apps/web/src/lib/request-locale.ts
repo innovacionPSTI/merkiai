@@ -14,6 +14,7 @@ import {
   type TranslatableEntity, type Db,
 } from '@merkiai/database'
 import { buildAlternates, localizedPath, type LocaleConfig } from './locale-routing'
+import { localizePrices } from './request-pricing'
 import { resolveTenant } from './tenant-context'
 import { getMachineDb } from './machine-db'
 
@@ -38,9 +39,12 @@ export const getRequestLocale = cache(async (): Promise<RequestLocale> => {
 
 /** Localiza filas de una entidad con el locale de la petición (no-op en el idioma por defecto). */
 export async function localize<T>(db: Db, entity: TranslatableEntity, rows: T[]): Promise<T[]> {
+  if (rows.length === 0) return rows
+  // HU-467 · los productos llegan además con el precio en la moneda del mercado.
+  const priced = entity === 'product' ? await localizePrices(rows) : rows
   const { locale, defaultLocale } = await getRequestLocale()
-  if (!locale || rows.length === 0) return rows
-  return (await localizeRows(db, entity, rows as unknown as Record<string, unknown>[], locale, defaultLocale)) as unknown as T[]
+  if (!locale) return priced
+  return (await localizeRows(db, entity, priced as unknown as Record<string, unknown>[], locale, defaultLocale)) as unknown as T[]
 }
 
 export async function localizeOne<T>(db: Db, entity: TranslatableEntity, row: T | null): Promise<T | null> {

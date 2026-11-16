@@ -22,7 +22,7 @@ export default function GuestOrderLookupPage() {
   const t = useT('web.track')
   const to = useT('web.orders')
   const locale = useLocale()
-  const fmt = (n: number) => formatMoney(n, { locale })
+  const fmt = (n: number, currency?: string | null) => formatMoney(n, { locale, currency: currency ?? 'COP' })
   const fmtDate = (s: string) => formatDate(s, { day: 'numeric', month: 'long', year: 'numeric', locale })
   const [orderNumber, setOrderNumber] = useState('')
   const [email, setEmail] = useState('')
@@ -107,7 +107,7 @@ export default function GuestOrderLookupPage() {
             </ul>
             <hr className="border-brand-primary/10 my-4" />
             <div className="flex justify-between font-brand font-bold text-brand-primary">
-              <span>{to('total')}</span><span>{fmt(order.total)}</span>
+              <span>{to('total')}</span><span>{fmt(order.total, (order as { currency?: string }).currency)}</span>
             </div>
           </div>
         )}

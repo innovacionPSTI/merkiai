@@ -7,6 +7,7 @@
  */
 import { useEffect, useState } from 'react'
 import { useWishlistStore, type WishlistItem } from '@/store/wishlist'
+import { useCurrency } from '@/components/i18n/I18nProvider'
 
 export default function WishlistButton({
   item,
@@ -20,7 +21,10 @@ export default function WishlistButton({
   /** 'icon' = solo corazón (overlay en tarjetas); 'button' = con texto (PDP). */
   variant?: 'icon' | 'button'
 }) {
-  const toggle = useWishlistStore((s) => s.toggle)
+  const toggleItem = useWishlistStore((s) => s.toggle)
+  const currency = useCurrency()
+  // HU-467 · el precio guardado lleva su moneda.
+  const toggle = (it: typeof item) => toggleItem({ ...it, currency })
   const items = useWishlistStore((s) => s.items)
   const [mounted, setMounted] = useState(false)
   useEffect(() => setMounted(true), [])

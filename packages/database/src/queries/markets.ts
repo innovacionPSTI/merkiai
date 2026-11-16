@@ -13,7 +13,7 @@
  */
 import { SUPPORTED_LOCALES, SUPPORTED_COUNTRIES, normalizeLocale, DEFAULT_LOCALE, type Locale, type CountryCode } from '@merkiai/i18n'
 import type { Db } from '../client'
-import { isPriceRounding, validateMarketCurrencies, type PriceRounding } from './market-pricing'
+import { isPriceRounding, validateMarketCurrencies, resolveMarket, basePricingContext, type PriceRounding, type PricingContext } from './market-pricing'
 
 export interface Market {
   id: number
@@ -271,6 +271,31 @@ export async function getStoreDefaultLocale(db: Db, tenantId: string): Promise<L
     return storeDefaultLocale(await listMarkets(db, tenantId))
   } catch {
     return DEFAULT_MARKET.default_locale
+  }
+}
+
+/**
+ * HU-467 · contexto de precios de una visita: mercado (por dominio o locale),
+ * moneda y precios de su lista. Fail-safe: ante error, moneda base sin conversión.
+ */
+export async function getPricingContext(db: Db, tenantId: string, opts: { locale?: string | null; host?: string | null }): Promise<PricingContext> {
+  try {
+    const markets = await listMarkets(db, tenantId)
+    const baseCurrency = defaultMarket(markets).currency
+    const market = resolveMarket(markets, opts)
+    if (!market || market.currency.toUpperCase() === baseCurrency.toUpperCase()) return basePricingContext(baseCurrency, market)
+    const listPrices = new Map<string, number>()
+    if (market.price_list_id) {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const { data } = await (db as any).from('price_list_items').select('product_id, variant_id, price').eq('price_list_id', market.price_list_id)
+      for (const r of (data ?? []) as Array<{ product_id: number | null; variant_id: number | null; price: number }>) {
+        if (r.variant_id != null) listPrices.set(`v:${r.variant_id}`, Number(r.price))
+        else if (r.product_id != null) listPrices.set(`p:${r.product_id}`, Number(r.price))
+      }
+    }
+    return { market, baseCurrency, currency: market.currency.toUpperCase(), converting: true, listPrices }
+  } catch {
+    return basePricingContext()
   }
 }
 

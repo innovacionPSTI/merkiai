@@ -22,7 +22,13 @@ jest.mock('@/lib/shipping', () => ({
 }))
 // HU-280: el cargo adicional lee shipping_config vía store-context.
 jest.mock('@/lib/store-context', () => ({ getStoreContext: jest.fn(async () => ({ db: {}, tenantId: 't1' })) }))
-jest.mock('@merkiai/database', () => ({ getShippingConfig: jest.fn(async () => ({ handling_fee_fixed: 0, handling_fee_percent: 0 })) }))
+jest.mock('@merkiai/database', () => ({ getShippingConfig: jest.fn(async () => ({ handling_fee_fixed: 0, handling_fee_percent: 0 })), ...jest.requireActual('../../../../../../packages/database/src/queries/market-pricing') }))
+// HU-467 · sin mercado en otra moneda: precios en la moneda base.
+jest.mock('@/lib/request-pricing', () => {
+  const mp = jest.requireActual('../../../../../../packages/database/src/queries/market-pricing')
+  return { getApiPricing: jest.fn(async () => mp.basePricingContext('COP')) }
+})
+
 
 import { getShippingProvider, calculateParcel } from '@/lib/shipping'
 import { POST } from '../shipping/rates/route'

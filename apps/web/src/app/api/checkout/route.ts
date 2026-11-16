@@ -1,5 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { hydrateManagedPayment, gatewayMethod } from '@/lib/merkiai-pagos'
+import { priceIn, amountIn, computeTax, providerSupportsCurrency, promotionsForCurrency, couponForCurrency, storedValueUsable } from '@merkiai/database'
+import { getApiPricing } from '@/lib/request-pricing'
 import { createOrder, resolveActivePayment, gatewayFromInstance, getStockForVariants, TuCompraGateway, ensureCustomer, listActivePromotions, computePromotions, getGiftCardByCode, getStoreCreditBalance, computeRedemption, redeemStoreValue, refundStoreValue, applyStockForOrder, getBundlesByIds, expandBundleLines, getCouponByCode, validateCoupon, getShippingConfig, reportError } from '@merkiai/database'
 import { storeCountries } from '@/lib/store-countries'
 import { getLocaleConfig } from '@/lib/request-locale'
@@ -196,6 +198,10 @@ export async function POST(req: NextRequest) {
     const shippingAddr = addrCheck.address
     const requestedLocale = normalizeLocale(typeof rawLocale === 'string' ? rawLocale : null)
     const orderLocale = requestedLocale && (await getLocaleConfig().catch(() => null))?.locales.includes(requestedLocale) ? requestedLocale : null
+    // ── E28 · HU-467 · moneda del pedido = la del mercado de la visita (dominio o
+    // idioma). Sin multimoneda es la base y nada cambia. Se fija aquí y no cambia.
+    const pricing = await getApiPricing(tenantId, orderLocale ?? requestedLocale)
+    const orderCurrency = pricing.currency
 
     // ── HU-168 Fase 2 · expandir líneas de BUNDLE a sus componentes. Guarded:
     // si no hay líneas de bundle, `orderItems` es la lista normal sin cambios.
@@ -209,8 +215,16 @@ export async function POST(req: NextRequest) {
       const bundleList = await getBundlesByIds(bundleIds, mdbPricing)
       for (const b of bundleList) bundleMap.set(b.id, { name: b.name, price: b.price, components: b.components })
       const compVariantIds = bundleList.flatMap((b) => b.components.map((c) => c.variant_id))
-      const { data: compRows } = await mdbPricing.from('product_variants').select('id, price').in('id', compVariantIds.length ? compVariantIds : [0])
-      const compPrice = new Map((compRows ?? []).map((r: any) => [r.id as number, Number(r.price)]))
+      const { data: compRows } = await mdbPricing.from('product_variants').select('id, price, product_id').in('id', compVariantIds.length ? compVariantIds : [0])
+      // HU-467 · precios del kit y de sus componentes en la moneda del pedido.
+      if (pricing.converting) {
+        for (const [id, b] of bundleMap) {
+          const p = amountIn(pricing, b.price)
+          if (p == null) return NextResponse.json({ error: 'Uno o más productos no están disponibles en tu moneda.' }, { status: 409 })
+          bundleMap.set(id, { ...b, price: p })
+        }
+      }
+      const compPrice = new Map((compRows ?? []).map((r: any) => [r.id as number, priceIn(pricing, { basePrice: Number(r.price), variantId: r.id, productId: r.product_id }) ?? 0]))
       orderItems = expandBundleLines(rawItems, bundleMap, compPrice)
     } else {
       orderItems = rawItems
@@ -224,9 +238,17 @@ export async function POST(req: NextRequest) {
     // normales coincide con el del cliente; si un precio cambió, manda el servidor.
     const normalVariantIds = rawItems.filter((i) => !i.bundle_id && i.variant_id).map((i) => i.variant_id as number)
     const { data: priceRows } = normalVariantIds.length
-      ? await mdbPricing.from('product_variants').select('id, price').in('id', normalVariantIds)
-      : { data: [] as Array<{ id: number; price: number }> }
-    const dbPrice = new Map((priceRows ?? []).map((r: any) => [r.id as number, Number(r.price)]))
+      ? await mdbPricing.from('product_variants').select('id, price, product_id').in('id', normalVariantIds)
+      : { data: [] as Array<{ id: number; price: number; product_id: number }> }
+    // HU-467 · precio en la moneda del pedido (lista del mercado o tasa fija).
+    const dbPrice = new Map<number, number>()
+    for (const r of (priceRows ?? []) as Array<{ id: number; price: number; product_id: number }>) {
+      const p = priceIn(pricing, { basePrice: Number(r.price), variantId: r.id, productId: r.product_id })
+      if (p == null) return NextResponse.json({ error: 'Uno o más productos no están disponibles en tu moneda.' }, { status: 409 })
+      dbPrice.set(r.id, p)
+    }
+    // Las líneas del pedido guardan el precio autoritativo (no el del cliente).
+    orderItems = orderItems.map((i) => (dbPrice.has(i.variant_id) ? { ...i, price: dbPrice.get(i.variant_id)! } : i))
     let serverSubtotal = 0
     for (const it of rawItems) {
       const qty = Math.max(1, Math.floor(it.qty))
@@ -240,8 +262,13 @@ export async function POST(req: NextRequest) {
     let serverShipping = Math.max(0, Number(shipping_cost ?? 0))
     try {
       const sc = await getShippingConfig(mdbPricing, tenantId)
-      if (sc.free_shipping_enabled && serverSubtotal >= sc.free_shipping_min_amount) serverShipping = 0
-      else if (sc.provider === 'fixed') serverShipping = Math.max(0, Math.round(sc.fixed_rate))
+      // HU-467 · tarifa fija y mínimo de envío gratis en la moneda del pedido; la
+      // transportadora cotiza en la moneda base, así que en otra moneda rige la fija.
+      const fixedRate = amountIn(pricing, sc.fixed_rate) ?? 0
+      const freeMin = amountIn(pricing, sc.free_shipping_min_amount) ?? Number.POSITIVE_INFINITY
+      if (sc.free_shipping_enabled && serverSubtotal >= freeMin) serverShipping = 0
+      else if (pricing.converting) { serverShipping = Math.max(0, fixedRate); skydropx_rate_id = null; carrier_name = null }
+      else if (sc.provider === 'fixed') serverShipping = Math.max(0, Math.round(fixedRate))
       // HU-468 · la transportadora integrada cotiza solo en Colombia: fuera de CO
       // rige la tarifa estándar de la tienda.
       else if (shippingAddr.country !== 'CO') { serverShipping = Math.max(0, Math.round(sc.fixed_rate)); skydropx_rate_id = null; carrier_name = null }
@@ -295,7 +322,8 @@ export async function POST(req: NextRequest) {
     const promoApplied: Array<{ promotion_id: number; name: string; amount: number }> = []
     try {
       const mdb = getMachineDb(tenantId)
-      const activePromos = await listActivePromotions(mdb)
+      // HU-467 · en otra moneda solo aplican las promociones porcentuales.
+      const activePromos = promotionsForCurrency(await listActivePromotions(mdb), pricing)
       if (activePromos.length > 0) {
         const vids = orderItems.map((i) => i.variant_id).filter((v): v is number => !!v)
         const { data: vrows } = await mdb
@@ -305,7 +333,7 @@ export async function POST(req: NextRequest) {
         const priceMap = new Map<number, { price: number; product_id: number; category_id: number | null }>()
         for (const v of (vrows ?? []) as any[]) {
           const prod = Array.isArray(v.products) ? v.products[0] : v.products
-          priceMap.set(v.id, { price: Number(v.price), product_id: v.product_id, category_id: prod?.category_id ?? null })
+          priceMap.set(v.id, { price: dbPrice.get(v.id) ?? priceIn(pricing, { basePrice: Number(v.price), variantId: v.id, productId: v.product_id }) ?? 0, product_id: v.product_id, category_id: prod?.category_id ?? null })
         }
         const cartLines = orderItems
           .map((i) => {
@@ -324,7 +352,8 @@ export async function POST(req: NextRequest) {
     // HU-293 · precio de campaña VIP: descuento server-side para el miembro
     // elegible dentro de la ventana (sin fuga para no-elegibles). Fail-open.
     let vipDiscount = 0
-    try {
+    // HU-467 · el precio de campaña VIP está en la moneda base: no aplica en otra.
+    if (!pricing.converting) try {
       vipDiscount = await computeVipMemberDiscount(
         tenantId,
         orderItems.map((i) => ({ variant_id: i.variant_id, qty: i.qty })),
@@ -338,7 +367,9 @@ export async function POST(req: NextRequest) {
     let serverCouponDiscount = 0
     if (coupon_code) {
       try {
-        const coupon = await getCouponByCode(String(coupon_code).trim(), mdbPricing)
+        const rawCoupon = await getCouponByCode(String(coupon_code).trim(), mdbPricing)
+        // HU-467 AC-6 · el cupón de monto fijo solo vale en su moneda.
+        const coupon = rawCoupon ? couponForCurrency(rawCoupon, pricing) : null
         if (coupon) {
           const r = validateCoupon(coupon, serverSubtotal)
           if (r.valid) serverCouponDiscount = r.discount
@@ -352,6 +383,19 @@ export async function POST(req: NextRequest) {
     const extraDiscount = promoDiscount + vipDiscount
     const effectiveDiscount = serverCouponDiscount + extraDiscount
     let effectiveTotal = Math.max(0, serverSubtotal + serverShipping - serverCouponDiscount - extraDiscount)
+    // ── HU-467 AC-4 · impuesto del país: incluido (se discrimina) o agregado al total.
+    const tax = pricing.market ? computeTax(effectiveTotal, { ...pricing.market, currency: orderCurrency }) : { tax: 0, total: effectiveTotal }
+    effectiveTotal = tax.total
+    // Solo se escriben si difieren del valor por defecto de la columna (COP, sin
+    // impuesto): así una tienda sin multimoneda no depende de la migración e17/82.
+    const currencyOrderFields = (orderCurrency !== 'COP' || tax.tax > 0 || pricing.converting)
+      ? {
+          currency: orderCurrency,
+          tax_amount: tax.tax,
+          fx_rate: pricing.converting ? (pricing.market?.fx_rate ?? null) : null,
+          market_key: pricing.market?.key ?? null,
+        }
+      : {}
 
     // ── HU-148 Fase 2 · canje de gift card / saldo a favor (guarded). Valida y
     // aplica server-side sobre el monto ya descontado. Decremento ATÓMICO de la
@@ -370,13 +414,15 @@ export async function POST(req: NextRequest) {
         let giftCardBalance = 0
         if (gift_card_code) {
           const gc = await getGiftCardByCode(String(gift_card_code), mdb)
-          if (gc && gc.active && gc.balance > 0 && (!gc.expires_at || Date.now() < new Date(gc.expires_at).getTime())) {
+          // HU-467 AC-6 · la gift card solo se canjea en su moneda.
+          if (gc && gc.active && gc.balance > 0 && storedValueUsable((gc as { currency?: string | null }).currency, pricing) && (!gc.expires_at || Date.now() < new Date(gc.expires_at).getTime())) {
             giftCardId = gc.id; giftCardBalance = gc.balance; giftCardCodeApplied = gc.code
           }
         }
         // Saldo a favor del cliente autenticado.
         let storeCredit = 0
-        if (use_store_credit) {
+        // HU-467 AC-6 · el saldo a favor está en la moneda base.
+        if (use_store_credit && !pricing.converting) {
           const su = await stackServerApp.getUser().catch(() => null)
           if (su?.id) {
             const { data: cust } = await mdb.from('customers').select('id').eq('stack_id', su.id).maybeSingle()
@@ -431,6 +477,10 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: reason }, { status: 503 })
     }
     const activeProvider = active?.provider ?? 'none'
+    // HU-467 AC-3 · la pasarela debe aceptar la moneda del pedido.
+    if (effectiveTotal > 0 && active && !providerSupportsCurrency(activeProvider, orderCurrency)) {
+      return NextResponse.json({ error: `El medio de pago de la tienda no acepta ${orderCurrency}.` }, { status: 422 })
+    }
 
     // E17/HU-157: la base URL (webhook + return de pagos) sale del host del
     // tenant (subdominio/dominio propio), no de una env global. Fallback a
@@ -499,7 +549,7 @@ export async function POST(req: NextRequest) {
         payment_status: 'approved',
         skydropx_rate_id,
         carrier_name,
-        ...creditOrderFields,
+        ...creditOrderFields, ...currencyOrderFields,
       }, mdb)
       await applyStockForOrder(order.order_number).catch((e) => console.error('[checkout] applyStock credit:', e instanceof Error ? e.message : e))
       orderWasCreated = true
@@ -526,7 +576,7 @@ export async function POST(req: NextRequest) {
         payment_method: 'manual',
         skydropx_rate_id,
         carrier_name,
-        ...creditOrderFields,
+        ...creditOrderFields, ...currencyOrderFields,
       }, getMachineDb(tenantId))
       orderWasCreated = true
       await autoSaveAddress()
@@ -564,7 +614,7 @@ export async function POST(req: NextRequest) {
         customer_id: customerId,
         customer_name: name, customer_email: email, customer_phone: phone ?? null,
         shipping_addr: shippingAddr, locale: orderLocale, items: orderItems, subtotal: serverSubtotal, shipping_cost: serverShipping, discount: effectiveDiscount, total: effectiveTotal,
-        payment_method: 'tucompra', skydropx_rate_id, carrier_name, ...creditOrderFields,
+        payment_method: 'tucompra', skydropx_rate_id, carrier_name, ...creditOrderFields, ...currencyOrderFields,
       }, getMachineDb(tenantId))
       orderWasCreated = true
       await autoSaveAddress()
@@ -700,7 +750,7 @@ export async function POST(req: NextRequest) {
       payment_method: gatewayMethod(activeProvider) as 'wompi' | 'mercadopago' | 'tucompra' | 'bold' | 'payzen',
       skydropx_rate_id,
       carrier_name,
-      ...creditOrderFields,
+      ...creditOrderFields, ...currencyOrderFields,
     }, getMachineDb(tenantId))
     orderWasCreated = true
 
@@ -711,7 +761,7 @@ export async function POST(req: NextRequest) {
     const payment_url = await gateway.createPaymentUrl({
       orderNumber: order.order_number,
       amountInCents: Math.round(effectiveTotal * 100),
-      currency: 'COP',
+      currency: orderCurrency,
       customerEmail: email,
       customerName: name,
       customerPhone: phone ?? undefined,

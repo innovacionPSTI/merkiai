@@ -2,17 +2,18 @@ import Link from 'next/link'
 import type { Metadata } from 'next'
 import { listBundles } from '@merkiai/database'
 import { getRequestCatalogDb } from '@/lib/tenant-db'
-import { formatMoney } from '@merkiai/i18n'
+import { getMoneyFormatter } from '@/lib/i18n-server'
+import { localizeBundle } from '@/lib/request-pricing'
 
 export const metadata: Metadata = { title: 'Kits y paquetes' }
 export const dynamic = 'force-dynamic'
 
-const fmt = (n: number) => formatMoney(n)
-
 /** HU-168 · listado de bundles/kits activos del tenant (RLS filtra a activos). */
 export default async function BundlesPage() {
   const db = await getRequestCatalogDb()
-  const bundles = await listBundles(db).catch(() => [])
+  const fmt = await getMoneyFormatter()
+  // HU-467 · precio del kit en la moneda de la visita (los que no tienen precio en ella se omiten).
+  const bundles = (await Promise.all((await listBundles(db).catch(() => [])).map((b) => localizeBundle(b)))).filter((b): b is NonNullable<typeof b> => b !== null)
 
   return (
     <div className="max-w-5xl mx-auto px-4 py-10">

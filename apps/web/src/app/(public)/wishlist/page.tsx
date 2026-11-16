@@ -7,13 +7,13 @@
 import { useEffect, useState } from 'react'
 import Link from 'next/link'
 import { useWishlistStore } from '@/store/wishlist'
-import { formatMoney } from '@merkiai/i18n'
-
-const fmt = (n: number) =>
-  formatMoney(n)
+import { useFormat, useCurrency } from '@/components/i18n/I18nProvider'
 
 export default function WishlistPage() {
   const items = useWishlistStore((s) => s.items)
+  const { money } = useFormat()
+  const currency = useCurrency()
+  const fmt = (n: number) => money(n)
   const remove = useWishlistStore((s) => s.remove)
   const clear = useWishlistStore((s) => s.clear)
   const [mounted, setMounted] = useState(false)
@@ -79,7 +79,7 @@ export default function WishlistPage() {
                   <Link href={`/shop/${p.slug}`}>
                     <h3 className="font-brand text-base font-semibold text-brand-primary line-clamp-1 hover:text-brand-dark transition-colors">{p.name}</h3>
                   </Link>
-                  {p.price != null && <p className="font-brand font-bold text-brand-price mt-1">{fmt(p.price)}</p>}
+                  {p.price != null && (p.currency ?? 'COP') === currency && <p className="font-brand font-bold text-brand-price mt-1">{fmt(p.price)}</p>}
                   <Link
                     href={`/shop/${p.slug}`}
                     className="mt-3 inline-block w-full text-center border border-brand-primary text-brand-primary rounded-full py-2 font-brand text-sm hover:bg-brand-primary hover:text-brand-cream transition-colors"

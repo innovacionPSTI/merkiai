@@ -147,7 +147,8 @@ export async function sendOrderConfirmation(order: Order, config: EmailConfig): 
   const locale = (order as { locale?: string | null }).locale || 'es-CO'
   const t = createTranslator(locale, 'email.order')
   const tt = createTranslator(locale)
-  const money = (n: number) => formatMoney(n, { locale })
+  // HU-467 · montos en la moneda del pedido.
+  const money = (n: number) => formatMoney(n, { locale, currency: (order as { currency?: string | null }).currency ?? 'COP' })
 
   const content = `
     <h2 style="margin: 0 0 8px; color: #614a2a; font-size: 20px; font-family: sans-serif;">${esc(t('title'))}</h2>

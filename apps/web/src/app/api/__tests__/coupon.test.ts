@@ -19,7 +19,14 @@ jest.mock('@merkiai/database', () => ({
   validateCoupon: (...args: unknown[]) => mockValidateCoupon(...args),
   checkRateLimit: jest.fn(async () => ({ allowed: true, count: 1, blockedUntil: null, justLocked: false })),
   reportError: jest.fn(),
+  ...jest.requireActual('../../../../../../packages/database/src/queries/market-pricing'),
 }))
+
+// HU-467 · sin mercado en otra moneda: precios en la moneda base.
+jest.mock('@/lib/request-pricing', () => {
+  const mp = jest.requireActual('../../../../../../packages/database/src/queries/market-pricing')
+  return { getApiPricing: jest.fn(async () => mp.basePricingContext('COP')) }
+})
 // HU-174/hardening: la ruta resuelve el tenant y usa un cliente tenant-scoped.
 jest.mock('@/lib/tenant-context', () => ({ resolveTenant: jest.fn(async () => ({ tenantId: 't1' })) }))
 jest.mock('@/lib/machine-db', () => ({ getMachineDb: jest.fn(() => ({})) }))

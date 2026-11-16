@@ -15,10 +15,8 @@ import {
   type SectionLike,
 } from '@merkiai/database'
 import { getRequestCatalogDb } from '@/lib/tenant-db'
-import { formatMoney } from '@merkiai/i18n'
-
-const fmt = (n: number) =>
-  formatMoney(n)
+import { getMoneyFormatter } from '@/lib/i18n-server'
+import { localizePrices } from '@/lib/request-pricing'
 
 export default async function ProductCarousel({
   section,
@@ -31,12 +29,14 @@ export default async function ProductCarousel({
   const db = await getRequestCatalogDb().catch(() => null)
   if (!db) return null
 
-  const products = await getCarouselProducts(db, {
+  const fmt = await getMoneyFormatter()
+  // HU-467 · precios en la moneda del mercado de la visita.
+  const products = await localizePrices(await getCarouselProducts(db, {
     source: normalizeCarouselSource(f.source),
     categorySlug: (f.category_slug as string) ?? null,
     slugs: parseSlugList(f.product_slugs),
     limit: Number(f.limit) || 8,
-  }).catch(() => [])
+  }).catch(() => []))
 
   if (products.length === 0) return null
   const title = (f.title as string) || 'Productos'

@@ -14,6 +14,8 @@ export interface WishlistItem {
   imageUrl?: string | null
   /** Precio "desde" para mostrar en la lista (min_price). */
   price?: number | null
+  /** HU-467 · moneda del precio guardado. */
+  currency?: string
 }
 
 interface WishlistState {

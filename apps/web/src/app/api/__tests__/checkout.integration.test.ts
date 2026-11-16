@@ -26,7 +26,14 @@ jest.mock('@merkiai/database', () => ({
   getStockForVariants: jest.fn(),
   createServerClient: jest.fn(),
   reportError: jest.fn(),
+  // HU-467 · funciones puras reales de multimoneda (contexto neutro = sin cambios).
+  ...jest.requireActual('../../../../../../packages/database/src/queries/market-pricing'),
 }))
+// HU-467 · sin mercado en otra moneda: precios en la moneda base.
+jest.mock('@/lib/request-pricing', () => {
+  const mp = jest.requireActual('../../../../../../packages/database/src/queries/market-pricing')
+  return { getApiPricing: jest.fn(async () => mp.basePricingContext('COP')) }
+})
 
 // Corta la cadena de imports ESM de @stackframe/stack (jose, export-to-csv, otp…)
 jest.mock('@/stack', () => ({

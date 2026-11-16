@@ -24,7 +24,7 @@ export default async function PedidosPage() {
   // E28 · HU-465 · textos, fechas y montos en el idioma de la petición.
   const t = await getT('web.orders')
   const locale = await getPageLang().catch(() => 'es-CO')
-  const COP = { format: (n: number) => formatMoney(n, { locale }) }
+  const COP = { format: (n: number, currency?: string | null) => formatMoney(n, { locale, currency: currency ?? 'COP' }) }
   const user = await stackServerApp.getUser()
 
   // HU-156: provisioning del cliente (vincula por stack_id/email + reclama
@@ -108,7 +108,7 @@ export default async function PedidosPage() {
                       {st.label}
                     </span>
                     <span className="font-brand font-bold text-brand-primary tabular-nums">
-                      {COP.format(order.total)}
+                      {COP.format(order.total, (order as { currency?: string }).currency)}
                     </span>
                   </div>
                 </div>

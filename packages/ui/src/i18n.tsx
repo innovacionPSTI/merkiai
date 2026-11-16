@@ -9,9 +9,20 @@ import { createContext, useContext, useMemo } from 'react'
 import { createTranslator, translatePhrase, formatMoney, formatDate, DEFAULT_LOCALE, type Translator, type MoneyOptions, type DateOptions, type MessageValues } from '@merkiai/i18n'
 
 const LocaleContext = createContext<string>(DEFAULT_LOCALE)
+/** HU-467 · moneda en que se muestran los precios de la página (la del mercado). */
+const CurrencyContext = createContext<string | undefined>(undefined)
 
-export function I18nProvider({ locale, children }: { locale: string; children: React.ReactNode }) {
-  return <LocaleContext.Provider value={locale}>{children}</LocaleContext.Provider>
+export function I18nProvider({ locale, currency, children }: { locale: string; currency?: string; children: React.ReactNode }) {
+  return (
+    <LocaleContext.Provider value={locale}>
+      <CurrencyContext.Provider value={currency}>{children}</CurrencyContext.Provider>
+    </LocaleContext.Provider>
+  )
+}
+
+/** Moneda de los precios de la página (por defecto, la de `formatMoney`: COP). */
+export function useCurrency(): string {
+  return useContext(CurrencyContext) ?? 'COP'
 }
 
 export function useLocale(): string {
@@ -27,10 +38,13 @@ export function useT(namespace?: string): Translator {
 /** Formateadores ligados al locale actual (la moneda sigue viniendo del dato). */
 export function useFormat() {
   const locale = useLocale()
+  const currency = useContext(CurrencyContext)
   return useMemo(() => ({
-    money: (n: number | null | undefined, opts: MoneyOptions = {}) => formatMoney(n, { locale, ...opts }),
+    // HU-467 · la moneda por defecto es la del mercado de la página; un dato con
+    // moneda propia (pedido, documento) la indica en `opts.currency`.
+    money: (n: number | null | undefined, opts: MoneyOptions = {}) => formatMoney(n, { locale, ...(currency ? { currency } : {}), ...opts }),
     date: (v: Parameters<typeof formatDate>[0], opts: DateOptions = {}) => formatDate(v, { locale, ...opts }),
-  }), [locale])
+  }), [locale, currency])
 }
 
 /**

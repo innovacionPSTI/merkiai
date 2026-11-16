@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { getGiftCardByCode, getStoreCreditBalance, isGiftCardRedeemable, checkRateLimit, reportError } from '@merkiai/database'
+import { getGiftCardByCode, getStoreCreditBalance, isGiftCardRedeemable, checkRateLimit, reportError, storedValueUsable } from '@merkiai/database'
+import { getApiPricing } from '@/lib/request-pricing'
 import { stackServerApp } from '@/stack'
 import { resolveTenant } from '@/lib/tenant-context'
 import { getMachineDb } from '@/lib/machine-db'
@@ -24,14 +25,16 @@ export async function POST(req: NextRequest) {
 
     const body = await req.json().catch(() => ({}))
 
+    // HU-467 AC-6 · gift cards y saldo solo en su moneda (el saldo, en la base).
+    const pricing = await getApiPricing(tenantId)
     let giftCard: { balance: number } | null = null
     if (body.code) {
       const gc = await getGiftCardByCode(String(body.code), db)
-      if (gc && isGiftCardRedeemable(gc)) giftCard = { balance: gc.balance }
+      if (gc && isGiftCardRedeemable(gc) && storedValueUsable((gc as { currency?: string | null }).currency, pricing)) giftCard = { balance: gc.balance }
     }
 
     let storeCredit = 0
-    const user = await stackServerApp.getUser().catch(() => null)
+    const user = pricing.converting ? null : await stackServerApp.getUser().catch(() => null)
     if (user?.id) {
       const { data: cust } = await db.from('customers').select('id').eq('stack_id', user.id).maybeSingle()
       if (cust?.id) storeCredit = await getStoreCreditBalance(cust.id as string, db)

@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react'
 import Link from 'next/link'
 import { useRecentlyViewedStore, type RecentItem } from '@/store/recentlyViewed'
-import { formatMoney } from '@merkiai/i18n'
+import { useFormat, useCurrency } from '@/components/i18n/I18nProvider'
 
 /**
  * HU-286 · "Vistos recientemente". Registra el producto actual al montar y
@@ -14,22 +14,23 @@ export default function RecentlyViewed({ current }: { current: RecentItem }) {
   const items = useRecentlyViewedStore((s) => s.items)
   const record = useRecentlyViewedStore((s) => s.record)
   const [hydrated, setHydrated] = useState(false)
+  const { money } = useFormat()
+  const currency = useCurrency()
+  const fmt = (n: number) => money(n)
 
   // Guard de hidratación: el store persistido no está disponible en el primer
   // render del servidor; evita desajustes de SSR.
   useEffect(() => setHydrated(true), [])
 
   useEffect(() => {
-    record(current)
+    // HU-467 · se guarda la moneda del precio para no mostrarlo en otro mercado.
+    record({ ...current, currency })
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [current.id])
 
   if (!hydrated) return null
   const others = items.filter((i) => i.id !== current.id)
   if (others.length === 0) return null
-
-  const fmt = (n: number) =>
-    formatMoney(n)
 
   return (
     <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pb-16">
@@ -52,7 +53,7 @@ export default function RecentlyViewed({ current }: { current: RecentItem }) {
             </div>
             <div className="p-3">
               <p className="font-brand text-sm text-brand-primary truncate">{p.name}</p>
-              {p.price != null && (
+              {p.price != null && (p.currency ?? 'COP') === currency && (
                 <p className="font-brand font-bold text-brand-primary text-sm mt-0.5">{fmt(p.price)}</p>
               )}
             </div>

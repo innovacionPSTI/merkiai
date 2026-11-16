@@ -3,7 +3,8 @@
  * Valida un código de cupón y retorna el descuento calculado.
  */
 import { NextRequest, NextResponse } from 'next/server'
-import { getCouponByCode, validateCoupon, checkRateLimit, reportError } from '@merkiai/database'
+import { getCouponByCode, validateCoupon, checkRateLimit, reportError, couponForCurrency } from '@merkiai/database'
+import { getApiPricing } from '@/lib/request-pricing'
 import { resolveTenant } from '@/lib/tenant-context'
 import { getMachineDb } from '@/lib/machine-db'
 
@@ -28,7 +29,9 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'Se requiere code y subtotal' }, { status: 400 })
     }
 
-    const coupon = await getCouponByCode(code.trim(), db)
+    // HU-467 AC-6 · el cupón de monto fijo solo vale en su moneda.
+    const rawCoupon = await getCouponByCode(code.trim(), db)
+    const coupon = rawCoupon ? couponForCurrency(rawCoupon, await getApiPricing(tenantId)) : null
     if (!coupon) {
       return NextResponse.json({ error: NEUTRAL }, { status: 422 })
     }

@@ -3,11 +3,10 @@ import type { Metadata } from 'next'
 import { getBundleWithComponents, bundleMaxQty, componentsListPrice, bundleSavings } from '@merkiai/database'
 import { getRequestCatalogDb } from '@/lib/tenant-db'
 import AddBundleButton from '@/components/shop/AddBundleButton'
-import { formatMoney } from '@merkiai/i18n'
+import { getMoneyFormatter } from '@/lib/i18n-server'
+import { localizeBundle } from '@/lib/request-pricing'
 
 interface Props { params: Promise<{ slug: string }> }
-
-const fmt = (n: number) => formatMoney(n)
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { slug } = await params
@@ -21,8 +20,12 @@ export const dynamic = 'force-dynamic'
 export default async function BundleDetailPage({ params }: Props) {
   const { slug } = await params
   const db = await getRequestCatalogDb()
-  const bundle = await getBundleWithComponents(slug, db).catch(() => null)
-  if (!bundle || !bundle.active) notFound()
+  const raw = await getBundleWithComponents(slug, db).catch(() => null)
+  if (!raw || !raw.active) notFound()
+  // HU-467 · kit y componentes en la moneda de la visita.
+  const bundle = await localizeBundle(raw)
+  if (!bundle) notFound()
+  const fmt = await getMoneyFormatter()
 
   const maxQty = bundleMaxQty(bundle.components)
   const available = maxQty > 0

@@ -303,3 +303,21 @@ describe('persistencia en localStorage', () => {
     expect(parsed.state.items[0].price).toBe(99000)
   })
 })
+
+describe('HU-467 · moneda del carrito', () => {
+  const line = (variantId: number, price: number): CartItem => ({ variantId, productSlug: 'p', productName: 'P', variantLabel: '', price, qty: 1 })
+
+  it('las líneas nuevas heredan la moneda de la visita', () => {
+    act(() => { useCartStore.getState().setCurrency('USD'); useCartStore.getState().addItem(line(1, 25)) })
+    expect(useCartStore.getState().items[0].currency).toBe('USD')
+  })
+
+  it('applyPrices reemplaza precios y quita las líneas sin precio en esa moneda', () => {
+    useCartStore.setState({ items: [line(1, 120000), line(2, 80000), line(3, 5000)], currency: 'COP' })
+    act(() => useCartStore.getState().applyPrices('USD', { '1': 30.99, '2': null }))
+    const items = useCartStore.getState().items
+    expect(items.map((i) => i.variantId)).toEqual([1, 3])
+    expect(items[0]).toMatchObject({ price: 30.99, currency: 'USD' })
+    expect(useCartStore.getState().currency).toBe('USD')
+  })
+})

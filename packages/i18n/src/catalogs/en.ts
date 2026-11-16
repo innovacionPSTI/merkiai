@@ -96,6 +96,7 @@ const en = {
       apply: 'Apply', coupon_placeholder: 'CODE', gift_card_placeholder: 'Gift card code', gift_card_valid: 'Valid gift card — balance {amount}',
       use_credit: 'Use my store credit ({amount})', subtotal: 'Subtotal', discount: 'Discount ({code})', shipping: 'Shipping',
       free: 'Free', calculating: 'Calculating…', credit: 'Gift card / credit', total: 'Total',
+      tax: 'Taxes ({rate} %)', tax_included: 'Includes taxes ({rate} %) of {amount}',
       coupon_invalid: 'Invalid coupon', coupon_error: 'Error applying the coupon', gift_card_invalid: 'Invalid gift card or no balance.',
       gift_card_error: 'Error validating the gift card.', submit_error: "We couldn't process your order. Please try again.",
     },

@@ -29,10 +29,18 @@ export interface CartItem {
   length_cm?: number | null
   width_cm?: number | null
   height_cm?: number | null
+  /** HU-467 · moneda en que está el `price` de la línea (la del mercado al agregarla). */
+  currency?: string
 }
 
 interface CartState {
   items: CartItem[]
+  /** HU-467 · moneda en que se muestra el carrito (la del mercado de la visita). */
+  currency: string
+  /** HU-467 · fija la moneda de la visita (las líneas nuevas la heredan). */
+  setCurrency: (currency: string) => void
+  /** HU-467 · reemplaza precios ya convertidos; quita las líneas sin precio en esa moneda. */
+  applyPrices: (currency: string, prices: Record<string, number | null>) => void
   addItem: (item: CartItem) => void
   removeItem: (variantId: number) => void
   updateQty: (variantId: number, qty: number) => void
@@ -86,6 +94,21 @@ export const useCartStore = create<CartState>()(
   persist(
     (set, get) => ({
       items: [],
+      currency: 'COP',
+
+      setCurrency: (currency) => set({ currency }),
+
+      applyPrices: (currency, prices) => {
+        set((state) => ({
+          currency,
+          items: state.items
+            .filter((i) => prices[String(i.variantId)] !== null)
+            .map((i) => {
+              const p = prices[String(i.variantId)]
+              return p == null ? i : { ...i, price: p, currency }
+            }),
+        }))
+      },
 
       addItem: (item) => {
         set((state) => {
@@ -94,7 +117,7 @@ export const useCartStore = create<CartState>()(
             ? state.items.map((i) =>
                 i.variantId === item.variantId ? { ...i, qty: clampQty(i.qty + item.qty, item) } : i
               )
-            : [...state.items, { ...item, qty: clampQty(item.qty, item) }]
+            : [...state.items, { ...item, currency: item.currency ?? state.currency, qty: clampQty(item.qty, item) }]
           return { items: newItems }
         })
         // Fire-and-forget sync

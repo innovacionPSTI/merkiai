@@ -12,6 +12,8 @@ export interface RecentItem {
   name: string
   imageUrl?: string | null
   price?: number | null
+  /** HU-467 · moneda del precio guardado (el del mercado en que se vio). */
+  currency?: string
 }
 
 const MAX_ITEMS = 12

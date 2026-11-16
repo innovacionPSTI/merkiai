@@ -1,3 +1,5 @@
+import { amountIn } from '@merkiai/database'
+import { getApiPricing } from '@/lib/request-pricing'
 import { NextRequest, NextResponse } from 'next/server'
 import { getShippingConfig } from '@merkiai/database'
 import { getShippingProvider, calculateParcel, applyHandlingFee } from '@/lib/shipping'
@@ -53,6 +55,10 @@ export async function POST(req: NextRequest) {
       const cfg = await getShippingConfig(ctx.db, ctx.tenantId).catch(() => null)
       if (cfg) rates = applyHandlingFee(rates, cfg.handling_fee_fixed, cfg.handling_fee_percent)
     }
+
+    // HU-467 · tarifas en la moneda del mercado de la visita.
+    const pricing = await getApiPricing((await getStoreContext()).tenantId)
+    if (pricing.converting) rates = rates.map((r) => ({ ...r, total_price: amountIn(pricing, r.total_price) ?? r.total_price }))
 
     return NextResponse.json({
       provider: provider.name,

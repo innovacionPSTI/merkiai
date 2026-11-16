@@ -1,7 +1,7 @@
 'use client'
 
 import { useState } from 'react'
-import { formatMoney } from '@merkiai/i18n'
+import { useFormat } from '@/components/i18n/I18nProvider'
 
 /**
  * HU-285 · Estimador de envío en la PDP. Reutiliza el endpoint existente
@@ -28,8 +28,8 @@ export default function ShippingEstimator({ item }: { item: EstimatorItem | null
   const [rates, setRates] = useState<Rate[] | null>(null)
   const [error, setError] = useState<string | null>(null)
 
-  const fmt = (n: number) =>
-    formatMoney(n)
+  const { money } = useFormat()
+  const fmt = (n: number) => money(n)
 
   async function estimate(e: React.FormEvent) {
     e.preventDefault()

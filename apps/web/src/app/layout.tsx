@@ -9,6 +9,8 @@ import { buildThemeCSS } from '@/lib/theme-css'
 import { getStoreContext } from '@/lib/store-context'
 import { headers } from 'next/headers'
 import { getPageLang } from '@/lib/request-locale'
+import { getRequestCurrency } from '@/lib/request-pricing'
+import CartCurrencySync from '@/components/cart/CartCurrencySync'
 import { I18nProvider } from '@/components/i18n/I18nProvider'
 import './globals.css'
 
@@ -101,6 +103,8 @@ export default async function RootLayout({ children }: { children: React.ReactNo
   const nonce = (await headers()).get('x-nonce') ?? undefined
   // E28 · HU-462/465 · idioma de la petición (atributo lang + textos de la interfaz).
   const lang = await getPageLang().catch(() => 'es-CO')
+  // HU-467 · moneda de los precios de la página (la del mercado de la visita).
+  const currency = await getRequestCurrency().catch(() => 'COP')
 
   return (
     <html lang={lang}>
@@ -121,7 +125,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
           <StackTheme nonce={nonce}>
             <Suspense fallback={null}><CartSyncOnLogin /></Suspense>
             <Suspense fallback={null}><WishlistSyncOnLogin /></Suspense>
-            <I18nProvider locale={lang}>{children}</I18nProvider>
+            <I18nProvider locale={lang} currency={currency}><CartCurrencySync />{children}</I18nProvider>
           </StackTheme>
         </StackProvider>
         {analyticsEnabled && <Analytics />}

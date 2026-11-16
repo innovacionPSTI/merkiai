@@ -8,7 +8,6 @@ import SearchableSelect from '@/components/ui/SearchableSelect'
 import { DEPARTMENTS, getCitiesForDepartment } from '@merkiai/ui'
 import { getRegion, validateAddress, countryName } from '@merkiai/i18n'
 import RegionalAddressFields from '@/components/address/RegionalAddressFields'
-import { formatMoney } from '@merkiai/i18n'
 import { useT, useFormat, useLocale } from '@/components/i18n/I18nProvider'
 
 type Step = 1 | 2 | 3
@@ -27,6 +26,8 @@ interface ShippingPublicConfig {
   fixed_rate: number
   free_shipping_enabled: boolean
   free_shipping_min_amount: number
+  /** HU-467 · impuesto del mercado (incluido en el precio o agregado al total). */
+  tax?: { rate: number; included: boolean }
 }
 
 interface SavedAddress {
@@ -59,9 +60,6 @@ interface GatewayOption { value: string; label: string; desc: string }
 const FALLBACK_GATEWAYS: GatewayOption[] = [
   { value: 'wompi', label: 'Wompi', desc: 'Tarjeta débito/crédito, PSE, Bancolombia' },
 ]
-
-const fmt = (n: number) =>
-  formatMoney(n)
 
 function addressToShipping(addr: SavedAddress, countries: string[]): ShippingInfo {
   const parts = addr.full_name.trim().split(/\s+/)
@@ -340,7 +338,13 @@ export default function CheckoutClient({ initialEmail = '', defaultAddress = nul
 
   // `total` es el monto ANTES de gift card / saldo: el servidor aplica el canje
   // y es la autoridad del cobro. Aquí solo se previsualiza el crédito.
-  const total = Math.max(0, sub + shippingCost - couponDiscount)
+  const taxable = Math.max(0, sub + shippingCost - couponDiscount)
+  // HU-467 AC-4 · impuesto del país: discriminado si está incluido, sumado si no
+  // (el servidor recalcula y es la autoridad del cobro).
+  const taxRate = shippingCfg.tax?.rate ?? 0
+  const taxIncluded = shippingCfg.tax?.included ?? true
+  const taxAmount = taxRate > 0 ? (taxIncluded ? taxable - taxable / (1 + taxRate / 100) : taxable * (taxRate / 100)) : 0
+  const total = taxIncluded ? taxable : taxable + taxAmount
   const giftCardUse = Math.min(giftCardBalance, total)
   const creditUse = useCredit ? Math.min(storeCredit, total - giftCardUse) : 0
   const creditApplied = giftCardUse + creditUse
@@ -941,11 +945,20 @@ export default function CheckoutClient({ initialEmail = '', defaultAddress = nul
                     <span>−{fmt(creditApplied)}</span>
                   </div>
                 )}
+                {taxRate > 0 && !taxIncluded && (
+                  <div className="flex justify-between">
+                    <span className="text-brand-primary/60">{t('tax', { rate: taxRate })}</span>
+                    <span className="text-brand-primary">{fmt(taxAmount)}</span>
+                  </div>
+                )}
                 <hr className="border-brand-primary/10" />
                 <div className="flex justify-between font-bold text-brand-primary text-base">
                   <span>{t('total')}</span>
                   <span>{fmt(displayTotal)}</span>
                 </div>
+                {taxRate > 0 && taxIncluded && (
+                  <p className="text-xs text-brand-primary/40 text-right">{t('tax_included', { rate: taxRate, amount: fmt(taxAmount) })}</p>
+                )}
               </div>
             </div>
           </div>
