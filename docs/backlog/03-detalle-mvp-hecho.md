@@ -827,7 +827,7 @@
 
 **Estimación:** M (5 puntos)
 **Módulo:** `packages/database/src/providers/shipping/`, `apps/web/src/app/api/shipping/`
-**Estado:** 🔲 Pendiente
+**Estado:** ✅ **(verificado v291: implementada con el registro de proveedores (HU-276/278): `ShippingProvider` con Skydropx y tarifa fija)** — 
 **Prerequisito de:** HU-083, HU-084
 
 **Criterios de aceptación:**
@@ -852,7 +852,7 @@
 
 **Estimación:** S (2 puntos)
 **Módulo:** `packages/database/supabase/migrations/`, `apps/admin/src/app/configuracion/envios/`
-**Estado:** 🔲 Pendiente
+**Estado:** ✅ **(verificado v291: implementada por HU-274/278: instancia activa de envíos (una a la vez) en Configuración → Envíos)** — 
 **Bloqueada por:** HU-082
 
 **Criterios de aceptación:**
@@ -874,7 +874,7 @@
 
 **Estimación:** S (2 puntos)
 **Módulo:** `apps/web/src/app/api/shipping/quote/route.ts`
-**Estado:** 🔲 Pendiente
+**Estado:** ✅ **(verificado v291: implementada: el checkout cotiza con el proveedor activo (HU-277/278))** — 
 **Bloqueada por:** HU-082, HU-083
 
 **Criterios de aceptación:**
@@ -895,7 +895,7 @@
 
 **Estimación:** M (5 puntos)
 **Módulo:** `packages/database/src/providers/payment/`, `apps/web/src/app/api/checkout/`
-**Estado:** 🔲 Pendiente
+**Estado:** ✅ **(verificado v291: implementada: interfaz `PaymentGateway` (Wompi, MercadoPago, Tu Compra, Bold, PayZen))** — 
 **Prerequisito de:** HU-086, HU-087, HU-088
 
 **Criterios de aceptación:**
@@ -917,7 +917,7 @@
 
 **Estimación:** S (2 puntos)
 **Módulo:** `packages/database/supabase/migrations/`, `apps/admin/src/app/configuracion/pagos/`
-**Estado:** 🔲 Pendiente
+**Estado:** ✅ **(verificado v291: reemplazada por el patrón de pasarela única activa (HU-272/275))** — 
 **Bloqueada por:** HU-085
 
 **Criterios de aceptación:**
@@ -939,7 +939,7 @@
 
 **Estimación:** S (2 puntos)
 **Módulo:** `apps/web/src/app/(public)/checkout/`
-**Estado:** 🔲 Pendiente
+**Estado:** ✅ **(verificado v291: implementada: el checkout ofrece solo la pasarela activa (HU-277))** — 
 **Bloqueada por:** HU-085, HU-086
 
 **Criterios de aceptación:**
@@ -986,7 +986,7 @@
 
 **Estimación:** S (2 puntos)
 **Módulo:** `packages/database/src/providers/email/`, `packages/database/src/lib/email.ts`
-**Estado:** 🔲 Pendiente
+**Estado:** ✅ **(verificado v291: implementada: `EmailProvider` + `ResendProvider` (multi-proveedor sigue en HU-159))** — 
 **Prerequisito de:** HU-090
 
 **Criterios de aceptación:**
@@ -1008,7 +1008,7 @@
 
 **Estimación:** S (2 puntos)
 **Módulo:** `apps/admin/src/app/configuracion/email/`, `packages/database/supabase/migrations/`
-**Estado:** 🔲 Pendiente
+**Estado:** ✅ **(verificado v291: implementada: instancia de correo activa (HU-278))** — 
 **Bloqueada por:** HU-089
 
 **Criterios de aceptación:**

@@ -16,19 +16,31 @@
 | [`docs/backlog/08-cobertura-olas-dod-pruebas.md`](docs/backlog/08-cobertura-olas-dod-pruebas.md) | **Cobertura · roadmap por olas · DoD · pruebas** + HUs recientes (HU-207/209/215/216) | E17 en curso |
 | [`docs/backlog/09-detalle-e20-e23-vertical-servicios.md`](docs/backlog/09-detalle-e20-e23-vertical-servicios.md) | **Vertical Servicios/Educación**: E20 (cobros recurrentes/matrículas) · E21 (formularios/trámites/certificados) · E22 (marketing & analytics) · E23 (portal institucional, horizonte) | HU-310…343 🔲 |
 | [`docs/backlog/10-detalle-constructor-v2.md`](docs/backlog/10-detalle-constructor-v2.md) | **Constructor v2** (E2/E3): autoría unificada + **layout adaptable (Filas/Columnas)** + **colecciones/contenido dirigido por datos** + plantillas por tipo + bloques dinámicos/globales + biblioteca de medios. Habilita educación (E20) y portal (E23). | Ola 1 ✅ (HU-350/351/352) · Olas 1-3 ✅ · HU-359 🟡 · Ola 4 propuesta (HU-364…375 UX/unificación) |
+| [`docs/backlog/11-detalle-pos-operaciones.md`](docs/backlog/11-detalle-pos-operaciones.md) | **E24 Operaciones e inventario** + **E25 Punto de venta** | HU-400…427 |
+| [`docs/backlog/12-detalle-e26-infra-celdas.md`](docs/backlog/12-detalle-e26-infra-celdas.md) | **E26 Infra multi-celda** (ADR-008) | HU-430…437 |
+| [`docs/backlog/13-detalle-e27-cartera.md`](docs/backlog/13-detalle-e27-cartera.md) | **E27 Cartera operativa** (ADR-010) | HU-450…457 |
+| [`docs/backlog/14-detalle-e28-i18n.md`](docs/backlog/14-detalle-e28-i18n.md) | **E28 Idiomas y mercados** (ADR-011) | HU-460…468 |
 | [`docs/backlog/JIRA-MIGRATION.md`](docs/backlog/JIRA-MIGRATION.md) | Plan de migración a Jira (HU→issue, épica→epic, ola→fixVersion, estado→status) | — |
 
-## Estado actual (E17 multi-tenant · en curso)
+## Estado actual (verificado contra el código · v291 · nov-2026)
 
-- ✅ **MVP (E1–E15)** completo.
-- 🟡 **E17 aprovisionamiento de tenants** operable end-to-end (HU-172/173/208/209/215) — validado con `prueba1`.
-- 🟡 **Storefront tenant-scoped** (HU-156/157/207): catálogo, contenido, config, tema, nav, marca y home por tenant + redirect de host sin tenant. Migración `e17/08_rls_themes` pendiente de aplicar en prod.
-- 🟡 **Seguridad** (HU-216): auditoría anti service-role + enforcement por lint en el storefront. Ver `docs/HU-216-service-role-audit.md`.
-- ✅ **Integraciones por instancia — ADR-004** (HU-275…278): pagos, correo y envíos en `integration_instances` (registry data-driven, resolvers instance-first con fallback legacy, admin lista+wizard consistente). Ver `docs/adr/ADR-004`.
-- ✅ **Envíos: métodos unificados + cargo adicional + webhook Skydropx** (HU-278/280): tarifa fija como método activable junto a transportadoras; cargo adicional excluyente (fijo/%); webhook con HMAC-SHA512/Bearer + idempotencia; host del API por entorno; cotización robusta.
-- ✅ **Multi-dominio por tenant** (HU-279): tabla `tenant_custom_domains`, resolución por tabla (dominios `active`) con fallback legacy, redirect canónico `www`/subdominio→dominio propio, API interna multi-dominio (add/verify/activate/primary/remove + hosting link/unlink + sync de la columna legacy) y UI admin de lista de dominios (agregar/verificar/activar/hacer principal/quitar con instrucciones DNS).
-- ✅ **Admin tenant-scoped con RLS** (HU-158): `getAdminDb` acuña JWT (authenticated + is_admin + tenant) → políticas `*_admin_all` acotan por tenant (sin service-role). Auditoría cerrada: los `createServerClient` restantes son legítimos (storage confinado al borde, profiles cross-tenant, internal control-plane gated por `withInternalAuth`); el único hueco (insert de `media_assets`) migrado a RLS.
-- 🔲 **Pendiente mayor:** **billing** (HU-192/193/194, pausado — negociación PayZen; cobro manual mientras tanto) · **aislamiento por plan** (HU-200) · preparación a servicios (HU-195…199) · E16 IA (HU-135…145) · E18 multi-ubicación (HU-176…183).
-- 🔲 **Ops pendiente:** retirar columnas legacy (`payment_config`, `skydropx_*` en `shipping_config`) tras verificar instancias en prod · revisar email de confirmación de pago (capturar log `[webhook/wompi] Error email confirmación:`).
+| Épica | Estado | Qué falta |
+|---|---|---|
+| E1–E15 · MVP (tienda, carrito, checkout, pagos, envíos, correo, blog, admin, SEO) | ✅ | Login social (HU-111), carrito abandonado (HU-109), click & collect (HU-110/181), 2FA (HU-117), historial de versiones CMS (HU-127), a11y WCAG formal (HU-154), Core Web Vitals (HU-155), Sentry en admin/consola (HU-170b) |
+| E2/E3 · Constructor v2 (Olas 1–4) | ✅ | — |
+| E16 · IA | 🔲 | Cimientos (HU-135…137) y funciones (HU-118/119/138…145); requiere decidir proveedor |
+| E17 · Plataforma SaaS | 🟡 | Billing PayZen en pruebas (HU-440/441), aislamiento por plan (HU-200), vault por tenant (HU-362), despliegue dedicado (HU-360/363), env final de producción (HU-364), dominios de correo (HU-175) |
+| E18 · Multi-ubicación | 🟡 | Reservas por ubicación (HU-177), ruteo de despacho (HU-179), click & collect (HU-181) |
+| E19 · Club VIP | ✅ MVP | Segmentación por IA (HU-295), campañas recurrentes (HU-296) |
+| E20–E23 · Vertical servicios / portal | 🔲 | Todo (HU-310…343) |
+| E24 · Operaciones e inventario | ✅ | — |
+| E25 · Punto de venta | 🔲 | Todo (HU-420…427) |
+| E26 · Infra multi-celda | 🟡 | Hosting/Storage/caché en curso (HU-431/432/434); celdas, Neon, cómputo portable (HU-430/433/435…437) |
+| E27 · Cartera | ✅ | Cartera en el POS (HU-457, depende de E25) |
+| E28 · Idiomas y mercados | ✅ | Traducción con IA (HU-464 AC-4, depende de E16) |
+| Seguridad transversal | 🟡 | CORS de APIs públicas (HU-202), rotación de llaves (HU-184), logging seguro (HU-185), PCI SAQ A + integridad de scripts (HU-186/187) |
+| Servicios / arquitectura | 🔲 | Bounded contexts, eventos/outbox, observabilidad distribuida (HU-195…199) |
+
+Los estados de cada HU se verificaron contra el código en v291 (marca **"verificado v291"** en la línea de estado de las HU que cambiaron).
 
 > **Changelog / progreso de implementación:** `PROGRESS.md` (entradas por versión, más recientes arriba).

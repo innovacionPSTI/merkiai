@@ -162,7 +162,7 @@
 
 **Estimación:** M (5 puntos)
 **Módulo:** tabla `email_log`, wrapper de envío, reintentos con backoff
-**Estado:** 🟡 Parcial (v156) — **hecho:** tabla `email_log` (`e17/50`, RLS is_admin read/insert) + `recordEmail` (best-effort, nunca lanza) / `listEmailLog` (paginado); instrumentados los correos **admin** de **estado de pedido** y **confirmación de pago** (sent/failed, reemplazando el `.catch` mudo — AC-1/AC-4); vista admin **`/emails`** (menú Sistema, gated por permiso de datos). **Pendiente:** instrumentar los envíos del storefront (confirmación de compra, back-in-stock, avisos VIP) + **reintentos con backoff + idempotencia por (tipo, entidad)** (AC-2).
+**Estado:** ✅ **(verificado v291: `email_log` + idempotencia y reintentos en el storefront (HU-162 F2))** — Parcial (v156) — **hecho:** tabla `email_log` (`e17/50`, RLS is_admin read/insert) + `recordEmail` (best-effort, nunca lanza) / `listEmailLog` (paginado); instrumentados los correos **admin** de **estado de pedido** y **confirmación de pago** (sent/failed, reemplazando el `.catch` mudo — AC-1/AC-4); vista admin **`/emails`** (menú Sistema, gated por permiso de datos). **Pendiente:** instrumentar los envíos del storefront (confirmación de compra, back-in-stock, avisos VIP) + **reintentos con backoff + idempotencia por (tipo, entidad)** (AC-2).
 
 | # | Escenario | Resultado esperado |
 |---|-----------|-------------------|
@@ -290,7 +290,7 @@
 
 **Estimación:** M (5 puntos)
 **Módulo:** wizard en admin, checklist de setup
-**Estado:** 🔲 Pendiente (roadmap)
+**Estado:** ✅ **(verificado v291: absorbida por HU-236 (wizard de onboarding reanudable))** — (roadmap)
 
 > ⚠️ **Ampliada por HU-236** (onboarding por plan): esta HU es el núcleo básico; la versión completa (apariencia/Tema, Presets de nicho, Template de páginas, modelo de inventario, catálogo, sucursales, todo **gated por entitlements**) se define en el cluster HU-233…239 y su fundamento en `docs/adr/ADR-002-presets-onboarding-entitlements.md`. **No implementar HU-169 aislada** — hacerlo dentro de HU-236.
 
@@ -356,7 +356,7 @@
 
 **Estimación:** M (spike)
 **Módulo:** PoC (Stack Auth Teams + rol dedicado + GUC + RLS sobre el pooler) + ADR
-**Estado:** 🔲 Pendiente (roadmap) — **precede a HU-156/157/158**
+**Estado:** ✅ **(verificado v291: spike resuelto: JWT con claim `tenant_id` + RLS como frontera (E17, HU-156…158))** — (roadmap) — **precede a HU-156/157/158**
 
 > **Decisión de referencia — validada contra doc oficial Hexclave (ago-2026):** **Teams = tenants** (no FusionAuth) ✅; **RBAC** cubre roles por tenant (*Team Permissions*) y rol de operador del control plane (*Project Permissions*) ✅; **estrategia RLS revisada → JWT con claim `tenant_id`** (patrón oficial Hexclave↔Supabase: `accessToken` callback + policies `auth.jwt() ->> 'tenant_id'`), usando el rol `authenticated`/`anon` sujeto a RLS (service-role solo en control plane). **GUC por request + rol dedicado** queda como **fallback** para rutas server-only. El PoC confirma la mecánica y los riesgos abiertos.
 
@@ -380,7 +380,7 @@
 
 **Estimación:** L (8 puntos)
 **Módulo:** `apps/console` sobre **proyecto Supabase propio** (BD de plataforma), rol de plataforma, acceso cross-tenant, auditoría
-**Estado:** 🔲 Pendiente (roadmap) — depende de HU-156
+**Estado:** ✅ **(verificado v291: consola `apps/console`: tenants, planes, presets, suscripciones, infraestructura)** — (roadmap) — depende de HU-156
 
 | # | Escenario | Resultado esperado |
 |---|-----------|-------------------|
@@ -398,7 +398,7 @@
 
 **Estimación:** L (8 puntos)
 **Módulo:** `plans` + `entitlements`, guard `can(tenant, feature)` en UI y API (`@merkiai/tenancy`)
-**Estado:** 🔶 Parcial — **hecho:** catálogo `plans` (features/limits JSONB) en la BD de plataforma + FK `tenants.plan` + seed free/pro/enterprise (`platform/03_plans.sql`); módulo de entitlements puro `@merkiai/tenancy/entitlements` (`hasFeature`/`withinLimit`/`limitOf`, 3 tests verdes); `resolve-tenant` devuelve los entitlements del plan y el plano de tienda los transporta en `ResolvedTenant`; **guard reusable** en `apps/web/src/lib/entitlements.ts` (`tenantHasFeature` para UI, `requireFeature`/`requireWithinLimit` → 403 para API), **sin cablear a ninguna feature aún** (cada módulo aplicará el suyo al construirse). **Avance adicional:** catálogo de entitlements ampliado y con *enforcement* transversal (HU-239/359), **gestión de planes en la consola ✅** (HU-239 v2), y gating ya aplicado en el Constructor ("modo contenido", features de contenido). **Avance (v202):** **peldaño e-commerce gateado** — nueva feature `ecommerce` (default **true**, fail-open) con **barrera dura server-side en el checkout API** (403 en modo vitrina), **redirección de la página `/checkout`** y **ocultamiento del carrito** en el chrome (`ecommerceEnabled` en el store-context). Una tienda sin la feature opera como **vitrina/catálogo** sin romper el render del catálogo. **Límites del plan ya enforced** en creación: productos ✅, páginas ✅, colecciones/registros ✅. **Pulido de vitrina ✅ (v203):** `EcommerceProvider`/`useEcommerceEnabled` (contexto de cliente montado en el layout público) oculta los CTA de compra en modo vitrina — **PDP** (botón + barra pegajosa móvil), **quick-add** del listado `/shop` y del **home**, y **kits/bundles**; en modo vitrina las tarjetas enlazan a la ficha sin "Agregar". **Pendiente (menor):** (1) ocultar add-to-cart en superficies fuera del layout público (reorder en cuenta, carrito) — borde en modo vitrina; (2) límite de **usuarios del panel** en el alta; (3) exponer el plan efectivo en el admin. El **billing automático** (HU-192/193) sigue ⏸️ diferido: el plan se asigna a mano desde la consola.
+**Estado:** ✅ **(verificado v291: completada por HU-239 (catálogo canónico + enforcement) y su editor de planes)** — Parcial — **hecho:** catálogo `plans` (features/limits JSONB) en la BD de plataforma + FK `tenants.plan` + seed free/pro/enterprise (`platform/03_plans.sql`); módulo de entitlements puro `@merkiai/tenancy/entitlements` (`hasFeature`/`withinLimit`/`limitOf`, 3 tests verdes); `resolve-tenant` devuelve los entitlements del plan y el plano de tienda los transporta en `ResolvedTenant`; **guard reusable** en `apps/web/src/lib/entitlements.ts` (`tenantHasFeature` para UI, `requireFeature`/`requireWithinLimit` → 403 para API), **sin cablear a ninguna feature aún** (cada módulo aplicará el suyo al construirse). **Avance adicional:** catálogo de entitlements ampliado y con *enforcement* transversal (HU-239/359), **gestión de planes en la consola ✅** (HU-239 v2), y gating ya aplicado en el Constructor ("modo contenido", features de contenido). **Avance (v202):** **peldaño e-commerce gateado** — nueva feature `ecommerce` (default **true**, fail-open) con **barrera dura server-side en el checkout API** (403 en modo vitrina), **redirección de la página `/checkout`** y **ocultamiento del carrito** en el chrome (`ecommerceEnabled` en el store-context). Una tienda sin la feature opera como **vitrina/catálogo** sin romper el render del catálogo. **Límites del plan ya enforced** en creación: productos ✅, páginas ✅, colecciones/registros ✅. **Pulido de vitrina ✅ (v203):** `EcommerceProvider`/`useEcommerceEnabled` (contexto de cliente montado en el layout público) oculta los CTA de compra en modo vitrina — **PDP** (botón + barra pegajosa móvil), **quick-add** del listado `/shop` y del **home**, y **kits/bundles**; en modo vitrina las tarjetas enlazan a la ficha sin "Agregar". **Pendiente (menor):** (1) ocultar add-to-cart en superficies fuera del layout público (reorder en cuenta, carrito) — borde en modo vitrina; (2) límite de **usuarios del panel** en el alta; (3) exponer el plan efectivo en el admin. El **billing automático** (HU-192/193) sigue ⏸️ diferido: el plan se asigna a mano desde la consola.
 
 | # | Escenario | Resultado esperado |
 |---|-----------|-------------------|
@@ -418,7 +418,7 @@
 
 **Estimación:** XL (13+ puntos)
 **Módulo:** gestión de dominios + máquina de estados; integración con CDN/host para certificado + propagación
-**Estado:** 🔶 **v1 (backend completo)** — **núcleo puro** `domain-verification.ts` (`normalizeDomain`, `isValidDomain` [rechaza `*.merkiai.com`], `makeVerifyToken`, `expectedTxtName`/`Value`, `verifyTxt`) + **orquestación** `domain-service.ts` (`requestDomain` → `pending`+token+instrucciones TXT; `verifyDomain` → resuelve TXT y deja `verified`, DNS inyectable). **Persistencia** `platform/06_custom_domains.sql` (`domain_status`/`domain_verify_token`/`domain_requested` + check). **Endpoints** `POST/GET /api/internal/tenants/[id]/domain` y `POST …/domain/verify` (DNS real `node:dns/promises`). **Gating anti-hijack** en `PATCH /tenants/[id]`: `primaryDomain` solo se activa si el dominio está `verified` y coincide con el solicitado (→ `active`). 14 tests. **UI en el admin** ✅: `/configuracion/dominio` (sección en Configuración) — ingresar dominio → instrucciones del registro TXT (con copiar) → Verificar → Activar, con estados (`none/pending/verified/active`) en `StatusBadge`; puente `admin/lib/domains.ts` al control plane (GET/POST domain, POST verify, PATCH activar). **v2 ✅ (apuntado DNS + fix referencias por host):** núcleo `expectedDnsRecords` (A apex + CNAME www; destinos `DOMAIN_A_RECORD`/`DOMAIN_CNAME_TARGET`, Vercel por defecto) devuelto por el POST y el GET del endpoint; nuevo paso **"3 · Apunta tu dominio"** en la UI + TXT que ahora **persiste** vía GET. **Fix:** la vista previa usa SIEMPRE el **subdominio** (el `frame-src` del CSP del admin no permite el dominio propio); `metadataBase`/OG (layout) y `robots.ts` pasan a usar el **host de la petición** (antes `NEXT_PUBLIC_SITE_URL` fijo). Checkout/webhooks/`sitemap.ts` ya seguían el host (OK). Tests console +2. **Pendiente (ops, fuera de código):** alta del dominio en el hosting (Vercel auto-provisiona cert/CDN al detectar el DNS) y sync de **Trusted Domains** en Stack Auth (paso (f) de HU-214). Extiende HU-157.
+**Estado:** ✅ **(verificado v291: v1 + multi-dominio (HU-279) + Cloudflare for SaaS (HU-431))** — **v1 (backend completo)** — **núcleo puro** `domain-verification.ts` (`normalizeDomain`, `isValidDomain` [rechaza `*.merkiai.com`], `makeVerifyToken`, `expectedTxtName`/`Value`, `verifyTxt`) + **orquestación** `domain-service.ts` (`requestDomain` → `pending`+token+instrucciones TXT; `verifyDomain` → resuelve TXT y deja `verified`, DNS inyectable). **Persistencia** `platform/06_custom_domains.sql` (`domain_status`/`domain_verify_token`/`domain_requested` + check). **Endpoints** `POST/GET /api/internal/tenants/[id]/domain` y `POST …/domain/verify` (DNS real `node:dns/promises`). **Gating anti-hijack** en `PATCH /tenants/[id]`: `primaryDomain` solo se activa si el dominio está `verified` y coincide con el solicitado (→ `active`). 14 tests. **UI en el admin** ✅: `/configuracion/dominio` (sección en Configuración) — ingresar dominio → instrucciones del registro TXT (con copiar) → Verificar → Activar, con estados (`none/pending/verified/active`) en `StatusBadge`; puente `admin/lib/domains.ts` al control plane (GET/POST domain, POST verify, PATCH activar). **v2 ✅ (apuntado DNS + fix referencias por host):** núcleo `expectedDnsRecords` (A apex + CNAME www; destinos `DOMAIN_A_RECORD`/`DOMAIN_CNAME_TARGET`, Vercel por defecto) devuelto por el POST y el GET del endpoint; nuevo paso **"3 · Apunta tu dominio"** en la UI + TXT que ahora **persiste** vía GET. **Fix:** la vista previa usa SIEMPRE el **subdominio** (el `frame-src` del CSP del admin no permite el dominio propio); `metadataBase`/OG (layout) y `robots.ts` pasan a usar el **host de la petición** (antes `NEXT_PUBLIC_SITE_URL` fijo). Checkout/webhooks/`sitemap.ts` ya seguían el host (OK). Tests console +2. **Pendiente (ops, fuera de código):** alta del dominio en el hosting (Vercel auto-provisiona cert/CDN al detectar el DNS) y sync de **Trusted Domains** en Stack Auth (paso (f) de HU-214). Extiende HU-157.
 
 | # | Escenario | Resultado esperado |
 |---|-----------|-------------------|
@@ -521,7 +521,7 @@
 
 **Estimación:** XL (13+ puntos)
 **Módulo:** `tenants.db_ref` + connection factory (`@merkiai/tenancy`), herramientas de provisioning/migración en el control plane, orquestación de migraciones multi-destino
-**Estado:** 🔲 Pendiente (roadmap) — depende de HU-156; se acopla a HU-172/173
+**Estado:** 🟡 **(verificado v291: base: `tenant_infra_config` + `data_isolation` y destino dedicado por tenant (HU-362); falta routing automático por plan)** — (roadmap) — depende de HU-156; se acopla a HU-172/173
 
 | # | Escenario | Resultado esperado |
 |---|-----------|-------------------|
@@ -612,7 +612,7 @@
 
 **Estimación:** L (8 puntos)
 **Módulo:** interfaz `@merkiai/tenancy/identity` + adaptador(es) por proveedor; consumidores (guards, provisioning) vía la interfaz
-**Estado:** 🔲 Pendiente (roadmap) — **base implementada:** interfaz `IdentityProvider` + adaptador Stack Auth (console) + `platform-auth` refactorizado a la interfaz
+**Estado:** 🟡 **(verificado v291: interfaz `IdentityProvider` + adaptador Stack Auth en uso; falta un segundo proveedor)** — (roadmap) — **base implementada:** interfaz `IdentityProvider` + adaptador Stack Auth (console) + `platform-auth` refactorizado a la interfaz
 
 | # | Escenario | Resultado esperado |
 |---|-----------|-------------------|

@@ -17,7 +17,7 @@
 ### HU-203 — CSP endurecida (nonce) + sanitización XSS de contenido · E14
 > Como plataforma, quiero eliminar `unsafe-inline`/`unsafe-eval` y sanitizar el HTML de contenido, para cerrar la superficie XSS.
 
-**Estimación:** L (8 puntos) · **Estado:** 🔶 Parcial — **hecho:** sanitización XSS del contenido de tenant en `markdownToHtml` (escape de HTML + `href` seguro contra `javascript:`/`data:`) + pruebas (`markdown.test.ts`). Pendiente: CSP con nonce (quitar `unsafe-inline`/`unsafe-eval`) y sanitizar cualquier otro HTML no-markdown.
+**Estimación:** L (8 puntos) · **Estado:** ✅ **(verificado v291: CSP con nonce + `strict-dynamic` en web y admin (hardening v270))** — Parcial — **hecho:** sanitización XSS del contenido de tenant en `markdownToHtml` (escape de HTML + `href` seguro contra `javascript:`/`data:`) + pruebas (`markdown.test.ts`). Pendiente: CSP con nonce (quitar `unsafe-inline`/`unsafe-eval`) y sanitizar cualquier otro HTML no-markdown.
 
 | # | Escenario | Resultado esperado |
 |---|-----------|-------------------|
@@ -29,7 +29,7 @@
 ### HU-204 — Rate limiting distribuido + anti-abuso · E14
 > Como plataforma, quiero límites de tasa reales y protección anti-bot, para resistir fuerza bruta y abuso.
 
-**Estimación:** L (8 puntos) · **Estado:** 🔲 Pendiente (roadmap) — reemplaza el rate-limit in-memory por-instancia actual
+**Estimación:** L (8 puntos) · **Estado:** ✅ **(verificado v291: rate limit distribuido (HU-300) + tier Redis (HU-434))** — (roadmap) — reemplaza el rate-limit in-memory por-instancia actual
 
 | # | Escenario | Resultado esperado |
 |---|-----------|-------------------|
@@ -41,7 +41,7 @@
 ### HU-205 — Validación de entradas + CSRF · E14
 > Como plataforma, quiero validar toda entrada en los bordes y proteger las mutaciones con sesión, para evitar inyección y CSRF.
 
-**Estimación:** M (5 puntos) · **Estado:** 🔲 Pendiente (roadmap)
+**Estimación:** M (5 puntos) · **Estado:** ✅ **(verificado v291: CSRF por `Origin` en el middleware + validación de entradas en APIs (hardening v270))** — (roadmap)
 
 | # | Escenario | Resultado esperado |
 |---|-----------|-------------------|
@@ -53,7 +53,7 @@
 ### HU-206 — Gestión de secretos + escaneo de dependencias (SCA) · E14
 > Como responsable, quiero rotación de secretos y escaneo continuo de dependencias, para reducir el riesgo de fuga y CVEs.
 
-**Estimación:** M (5 puntos) · **Estado:** 🔲 Pendiente (roadmap) — extiende HU-184 (rotación de llaves de pago) a los demás secretos
+**Estimación:** M (5 puntos) · **Estado:** ✅ **(verificado v291: SCA en CI (Dependabot, CodeQL, secret scanning, audit); rotación de llaves sigue en HU-184)** — (roadmap) — extiende HU-184 (rotación de llaves de pago) a los demás secretos
 
 | # | Escenario | Resultado esperado |
 |---|-----------|-------------------|
