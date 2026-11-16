@@ -217,6 +217,10 @@ export type Database = {
           tenant_id: string
           order_number: string
           locale?: string | null
+          currency?: string
+          tax_amount?: number
+          fx_rate?: number | null
+          market_key?: string | null
           customer_id: string | null
           customer_name: string
           customer_email: string
@@ -259,6 +263,10 @@ export type Database = {
           tenant_id?: string
           order_number: string
           locale?: string | null
+          currency?: string
+          tax_amount?: number
+          fx_rate?: number | null
+          market_key?: string | null
           customer_id?: string | null
           customer_name: string
           customer_email: string
@@ -301,6 +309,10 @@ export type Database = {
           tenant_id?: string
           order_number?: string
           locale?: string | null
+          currency?: string
+          tax_amount?: number
+          fx_rate?: number | null
+          market_key?: string | null
           customer_id?: string | null
           customer_name?: string
           customer_email?: string
@@ -986,6 +998,10 @@ export type Database = {
           price_list_id: number | null
           locales: string[]
           default_locale: string
+          fx_rate: number | null
+          price_rounding: string
+          tax_rate: number
+          tax_included: boolean
           domain: string | null
           is_default: boolean
           active: boolean
@@ -1016,6 +1032,10 @@ export type Database = {
           price_list_id?: number | null
           locales?: string[]
           default_locale?: string
+          fx_rate?: number | null
+          price_rounding?: string
+          tax_rate?: number
+          tax_included?: boolean
           domain?: string | null
           is_default?: boolean
           active?: boolean
@@ -1025,6 +1045,7 @@ export type Database = {
       }
       price_lists: {
         Row: {
+          currency?: string | null
           id: number
           tenant_id: string
           key: string
@@ -1037,6 +1058,7 @@ export type Database = {
           updated_at: string
         }
         Insert: {
+          currency?: string | null
           id?: number
           tenant_id?: string
           key: string
@@ -1049,6 +1071,7 @@ export type Database = {
           updated_at?: string
         }
         Update: {
+          currency?: string | null
           key?: string
           name?: string
           scope_type?: string
@@ -1343,6 +1366,7 @@ export type Database = {
       }
       gift_cards: {
         Row: {
+          currency?: string | null
           id: number
           tenant_id: string
           code: string
@@ -1355,6 +1379,7 @@ export type Database = {
           updated_at: string
         }
         Insert: {
+          currency?: string | null
           id?: number
           tenant_id?: string
           code: string
@@ -1367,6 +1392,7 @@ export type Database = {
           updated_at?: string
         }
         Update: {
+          currency?: string | null
           balance?: number
           active?: boolean
           note?: string | null
@@ -1997,6 +2023,7 @@ export type Database = {
       }
       coupons: {
         Row: {
+          currency?: string | null
           tenant_id: string
           id: number
           code: string
@@ -2010,6 +2037,7 @@ export type Database = {
           created_at: string
         }
         Insert: {
+          currency?: string | null
           tenant_id?: string
           id?: number
           code: string
@@ -2023,6 +2051,7 @@ export type Database = {
           created_at?: string
         }
         Update: {
+          currency?: string | null
           tenant_id?: string
           id?: number
           code?: string

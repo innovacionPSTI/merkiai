@@ -13,6 +13,7 @@
  */
 import { SUPPORTED_LOCALES, SUPPORTED_COUNTRIES, normalizeLocale, DEFAULT_LOCALE, type Locale, type CountryCode } from '@merkiai/i18n'
 import type { Db } from '../client'
+import { isPriceRounding, validateMarketCurrencies, type PriceRounding } from './market-pricing'
 
 export interface Market {
   id: number
@@ -26,6 +27,14 @@ export interface Market {
   domain: string | null
   is_default: boolean
   active: boolean
+  /** HU-467 · tasa fija desde la moneda base (NULL = sin conversión). */
+  fx_rate: number | null
+  /** HU-467 · redondeo del precio convertido. */
+  price_rounding: PriceRounding
+  /** HU-467 · impuesto del país en % (0 = no se discrimina). */
+  tax_rate: number
+  /** HU-467 · los precios incluyen el impuesto. */
+  tax_included: boolean
   /** true si es el mercado por defecto implícito (aún no guardado en BD). */
   virtual?: boolean
 }
@@ -42,6 +51,10 @@ export interface MarketInput {
   domain?: string | null
   is_default?: boolean
   active?: boolean
+  fx_rate?: number | string | null
+  price_rounding?: string | null
+  tax_rate?: number | string | null
+  tax_included?: boolean | null
 }
 
 export interface MarketRules {
@@ -51,11 +64,13 @@ export interface MarketRules {
   marketsEnabled: boolean
   /** Moneda base de la tienda (la del mercado por defecto). */
   baseCurrency: string
-  /** HU-467 (multimoneda). Mientras sea false, todo mercado usa la moneda base (AC-4). */
+  /** HU-467 · feature `multi_currency` del plan. Sin ella, todo mercado usa la moneda base. */
   multiCurrency?: boolean
+  /** HU-467 · pasarela de pago activa (para validar que acepte la moneda del mercado). */
+  activePaymentProvider?: string | null
 }
 
-/** Multimoneda llega con HU-467: hasta entonces los mercados heredan la moneda base. */
+/** Valor por defecto de `multiCurrency` cuando el llamador no lo indica (lo decide el plan). */
 export const MULTI_CURRENCY_ENABLED = false
 
 export const DEFAULT_MARKET: Market = {
@@ -70,6 +85,10 @@ export const DEFAULT_MARKET: Market = {
   domain: null,
   is_default: true,
   active: true,
+  fx_rate: null,
+  price_rounding: 'auto',
+  tax_rate: 0,
+  tax_included: true,
   virtual: true,
 }
 
@@ -87,7 +106,13 @@ function normalizeDomain(raw: string | null | undefined): string | null {
 }
 
 /** Normaliza la entrada del formulario (mayúsculas, locales canónicos, sin duplicados). */
-export function normalizeMarketInput(input: MarketInput): MarketInput & { key: string; countries: string[]; currency: string; locales: string[]; domain: string | null } {
+function toNumberOrNull(v: unknown): number | null {
+  if (v === null || v === undefined || v === '') return null
+  const n = Number(String(v).replace(',', '.'))
+  return Number.isFinite(n) ? n : null
+}
+
+export function normalizeMarketInput(input: MarketInput): MarketInput & { key: string; countries: string[]; currency: string; locales: string[]; domain: string | null; fx_rate: number | null; price_rounding: PriceRounding; tax_rate: number; tax_included: boolean } {
   const locales = [...new Set((input.locales ?? []).map((l) => normalizeLocale(l) ?? String(l).trim()))].filter(Boolean)
   return {
     ...input,
@@ -100,6 +125,10 @@ export function normalizeMarketInput(input: MarketInput): MarketInput & { key: s
     domain: normalizeDomain(input.domain),
     is_default: Boolean(input.is_default),
     active: input.active ?? true,
+    fx_rate: toNumberOrNull(input.fx_rate),
+    price_rounding: isPriceRounding(input.price_rounding) ? input.price_rounding : 'auto',
+    tax_rate: toNumberOrNull(input.tax_rate) ?? 0,
+    tax_included: input.tax_included ?? true,
   }
 }
 
@@ -163,7 +192,7 @@ export function validateMarkets(markets: Array<Omit<Market, 'id'> & { id?: numbe
     if (!m.locales.includes(m.default_locale)) errors.push(`${label}: el idioma por defecto debe estar entre los habilitados.`)
     if (!/^[A-Z]{3}$/.test(m.currency)) errors.push(`${label}: moneda inválida.`)
     else if (!(rules.multiCurrency ?? MULTI_CURRENCY_ENABLED) && m.currency !== rules.baseCurrency) {
-      errors.push(`${label}: por ahora todos los mercados venden en la moneda de la tienda (${rules.baseCurrency}).`)
+      errors.push(`${label}: tu plan no incluye multimoneda; todos los mercados venden en la moneda de la tienda (${rules.baseCurrency}).`)
     }
     const badCountries = m.countries.filter((c) => !/^[A-Z]{2}$/.test(c))
     if (badCountries.length) errors.push(`${label}: código de país inválido (${badCountries.join(', ')}).`)
@@ -173,6 +202,12 @@ export function validateMarkets(markets: Array<Omit<Market, 'id'> & { id?: numbe
       domains.add(m.domain)
     }
   }
+
+  errors.push(...validateMarketCurrencies(markets as Market[], {
+    baseCurrency: rules.baseCurrency,
+    activePaymentProvider: rules.activePaymentProvider ?? null,
+    currencies: rules.multiCurrency ?? MULTI_CURRENCY_ENABLED,
+  }))
 
   const languages = enabledLocales(markets as Market[]).length
   if (rules.maxLanguages !== null && languages > rules.maxLanguages) {
@@ -194,6 +229,7 @@ export function applyMarketChange(existing: Market[], input: MarketInput): Array
     id: n.id ?? null, key: n.key, name: n.name, countries: n.countries, currency: n.currency,
     price_list_id: n.price_list_id ?? null, locales: n.locales as Locale[], default_locale: n.default_locale as Locale,
     domain: n.domain, is_default: Boolean(n.is_default), active: n.active ?? true,
+    fx_rate: n.fx_rate, price_rounding: n.price_rounding, tax_rate: n.tax_rate, tax_included: n.tax_included,
   }
   const rest = base.filter((m) => !(n.id && m.id === n.id))
   const others = draft.is_default ? rest.map((m) => ({ ...m, is_default: false })) : rest
@@ -213,6 +249,10 @@ function toMarket(r: Record<string, unknown>): Market {
     domain: (r.domain as string | null) ?? null,
     is_default: Boolean(r.is_default),
     active: r.active !== false,
+    fx_rate: r.fx_rate == null ? null : Number(r.fx_rate),
+    price_rounding: isPriceRounding(r.price_rounding) ? r.price_rounding : 'auto',
+    tax_rate: Number(r.tax_rate ?? 0) || 0,
+    tax_included: r.tax_included !== false,
   }
 }
 
@@ -272,6 +312,7 @@ export async function saveMarket(db: Db, tenantId: string, input: MarketInput, r
     tenant_id: tenantId, key: n.key, name: n.name, countries: n.countries, currency: n.currency,
     price_list_id: n.price_list_id ?? null, locales: n.locales, default_locale: n.default_locale,
     domain: n.domain, is_default: Boolean(n.is_default) || editingVirtual, active: n.active ?? true,
+    fx_rate: n.fx_rate, price_rounding: n.price_rounding, tax_rate: n.tax_rate, tax_included: n.tax_included,
     updated_at: new Date().toISOString(),
   }
   // eslint-disable-next-line @typescript-eslint/no-explicit-any

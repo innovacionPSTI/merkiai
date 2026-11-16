@@ -16,6 +16,11 @@ export type DateInput = Date | string | number
 /** Monedas que se muestran sin decimales por convención comercial. */
 const ZERO_DECIMAL_DISPLAY = new Set(['COP', 'CLP', 'PYG', 'JPY', 'KRW', 'VND', 'ISK', 'HUF'])
 
+/** Decimales con que se muestran y redondean los montos de una moneda (COP → 0, USD → 2). */
+export function currencyDecimals(currency: string | null | undefined): number {
+  return ZERO_DECIMAL_DISPLAY.has(String(currency || 'COP').toUpperCase()) ? 0 : 2
+}
+
 const numberCache = new Map<string, Intl.NumberFormat>()
 function numberFormat(locale: string, options: Intl.NumberFormatOptions): Intl.NumberFormat {
   const key = `${locale}|${JSON.stringify(options)}`

@@ -19,6 +19,10 @@ interface MarketView {
   domain: string | null
   is_default: boolean
   active: boolean
+  fx_rate: number | null
+  price_rounding: string
+  tax_rate: number
+  tax_included: boolean
   virtual?: boolean
 }
 
@@ -26,17 +30,24 @@ interface Props {
   markets: MarketView[]
   locales: { code: string; label: string }[]
   priceLists: { id: number; name: string }[]
-  rules: { maxLanguages: number | null; marketsEnabled: boolean; multiCurrency: boolean }
+  rules: { maxLanguages: number | null; marketsEnabled: boolean; multiCurrency: boolean; activePaymentProvider?: string | null }
   usedLanguages: number
 }
 
 const input = 'rounded-xl border border-brand-primary/20 px-3 py-2 font-brand text-sm focus:border-brand-primary focus:outline-none'
 
-type Draft = Omit<MarketView, 'countries'> & { countriesText: string }
+type Draft = Omit<MarketView, 'countries' | 'fx_rate' | 'tax_rate'> & { countriesText: string; fxText: string; taxText: string }
 
 function toDraft(m: MarketView): Draft {
-  const { countries, ...rest } = m
-  return { ...rest, countriesText: countries.join(', ') }
+  const { countries, fx_rate, tax_rate, ...rest } = m
+  return { ...rest, countriesText: countries.join(', '), fxText: fx_rate == null ? '' : String(fx_rate), taxText: tax_rate ? String(tax_rate) : '' }
+}
+
+/** HU-467 · reglas de redondeo del precio convertido. */
+const ROUNDINGS = ['auto', 'integer', 'nearest_10', 'nearest_100', 'nearest_1000', 'x99', 'x90', 'none'] as const
+const ROUNDING_LABEL: Record<(typeof ROUNDINGS)[number], string> = {
+  auto: 'Automático (decimales de la moneda)', integer: 'Sin decimales', nearest_10: 'Al 10 más cercano',
+  nearest_100: 'Al 100 más cercano', nearest_1000: 'Al 1.000 más cercano', x99: 'Terminado en ,99', x90: 'Terminado en ,90', none: 'Sin redondeo',
 }
 
 export default function MarketsManager({ markets, locales, priceLists, rules, usedLanguages }: Props) {
@@ -54,6 +65,7 @@ export default function MarketsManager({ markets, locales, priceLists, rules, us
     id: 0, key: '', name: '', countriesText: '', currency: baseCurrency, price_list_id: null,
     locales: [markets[0]?.default_locale ?? 'es-CO'], default_locale: markets[0]?.default_locale ?? 'es-CO',
     domain: null, is_default: false, active: true,
+    fxText: '', price_rounding: 'auto', taxText: '', tax_included: true,
   })
 
   const limitText = useMemo(() => {
@@ -85,6 +97,10 @@ export default function MarketsManager({ markets, locales, priceLists, rules, us
         domain: d.domain,
         is_default: d.is_default,
         active: d.active,
+        fx_rate: d.fxText.trim() || null,
+        price_rounding: d.price_rounding,
+        tax_rate: d.taxText.trim() || 0,
+        tax_included: d.tax_included,
       })
       if (r.ok) { setMsg({ ok: true, text: r.message }); setEditing(null); router.refresh() }
       else setMsg({ ok: false, text: r.error, list: r.errors && r.errors.length > 1 ? r.errors : undefined })
@@ -142,6 +158,8 @@ export default function MarketsManager({ markets, locales, priceLists, rules, us
                 <li key={l}>{label(l)}{l === m.default_locale ? ' · por defecto' : ''}</li>
               ))}
             </ul>
+            {m.currency !== baseCurrency && <p className="font-brand text-xs text-brand-primary/60">{m.fx_rate ? tx('1 {base} = {rate} {currency}', { base: baseCurrency, rate: m.fx_rate, currency: m.currency }) : tx('Precios desde su lista de precios')}</p>}
+            {m.tax_rate > 0 && <p className="font-brand text-xs text-brand-primary/60">{tx(m.tax_included ? 'Impuesto {rate} % incluido en el precio' : 'Impuesto {rate} % se suma al total', { rate: m.tax_rate })}</p>}
             {m.domain && <p className="font-brand text-xs text-brand-primary/60"><T>Dominio:</T> {m.domain}</p>}
             {m.price_list_id && <p className="font-brand text-xs text-brand-primary/60"><T>Lista de precios:</T> {priceLists.find((p) => p.id === m.price_list_id)?.name ?? '—'}</p>}
             <div className="flex gap-3 pt-1">
@@ -166,7 +184,7 @@ export default function MarketsManager({ markets, locales, priceLists, rules, us
             </label>
             <label className="block font-brand text-sm text-brand-primary"><T>Moneda</T>
               <input className={`${input} mt-1 w-full bg-gray-50`} value={editing.currency} disabled={!rules.multiCurrency} onChange={(e) => setEditing({ ...editing, currency: e.target.value.toUpperCase() })} />
-              {!rules.multiCurrency && <span className="block font-brand text-xs text-brand-primary/60 mt-1"><T>Por ahora todos los mercados venden en la moneda de la tienda (</T>{baseCurrency}). Los precios en otra moneda llegan en una próxima versión.</span>}
+              {!rules.multiCurrency && <span className="block font-brand text-xs text-brand-primary/60 mt-1">{tx('Tu plan vende todos los mercados en la moneda de la tienda ({currency}). Mejora tu plan para usar multimoneda.', { currency: baseCurrency })}</span>}
             </label>
             <label className="block font-brand text-sm text-brand-primary"><T>Dominio propio (opcional)</T>
               <input className={`${input} mt-1 w-full`} value={editing.domain ?? ''} onChange={(e) => setEditing({ ...editing, domain: e.target.value || null })} placeholder="mitienda.mx" />
@@ -179,6 +197,25 @@ export default function MarketsManager({ markets, locales, priceLists, rules, us
                 </select>
               </label>
             )}
+            {rules.multiCurrency && editing.currency && editing.currency !== baseCurrency && (
+              <>
+                <label className="block font-brand text-sm text-brand-primary">{tx('Tasa de cambio (1 {base} = ? {currency})', { base: baseCurrency, currency: editing.currency })}
+                  <input className={`${input} mt-1 w-full`} inputMode="decimal" value={editing.fxText} onChange={(e) => setEditing({ ...editing, fxText: e.target.value })} placeholder="0.00025" />
+                  <span className="block font-brand text-xs text-brand-primary/60 mt-1"><T>Se usa para los productos que no tienen precio en la lista de precios del mercado. Es fija: actualízala cuando cambie.</T></span>
+                </label>
+                <label className="block font-brand text-sm text-brand-primary"><T>Redondeo del precio convertido</T>
+                  <select className={`${input} mt-1 w-full`} value={editing.price_rounding} onChange={(e) => setEditing({ ...editing, price_rounding: e.target.value })}>
+                    {ROUNDINGS.map((r) => <option key={r} value={r}>{tx(ROUNDING_LABEL[r])}</option>)}
+                  </select>
+                </label>
+              </>
+            )}
+            <label className="block font-brand text-sm text-brand-primary"><T>Impuesto del país (%)</T>
+              <input className={`${input} mt-1 w-full`} inputMode="decimal" value={editing.taxText} onChange={(e) => setEditing({ ...editing, taxText: e.target.value })} placeholder="0" />
+              <span className="mt-2 flex items-center gap-2 font-brand text-xs text-brand-primary/70">
+                <input type="checkbox" checked={editing.tax_included} onChange={(e) => setEditing({ ...editing, tax_included: e.target.checked })} /> <T>Los precios ya incluyen el impuesto</T>
+              </span>
+            </label>
           </div>
 
           <fieldset className="space-y-2">

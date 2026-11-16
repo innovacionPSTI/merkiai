@@ -44,7 +44,10 @@ describe('HU-461 · reglas puras de mercados', () => {
   it('AC-4 · sin multimoneda, un mercado nuevo debe usar la moneda base', () => {
     const next = applyMarketChange([co], { name: 'México', locales: ['es-CO'], default_locale: 'es-CO', currency: 'MXN' })
     expect(validateMarkets(next, { ...rules, marketsEnabled: true }).join(' ')).toMatch(/moneda de la tienda \(COP\)/)
-    expect(validateMarkets(next, { ...rules, marketsEnabled: true, multiCurrency: true })).toEqual([])
+    // HU-467 · con multimoneda hace falta la tasa (o una lista de precios) en la otra moneda.
+    expect(validateMarkets(next, { ...rules, marketsEnabled: true, multiCurrency: true }).join(' ')).toMatch(/tasa de cambio/)
+    const withRate = applyMarketChange([co], { name: 'México', locales: ['es-CO'], default_locale: 'es-CO', currency: 'MXN', fx_rate: 0.0042 })
+    expect(validateMarkets(withRate, { ...rules, marketsEnabled: true, multiCurrency: true })).toEqual([])
   })
 
   it('AC-5 · un solo default, activo, y su locale por defecto debe estar habilitado', () => {

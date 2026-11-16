@@ -1,6 +1,6 @@
 # Detalle · E28 — Internacionalización y mercados (idiomas, regiones, moneda)
 
-> **Épica:** **E28 · Internacionalización y mercados** (HU-460…468). **Diseño:** **ADR-011**. **Estado:** 🟡 en curso — HU-460 ✅ (v272) · HU-461 ✅ (v273) · HU-468 ✅ (v274) · HU-463 ✅ (v275) · HU-462 ✅ (v276) · HU-465 ✅ (v286) · HU-464 ✅ (v278, sin IA) · HU-466 ✅ (v285, cola larga cubierta).
+> **Épica:** **E28 · Internacionalización y mercados** (HU-460…468). **Diseño:** **ADR-011**. **Estado:** 🟡 en curso — HU-460 ✅ (v272) · HU-461 ✅ (v273) · HU-468 ✅ (v274) · HU-463 ✅ (v275) · HU-462 ✅ (v276) · HU-465 ✅ (v286) · HU-464 ✅ (v278, sin IA) · HU-466 ✅ (v285, cola larga cubierta) · HU-467 🟡 F1 (v287).
 > **Absorbe:** HU-114a → HU-463 · HU-114b → HU-462 · HU-114c → HU-464 (E2).
 > **Construye sobre:** listas de precio (HU-407), multi-dominio (HU-279), schema de bloques del Constructor, correos idempotentes (HU-162), entitlements (ADR-002), middleware con tenant + CSP (v270), IA (HU-118).
 >
@@ -120,7 +120,7 @@
 
 > Como comerciante, quiero vender en la moneda de cada mercado, para que el cliente vea y pague precios locales.
 
-**Talla:** XL · **Módulo:** moneda por mercado con lista de precios por moneda (HU-407) o conversión con tasa fija configurable y redondeo; la moneda del pedido se fija al crearlo; validación de que la pasarela activa del mercado soporta la moneda; impuestos por país (tasa e inclusión en precio); cupones, gift cards y crédito en la moneda del pedido; reportes por moneda sin mezclar totales; cartera ya guarda `currency`. **Estado:** 🔲
+**Talla:** XL · **Módulo:** moneda por mercado con lista de precios por moneda (HU-407) o conversión con tasa fija configurable y redondeo; la moneda del pedido se fija al crearlo; validación de que la pasarela activa del mercado soporta la moneda; impuestos por país (tasa e inclusión en precio); cupones, gift cards y crédito en la moneda del pedido; reportes por moneda sin mezclar totales; cartera ya guarda `currency`. **Estado:** 🟡 **F1 (v287) — modelo, motor y configuración:** migración `e17/82_multicurrency.sql` (mercado: `fx_rate`, `price_rounding`, `tax_rate`, `tax_included`; `price_lists.currency`; `orders.currency`/`tax_amount`/`fx_rate`/`market_key`; `coupons.currency`, `gift_cards.currency`). Motor puro `market-pricing.ts`: precio local (lista del mercado → conversión con tasa fija y redondeo `auto`/múltiplos/`x99`/`x90`), impuesto incluido o agregado con los decimales de la moneda, monedas por pasarela (Wompi/Bold/Tu Compra/Merkiai Pagos: COP; MercadoPago y PayZen: varias según contrato). Feature de plan **`multi_currency`** (requiere `markets`). **Idiomas y mercados**: moneda editable con la feature, tasa y redondeo para mercados en otra moneda, impuesto del país (incluido o no); al guardar se valida que haya tasa o lista y que **la pasarela activa acepte la moneda** (AC-3). *Siguiente (F2):* resolver el mercado de la visita y mostrar precios locales en catálogo, ficha, carrito y checkout; checkout server-side en la moneda del mercado con IVA; moneda en pasarelas, correos y reportes; cupones de monto fijo y gift cards por moneda (AC-6).
 
 | # | Escenario | Resultado |
 |---|-----------|-----------|

@@ -152,6 +152,8 @@ export const FEATURES = {
   // ── E28 · Internacionalización (ADR-011) ───────────────────────────────────
   /** HU-461 · más de un mercado (países/moneda/precios propios). */
   MARKETS: 'markets',
+  /** HU-467 · vender cada mercado en su moneda (precios locales, IVA por país). */
+  MULTI_CURRENCY: 'multi_currency',
 } as const
 
 /** Claves de límite (cuantitativas; null = ilimitado). */
@@ -200,6 +202,7 @@ export const ENTITLEMENTS_CATALOG: EntitlementDef[] = [
   { key: FEATURES.EDITABLE_CHROME,   kind: 'feature', label: 'Header/Footer editables', description: 'Construir el encabezado y el pie con bloques (regiones).', default: false },
   { key: FEATURES.SITE_BLUEPRINTS,   kind: 'feature', label: 'Estructuras de sitio',   description: 'Elegir entre estructuras de sitio (blueprints) por plan.', default: false },
   { key: FEATURES.MARKETS,           kind: 'feature', label: 'Mercados',              description: 'Vender en varios mercados (países) con su propia configuración de idiomas, precios y dominio.', default: false },
+  { key: FEATURES.MULTI_CURRENCY,    kind: 'feature', label: 'Multimoneda',           description: 'Vender cada mercado en su moneda: precios locales (lista o tasa fija), IVA por país y reportes por moneda. Requiere mercados.', default: false },
   { key: LIMITS.PRODUCTS,             kind: 'limit', label: 'Productos',            description: 'Máximo de productos publicables.',        default: null },
   { key: LIMITS.USERS,                kind: 'limit', label: 'Usuarios del panel',   description: 'Máximo de usuarios del admin.',           default: null },
   { key: LIMITS.CATEGORIES,           kind: 'limit', label: 'Categorías',           description: 'Máximo de categorías.',                   default: null },

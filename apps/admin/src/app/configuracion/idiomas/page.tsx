@@ -1,6 +1,6 @@
 import type { Metadata } from 'next'
 import { PageHeader } from '@merkiai/ui'
-import { listMarkets, listPriceLists, enabledLocales, MULTI_CURRENCY_ENABLED } from '@merkiai/database'
+import { listMarkets, listPriceLists, enabledLocales } from '@merkiai/database'
 import { SUPPORTED_LOCALES, LOCALE_INFO } from '@merkiai/i18n'
 import { requireMarkets } from '@/lib/markets'
 import MarketsManager from './MarketsManager'
@@ -28,7 +28,7 @@ export default async function IdiomasMercadosPage() {
         markets={markets}
         locales={SUPPORTED_LOCALES.map((l) => ({ code: l, label: LOCALE_INFO[l].label }))}
         priceLists={priceLists.map((p) => ({ id: p.id, name: p.name }))}
-        rules={{ ...rules, multiCurrency: MULTI_CURRENCY_ENABLED }}
+        rules={rules}
         usedLanguages={enabledLocales(markets).length}
       />
     </div>
