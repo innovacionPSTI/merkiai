@@ -16,11 +16,12 @@
 import { getActiveTenantId } from './active-tenant'
 import type { PlanEntitlements } from '@merkiai/tenancy'
 import { consoleUrl } from './console-url'
+import { featureAllowed as featureAllowedImpl, entitlementDef as entitlementDefImpl } from '@merkiai/tenancy'
 
 export type { PlanEntitlements, EntitlementDef, EntitlementKind } from '@merkiai/tenancy'
 export {
   hasFeature, withinLimit, limitOf,
-  resolveFeature, resolveLimit,
+  resolveFeature, resolveLimit, featureAllowed,
   requireFeature, enforceLimit,
   EntitlementError, entitlementDef,
   ENTITLEMENTS_CATALOG, FEATURES, LIMITS,
@@ -55,4 +56,15 @@ async function fetchEntitlements(tenantId: string): Promise<{ tenantId: string; 
   } catch {
     return { tenantId, entitlements: null, status: null }
   }
+}
+
+/**
+ * HU-359 · gating server-side de una capacidad del Constructor que el plan puede
+ * apagar (ver `featureAllowed`). Devuelve el mensaje si está apagada; null si se
+ * permite (también sin control-plane: fail-open).
+ */
+export async function featureDeniedMessage(tenantId: string, key: string): Promise<string | null> {
+  const { entitlements } = await getTenantEntitlements(tenantId)
+  if (!entitlements) return null
+  return featureAllowedImpl(entitlements, key) ? null : `Tu plan no incluye: ${entitlementDefImpl(key)?.label ?? key}.`
 }

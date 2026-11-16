@@ -19,7 +19,7 @@ const TYPE_LABELS: Record<CollectionFieldType, string> = {
   select: 'Selección', relation: 'Relación',
 }
 
-export default function ColeccionesClient({ initialCollections }: { initialCollections: Collection[] }) {
+export default function ColeccionesClient({ initialCollections, templatesByType = true }: { initialCollections: Collection[]; /** HU-359 · plantilla por tipo según el plan. */ templatesByType?: boolean }) {
   const tx = useTx()
   const [collections, setCollections] = useState<Collection[]>(initialCollections)
   const [sel, setSel] = useState<string | null>(initialCollections[0]?.key ?? null)
@@ -105,7 +105,7 @@ export default function ColeccionesClient({ initialCollections }: { initialColle
               </div>
             </div>
             {/* HU-354 AC-1 · plantilla de registro (página CMS con placeholders {{campo}}) */}
-            <div className="mb-4 flex items-center gap-2 text-xs text-slate-600">
+            {templatesByType && <div className="mb-4 flex items-center gap-2 text-xs text-slate-600">
               <span title="Página del Constructor que se usa como plantilla; sus bloques pueden usar {{clave_de_campo}}. Vacío = plantilla automática.">Plantilla (clave de página)</span>
               <input
                 defaultValue={current.template_page_key ?? ''}
@@ -114,7 +114,7 @@ export default function ColeccionesClient({ initialCollections }: { initialColle
                 className="h-7 rounded border border-slate-300 px-2 text-xs font-mono w-56"
                 aria-label={tx("Clave de la página plantilla")}
               />
-            </div>
+            </div>}
             {tab === 'campos'
               ? <FieldsEditor key={current.key} fields={current.fields} onSave={saveFields} />
               : <RecordsManager key={current.key} collection={current} onError={setMsg} />}

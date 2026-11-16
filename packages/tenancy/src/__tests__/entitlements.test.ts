@@ -145,3 +145,14 @@ describe('effectiveSectionsForRole (HU-281)', () => {
       .toEqual(['dashboard', 'contenido', 'configuracion'])
   })
 })
+
+describe('HU-359 · featureAllowed (capacidades que el plan puede apagar)', () => {
+  // eslint-disable-next-line @typescript-eslint/no-var-requires
+  const { featureAllowed, FEATURES: F } = require('../entitlements')
+  it('sin plan o sin dato → permitida (degradación segura); solo `false` explícito la apaga', () => {
+    expect(featureAllowed(null, F.MEDIA_LIBRARY)).toBe(true)
+    expect(featureAllowed({ features: {}, limits: {} }, F.SAVED_BLOCKS)).toBe(true)
+    expect(featureAllowed({ features: { [F.SAVED_BLOCKS]: false }, limits: {} }, F.SAVED_BLOCKS)).toBe(false)
+    expect(featureAllowed({ features: { [F.GLOBAL_PARTIALS]: true }, limits: {} }, F.GLOBAL_PARTIALS)).toBe(true)
+  })
+})

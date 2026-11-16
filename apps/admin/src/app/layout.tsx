@@ -14,7 +14,8 @@ import { listWorkspaces } from '@/lib/workspaces'
 import { FEATURES as FLAGS } from '@/lib/features'
 import { getTenantEntitlements } from '@/lib/entitlements'
 import { isTenantBlocked } from '@/lib/tenant-status'
-import { resolveFeature, FEATURES } from '@merkiai/tenancy'
+import { resolveFeature, featureAllowed, FEATURES } from '@merkiai/tenancy'
+import { AdminFeaturesProvider } from '@/components/AdminFeatures'
 import TenantSuspended from '@/components/TenantSuspended'
 import { canManageBilling } from '@/lib/billing'
 import { I18nProvider } from '@merkiai/ui'
@@ -129,6 +130,8 @@ export default async function AdminRootLayout({ children }: { children: React.Re
   const quotesEnabled = adminUser ? resolveFeature(layoutEntitlements, FEATURES.QUOTES) : false
   const multiLocationEnabled = adminUser ? resolveFeature(layoutEntitlements, FEATURES.MULTI_LOCATION) : false
   const receivablesEnabled = adminUser ? resolveFeature(layoutEntitlements, FEATURES.RECEIVABLES) : false
+  // HU-359 · biblioteca de medios (permitida salvo que el plan la apague).
+  const adminFeatures = { mediaLibrary: featureAllowed(layoutEntitlements, FEATURES.MEDIA_LIBRARY) }
 
   // HU-194 · gate de suspensión: si el tenant está suspendido/cancelado, el panel
   // se bloquea (espejo del storefront). Fail-open (ver isTenantBlocked).
@@ -151,7 +154,7 @@ export default async function AdminRootLayout({ children }: { children: React.Re
       <body className="bg-gray-50">
         <StackProvider app={stackServerApp}>
           <StackTheme nonce={headersList.get('x-nonce') ?? undefined}>
-            <I18nProvider locale={uiLocale}>
+            <I18nProvider locale={uiLocale}><AdminFeaturesProvider value={adminFeatures}>
             {billingBypass ? (
               <main className="min-h-screen p-6 md:p-10">{children}</main>
             ) : tenantBlocked ? (
@@ -209,7 +212,7 @@ export default async function AdminRootLayout({ children }: { children: React.Re
               /* Rutas públicas: handler/*, no-autorizado */
               <>{children}</>
             )}
-            </I18nProvider>
+            </AdminFeaturesProvider></I18nProvider>
           </StackTheme>
         </StackProvider>
       </body>

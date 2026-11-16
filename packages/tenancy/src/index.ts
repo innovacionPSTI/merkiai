@@ -53,7 +53,7 @@ export type { IdentityProvider, IdentityUser } from './identity'
 
 export {
   hasFeature, withinLimit, limitOf,
-  resolveFeature, resolveLimit,
+  resolveFeature, resolveLimit, featureAllowed,
   requireFeature, enforceLimit,
   EntitlementError,
   entitlementDef,

@@ -30,7 +30,7 @@ function catOf(type: string, schemaCat: string): string {
   return schemaCat
 }
 
-export default function AddBlockCatalog({ onAdd }: { onAdd: (type: string) => void }) {
+export default function AddBlockCatalog({ onAdd, hiddenTypes = [] }: { onAdd: (type: string) => void; /** HU-359 · tipos que el plan no incluye. */ hiddenTypes?: string[] }) {
   const tx = useTx()
   const [open, setOpen] = useState(false)
   const [tab, setTab] = useState<string>('all')
@@ -44,7 +44,10 @@ export default function AddBlockCatalog({ onAdd }: { onAdd: (type: string) => vo
     return () => document.removeEventListener('mousedown', onDoc)
   }, [open])
 
-  const blocks = useMemo(() => listBlockTypes().map((b) => ({ ...b, cat: catOf(b.type, b.category) })), [])
+  const hiddenKey = hiddenTypes.join(',')
+  const blocks = useMemo(() => listBlockTypes().filter((b) => !hiddenTypes.includes(b.type)).map((b) => ({ ...b, cat: catOf(b.type, b.category) })),
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [hiddenKey])
   const cats = CAT_ORDER.filter((c) => blocks.some((b) => b.cat === c))
   const filtered = blocks.filter((b) => {
     if (tab !== 'all' && b.cat !== tab) return false

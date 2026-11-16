@@ -2,6 +2,7 @@ import { NextRequest } from 'next/server'
 import { NextResponse } from '@/lib/api-response'
 import { getAdminDb } from '@/lib/admin-db'
 import { getAdminUser } from '@/lib/auth'
+import { featureDeniedMessage, FEATURES } from '@/lib/entitlements'
 
 async function requireEditor() {
   const user = await getAdminUser()
@@ -17,6 +18,10 @@ async function requireEditor() {
 export async function GET(req: NextRequest) {
   const { user, error } = await requireEditor()
   if (error) return error
+  // HU-359 · el plan puede apagar la biblioteca de medios (la subida directa sigue).
+  // El listado de "Archivos" sigue disponible; el selector (`picker=1`) es la biblioteca.
+  const denied = new URL(req.url).searchParams.get('picker') === '1' ? await featureDeniedMessage(user!.tenantId, FEATURES.MEDIA_LIBRARY) : null
+  if (denied) return NextResponse.json({ error: denied, code: 'feature', key: FEATURES.MEDIA_LIBRARY }, { status: 403 })
 
   const { searchParams } = new URL(req.url)
   const mimeFilter = searchParams.get('mime') ?? undefined

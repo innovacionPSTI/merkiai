@@ -31,7 +31,8 @@ export default function MediaPicker({
   useEffect(() => {
     if (!open) return
     setLoading(true)
-    const qs = mime ? `?mime=${encodeURIComponent(mime)}` : ''
+    // HU-359 · `picker=1` = uso de la biblioteca (el plan puede apagarla).
+    const qs = `?picker=1${mime ? `&mime=${encodeURIComponent(mime)}` : ''}`
     fetch(`/api/admin/media${qs}`)
       .then((r) => r.ok ? r.json() : { assets: [] })
       .then((d) => setAssets(d.assets ?? []))

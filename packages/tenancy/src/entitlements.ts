@@ -229,6 +229,16 @@ export function resolveFeature(ent: PlanEntitlements | null | undefined, key: st
   return Boolean(v)
 }
 
+/**
+ * HU-359 · capacidades que existían antes de su entitlement (medios, bloques
+ * guardados, partials, listado dinámico, plantillas por tipo): se bloquean solo si
+ * el plan las **apaga explícitamente** (`false`). Sin dato → permitidas, así
+ * ningún comercio pierde lo que ya usaba (degradación segura, AC-4).
+ */
+export function featureAllowed(ent: PlanEntitlements | null | undefined, key: string): boolean {
+  return ent?.features?.[key] !== false
+}
+
 /** Límite resuelto: valor del plan, o el default del catálogo. null = ilimitado. */
 export function resolveLimit(ent: PlanEntitlements | null | undefined, key: string): number | null {
   const v = ent?.limits?.[key]

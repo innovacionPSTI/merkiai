@@ -14,7 +14,13 @@ import { NextResponse } from '@/lib/api-response'
 import { getAdminUser } from '@/lib/auth'
 import { getAdminDb } from '@/lib/admin-db'
 import { validateSectionPayload, validateItemByItemType } from '@/lib/section-validation'
-import { getTenantEntitlements, enforceLimit, EntitlementError, LIMITS } from '@/lib/entitlements'
+import { getTenantEntitlements, enforceLimit, EntitlementError, LIMITS, FEATURES, featureDeniedMessage } from '@/lib/entitlements'
+
+/** HU-359 · tipos de bloque cuya creación depende de una capacidad del plan. */
+const SECTION_FEATURE: Record<string, string> = {
+  partial_ref: FEATURES.GLOBAL_PARTIALS,
+  collection_list: FEATURES.DYNAMIC_LIST,
+}
 
 // ── Tipo de tabla CMS reconocida ─────────────────────────────────────────────
 // Note: section_settings and banners were dropped in migration 19 (unified CMS)
@@ -120,6 +126,13 @@ export async function POST(req: NextRequest, { params }: RouteParams) {
   const missing = config.required.filter((f) => body[f] === undefined || body[f] === null || body[f] === '')
   if (missing.length > 0) {
     return NextResponse.json({ error: `Campos requeridos: ${missing.join(', ')}` }, { status: 400 })
+  }
+
+  // HU-359 · bloques que el plan puede apagar: partials globales y listado dinámico.
+  if (resource === 'sections' && typeof body.section_type === 'string') {
+    const gated = SECTION_FEATURE[body.section_type]
+    const denied = gated ? await featureDeniedMessage(adminUser!.tenantId, gated) : null
+    if (denied) return NextResponse.json({ error: denied, code: 'feature', key: gated }, { status: 403 })
   }
 
   // HU-218.4: valida los campos de la sección contra el contrato del bloque.

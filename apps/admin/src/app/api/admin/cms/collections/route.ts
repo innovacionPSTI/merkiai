@@ -13,7 +13,7 @@ import {
   listCollections, createCollection, updateCollection, deleteCollection, countCollections,
 } from '@merkiai/database'
 import {
-  getTenantEntitlements, requireFeature, enforceLimit, EntitlementError, FEATURES, LIMITS,
+  getTenantEntitlements, requireFeature, enforceLimit, EntitlementError, FEATURES, LIMITS, featureDeniedMessage,
 } from '@/lib/entitlements'
 
 async function requireAdmin() {
@@ -75,6 +75,11 @@ export async function PATCH(req: NextRequest) {
   const body = await req.json()
   if (!body?.key) return NextResponse.json({ error: 'key requerido' }, { status: 400 })
   const { key, ...patch } = body
+  // HU-359 · asignar una plantilla por tipo depende de `plantillas_por_tipo`.
+  if (patch.template_page_key) {
+    const denied = await featureDeniedMessage(adminUser!.tenantId, FEATURES.TEMPLATES_BY_TYPE)
+    if (denied) return NextResponse.json({ error: denied, code: 'feature', key: FEATURES.TEMPLATES_BY_TYPE }, { status: 403 })
+  }
   try {
     return NextResponse.json(await updateCollection(key, patch, db))
   } catch (e) {

@@ -56,7 +56,11 @@ interface SectionRow {
 
 const api = '/api/admin/cms/sections'
 
-interface ConstructorFeatures { layoutAdvanced: boolean; pageStyle: boolean }
+interface ConstructorFeatures {
+  layoutAdvanced: boolean; pageStyle: boolean
+  /** HU-359 · capacidades que el plan puede apagar (por defecto, permitidas). */
+  savedBlocks?: boolean; globalPartials?: boolean; dynamicList?: boolean
+}
 
 export default function ConstructorClient({
   pages, initialPageKey, initialTemplate,
@@ -696,7 +700,7 @@ export default function ConstructorClient({
             )}
 
             {/* HU-358 · insertar un bloque guardado (HU-369 · solo con estructura editable) */}
-            {!contentMode && savedBlocks.length > 0 && (
+            {!contentMode && features.savedBlocks !== false && savedBlocks.length > 0 && (
               <label className="flex items-center gap-1 text-xs text-slate-600" title={tx("Insertar un bloque guardado como copia")}>
                 <T>Bloque guardado</T>
                 <select
@@ -712,7 +716,7 @@ export default function ConstructorClient({
             <div className="ml-auto">
               {contentMode
                 ? <span className="inline-flex items-center gap-1 rounded-full bg-indigo-50 text-indigo-700 text-[11px] px-2.5 py-1" title={tx("Tu plan permite editar contenidos; la estructura está fija")}><T>🔒 Modo contenido ·</T> <a href="/configuracion" className="underline"><T>mejora a Pro</T></a> <T>para editar la estructura</T></span>
-                : <AddBlockCatalog onAdd={addBlock} />}
+                : <AddBlockCatalog onAdd={addBlock} hiddenTypes={[...(features.globalPartials === false ? ['partial_ref'] : []), ...(features.dynamicList === false ? ['collection_list'] : [])]} />}
             </div>
           </div>
 
@@ -825,7 +829,7 @@ export default function ConstructorClient({
                               <div className="fixed inset-0 z-10" onClick={() => setBlockMenu(null)} aria-hidden="true" />
                               <div className="absolute right-0 top-full z-20 mt-1 w-44 rounded-xl border border-slate-200 bg-white shadow-lg p-1.5" role="menu">
                                 <button onClick={() => { setBlockMenu(null); duplicate(s) }} className="w-full flex items-center gap-2 rounded-lg px-3 py-2 text-sm text-slate-700 hover:bg-slate-50 text-left"><Icon name="grid" size={14} /> <T>Duplicar</T></button>
-                                <button onClick={() => { setBlockMenu(null); saveBlock(s) }} className="w-full flex items-center gap-2 rounded-lg px-3 py-2 text-sm text-slate-700 hover:bg-slate-50 text-left"><Icon name="preset" size={14} /> <T>Guardar como bloque</T></button>
+                                {features.savedBlocks !== false && <button onClick={() => { setBlockMenu(null); saveBlock(s) }} className="w-full flex items-center gap-2 rounded-lg px-3 py-2 text-sm text-slate-700 hover:bg-slate-50 text-left"><Icon name="preset" size={14} /> <T>Guardar como bloque</T></button>}
                                 <button onClick={() => { setBlockMenu(null); remove(s) }} className="w-full flex items-center gap-2 rounded-lg px-3 py-2 text-sm text-red-600 hover:bg-red-50 text-left"><Icon name="trash" size={14} /> <T>Eliminar</T></button>
                               </div>
                             </>

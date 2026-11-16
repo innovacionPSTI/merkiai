@@ -4,7 +4,7 @@ import { requireAdminDb } from '@/lib/admin-context'
 import { listCollections } from '@merkiai/database'
 import { FEATURES as FLAGS } from '@/lib/features'
 import { getTenantEntitlements } from '@/lib/entitlements'
-import { resolveFeature, FEATURES } from '@merkiai/tenancy'
+import { resolveFeature, featureAllowed, FEATURES } from '@merkiai/tenancy'
 import ColeccionesClient from '@/components/colecciones/ColeccionesClient'
 import { T } from '@merkiai/ui'
 
@@ -33,7 +33,7 @@ export default async function ColeccionesPage() {
         </p>
       </div>
       <div className="flex-1 overflow-y-auto bg-slate-50">
-        <ColeccionesClient initialCollections={collections} />
+        <ColeccionesClient initialCollections={collections} templatesByType={featureAllowed(entitlements, FEATURES.TEMPLATES_BY_TYPE)} />
       </div>
     </div>
   )

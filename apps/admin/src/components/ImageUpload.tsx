@@ -3,6 +3,7 @@
 import { useState, useRef } from 'react'
 import { Icon } from '@merkiai/ui'
 import MediaPicker from './MediaPicker'
+import { useAdminFeatures } from './AdminFeatures'
 import { T } from '@merkiai/ui'
 import { useTx } from '@merkiai/ui'
 
@@ -30,6 +31,7 @@ export default function ImageUpload({
   const [error, setError] = useState('')
   const [dragging, setDragging] = useState(false)
   const [pickerOpen, setPickerOpen] = useState(false) // HU-357 · biblioteca
+  const { mediaLibrary } = useAdminFeatures() // HU-359 · el plan puede apagarla
   const inputRef = useRef<HTMLInputElement>(null)
 
   async function upload(file: File) {
@@ -141,13 +143,15 @@ export default function ImageUpload({
                 <T>Arrastra una imagen o</T> <span className="text-brand-primary underline"><T>haz clic</T></span>
               </p>
               <p className="font-brand text-xs text-brand-primary/30"><T>JPG, PNG, WebP — máx. 5 MB</T></p>
-              <button
-                type="button"
-                onClick={(e) => { e.stopPropagation(); setPickerOpen(true) }}
-                className="mt-1 font-brand text-xs text-brand-primary underline"
-              >
-                <T>o elegir de la biblioteca</T>
-              </button>
+              {mediaLibrary && (
+                <button
+                  type="button"
+                  onClick={(e) => { e.stopPropagation(); setPickerOpen(true) }}
+                  className="mt-1 font-brand text-xs text-brand-primary underline"
+                >
+                  <T>o elegir de la biblioteca</T>
+                </button>
+              )}
             </div>
           )}
         </div>

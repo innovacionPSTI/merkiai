@@ -11,6 +11,7 @@ import { NextRequest } from 'next/server'
 import { NextResponse } from '@/lib/api-response'
 import { getAdminUser } from '@/lib/auth'
 import { getAdminDb } from '@/lib/admin-db'
+import { featureDeniedMessage, FEATURES } from '@/lib/entitlements'
 import {
   listSavedBlocks, createSavedBlockFromSection, insertSavedBlock, deleteSavedBlock,
 } from '@merkiai/database'
@@ -35,6 +36,9 @@ export async function POST(req: NextRequest) {
   if (error) return error
   const db = getAdminDb(adminUser!.tenantId)
   const body = await req.json()
+  // HU-359 · el plan puede apagar la biblioteca de bloques guardados.
+  const denied = await featureDeniedMessage(adminUser!.tenantId, FEATURES.SAVED_BLOCKS)
+  if (denied) return NextResponse.json({ error: denied, code: 'feature', key: FEATURES.SAVED_BLOCKS }, { status: 403 })
   try {
     if (body?.insert_id && body?.page_key) {
       const created = await insertSavedBlock(db, { id: Number(body.insert_id), pageKey: String(body.page_key), orderIndex: body.order_index })

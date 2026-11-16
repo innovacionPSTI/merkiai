@@ -5,7 +5,7 @@ import { requireAdminDb } from '@/lib/admin-context'
 import { FEATURES as FLAGS } from '@/lib/features'
 import { getTenantEntitlements } from '@/lib/entitlements'
 import { getOnboardingOptions } from '@/lib/onboarding'
-import { resolveFeature, FEATURES } from '@merkiai/tenancy'
+import { resolveFeature, featureAllowed, FEATURES } from '@merkiai/tenancy'
 import ConstructorClient from '@/components/constructor/ConstructorClient'
 import { T } from '@merkiai/ui'
 
@@ -31,6 +31,10 @@ export default async function ConstructorPage() {
   const constructorFeatures = {
     layoutAdvanced: resolveFeature(entitlements, FEATURES.LAYOUT_ADVANCED),
     pageStyle: resolveFeature(entitlements, FEATURES.PAGE_STYLE),
+    // HU-359 · capacidades que el plan puede apagar (permitidas salvo `false` explícito).
+    savedBlocks: featureAllowed(entitlements, FEATURES.SAVED_BLOCKS),
+    globalPartials: featureAllowed(entitlements, FEATURES.GLOBAL_PARTIALS),
+    dynamicList: featureAllowed(entitlements, FEATURES.DYNAMIC_LIST),
   }
 
   const { adminUser, db: supabase } = await requireAdminDb()
