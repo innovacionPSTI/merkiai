@@ -71,7 +71,7 @@ Las E2E necesitan **un tenant conocido** con su plan de Operaciones encendido y 
 4. **Mapea el host→tenant**: el storefront resuelve el tenant por *host*. Registra
    `E2E_TENANT_HOST` (p. ej. `tienda-test.localhost`) como dominio del tenant.
 
-> El **catálogo + operaciones de ejemplo** (café + receta `al_vender`) los siembra
+> El **catálogo + operaciones de ejemplo** (producto genérico + receta `al_vender`) los siembra
 > automáticamente `global-setup` llamando al endpoint interno de seed
 > (`apps/e2e/lib/seed.ts`, reusa el preset de HU-410) cuando `E2E_SEED=1` y
 > `E2E_INTERNAL_SECRET` está configurado. El **saldo de apertura** se materializa
@@ -162,7 +162,10 @@ apps/e2e/
 ├─ tests/
 │  ├─ operations.admin.spec.ts     # tablero, crear ítem, cotización→orden
 │  ├─ rls-isolation.admin.spec.ts  # aislamiento multi-tenant
-│  └─ sale-ledger.store.spec.ts    # compra → webhook → ledger (plantilla)
+│  ├─ sale-ledger.store.spec.ts    # pedido → pago confirmado → ledger (API, sin pasarela)
+│  ├─ storefront-smoke.store.spec.ts # páginas públicas, SEO, 404, CSP (@smoke = producción)
+│  ├─ i18n.store.spec.ts           # prefijo de idioma, html lang, hreflang, 301 del idioma por defecto
+│  └─ admin-smoke.admin.spec.ts    # pantallas principales, panel en inglés, reportes por moneda
 └─ .env.example
 ```
 

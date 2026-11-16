@@ -15,6 +15,8 @@ import { ADMIN_STORAGE } from './playwright.config'
 import { seedTestTenant } from './lib/seed'
 
 export default async function globalSetup(_config: FullConfig) {
+  // Smoke de solo lectura (p. ej. producción): sin seed ni sesión de admin.
+  if (process.env.E2E_SKIP_ADMIN === '1') return
   const adminUrl = process.env.E2E_ADMIN_URL ?? 'http://localhost:3001'
   const tenantId = process.env.E2E_TENANT_ID ?? ''
   const email = process.env.E2E_ADMIN_EMAIL ?? ''

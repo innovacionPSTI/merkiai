@@ -34,7 +34,9 @@ feature/* ──PR──▶ test ──PR──▶ develop ──PR──▶ mai
   de entorno** (`scripts/check-env-docs.mjs`, HU-364: falla si el código usa una variable no
   documentada en `.env.example`), `type-check`, `lint`, `test` (unitarias/integración, vía Turbo).
   Gate rápido, sin red externa.
-- **`.github/workflows/e2e.yml`** — en push a `test` y PR hacia `develop` (o manual):
+- **`ci.yml` · job `E2E · Type-check`** — compila la suite `apps/e2e` (sin navegadores) para que una spec rota no llegue al entorno.
+- **`.github/workflows/smoke.yml`** — **post-despliegue a producción** (cuando Vercel reporta un deploy exitoso a *Production*, o a mano): corre solo las pruebas `@smoke` del storefront contra `vars.PROD_WEB_URL`, **de solo lectura** (sin seed, sin sesión, sin pedidos). Environment `production`.
+- **`.github/workflows/e2e.yml`** — en push a `test` (Environment `test`), push a `develop` (Environment `staging`, mismos nombres de secretos) y PR hacia `develop` (o manual):
   **aprovisiona el entorno** (`scripts/e2e-provision.sh`), instala Playwright y
   corre la suite **contra el entorno desplegado** (no reconstruye el stack en el
   runner, porque depende de Stack Auth y del control-plane). Sube el `playwright-report`.
@@ -112,6 +114,18 @@ Nunca apuntes el entorno de pruebas a la base de producción.
 ---
 
 ## 6. Puesta en marcha (checklist)
+
+**Estado (v292):** pipeline y suite listos en el repo (CI + type-check E2E, E2E en test/staging, smoke de producción). Lo que sigue son configuraciones **fuera del repo** que debe hacer quien administra las cuentas:
+
+| # | Dónde | Qué | Hecho |
+|---|---|---|---|
+| 1 | GitHub | Publicar ramas `test` y `develop` | ☐ |
+| 2 | Supabase | Bases de **test** y **staging** separadas de producción (cadena de conexión de cada una) | ☐ |
+| 3 | Vercel | `main` = Production; previews de `test`/`develop`; variables por Environment (ver `docs/ENV-VARS-MATRIZ.md`) | ☐ |
+| 4 | GitHub → Environments | Crear `test`, `staging` y `production`; cargar secretos/variables de §5 en `test` y `staging`; en `production` solo `PROD_WEB_URL` | ☐ |
+| 5 | GitHub → Branches | Protección de `develop`/`main` con checks obligatorios `CI / Lint · Type-check · Unit`, `CI / E2E · Type-check` y (en `develop`) `E2E / Playwright` | ☐ |
+| 6 | GitHub | Primer PR `feature/*` → `test` y verificar CI + E2E en verde | ☐ |
+
 
 Las ramas `develop` y `test` ya existen en local. Lo que falta, en orden:
 

@@ -1,0 +1,41 @@
+name: Smoke producción
+
+# Verificación post-despliegue de SOLO LECTURA contra producción: home, carrito y
+# checkout cargan, robots/sitemap, 404 y cabeceras de seguridad (pruebas `@smoke`).
+# No siembra datos, no inicia sesión y no crea pedidos.
+# - Se dispara cuando Vercel reporta un despliegue exitoso a Production.
+# - O a mano (workflow_dispatch), p. ej. tras un cambio de DNS.
+on:
+  deployment_status:
+  workflow_dispatch:
+
+jobs:
+  smoke:
+    name: Playwright @smoke (producción)
+    if: github.event_name == 'workflow_dispatch' || (github.event.deployment_status.state == 'success' && github.event.deployment.environment == 'Production')
+    runs-on: ubuntu-latest
+    environment: production
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+        with: { version: 9 }
+      - uses: actions/setup-node@v4
+        with: { node-version: 20, cache: pnpm }
+      - name: Instalar Playwright
+        working-directory: apps/e2e
+        run: |
+          pnpm install --no-frozen-lockfile
+          pnpm run install:browsers
+      - name: Smoke
+        working-directory: apps/e2e
+        env:
+          E2E_WEB_URL: ${{ vars.PROD_WEB_URL }}
+          E2E_SKIP_ADMIN: '1'
+        run: pnpm run smoke
+      - name: Publicar reporte
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-smoke-report
+          path: apps/e2e/playwright-report
+          retention-days: 7

@@ -45,3 +45,19 @@ jobs:
 
       - name: Pruebas unitarias / integración
         run: pnpm turbo run test
+
+  e2e-typecheck:
+    name: E2E · Type-check
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+        with: { version: 9 }
+      - uses: actions/setup-node@v4
+        with: { node-version: 20, cache: pnpm }
+      # apps/e2e es standalone (fuera del workspace): solo instala y compila, sin navegadores.
+      - name: Type-check de la suite E2E
+        working-directory: apps/e2e
+        run: |
+          pnpm install --no-frozen-lockfile
+          pnpm run type-check

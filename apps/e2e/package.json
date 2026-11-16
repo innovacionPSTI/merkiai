@@ -10,10 +10,14 @@
     "report": "playwright show-report",
     "codegen": "playwright codegen",
     "ensure:user": "node scripts/ensure-stack-user.mjs",
-    "install:browsers": "playwright install --with-deps chromium"
+    "install:browsers": "playwright install --with-deps chromium",
+    "type-check": "tsc --noEmit -p .",
+    "smoke": "playwright test --project=storefront --grep @smoke"
   },
   "devDependencies": {
     "@playwright/test": "^1.49.0",
-    "dotenv": "^16.4.5"
+    "dotenv": "^16.4.5",
+    "@types/node": "^20.11.0",
+    "typescript": "^5.4.0"
   }
 }

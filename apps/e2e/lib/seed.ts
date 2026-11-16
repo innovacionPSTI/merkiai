@@ -24,22 +24,22 @@ interface SeedOptions {
 const PRESET = {
   theme: { name: 'Tienda E2E', color_primary: '#0f766e' },
   template: 'boutique',
-  sample_categories: [{ name: 'Bebidas' }],
+  sample_categories: [{ name: 'General' }],
   sample_products: [
-    { name: 'Café E2E', price: 12000, category_slug: 'bebidas', featured: true, stock: 25 },
+    { name: 'Producto E2E', price: 12000, category_slug: 'general', featured: true, stock: 25 },
   ],
   // Operaciones (HU-410): se materializa solo si el plan trae `inventory`.
   operations: {
     uoms: [{ code: 'g', name: 'Gramo', dimension: 'weight', to_base_factor: 1 }],
     stock_items: [
-      { name: 'Café en grano', item_class: 'materia_prima', uom: 'g' },
-      { name: 'Café E2E', item_class: 'terminado', sellable: true },
+      { name: 'Materia prima E2E', item_class: 'materia_prima', uom: 'g' },
+      { name: 'Producto E2E', item_class: 'terminado', sellable: true },
     ],
     boms: [
       {
-        output: 'cafe-e2e',
+        output: 'producto-e2e',
         consumption_policy: 'al_vender',
-        components: [{ item: 'cafe-en-grano', qty: 18, uom: 'g' }],
+        components: [{ item: 'materia-prima-e2e', qty: 18, uom: 'g' }],
       },
     ],
   },

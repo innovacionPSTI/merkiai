@@ -1,14 +1,15 @@
 name: E2E
 
-# Pruebas end-to-end (Playwright) contra el ENTORNO DE PRUEBAS desplegado.
-# - push a `test`     → valida el entorno de pruebas.
+# Pruebas end-to-end (Playwright) contra el entorno desplegado.
+# - push a `test`     → valida el entorno de pruebas (Environment `test`).
+# - push a `develop`  → valida staging (Environment `staging`, mismos nombres de secretos).
 # - PR hacia `develop`→ gate antes de integrar a staging.
 # Los E2E corren contra URLs ya desplegadas (Vercel) para no reconstruir el stack
 # completo (Next + Stack Auth + control-plane) dentro del runner. La DB de prueba
 # se migra/siembra con `scripts/db-apply.sh` + el seed del tenant de prueba.
 on:
   push:
-    branches: [test]
+    branches: [test, develop]
   pull_request:
     branches: [develop]
   workflow_dispatch:
@@ -19,9 +20,10 @@ concurrency:
 
 jobs:
   e2e:
-    name: Playwright (entorno de pruebas)
+    name: Playwright (entorno de pruebas / staging)
     runs-on: ubuntu-latest
-    environment: test
+    # push a `develop` → entorno de staging; el resto (push a `test`, PR) → pruebas.
+    environment: ${{ github.event_name == 'push' && github.ref_name == 'develop' && 'staging' || 'test' }}
     steps:
       - uses: actions/checkout@v4
 

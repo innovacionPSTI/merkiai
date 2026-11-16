@@ -39,8 +39,9 @@ test.describe('Operaciones · admin', () => {
     // Aparece la fila; convertir genera una orden.
     const fila = page.getByRole('row', { name: /Cliente E2E/ }).first()
     await expect(fila).toBeVisible()
-    page.once('dialog', (d) => d.accept()) // confirm()
+    // Confirmación inline por fila (sin diálogos nativos).
     await fila.getByRole('button', { name: 'Convertir a orden' }).click()
+    await fila.getByRole('button', { name: 'Confirmar' }).click()
     await expect(page.getByText(/Orden creada:/i)).toBeVisible()
   })
 })
