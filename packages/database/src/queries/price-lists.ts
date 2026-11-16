@@ -25,6 +25,14 @@ export interface PriceList {
   scope_value: string | null
   priority: number
   active: boolean
+  /** HU-467 · moneda de los precios de la lista (null = moneda base). */
+  currency?: string | null
+}
+
+/** HU-467 · normaliza la moneda de una lista: 3 letras en mayúscula o null (base). */
+export function normalizeListCurrency(v: unknown): string | null {
+  const c = String(v ?? '').trim().toUpperCase()
+  return /^[A-Z]{3}$/.test(c) ? c : null
 }
 
 export interface PriceListItem {
@@ -114,7 +122,7 @@ export async function getPriceListItems(db: Db, priceListId: number): Promise<Pr
 
 export async function createPriceList(
   db: Db,
-  input: { tenant_id?: string; key: string; name: string; scope_type?: PriceScopeType; scope_value?: string | null; priority?: number },
+  input: { tenant_id?: string; key: string; name: string; scope_type?: PriceScopeType; scope_value?: string | null; priority?: number; currency?: string | null },
 ): Promise<PriceList> {
   const row = {
     tenant_id: input.tenant_id,
@@ -123,6 +131,7 @@ export async function createPriceList(
     scope_type: input.scope_type ?? 'generic',
     scope_value: input.scope_value?.trim() || null,
     priority: input.priority ?? 0,
+    ...(normalizeListCurrency(input.currency) ? { currency: normalizeListCurrency(input.currency) } : {}),
   }
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const { data, error } = await db.from('price_lists').insert(row as any).select().single()
@@ -133,7 +142,7 @@ export async function createPriceList(
 export async function updatePriceList(
   db: Db,
   id: number,
-  patch: Partial<{ name: string; scope_type: PriceScopeType; scope_value: string | null; priority: number; active: boolean }>,
+  patch: Partial<{ name: string; scope_type: PriceScopeType; scope_value: string | null; priority: number; active: boolean; currency: string | null }>,
 ): Promise<PriceList> {
   const { data, error } = await db
     .from('price_lists')

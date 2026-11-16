@@ -11,7 +11,7 @@ import { formatMoney } from '@merkiai/i18n'
 import { T } from '@merkiai/ui'
 import { useTx } from '@merkiai/ui'
 
-interface PriceList { id: number; key: string; name: string; scope_type: string; scope_value: string | null; priority: number; active: boolean }
+interface PriceList { id: number; key: string; name: string; scope_type: string; scope_value: string | null; priority: number; active: boolean; currency?: string | null }
 interface ProductRef { id: number; name: string; base_price: number | null }
 interface Item { id: number; product_id: number | null; variant_id: number | null; price: number }
 
@@ -31,6 +31,7 @@ export default function PriceListsManager({ lists: initialLists, products }: { l
   const [scopeType, setScopeType] = useState('generic')
   const [scopeValue, setScopeValue] = useState('')
   const [priority, setPriority] = useState(0)
+  const [currency, setCurrency] = useState('')
   const [busy, setBusy] = useState(false)
 
   async function reloadLists() {
@@ -44,7 +45,7 @@ export default function PriceListsManager({ lists: initialLists, products }: { l
     try {
       const res = await fetch('/api/admin/price-lists', {
         method: 'POST', headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ key: key.trim(), name: name.trim(), scope_type: scopeType, scope_value: scopeType === 'generic' ? null : scopeValue.trim(), priority }),
+        body: JSON.stringify({ key: key.trim(), name: name.trim(), scope_type: scopeType, scope_value: scopeType === 'generic' ? null : scopeValue.trim(), priority, currency: currency.trim() || null }),
       })
       if (!res.ok) throw new Error((await res.json().catch(() => ({})))?.error ?? 'No se pudo crear')
       setName(''); setKey(''); setScopeType('generic'); setScopeValue(''); setPriority(0)
@@ -88,6 +89,10 @@ export default function PriceListsManager({ lists: initialLists, products }: { l
           <label>
             <span className="font-brand text-xs font-semibold text-brand-primary block mb-1"><T>Prioridad</T></span>
             <input type="number" value={priority} onChange={(e) => setPriority(Number(e.target.value))} className="w-24 border border-gray-200 rounded-xl px-3 py-2 font-brand text-sm" />
+          </label>
+          <label>
+            <span className="font-brand text-xs font-semibold text-brand-primary block mb-1"><T>Moneda (opcional)</T></span>
+            <input value={currency} maxLength={3} onChange={(e) => setCurrency(e.target.value.toUpperCase())} placeholder="USD" title={tx("Vacío = moneda de la tienda. Úsala para el mercado que vende en esa moneda.")} className="w-24 border border-gray-200 rounded-xl px-3 py-2 font-brand text-sm uppercase" />
           </label>
           <button onClick={addList} disabled={busy} className="rounded-full bg-brand-primary text-brand-cream px-5 py-2 font-brand text-sm font-medium hover:bg-brand-dark disabled:opacity-50">{busy ? tx("Creando…") : tx("Crear lista")}</button>
         </div>
@@ -145,7 +150,7 @@ function ListCard({ list, products, onToggle }: { list: PriceList; products: Pro
       <div className="flex items-center justify-between">
         <div>
           <h3 className="font-display text-brand-primary text-lg">{list.name} {!list.active && <span className="font-brand text-xs text-red-500">(inactiva)</span>}</h3>
-          <p className="font-brand text-xs text-brand-primary/50">{scope} <T>· prioridad</T> {list.priority} <T>· clave</T> <code>{list.key}</code></p>
+          <p className="font-brand text-xs text-brand-primary/50">{scope} <T>· prioridad</T> {list.priority} <T>· clave</T> <code>{list.key}</code>{list.currency ? <> · {list.currency}</> : null}</p>
         </div>
         <div className="flex items-center gap-3">
           <button onClick={onToggle} className="font-brand text-sm text-brand-primary/60 underline">{list.active ? tx("Desactivar") : tx("Activar")}</button>

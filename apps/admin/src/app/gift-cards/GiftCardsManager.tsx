@@ -6,15 +6,16 @@ import { formatMoney } from '@merkiai/i18n'
 import { T } from '@merkiai/ui'
 import { useTx } from '@merkiai/ui'
 
-interface GiftCard { id: number; code: string; initial_balance: number; balance: number; active: boolean; note: string | null; expires_at: string | null }
+interface GiftCard { id: number; code: string; initial_balance: number; balance: number; active: boolean; note: string | null; expires_at: string | null; currency?: string | null }
 
-const money = (n: number) => formatMoney(n)
+const money = (n: number, currency?: string | null) => formatMoney(n, { currency: currency || 'COP' })
 
 export default function GiftCardsManager({ initial }: { initial: GiftCard[] }) {
   const tx = useTx()
   const [cards, setCards] = useState<GiftCard[]>(initial)
   const [amount, setAmount] = useState('')
   const [note, setNote] = useState('')
+  const [currency, setCurrency] = useState('')
   const [error, setError] = useState('')
   const [busy, setBusy] = useState(false)
 
@@ -30,7 +31,7 @@ export default function GiftCardsManager({ initial }: { initial: GiftCard[] }) {
     try {
       const res = await fetch('/api/admin/gift-cards', {
         method: 'POST', headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ amount: Number(amount), note }),
+        body: JSON.stringify({ amount: Number(amount), note, currency: currency.trim() || null }),
       })
       const data = await res.json()
       if (!res.ok) { setError(data.error ?? 'Error'); return }
@@ -69,6 +70,9 @@ export default function GiftCardsManager({ initial }: { initial: GiftCard[] }) {
         <label className="block"><span className="font-brand text-xs text-brand-primary/50"><T>Monto de la gift card</T></span>
           <input type="number" min={1} value={amount} onChange={(e) => setAmount(e.target.value)} required
             className="mt-1 w-40 rounded-lg border border-brand-primary/15 px-3 py-2 font-brand text-sm" /></label>
+        <label className="block"><span className="font-brand text-xs text-brand-primary/50"><T>Moneda (opcional)</T></span>
+          <input value={currency} maxLength={3} onChange={(e) => setCurrency(e.target.value.toUpperCase())} placeholder="COP" title={tx("Vacío = moneda de la tienda. La gift card solo se canjea en su moneda.")}
+            className="mt-1 w-24 rounded-lg border border-brand-primary/15 px-3 py-2 font-brand text-sm uppercase" /></label>
         <label className="block flex-1 min-w-[200px]"><span className="font-brand text-xs text-brand-primary/50"><T>Nota (opcional)</T></span>
           <input value={note} onChange={(e) => setNote(e.target.value)}
             className="mt-1 w-full rounded-lg border border-brand-primary/15 px-3 py-2 font-brand text-sm" /></label>
@@ -95,7 +99,7 @@ export default function GiftCardsManager({ initial }: { initial: GiftCard[] }) {
             ) : cards.map((c) => (
               <tr key={c.id} className="border-t border-gray-100">
                 <td className="px-4 py-3 font-mono text-brand-primary">{c.code}</td>
-                <td className="px-4 py-3 font-brand text-brand-primary">{money(c.balance)} <span className="text-brand-primary/40">/ {money(c.initial_balance)}</span></td>
+                <td className="px-4 py-3 font-brand text-brand-primary">{money(c.balance, c.currency)} <span className="text-brand-primary/40">/ {money(c.initial_balance, c.currency)}</span></td>
                 <td className="px-4 py-3 font-brand text-brand-primary/60">{c.note ?? '—'}</td>
                 <td className="px-4 py-3">
                   <button onClick={() => toggle(c)} className={`font-brand text-xs rounded-full px-2 py-1 ${c.active ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-500'}`}>

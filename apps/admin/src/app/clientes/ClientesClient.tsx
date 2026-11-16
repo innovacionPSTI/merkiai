@@ -17,7 +17,9 @@ export interface ClientRow {
   type: ClientType
   signedUpAt: string | null   // ISO — fecha de registro en Stack Auth
   totalOrders: number
-  totalSpent: number          // en centavos (COP)
+  totalSpent: number          // suma en la moneda base (orden y filtros)
+  /** HU-467 AC-5 · gasto por moneda (nunca se suman monedas distintas). */
+  spent?: Array<{ currency: string; amount: number }>
   lastOrderAt: string | null  // ISO
 }
 
@@ -190,7 +192,7 @@ export default function ClientesClient({ clients }: Props) {
                   </td>
                   <td className="px-6 py-4">
                     <span className="font-brand text-sm text-brand-primary">
-                      {c.totalSpent > 0 ? formatCOP(c.totalSpent) : <span className="text-brand-primary/30">—</span>}
+                      {c.spent && c.spent.some((s) => s.amount > 0) ? c.spent.map((s) => formatMoney(s.amount, { currency: s.currency })).join(' · ') : c.totalSpent > 0 ? formatCOP(c.totalSpent) : <span className="text-brand-primary/30">—</span>}
                     </span>
                   </td>
                   <td className="px-6 py-4">

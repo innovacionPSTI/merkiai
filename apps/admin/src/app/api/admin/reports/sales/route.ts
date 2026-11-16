@@ -1,4 +1,4 @@
-import { getSalesReport, salesReportToCsv } from '@merkiai/database'
+import { getSalesReport, salesReportToCsv, getStoreBaseCurrency } from '@merkiai/database'
 import { NextRequest } from 'next/server'
 import { NextResponse } from '@/lib/api-response'
 import { getAdminUser } from '@/lib/auth'
@@ -29,14 +29,16 @@ export async function GET(req: NextRequest) {
   }
 
   const db = getAdminDb(user.tenantId)
-  const report = await getSalesReport(db, { from, to })
+  // HU-467 AC-5 · un reporte por moneda (por defecto, la base de la tienda).
+  const currency = /^[A-Za-z]{3}$/.test(sp.get('currency') ?? '') ? sp.get('currency') : null
+  const report = await getSalesReport(db, { from, to, currency, baseCurrency: await getStoreBaseCurrency(db, user.tenantId) })
 
   if (sp.get('format') === 'csv') {
     const csv = salesReportToCsv(report)
     return new NextResponse(csv, {
       headers: {
         'Content-Type': 'text/csv; charset=utf-8',
-        'Content-Disposition': `attachment; filename="ventas-${from}_a_${to}.csv"`,
+        'Content-Disposition': `attachment; filename="ventas-${report.currency}-${from}_a_${to}.csv"`,
       },
     })
   }

@@ -1,4 +1,5 @@
 import type { Db } from '../client'
+import { currencyDecimals } from '@merkiai/i18n'
 import { objectsToCsv } from '../lib/product-import'
 
 /**
@@ -13,6 +14,10 @@ export interface SalesReportProduct { product_id: number; name: string; qty: num
 export interface SalesReport {
   from: string
   to: string
+  /** HU-467 AC-5 · moneda del reporte: los montos son solo de pedidos en esa moneda. */
+  currency: string
+  /** Monedas con pedidos en el rango (para elegir; nunca se suman entre sí). */
+  currencies: string[]
   revenue: number
   orders: number
   avgTicket: number
@@ -22,6 +27,7 @@ export interface SalesReport {
 
 interface OrderRow {
   created_at: string
+  currency?: string | null
   total: number | null
   status: string | null
   items: unknown
@@ -40,7 +46,7 @@ function dayKey(iso: string): string {
  */
 export async function getSalesReport(
   db: Db,
-  opts: { from: string; to: string; topLimit?: number },
+  opts: { from: string; to: string; topLimit?: number; currency?: string | null; baseCurrency?: string },
 ): Promise<SalesReport> {
   const from = opts.from
   const to = opts.to
@@ -52,13 +58,19 @@ export async function getSalesReport(
 
   const { data } = await db
     .from('orders')
-    .select('created_at, total, status, items')
+    .select('created_at, total, status, items, currency')
     .gte('created_at', `${from}T00:00:00.000Z`)
     .lt('created_at', toExclusive.toISOString())
     .order('created_at', { ascending: true })
 
   const rows = (data ?? []) as OrderRow[]
-  const paid = rows.filter((o) => o.status !== 'cancelled')
+  // HU-467 AC-5 · un reporte por moneda: los totales nunca mezclan COP con USD.
+  const base = (opts.baseCurrency || 'COP').toUpperCase()
+  const curOf = (o: OrderRow) => String(o.currency || base).toUpperCase()
+  const notCancelled = rows.filter((o) => o.status !== 'cancelled')
+  const currencies = [...new Set(notCancelled.map(curOf))].sort((a, b) => (a === base ? -1 : b === base ? 1 : a.localeCompare(b)))
+  const currency = (opts.currency || (currencies.includes(base) ? base : currencies[0]) || base).toUpperCase()
+  const paid = notCancelled.filter((o) => curOf(o) === currency)
 
   let revenue = 0
   const byDayMap = new Map<string, { revenue: number; orders: number }>()
@@ -94,8 +106,8 @@ export async function getSalesReport(
     .slice(0, topLimit)
 
   return {
-    from, to, revenue, orders,
-    avgTicket: orders > 0 ? Math.round(revenue / orders) : 0,
+    from, to, currency, currencies: currencies.length ? currencies : [currency], revenue, orders,
+    avgTicket: orders > 0 ? Math.round((revenue / orders) * 10 ** currencyDecimals(currency)) / 10 ** currencyDecimals(currency) : 0,
     byDay, topProducts,
   }
 }
@@ -104,8 +116,9 @@ export async function getSalesReport(
 export function salesReportToCsv(report: SalesReport): string {
   const rows = report.byDay.map((d) => ({
     fecha: d.date,
+    moneda: report.currency,
     pedidos: d.orders,
     ingresos: d.revenue,
   }))
-  return objectsToCsv(['fecha', 'pedidos', 'ingresos'], rows)
+  return objectsToCsv(['fecha', 'moneda', 'pedidos', 'ingresos'], rows)
 }

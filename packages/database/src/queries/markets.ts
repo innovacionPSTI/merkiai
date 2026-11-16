@@ -265,6 +265,15 @@ export async function listMarkets(db: Db, tenantId: string): Promise<Market[]> {
   return rows.length ? rows : [{ ...DEFAULT_MARKET }]
 }
 
+/** HU-467 · moneda base de la tienda (la del mercado por defecto; fail-safe: COP). */
+export async function getStoreBaseCurrency(db: Db, tenantId: string): Promise<string> {
+  try {
+    return defaultMarket(await listMarkets(db, tenantId)).currency.toUpperCase()
+  } catch {
+    return 'COP'
+  }
+}
+
 /** Locale por defecto de la tienda leído de BD (fail-safe: es-CO). Para correos sin pedido. */
 export async function getStoreDefaultLocale(db: Db, tenantId: string): Promise<Locale> {
   try {
@@ -329,6 +338,14 @@ export async function saveMarket(db: Db, tenantId: string, input: MarketInput, r
     ? applyMarketChange([], { ...input, id: null, is_default: true })
     : applyMarketChange(current, input)
   const errors = validateMarkets(next, { ...rules, baseCurrency })
+  // HU-467 · la lista de precios del mercado debe estar en su moneda.
+  const nIn = normalizeMarketInput(input)
+  if (nIn.price_list_id) {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const { data: pl } = await (db as any).from('price_lists').select('currency').eq('id', nIn.price_list_id).maybeSingle()
+    const listCurrency = String((pl as { currency?: string | null } | null)?.currency || baseCurrency).toUpperCase()
+    if (pl && listCurrency !== nIn.currency) errors.push(`${nIn.name || nIn.key}: la lista de precios está en ${listCurrency} y el mercado vende en ${nIn.currency}.`)
+  }
   if (errors.length) throw new MarketValidationError(errors)
 
   if (!editingVirtual) current = await materializeDefault(db, tenantId, current)

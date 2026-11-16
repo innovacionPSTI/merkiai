@@ -7,7 +7,7 @@ import { NextRequest } from 'next/server'
 import { NextResponse } from '@/lib/api-response'
 import { getAdminUser } from '@/lib/auth'
 import { getAdminDb } from '@/lib/admin-db'
-import { updatePriceList, isPriceScopeType } from '@merkiai/database'
+import { updatePriceList, isPriceScopeType, normalizeListCurrency } from '@merkiai/database'
 import { getTenantEntitlements, requireFeature, EntitlementError, FEATURES } from '@/lib/entitlements'
 
 export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
@@ -25,6 +25,7 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
 
   const patch: Record<string, unknown> = {}
   if (typeof body?.name === 'string') patch.name = body.name.trim()
+  if ('currency' in (body ?? {})) patch.currency = normalizeListCurrency(body.currency)
   if (typeof body?.scope_type === 'string' && isPriceScopeType(body.scope_type)) patch.scope_type = body.scope_type
   if ('scope_value' in body) patch.scope_value = body.scope_value ?? null
   if (body?.priority != null) patch.priority = Number(body.priority)

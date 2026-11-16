@@ -75,7 +75,7 @@ Un **mercado** tiene uno o varios locales (p. ej. *Estados Unidos* = `en-US` + `
 
 ### 2.8 Fuera de alcance inicial (decisiones explícitas)
 
-- **Multimoneda** (HU-467) va aparte: arrastra precios por moneda, pasarela compatible con la moneda, impuestos y conciliación. Sin ella, un mercado nuevo cambia idioma y formatos, pero sigue vendiendo en la moneda base.
+- **Multimoneda** (HU-467, implementada en v287–v289 tras la feature `multi_currency`): precio local por lista del mercado o tasa fija + redondeo, impuesto por país, moneda fija en el pedido, pasarela compatible y totales por moneda. Sin la feature, un mercado nuevo cambia idioma y formatos, pero sigue vendiendo en la moneda base.
 - **Idiomas RTL** (árabe, hebreo): el catálogo queda abierto, pero no se prueba la dirección derecha a izquierda.
 - **Traducción automática en tiempo real** para el visitante: no. Las traducciones se guardan y se revisan.
 - **España como mercado vendible** requiere una pasarela que opere en EUR en España (Redsys/Stripe, no integradas). Hasta entonces, `es-ES` sirve como idioma.

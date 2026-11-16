@@ -25,7 +25,7 @@ export async function POST(req: NextRequest) {
   const b = await req.json().catch(() => ({}))
   try {
     const giftCard = await issueGiftCard(
-      { amount: Number(b.amount), note: b.note || null, expires_at: b.expires_at || null },
+      { amount: Number(b.amount), note: b.note || null, expires_at: b.expires_at || null, currency: b.currency || null },
       g.db, g.adminUser.tenantId,
     )
     // HU-300 · auditoría de emisión de gift cards.

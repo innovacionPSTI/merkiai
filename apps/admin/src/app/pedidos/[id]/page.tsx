@@ -35,8 +35,9 @@ export default async function PedidoDetailPage({ params }: { params: Promise<{ i
   // HU-107a · devoluciones del pedido (historial + gestión).
   const returns = await getReturnsForOrder(supabase, order.id).catch(() => [])
 
+  // HU-467 · montos en la moneda del pedido.
   const fmt = (n: number) =>
-    formatMoney(n)
+    formatMoney(n, { currency: (order as { currency?: string | null } | null)?.currency || 'COP' })
 
   const currentStep = STATUS_ORDER.indexOf(order.status)
 
@@ -100,6 +101,7 @@ export default async function PedidoDetailPage({ params }: { params: Promise<{ i
               <div className="flex justify-between"><span className="text-brand-primary/50"><T>Subtotal</T></span><span>{fmt(order.subtotal)}</span></div>
               <div className="flex justify-between"><span className="text-brand-primary/50"><T>Envío</T></span><span>{fmt(order.shipping_cost)}</span></div>
               {order.discount > 0 && <div className="flex justify-between"><span className="text-green-600"><T>Descuento</T></span><span className="text-green-600">-{fmt(order.discount)}</span></div>}
+              {Number((order as { tax_amount?: number }).tax_amount ?? 0) > 0 && <div className="flex justify-between"><span className="text-brand-primary/50"><T>Impuestos</T></span><span>{fmt(Number((order as { tax_amount?: number }).tax_amount))}</span></div>}
               <div className="flex justify-between font-bold text-brand-primary"><span><T>Total</T></span><span>{fmt(order.total)}</span></div>
             </div>
           </div>

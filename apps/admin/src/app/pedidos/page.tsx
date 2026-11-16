@@ -5,7 +5,8 @@ import type { Metadata } from 'next'
 import { PageHeader, Pagination } from '@merkiai/ui'
 import PickupModal from '@/components/pedidos/PickupModal'
 import PedidosSearch from './PedidosSearch'
-import { formatMoney, formatDate } from '@merkiai/i18n'
+import { formatDate } from '@merkiai/i18n'
+import { moneyIn } from '@/lib/money'
 import { T } from '@merkiai/ui'
 import { getAdminTx } from '@/lib/ui-locale'
 
@@ -41,7 +42,7 @@ export default async function PedidosAdminPage({
   // ── Consulta principal ────────────────────────────────────────────────────
   let query = supabase
     .from('orders')
-    .select('id, order_number, customer_name, customer_email, total, status, tracking_number, created_at', { count: 'exact' })
+    .select('id, order_number, customer_name, customer_email, total, currency, status, tracking_number, created_at', { count: 'exact' })
     .order('created_at', { ascending: false })
     .range(offset, offset + PAGE_SIZE - 1)
 
@@ -66,8 +67,6 @@ export default async function PedidosAdminPage({
     .order('created_at', { ascending: false })
     .limit(100)
 
-  const fmt = (n: number) =>
-    formatMoney(n)
 
   // Construye URL para los filtros conservando los demás params
   function filterHref(params: Record<string, string | undefined>) {
@@ -148,7 +147,7 @@ export default async function PedidosAdminPage({
                       {formatDate(order.created_at)}
                     </td>
                     <td className="px-4 py-3 font-brand font-bold text-brand-primary text-sm">
-                      {fmt(order.total)}
+                      {moneyIn(order.total, (order as { currency?: string | null }).currency)}
                     </td>
                     <td className="px-4 py-3">
                       <span className={`font-brand text-xs font-semibold rounded-full px-3 py-1 ${st.color}`}>

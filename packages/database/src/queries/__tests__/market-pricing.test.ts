@@ -137,3 +137,15 @@ describe('HU-467 F2 · contexto de la visita', () => {
     expect(promotionsForCurrency(promos, basePricingContext())).toBe(promos)
   })
 })
+
+describe('HU-467 F3 · AC-5 totales por moneda', () => {
+  // eslint-disable-next-line @typescript-eslint/no-var-requires
+  const { sumByCurrency } = require('../market-pricing')
+  it('nunca suma monedas distintas; sin moneda cuenta en la base; la base va primero', () => {
+    const rows = [{ total: 100, currency: 'USD' }, { total: 50_000, currency: null }, { total: 20_000, currency: 'COP' }, { total: 40, currency: 'usd' }]
+    expect(sumByCurrency(rows, (r: { total: number; currency: string | null }) => ({ amount: r.total, currency: r.currency }))).toEqual([
+      { currency: 'COP', amount: 70_000 },
+      { currency: 'USD', amount: 140 },
+    ])
+  })
+})

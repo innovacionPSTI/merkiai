@@ -3,6 +3,8 @@ import { notFound } from 'next/navigation'
 import Link from 'next/link'
 import type { Metadata } from 'next'
 import { formatMoney, formatDate } from '@merkiai/i18n'
+import { sumByCurrency } from '@merkiai/database'
+import { formatTotals, moneyIn } from '@/lib/money'
 import { T } from '@merkiai/ui'
 
 export const dynamic = 'force-dynamic'
@@ -44,7 +46,7 @@ export default async function ClienteDetailPage({
   // Todos los pedidos del cliente
   const { data: orders } = await supabase
     .from('orders')
-    .select('id, order_number, created_at, status, total, payment_status, items')
+    .select('id, order_number, created_at, status, total, payment_status, items, currency')
     .eq('customer_email', email)
     .order('created_at', { ascending: false })
 
@@ -61,7 +63,10 @@ export default async function ClienteDetailPage({
       year: 'numeric',
     })
 
-  const totalSpent   = (orders ?? []).reduce((s, o) => s + (o.total ?? 0), 0)
+  // HU-467 AC-5 · gasto por moneda; el ticket promedio solo si hay una sola moneda.
+  const spent        = sumByCurrency(orders ?? [], (o) => ({ amount: o.total, currency: (o as { currency?: string | null }).currency }))
+  const totalSpent   = spent.length === 1 ? spent[0].amount : 0
+  const singleCurrency = spent.length <= 1 ? (spent[0]?.currency ?? 'COP') : null
   const totalOrders  = orders?.length ?? 0
   const displayName  = customer?.name ?? orders?.[0]?.['customer_name' as keyof typeof orders[0]] ?? email
 
@@ -128,12 +133,12 @@ export default async function ClienteDetailPage({
               </div>
               <div className="flex justify-between items-center">
                 <span className="font-brand text-sm text-brand-primary/60"><T>Total gastado</T></span>
-                <span className="font-brand font-bold text-brand-primary">{fmt(totalSpent)}</span>
+                <span className="font-brand font-bold text-brand-primary">{formatTotals(spent)}</span>
               </div>
-              {totalOrders > 0 && (
+              {totalOrders > 0 && singleCurrency && (
                 <div className="flex justify-between items-center">
                   <span className="font-brand text-sm text-brand-primary/60"><T>Ticket promedio</T></span>
-                  <span className="font-brand text-brand-primary">{fmt(Math.round(totalSpent / totalOrders))}</span>
+                  <span className="font-brand text-brand-primary">{formatMoney(Math.round(totalSpent / totalOrders), { currency: singleCurrency ?? 'COP' })}</span>
                 </div>
               )}
             </div>
@@ -185,7 +190,7 @@ export default async function ClienteDetailPage({
                           {itemCount} {itemCount === 1 ? 'producto' : 'productos'}
                         </td>
                         <td className="px-4 py-3 font-brand font-semibold text-brand-primary text-sm">
-                          {fmt(order.total ?? 0)}
+                          {moneyIn(order.total ?? 0, (order as { currency?: string | null }).currency)}
                         </td>
                         <td className="px-4 py-3">
                           <span className={`font-brand text-xs font-semibold rounded-full px-2.5 py-1 ${st.color}`}>

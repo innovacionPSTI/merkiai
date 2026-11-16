@@ -316,3 +316,24 @@ export function couponForCurrency<C extends { type: string; currency?: string | 
   const min = coupon.min_order_amount ? amountIn(ctx, coupon.min_order_amount) : 0
   return min == null ? null : { ...coupon, min_order_amount: min }
 }
+
+// ── Totales por moneda (AC-5): nunca se suman montos de monedas distintas ──────
+
+export interface CurrencyAmount { currency: string; amount: number }
+
+/**
+ * Agrupa montos por moneda (la moneda base primero, luego por monto). Filas sin
+ * moneda cuentan en la base (pedidos anteriores a la multimoneda). Pura.
+ */
+export function sumByCurrency<T>(rows: T[], pick: (row: T) => { amount: number | null | undefined; currency?: string | null }, baseCurrency = 'COP'): CurrencyAmount[] {
+  const map = new Map<string, number>()
+  for (const r of rows) {
+    const { amount, currency } = pick(r)
+    const c = String(currency || baseCurrency).toUpperCase()
+    map.set(c, (map.get(c) ?? 0) + (Number(amount) || 0))
+  }
+  const base = baseCurrency.toUpperCase()
+  return [...map.entries()]
+    .map(([currency, amount]) => ({ currency, amount }))
+    .sort((a, b) => (a.currency === base ? -1 : b.currency === base ? 1 : b.amount - a.amount))
+}

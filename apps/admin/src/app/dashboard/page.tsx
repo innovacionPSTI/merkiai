@@ -6,6 +6,7 @@ import { getAdminUser } from '@/lib/auth'
 import { requireAdminDb } from '@/lib/admin-context'
 import type { AdminRole } from '@/lib/roles'
 import { formatMoney, formatNumber, formatDate } from '@merkiai/i18n'
+import { orderTotals, moneyIn } from '@/lib/money'
 import { T } from '@merkiai/ui'
 import { getAdminTx } from '@/lib/ui-locale'
 
@@ -58,9 +59,9 @@ async function getAdminData() {
     recentOrders,
     topItems,
   ] = await Promise.all([
-    db.from('orders').select('total').gte('created_at', startOfDay.toISOString()),
-    db.from('orders').select('total').gte('created_at', startOfWeek.toISOString()),
-    db.from('orders').select('total').gte('created_at', startOfMonth.toISOString()),
+    db.from('orders').select('total, currency').gte('created_at', startOfDay.toISOString()),
+    db.from('orders').select('total, currency').gte('created_at', startOfWeek.toISOString()),
+    db.from('orders').select('total, currency').gte('created_at', startOfMonth.toISOString()),
     db.from('orders').select('*', { count: 'exact', head: true }).eq('status', 'pending'),
     db.from('customers').select('*', { count: 'exact', head: true }).gte('created_at', startOfWeek.toISOString()),
     db.from('product_variants')
@@ -69,7 +70,7 @@ async function getAdminData() {
       .order('stock', { ascending: true })
       .limit(5),
     db.from('orders')
-      .select('order_number, customer_name, total, status, created_at')
+      .select('order_number, customer_name, total, currency, status, created_at')
       .order('created_at', { ascending: false })
       .limit(6),
     db.from('order_items').select('product_id, product_name, qty'),
@@ -88,10 +89,11 @@ async function getAdminData() {
     .slice(0, 5)
 
   return {
-    salesDay:   (todayOrders.data ?? []).reduce((s, o) => s + o.total, 0),
+    // HU-467 AC-5 · ventas agrupadas por moneda (nunca se suman COP con USD).
+    salesDay:   orderTotals(todayOrders.data ?? []),
     ordersDay:  todayOrders.data?.length ?? 0,
-    salesWeek:  (weekOrders.data ?? []).reduce((s, o) => s + o.total, 0),
-    salesMonth: (monthOrders.data ?? []).reduce((s, o) => s + o.total, 0),
+    salesWeek:  orderTotals(weekOrders.data ?? []),
+    salesMonth: orderTotals(monthOrders.data ?? []),
     ordersMonth: monthOrders.data?.length ?? 0,
     pendingCount: pendingCount.count ?? 0,
     newCustomers: newCustomers.count ?? 0,
@@ -120,7 +122,7 @@ async function getVendedorData() {
       .order('stock', { ascending: true })
       .limit(8),
     db.from('orders')
-      .select('order_number, customer_name, customer_email, total, status, created_at')
+      .select('order_number, customer_name, customer_email, total, currency, status, created_at')
       .in('status', ['pending', 'processing'])
       .order('created_at', { ascending: true }) // los más antiguos primero = más urgentes
       .limit(8),
@@ -234,9 +236,9 @@ async function AdminDashboard() {
       <div>
         <SectionTitle><T>Resumen de ventas</T></SectionTitle>
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-          <StatCard label="Ventas hoy"     value={fmt(d.salesDay)}   sub={`${d.ordersDay} pedidos`}      icon="money" />
-          <StatCard label="Ventas semana"  value={fmt(d.salesWeek)}  icon="chart" />
-          <StatCard label="Ventas mes"     value={fmt(d.salesMonth)} sub={`${d.ordersMonth} pedidos`}    icon="calendar" />
+          <StatCard label="Ventas hoy"     value={d.salesDay}   sub={`${d.ordersDay} pedidos`}      icon="money" />
+          <StatCard label="Ventas semana"  value={d.salesWeek}  icon="chart" />
+          <StatCard label="Ventas mes"     value={d.salesMonth} sub={`${d.ordersMonth} pedidos`}    icon="calendar" />
           <StatCard label="Clientes nuevos (sem.)" value={fmtNum(d.newCustomers)} icon="customer" href="/clientes" />
         </div>
       </div>
@@ -269,7 +271,7 @@ async function AdminDashboard() {
                         </Link>
                       </td>
                       <td className="px-4 py-3 font-brand text-xs text-brand-primary/70 max-w-[120px] truncate">{o.customer_name}</td>
-                      <td className="px-4 py-3 font-brand text-xs font-semibold text-brand-primary">{fmt(o.total)}</td>
+                      <td className="px-4 py-3 font-brand text-xs font-semibold text-brand-primary">{moneyIn(o.total, (o as { currency?: string | null }).currency)}</td>
                       <td className="px-4 py-3">
                         <span className={`font-brand text-xs font-semibold rounded-full px-2 py-0.5 ${STATUS_COLOR[o.status] ?? 'bg-gray-100 text-gray-600'}`}>
                           {STATUS_LABEL[o.status] ?? o.status}

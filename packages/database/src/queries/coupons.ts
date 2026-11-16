@@ -12,6 +12,8 @@ export type CreateCouponInput = {
   max_uses?: number | null
   expires_at?: string | null
   active?: boolean
+  /** HU-467 · moneda de un cupón de monto fijo (null = moneda base). */
+  currency?: string | null
 }
 
 export type UpdateCouponInput = Partial<CreateCouponInput>

@@ -33,7 +33,7 @@ export default async function ClientesPage() {
   // ── 3. Estadísticas de pedidos por email ─────────────────────────────────────
   const { data: orders } = await supabase
     .from('orders')
-    .select('customer_email, customer_name, customer_phone, total, created_at')
+    .select('customer_email, customer_name, customer_phone, total, currency, created_at')
     .order('created_at', { ascending: false })
 
   type OrderStats = {
@@ -41,6 +41,8 @@ export default async function ClientesPage() {
     phone: string | null
     totalOrders: number
     totalSpent: number
+    /** HU-467 · gasto por moneda. */
+    spent: Map<string, number>
     lastOrderAt: string
   }
 
@@ -53,14 +55,17 @@ export default async function ClientesPage() {
     const existing = orderStatsByEmail.get(email)
     if (existing) {
       existing.totalOrders += 1
-      existing.totalSpent += order.total ?? 0
+      const cur = String((order as { currency?: string | null }).currency || 'COP')
+      existing.spent.set(cur, (existing.spent.get(cur) ?? 0) + (order.total ?? 0))
+      if (cur === 'COP') existing.totalSpent += order.total ?? 0
       // orders viene desc → el primer registro es el más reciente (ya guardado)
     } else {
       orderStatsByEmail.set(email, {
         name: order.customer_name ?? null,
         phone: order.customer_phone ?? null,
         totalOrders: 1,
-        totalSpent: order.total ?? 0,
+        totalSpent: ((order as { currency?: string | null }).currency || 'COP') === 'COP' ? order.total ?? 0 : 0,
+        spent: new Map([[String((order as { currency?: string | null }).currency || 'COP'), order.total ?? 0]]),
         lastOrderAt: order.created_at,
       })
     }
@@ -81,6 +86,7 @@ export default async function ClientesPage() {
       signedUpAt: c.created_at,
       totalOrders: stats?.totalOrders ?? 0,
       totalSpent: stats?.totalSpent ?? 0,
+      spent: stats ? [...stats.spent].map(([currency, amount]) => ({ currency, amount })) : [],
       lastOrderAt: stats?.lastOrderAt ?? null,
     })
   }
@@ -98,6 +104,7 @@ export default async function ClientesPage() {
       signedUpAt: null,
       totalOrders: stats.totalOrders,
       totalSpent: stats.totalSpent,
+      spent: [...stats.spent].map(([currency, amount]) => ({ currency, amount })),
       lastOrderAt: stats.lastOrderAt,
     })
   }

@@ -29,7 +29,7 @@ export async function POST(req: NextRequest) {
 
   try {
     const body = await req.json()
-    const { code, type, value, min_order_amount, max_uses, expires_at, active } = body
+    const { code, type, value, min_order_amount, max_uses, expires_at, active, currency } = body
 
     if (!code || !type || !value) {
       return NextResponse.json({ error: 'code, type y value son requeridos' }, { status: 400 })
@@ -43,6 +43,8 @@ export async function POST(req: NextRequest) {
       max_uses: max_uses ? Number(max_uses) : null,
       expires_at: expires_at || null,
       active: active !== false,
+      // HU-467 AC-6 · solo los de monto fijo tienen moneda propia.
+      ...(type === 'fixed' && /^[A-Za-z]{3}$/.test(String(currency ?? '')) ? { currency: String(currency).toUpperCase() } : {}),
     }, getAdminDb(user.tenantId), user.tenantId)
 
     return NextResponse.json({ coupon }, { status: 201 })

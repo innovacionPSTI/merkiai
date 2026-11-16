@@ -1907,6 +1907,12 @@ const adminEn: Record<string, string> = {
   "{0}: regla de redondeo inválida.": "{0}: invalid rounding rule.",
   "{0}: tu pasarela de pago activa no acepta {1}. Activa una que la acepte o desactiva el mercado.": "{0}: your active payment gateway does not accept {1}. Activate one that does or deactivate the market.",
   "{0}: tu plan no incluye multimoneda; todos los mercados venden en la moneda de la tienda ({1}).": "{0}: your plan does not include multi-currency; all markets sell in the store currency ({1}).",
+  "Impuestos": "Taxes",
+  "Moneda (opcional)": "Currency (optional)",
+  "Vacío = moneda de la tienda. La gift card solo se canjea en su moneda.": "Empty = store currency. The gift card can only be redeemed in its currency.",
+  "Vacío = moneda de la tienda. Un cupón de monto fijo solo vale en su moneda.": "Empty = store currency. A fixed-amount coupon only works in its currency.",
+  "Vacío = moneda de la tienda. Úsala para el mercado que vende en esa moneda.": "Empty = store currency. Use it for the market that sells in that currency.",
+  "{0}: la lista de precios está en {1} y el mercado vende en {2}.": "{0}: the price list is in {1} and the market sells in {2}.",
 }
 
 export default adminEn

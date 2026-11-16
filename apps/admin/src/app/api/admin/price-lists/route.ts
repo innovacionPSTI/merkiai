@@ -42,6 +42,7 @@ export async function POST(req: NextRequest) {
       scope_type: scope,
       scope_value: scope === 'generic' ? null : (body.scope_value ?? null),
       priority: body.priority != null ? Number(body.priority) : 0,
+      currency: body.currency ?? null, // HU-467 · moneda de la lista (vacío = base)
     })
     return NextResponse.json(list, { status: 201 })
   } catch (e) {

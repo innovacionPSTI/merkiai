@@ -44,13 +44,31 @@ describe('getSalesReport (HU-116)', () => {
   })
 })
 
+describe('HU-467 AC-5 · reporte por moneda', () => {
+  const rows = [
+    { created_at: '2026-02-01T10:00:00Z', total: 100000, status: 'delivered', currency: null, items: [] },
+    { created_at: '2026-02-01T11:00:00Z', total: 30, status: 'delivered', currency: 'USD', items: [] },
+    { created_at: '2026-02-02T11:00:00Z', total: 20, status: 'shipped', currency: 'USD', items: [] },
+  ]
+  it('por defecto la moneda base; lista las monedas del rango sin mezclar totales', async () => {
+    const r = await getSalesReport(dbWithOrders(rows).db, { from: '2026-02-01', to: '2026-02-02', baseCurrency: 'COP' })
+    expect(r.currency).toBe('COP')
+    expect(r.currencies).toEqual(['COP', 'USD'])
+    expect(r.revenue).toBe(100000)
+  })
+  it('elegida otra moneda, solo sus pedidos', async () => {
+    const r = await getSalesReport(dbWithOrders(rows).db, { from: '2026-02-01', to: '2026-02-02', currency: 'usd', baseCurrency: 'COP' })
+    expect(r).toMatchObject({ currency: 'USD', revenue: 50, orders: 2, avgTicket: 25 })
+  })
+})
+
 describe('salesReportToCsv', () => {
   it('serializa el detalle diario con cabecera', () => {
     const csv = salesReportToCsv({
-      from: '2026-02-01', to: '2026-02-02', revenue: 16000, orders: 2, avgTicket: 8000,
+      from: '2026-02-01', to: '2026-02-02', currency: 'COP', currencies: ['COP'], revenue: 16000, orders: 2, avgTicket: 8000,
       byDay: [{ date: '2026-02-01', revenue: 16000, orders: 2 }], topProducts: [],
     })
-    expect(csv.split('\n')[0]).toBe('fecha,pedidos,ingresos')
-    expect(csv).toContain('2026-02-01,2,16000')
+    expect(csv.split('\n')[0]).toBe('fecha,moneda,pedidos,ingresos')
+    expect(csv).toContain('2026-02-01,COP,2,16000')
   })
 })

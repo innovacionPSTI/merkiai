@@ -7,8 +7,6 @@ import { formatMoney, formatDate } from '@merkiai/i18n'
 import { T } from '@merkiai/ui'
 import { useTx } from '@merkiai/ui'
 
-const fmt = (n: number) =>
-  formatMoney(n)
 
 const STATUS_BADGE: Record<string, string> = {
   active:   'bg-green-100 text-green-700',
@@ -169,6 +167,20 @@ export default function CuponesClient({ initialCoupons }: Props) {
                 />
               </div>
 
+              {form.type === 'fixed' && (
+                <div>
+                  <label className="font-brand text-xs font-semibold text-brand-primary block mb-1"><T>Moneda (opcional)</T></label>
+                  <input
+                    value={form.currency ?? ''}
+                    maxLength={3}
+                    placeholder="COP"
+                    title={tx("Vacío = moneda de la tienda. Un cupón de monto fijo solo vale en su moneda.")}
+                    onChange={(e) => setForm((f) => ({ ...f, currency: e.target.value.toUpperCase() || null }))}
+                    className="w-full border border-gray-200 rounded-xl px-4 py-2.5 font-brand text-sm uppercase focus:outline-none focus:border-brand-primary"
+                  />
+                </div>
+              )}
+
               <div>
                 <label className="font-brand text-xs font-semibold text-brand-primary block mb-1"><T>Mínimo de pedido ($)</T></label>
                 <input
@@ -267,10 +279,10 @@ export default function CuponesClient({ initialCoupons }: Props) {
                       {c.code}
                     </td>
                     <td className="px-4 py-3 font-brand text-sm text-brand-primary">
-                      {c.type === 'percentage' ? `${c.value}%` : fmt(c.value)}
+                      {c.type === 'percentage' ? `${c.value}%` : formatMoney(c.value, { currency: c.currency || 'COP' })}
                     </td>
                     <td className="px-4 py-3 font-brand text-sm text-brand-primary/60">
-                      {c.min_order_amount > 0 ? fmt(c.min_order_amount) : '—'}
+                      {c.min_order_amount > 0 ? formatMoney(c.min_order_amount, { currency: (c.type === 'fixed' && c.currency) || 'COP' }) : '—'}
                     </td>
                     <td className="px-4 py-3 font-brand text-sm text-brand-primary/60">
                       {c.used_count}{c.max_uses !== null ? ` / ${c.max_uses}` : ''}

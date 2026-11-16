@@ -1,4 +1,5 @@
 import type { Db } from '../client'
+import { currencyDecimals } from '@merkiai/i18n'
 
 /**
  * Gift cards y saldo a favor (HU-148). Las gift cards tienen un saldo canjeable;
@@ -17,6 +18,8 @@ export interface GiftCard {
   note: string | null
   expires_at: string | null
   created_at: string
+  /** HU-467 · moneda de la gift card (null = moneda base); solo se canjea en ella. */
+  currency?: string | null
 }
 
 // Sin caracteres ambiguos (0/O, 1/I) para dictar/leer fácil.
@@ -75,18 +78,21 @@ export async function getGiftCardByCode(code: string, db: Db): Promise<GiftCard 
 
 /** Emite una gift card con saldo inicial. Reintenta si el código colisiona. */
 export async function issueGiftCard(
-  input: { amount: number; note?: string | null; expires_at?: string | null },
+  input: { amount: number; note?: string | null; expires_at?: string | null; currency?: string | null },
   db: Db,
   tenantId: string,
 ): Promise<GiftCard> {
-  const amount = Math.round(input.amount)
+  // HU-467 · moneda propia opcional; el monto se redondea a sus decimales.
+  const currency = /^[A-Za-z]{3}$/.test(String(input.currency ?? '')) ? String(input.currency).toUpperCase() : null
+  const f = 10 ** currencyDecimals(currency)
+  const amount = Math.round(input.amount * f) / f
   if (!(amount > 0)) throw new Error('El monto de la gift card debe ser mayor que 0.')
   for (let attempt = 0; attempt < 5; attempt++) {
     const code = generateGiftCardCode()
     const { data, error } = await db
       .from('gift_cards')
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      .insert({ tenant_id: tenantId, code, initial_balance: amount, balance: amount, note: input.note ?? null, expires_at: input.expires_at ?? null } as any)
+      .insert({ tenant_id: tenantId, code, initial_balance: amount, balance: amount, note: input.note ?? null, expires_at: input.expires_at ?? null, ...(currency ? { currency } : {}) } as any)
       .select(GC_COLS)
       .single()
     if (!error) return data as GiftCard

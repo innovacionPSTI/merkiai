@@ -6,12 +6,10 @@ import { T } from '@merkiai/ui'
 import { useTx } from '@merkiai/ui'
 
 interface SalesReport {
-  from: string; to: string; revenue: number; orders: number; avgTicket: number
+  from: string; to: string; currency: string; currencies: string[]; revenue: number; orders: number; avgTicket: number
   byDay: { date: string; revenue: number; orders: number }[]
   topProducts: { product_id: number; name: string; qty: number; revenue: number }[]
 }
-
-const COP = { format: (n: number) => formatMoney(n) }
 
 function isoDaysAgo(n: number): string {
   const d = new Date()
@@ -26,23 +24,26 @@ export default function ReportesClient() {
   const [report, setReport] = useState<SalesReport | null>(null)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
+  // HU-467 AC-5 · moneda del reporte (nunca se suman montos de monedas distintas).
+  const [currency, setCurrency] = useState<string | null>(null)
+  const COP = { format: (n: number) => formatMoney(n, { currency: report?.currency ?? currency ?? 'COP' }) }
 
-  const load = useCallback(async () => {
+  const load = useCallback(async (cur: string | null = currency) => {
     setLoading(true); setError('')
     try {
-      const res = await fetch(`/api/admin/reports/sales?from=${from}&to=${to}`)
+      const res = await fetch(`/api/admin/reports/sales?from=${from}&to=${to}${cur ? `&currency=${cur}` : ''}`)
       const data = await res.json()
       if (!res.ok) { setError(data.error ?? 'No se pudo cargar el reporte'); setReport(null); return }
       setReport(data)
     } catch {
       setError(tx("No se pudo cargar el reporte")); setReport(null)
     } finally { setLoading(false) }
-  }, [from, to])
+  }, [from, to, currency])
 
   useEffect(() => { load() }, []) // carga inicial (últimos 30 días)
 
   function exportCsv() {
-    window.location.href = `/api/admin/reports/sales?from=${from}&to=${to}&format=csv`
+    window.location.href = `/api/admin/reports/sales?from=${from}&to=${to}&format=csv${report ? `&currency=${report.currency}` : ''}`
   }
 
   const Metric = ({ label, value }: { label: string; value: string }) => (
@@ -66,7 +67,16 @@ export default function ReportesClient() {
           <input type="date" value={to} min={from} onChange={(e) => setTo(e.target.value)}
             className="border border-gray-200 rounded-xl px-3 py-2 font-brand text-sm text-brand-primary focus:outline-none focus:border-brand-primary" />
         </div>
-        <button onClick={load} disabled={loading}
+        {report && report.currencies.length > 1 && (
+          <div>
+            <label className="font-brand text-xs text-brand-primary/50 block mb-1"><T>Moneda</T></label>
+            <select value={report.currency} onChange={(e) => { setCurrency(e.target.value); load(e.target.value) }}
+              className="border border-gray-200 rounded-xl px-3 py-2 font-brand text-sm text-brand-primary focus:outline-none focus:border-brand-primary">
+              {report.currencies.map((c) => <option key={c} value={c}>{c}</option>)}
+            </select>
+          </div>
+        )}
+        <button onClick={() => load()} disabled={loading}
           className="font-brand text-sm bg-brand-primary text-brand-cream rounded-full px-5 py-2.5 hover:bg-brand-dark transition-colors disabled:opacity-50">
           {loading ? tx("Cargando…") : tx("Aplicar")}
         </button>
